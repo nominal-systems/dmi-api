@@ -1,9 +1,10 @@
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
+import { User } from '../users/entity/user.entity'
 import { OrganizationsService } from './organizations.service'
 
 @Injectable()
-export class OrganizationGuard implements CanActivate {
+export class OrganizationMemberGuard implements CanActivate {
   constructor (
     private reflector: Reflector,
     private organizationsService: OrganizationsService,
@@ -15,7 +16,7 @@ export class OrganizationGuard implements CanActivate {
       context.getHandler(),
     )
 
-    if (disabledGuards && disabledGuards.includes(OrganizationGuard.name)) {
+    if (disabledGuards && disabledGuards.includes(OrganizationMemberGuard.name)) {
       return true
     }
 
@@ -25,18 +26,18 @@ export class OrganizationGuard implements CanActivate {
       context.getHandler(),
     )
     const organizationId = request.params.id
-    const user = request.user
+    const user: User = request.user
 
     if (needsOwner) {
       const organization = await this.organizationsService.findOne({
-        _id: organizationId,
+        id: organizationId,
       })
 
-      if (organization.owner.toString() !== user._id.toString()) {
+      if (organization.owner.id !== user.id) {
         return false
       }
     }
 
-    return user.organization && user.organization.toString() === organizationId
+    return user.organization && user.organization.id === organizationId
   }
 }

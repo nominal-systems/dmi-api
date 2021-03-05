@@ -13,18 +13,18 @@ import { User } from '../common/decorators/user.decorator'
 import { JwtAuthGuard } from '../users/jwt-auth.guard'
 import { CreateOrganizationDto } from './dtos/create-organization.dto'
 import { NeedsOrganizationOwner } from './needsOwner.decorator'
-import { OrganizationGuard } from './organization.guard'
+import { OrganizationMemberGuard } from './organization-member.guard'
 import { OrganizationsService } from './organizations.service'
 
 @Controller('organizations')
-@UseGuards(JwtAuthGuard, OrganizationGuard)
+@UseGuards(JwtAuthGuard, OrganizationMemberGuard)
 export class OrganizationsController {
   constructor (private readonly organizationsService: OrganizationsService) {}
 
   @Get(':id')
   async findOrganization (@Param('id') organizationId: string) {
     const organization = await this.organizationsService.findOne({
-      _id: organizationId,
+      id: organizationId,
     })
 
     if (!organization) {
@@ -35,7 +35,7 @@ export class OrganizationsController {
   }
 
   @Post()
-  @DisableGuards(OrganizationGuard.name)
+  @DisableGuards(OrganizationMemberGuard.name)
   async createOrganization (
     @Body() createOrganizationDto: CreateOrganizationDto,
     @User() user,

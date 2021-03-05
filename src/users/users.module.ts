@@ -1,12 +1,13 @@
 import { Module } from '@nestjs/common'
 import { UsersService } from './users.service'
 import { UsersController } from './users.controller'
-import { MongooseModule } from '@nestjs/mongoose'
-import { User, UserDocument, UserSchema } from './schemas/user.schema'
 import * as argon2 from 'argon2'
 import { JwtModule } from '@nestjs/jwt'
 import { ConfigService } from '@nestjs/config'
 import { JwtStrategy } from './jwt.strategy'
+import { TypeOrmModule } from '@nestjs/typeorm'
+import { User } from './entity/user.entity'
+import { UserSubscriber } from './entity/user.subscriber'
 
 @Module({
   imports: [
@@ -17,29 +18,10 @@ import { JwtStrategy } from './jwt.strategy'
       }),
       inject: [ConfigService],
     }),
-    MongooseModule.forFeatureAsync([
-      {
-        name: User.name,
-        useFactory: () => {
-          const schema = UserSchema
-
-          schema.pre('save', async function () {
-            const user = this as UserDocument
-
-            if (!user.password.startsWith('$argon2id$v=')) {
-              user.password = await argon2.hash(user.password, {
-                type: argon2.argon2id,
-              })
-            }
-          })
-
-          return schema
-        },
-      },
-    ]),
+    TypeOrmModule.forFeature([User])
   ],
   controllers: [UsersController],
-  providers: [UsersService, JwtStrategy],
+  providers: [UsersService, JwtStrategy, UserSubscriber],
   exports: [UsersService, JwtModule]
 })
 export class UsersModule {}
