@@ -65,7 +65,7 @@ The API Service can message the Integration Engine by pushing Events with the fo
 - `type` Describes the type of event related to the originating occurrence.
   - Type: String
   - Required
-- `data` Event-specific data. This MAY include a property `providerConfiguration` with specific credentials/endpoints/parameters related to the provider (as specified in the [Provider Configuration](https://linestudio.stoplight.io/docs/diagnostic-modality-integration/docs/providers/readme.md#how-to-configure-a-provider)) and MAY include a property `payload` with any specific payload included in the User's originating request.
+- `data` Event-specific data. This MAY include a property `providerConfiguration` with specific credentials/endpoints/parameters related to the provider (as specified in the [Provider Configuration](https://linestudio.stoplight.io/docs/diagnostic-modality-integration/docs/providers/readme.md#how-to-configure-a-provider)), MAY include a `integrationOptions` property with the integration specific parameters created when an [integration is configured](https://linestudio.stoplight.io/docs/diagnostic-modality-integration/docs/getting-started.md#5-connect-the-practice-with-a-provider) and MAY include a property `payload` with any specific payload included in the User's originating request.
   - Type: Object
   - Optional 
   
@@ -81,6 +81,9 @@ For example, the event object generated to create an Order for Zoetis could look
       "url": "https://qa.vetscanconnect.zoetis.com",
       "partnerId": "partner-id",
       "partnerToken": "TOKEN"
+    },
+    "integrationOptions": {
+      "clientId": "f1cc5ab3-c563-47be-86f8-837e14a2228f"
     },
     "payload": {
       "integrationId": "<yourIntegrationId>",
