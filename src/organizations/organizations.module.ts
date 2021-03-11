@@ -14,5 +14,8 @@ import { TypeOrmModule } from '@nestjs/typeorm'
   providers: [
     OrganizationsService
   ],
+  exports: [
+    OrganizationsService
+  ]
 })
 export class OrganizationsModule {}

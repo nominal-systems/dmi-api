@@ -5,6 +5,7 @@ import keyGenerator from '../common/utils/keyGenerator'
 import { User } from '../users/entity/user.entity'
 import { UsersService } from '../users/users.service'
 import { CreateOrganizationDto } from './dtos/create-organization.dto'
+import { OrganizationKeys } from './dtos/organization-keys.dto'
 import { Organization } from './entities/organization.entity'
 
 @Injectable()
@@ -18,13 +19,15 @@ export class OrganizationsService {
   async findOne (organization: Partial<Organization>) {
     const result = await this.organizationsRepository.findOne(null, {
       where: organization,
-      relations: ['owner', 'members']
+      relations: ['owner', 'members'],
     })
 
     return result
   }
 
-  async getOrganizationsKeys (organizationId: string) {
+  async getOrganizationsKeys (
+    organizationId: string,
+  ): Promise<OrganizationKeys> {
     const result = await this.organizationsRepository.findOne(organizationId, {
       select: ['testKey', 'prodKey'],
     })
@@ -53,7 +56,7 @@ export class OrganizationsService {
     return newOrganization
   }
 
-  async regenerateKeys (organizationId: string) {
+  async regenerateKeys (organizationId: string): Promise<OrganizationKeys> {
     const { prodKey, testKey } = await this.organizationsRepository.save({
       id: organizationId,
       ...this.generateKeys(),

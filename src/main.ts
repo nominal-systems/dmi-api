@@ -6,12 +6,15 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify'
 import { AppModule } from './app.module'
+import { API_VERSION } from './common/constants/api.constant'
 
 async function bootstrap () {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     new FastifyAdapter(),
   )
+  app.setGlobalPrefix(`/api/${API_VERSION}`)
+
   const configService = app.get(ConfigService)
   const PORT = configService.get('PORT')
 

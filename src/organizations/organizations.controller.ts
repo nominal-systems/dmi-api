@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common'
 import { DisableGuards } from '../common/decorators/disable-guards.decorator'
 import { User } from '../common/decorators/user.decorator'
-import { JwtAuthGuard } from '../users/jwt-auth.guard'
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard'
 import { CreateOrganizationDto } from './dtos/create-organization.dto'
 import { NeedsOrganizationOwner } from './needsOwner.decorator'
 import { OrganizationMemberGuard } from './organization-member.guard'

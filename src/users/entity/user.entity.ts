@@ -1,8 +1,10 @@
 import {
   Column,
+  CreateDateColumn,
   Entity,
   ManyToOne,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm'
 import { Organization } from '../../organizations/entities/organization.entity'
 
@@ -22,4 +24,10 @@ export class User {
     organization => organization.members,
   )
   organization: Organization
+
+  @CreateDateColumn()
+  createdAt: Date
+
+  @UpdateDateColumn()
+  updatedAt: Date
 }
