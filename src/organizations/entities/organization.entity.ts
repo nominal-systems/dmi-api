@@ -8,6 +8,8 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm'
+import { Practice } from '../../practices/entities/practice.entity'
+import { ProviderConfiguration } from '../../providers/entities/provider-configuration.entity'
 import { User } from '../../users/entity/user.entity'
 
 @Entity()
@@ -36,6 +38,12 @@ export class Organization {
     user => user.organization,
   )
   members: User[]
+
+  @OneToMany(() => Practice, practice => practice.organization)
+  practices: Practice[]
+
+  @OneToMany(() => ProviderConfiguration, providerConfiguration => providerConfiguration.organization)
+  providerConfigurations: ProviderConfiguration[]
 
   @CreateDateColumn()
   createdAt: Date

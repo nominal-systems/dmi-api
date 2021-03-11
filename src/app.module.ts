@@ -6,6 +6,8 @@ import { UsersModule } from './users/users.module'
 import { OrganizationsModule } from './organizations/organizations.module'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { ProvidersModule } from './providers/providers.module'
+import { PracticesModule } from './practices/practices.module'
+import { IntegrationsModule } from './integrations/integrations.module'
 import configuration from './config/configuration'
 
 @Module({
@@ -20,12 +22,15 @@ import configuration from './config/configuration'
         type: 'mysql',
         ...configService.get('database'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
+        dropSchema: false,
       }),
       inject: [ConfigService],
     }),
     UsersModule,
     OrganizationsModule,
     ProvidersModule,
+    PracticesModule,
+    IntegrationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

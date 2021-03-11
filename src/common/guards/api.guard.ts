@@ -8,18 +8,15 @@ export class ApiGuard implements CanActivate {
   async canActivate (context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest()
     const apiKey = request.headers['x-api-key']
-    const user = request.user
 
-    if (!apiKey || !user.organization) return false
+    if (!apiKey) return false
 
-    const organizationKeys = await this.organizationsService.getOrganizationsKeys(
-      user.organization.id,
-    )
+    const organization = await this.organizationsService.findOneWithKey(apiKey)
 
-    if (!organizationKeys) return false
+    if (!organization) return false
 
-    return Object.values(organizationKeys).some(
-      organizationKey => organizationKey === apiKey,
-    )
+    request.organization = organization
+
+    return true
   }
 }

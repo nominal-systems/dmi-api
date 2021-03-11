@@ -12,30 +12,21 @@ import { Integration } from '../../integrations/entities/integration.entity'
 import { Organization } from '../../organizations/entities/organization.entity'
 
 @Entity()
-export class ProviderConfiguration {
+export class Practice {
   @PrimaryGeneratedColumn('uuid')
   id: string
 
-  @Column({ nullable: false })
-  diagnosticProviderId: string
-
-  @Column('json')
-  providerConfigurationOptions: any
+  @Column({ unique: true })
+  name: string
 
   @Column()
   @Exclude()
   organizationId: string
 
-  @OneToMany(
-    () => Integration,
-    integration => integration.providerConfiguration,
-  )
+  @OneToMany(() => Integration, integration => integration.practice)
   integrations: Integration[]
 
-  @ManyToOne(
-    () => Organization,
-    organization => organization.providerConfigurations,
-  )
+  @ManyToOne(() => Organization, organization => organization.practices)
   organization: Organization
 
   @CreateDateColumn()

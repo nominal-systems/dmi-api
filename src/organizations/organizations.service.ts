@@ -6,6 +6,7 @@ import { User } from '../users/entity/user.entity'
 import { UsersService } from '../users/users.service'
 import { CreateOrganizationDto } from './dtos/create-organization.dto'
 import { OrganizationKeys } from './dtos/organization-keys.dto'
+import { OrganizationWithoutKeys } from './dtos/organization-without-keys.dto'
 import { Organization } from './entities/organization.entity'
 
 @Injectable()
@@ -23,6 +24,18 @@ export class OrganizationsService {
     })
 
     return result
+  }
+
+  async findOneWithKey (apiKey: string): Promise<OrganizationWithoutKeys> {
+    const organization = await this.organizationsRepository.findOne(null, {
+      where: [{ prodKey: apiKey }, { testKey: apiKey }],
+    })
+
+    if (!organization) return null
+
+    const { testKey, prodKey, ...rest } = organization
+
+    return rest
   }
 
   async getOrganizationsKeys (
@@ -53,7 +66,9 @@ export class OrganizationsService {
 
     await this.usersService.updateOrganization(owner, newOrganization)
 
-    return newOrganization
+    const { testKey, prodKey, ...rest } = newOrganization
+
+    return rest
   }
 
   async regenerateKeys (organizationId: string): Promise<OrganizationKeys> {
@@ -63,6 +78,22 @@ export class OrganizationsService {
     })
 
     return { testKey, prodKey }
+  }
+
+  async getIntegrations (organizationId: string) {
+    const organization = await this.organizationsRepository.findOne({
+      where: {
+        id: organizationId,
+      },
+      relations: [
+        'providerConfigurations',
+        'providerConfigurations.integrations',
+      ],
+    })
+
+    return organization.providerConfigurations
+      .map(providerConfiguration => providerConfiguration.integrations)
+      .reduce((prev, curr) => prev.concat(curr), [])
   }
 
   generateKeys () {

@@ -4,6 +4,7 @@ import { Repository } from 'typeorm'
 import providersList from './constants/provider-list.constant'
 import { ProviderConfiguration } from './entities/provider-configuration.entity'
 import * as createValidator from 'is-my-json-valid'
+import { Organization } from '../organizations/entities/organization.entity'
 
 @Injectable()
 export class ProvidersService {
@@ -20,16 +21,23 @@ export class ProvidersService {
     return providersList.find(provider => provider.id === providerId)
   }
 
-  async getProviderConfigurations (providerId: string) {
+  async getProviderConfigurations (
+    organization: Organization,
+    providerId: string,
+  ) {
     return await this.providerConfigurationRepository.find({
-      where: { diagnosticProviderId: providerId },
+      where: {
+        diagnosticProviderId: providerId,
+        organizationId: organization.id,
+      },
     })
   }
 
   async createProviderConfiguration (
+    organization: Organization,
     providerId: string,
     providerConfiguration: any,
-  ) {
+  ): Promise<ProviderConfiguration> {
     const provider = await this.findOneById(providerId)
 
     if (!provider) {
@@ -58,6 +66,7 @@ export class ProvidersService {
     return await this.providerConfigurationRepository.save({
       diagnosticProviderId: providerId,
       providerConfigurationOptions: providerConfiguration,
+      organization
     })
   }
 }

@@ -7,12 +7,13 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common'
+import { Organization } from '../common/decorators/organization.decorator'
 import { ApiGuard } from '../common/guards/api.guard'
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard'
+import { Organization as OrganizationEntity } from '../organizations/entities/organization.entity'
 import { ProvidersService } from './providers.service'
 
 @Controller('providers')
-@UseGuards(JwtAuthGuard, ApiGuard)
+@UseGuards(ApiGuard)
 export class ProvidersController {
   constructor (private readonly providersService: ProvidersService) {}
 
@@ -33,16 +34,24 @@ export class ProvidersController {
   }
 
   @Get(':id/configurations')
-  async getConfigurationsForProvider (@Param('id') providerId: string) {
-    return await this.providersService.getProviderConfigurations(providerId)
+  async getConfigurationsForProvider (
+    @Organization() organization: OrganizationEntity,
+    @Param('id') providerId: string,
+  ) {
+    return await this.providersService.getProviderConfigurations(
+      organization,
+      providerId,
+    )
   }
 
   @Post(':id/configurations')
   async configureProvider (
+    @Organization() organization: OrganizationEntity,
     @Param('id') providerId: string,
     @Body() providerConfiguration: any,
   ) {
     return await this.providersService.createProviderConfiguration(
+      organization,
       providerId,
       providerConfiguration,
     )
