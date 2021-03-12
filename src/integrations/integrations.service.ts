@@ -1,6 +1,11 @@
-import { ForbiddenException, Inject, Injectable } from '@nestjs/common'
+import {
+  ForbiddenException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { FindOneOptions, Repository } from 'typeorm'
 import { Organization } from '../organizations/entities/organization.entity'
 import { OrganizationsService } from '../organizations/organizations.service'
 import { CreateIntegrationDto } from './dtos/create-integration.dto'
@@ -19,8 +24,25 @@ export class IntegrationsService {
     return await this.integrationsRepository.find()
   }
 
+  async findOne (id: string, options?: FindOneOptions<Integration>) {
+    return await this.integrationsRepository.findOne(
+      options ? null : id,
+      options,
+    )
+  }
+
   async create (createIntegrationDto: CreateIntegrationDto) {
-    return await this.integrationsRepository.save(createIntegrationDto)
+    try {
+      return await this.integrationsRepository.save(createIntegrationDto)
+    } catch (error) {
+      if (error.code === 'ER_NO_REFERENCED_ROW_2') {
+        throw new NotFoundException(
+          'The practice or providerConfiguration was not found',
+        )
+      }
+
+      throw error
+    }
   }
 
   async delete (organization: Organization, integrationId: string) {

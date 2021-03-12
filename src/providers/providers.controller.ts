@@ -33,6 +33,20 @@ export class ProvidersController {
     return provider
   }
 
+  @Get(':id/services')
+  async getProviderTests () {
+    return [
+      {
+        code: 'HEM',
+        name: 'Hematology',
+        category: 'Chemistry',
+        type: 'IN_HOUSE',
+        price: 195.99,
+        currency: 'USD',
+      },
+    ]
+  }
+
   @Get(':id/configurations')
   async getConfigurationsForProvider (
     @Organization() organization: OrganizationEntity,
