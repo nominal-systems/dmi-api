@@ -31,6 +31,9 @@ export class OrganizationMemberGuard implements CanActivate {
     if (needsOwner) {
       const organization = await this.organizationsService.findOne({
         id: organizationId,
+        options: {
+          relations: ['owner']
+        }
       })
 
       if (organization.owner.id !== user.id) {

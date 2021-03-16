@@ -1,3 +1,4 @@
+import { Exclude } from 'class-transformer'
 import {
   Column,
   CreateDateColumn,
@@ -16,12 +17,14 @@ export class User {
   @Column()
   email: string
 
-  @Column({ select: false })
+  @Column()
+  @Exclude()
   password: string
 
   @ManyToOne(
     () => Organization,
     organization => organization.members,
+    { onDelete: 'SET NULL' },
   )
   organization: Organization
 

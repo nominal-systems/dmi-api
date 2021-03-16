@@ -22,7 +22,12 @@ export class PracticesController {
 
   @Get()
   async getPractices (@Organization() organization: OrganizationEntity) {
-    return await this.practicesService.findAllForOrganization(organization)
+    return await this.practicesService.findAll({
+      where: {
+        organizationId: organization.id,
+      },
+      relations: ['integrations'],
+    })
   }
 
   @Post()

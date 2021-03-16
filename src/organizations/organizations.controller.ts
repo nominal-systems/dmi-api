@@ -7,11 +7,14 @@ import {
   Post,
   Put,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common'
 import { DisableGuards } from '../common/decorators/disable-guards.decorator'
 import { User } from '../common/decorators/user.decorator'
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard'
+import { TransformInterceptor } from '../common/interceptors/transform.interceptor'
 import { CreateOrganizationDto } from './dtos/create-organization.dto'
+import { OrganizationKeys } from './dtos/organization-keys.dto'
 import { NeedsOrganizationOwner } from './needsOwner.decorator'
 import { OrganizationMemberGuard } from './organization-member.guard'
 import { OrganizationsService } from './organizations.service'
@@ -25,6 +28,9 @@ export class OrganizationsController {
   async findOrganization (@Param('id') organizationId: string) {
     const organization = await this.organizationsService.findOne({
       id: organizationId,
+      options: {
+        relations: ['owner', 'members', 'practices', 'providerConfigurations'],
+      },
     })
 
     if (!organization) {
@@ -44,12 +50,14 @@ export class OrganizationsController {
   }
 
   @Get(':id/keys')
+  @UseInterceptors(new TransformInterceptor(OrganizationKeys))
   async getKeys (@Param('id') organizationId: string) {
-    const keys = await this.organizationsService.getOrganizationsKeys(
-      organizationId,
-    )
-
-    return keys
+    return await this.organizationsService.findOne({
+      id: organizationId,
+      options: {
+        select: ['testKey', 'prodKey'],
+      },
+    })
   }
 
   @Put(':id/keys')

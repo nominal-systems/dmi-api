@@ -10,12 +10,16 @@ import {
 import { Organization } from '../common/decorators/organization.decorator'
 import { ApiGuard } from '../common/guards/api.guard'
 import { Organization as OrganizationEntity } from '../organizations/entities/organization.entity'
+import { ProviderConfigurationsService } from '../provider-configurations/provider-configurations.service'
 import { ProvidersService } from './providers.service'
 
 @Controller('providers')
 @UseGuards(ApiGuard)
 export class ProvidersController {
-  constructor (private readonly providersService: ProvidersService) {}
+  constructor (
+    private readonly providersService: ProvidersService,
+    private readonly providerConfigurationsService: ProviderConfigurationsService,
+  ) {}
 
   @Get()
   async listProviders () {
@@ -52,10 +56,12 @@ export class ProvidersController {
     @Organization() organization: OrganizationEntity,
     @Param('id') providerId: string,
   ) {
-    return await this.providersService.getProviderConfigurations(
-      organization,
-      providerId,
-    )
+    return await this.providerConfigurationsService.findAll({
+      where: {
+        diagnosticProviderId: providerId,
+        organizationId: organization.id,
+      },
+    })
   }
 
   @Post(':id/configurations')
@@ -64,7 +70,7 @@ export class ProvidersController {
     @Param('id') providerId: string,
     @Body() providerConfiguration: any,
   ) {
-    return await this.providersService.createProviderConfiguration(
+    return await this.providerConfigurationsService.create(
       organization,
       providerId,
       providerConfiguration,

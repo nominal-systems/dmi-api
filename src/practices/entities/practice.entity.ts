@@ -1,4 +1,4 @@
-import { Exclude } from 'class-transformer'
+import { Exclude, Type } from 'class-transformer'
 import {
   Column,
   CreateDateColumn,
@@ -23,10 +23,18 @@ export class Practice {
   @Exclude()
   organizationId: string
 
-  @OneToMany(() => Integration, integration => integration.practice)
+  @OneToMany(
+    () => Integration,
+    integration => integration.practice,
+  )
+  @Type(() => Integration)
   integrations: Integration[]
 
-  @ManyToOne(() => Organization, organization => organization.practices)
+  @ManyToOne(
+    () => Organization,
+    organization => organization.practices,
+  )
+  @Type(() => Organization)
   organization: Organization
 
   @CreateDateColumn()

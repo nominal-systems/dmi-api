@@ -20,12 +20,17 @@ export class UsersService {
   ) {}
 
   async findOne (user: Partial<User>) {
-    return await this.usersRepository.findOne(null, { where: user, relations: ['organization'] })
+    return await this.usersRepository.findOne(null, {
+      where: user,
+      relations: ['organization'],
+    })
   }
 
   async create (user: CreateUserDto) {
     try {
-      const newUser = await this.usersRepository.save(user)
+      const newUser = this.usersRepository.create(user)
+      await this.usersRepository.save(newUser)
+
       const token = await this.generateJwt(newUser)
       return { token }
     } catch (error) {
@@ -43,10 +48,9 @@ export class UsersService {
   }
 
   async authenticate (credentials: UserCredentialsDto) {
-    const user = await this.usersRepository.findOne(
-      { email: credentials.email },
-      { select: ['id', 'password'] },
-    )
+    const user = await this.usersRepository.findOne({
+      email: credentials.email,
+    })
 
     if (!user) {
       throw new UnauthorizedException('Username or password is incorrect')

@@ -11,11 +11,15 @@ export class ApiGuard implements CanActivate {
 
     if (!apiKey) return false
 
-    const organization = await this.organizationsService.findOneWithKey(apiKey)
+    const organization = await this.organizationsService.findOne({
+      options: { where: [{ prodKey: apiKey }, { testKey: apiKey }] },
+    })
 
     if (!organization) return false
 
-    request.organization = organization
+    const { testKey, prodKey, ...rest } = organization
+
+    request.organization = rest
 
     return true
   }

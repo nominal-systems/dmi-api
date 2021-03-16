@@ -5,7 +5,8 @@ import {
   NotFoundException,
 } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { FindOneOptions, Repository } from 'typeorm'
+import { FindManyOptions, Repository } from 'typeorm'
+import { FindOneOfTypeOptions } from '../common/typings/find-one-of-type-options.interface'
 import { Organization } from '../organizations/entities/organization.entity'
 import { OrganizationsService } from '../organizations/organizations.service'
 import { CreateIntegrationDto } from './dtos/create-integration.dto'
@@ -20,20 +21,23 @@ export class IntegrationsService {
     private organizationsService: OrganizationsService,
   ) {}
 
-  async findAll () {
-    return await this.integrationsRepository.find()
+  async findAll (options?: FindManyOptions<Integration>) {
+    return await this.integrationsRepository.find(options)
   }
 
-  async findOne (id: string, options?: FindOneOptions<Integration>) {
+  async findOne (args: FindOneOfTypeOptions<Integration>) {
     return await this.integrationsRepository.findOne(
-      options ? null : id,
-      options,
+      args.id,
+      args.options,
     )
   }
 
   async create (createIntegrationDto: CreateIntegrationDto) {
     try {
-      return await this.integrationsRepository.save(createIntegrationDto)
+      const newIntegration = this.integrationsRepository.create(
+        createIntegrationDto,
+      )
+      return await this.integrationsRepository.save(newIntegration)
     } catch (error) {
       if (error.code === 'ER_NO_REFERENCED_ROW_2') {
         throw new NotFoundException(
@@ -50,7 +54,7 @@ export class IntegrationsService {
       organization.id,
     )
 
-    const integrationBelongsToOrganization = !organizationsIntegrations.find(
+    const integrationBelongsToOrganization = organizationsIntegrations.find(
       integration => integration && integration.id === integrationId,
     )
 

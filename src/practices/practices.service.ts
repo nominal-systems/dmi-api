@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { FindManyOptions, Repository } from 'typeorm'
 import { Organization } from '../organizations/entities/organization.entity'
 import { CreatePracticeDto } from './dto/create-practice.dto'
 import { Practice } from './entities/practice.entity'
@@ -16,20 +16,17 @@ export class PracticesService {
     private practicesRepository: Repository<Practice>,
   ) {}
 
-  async findAllForOrganization (organization: Organization) {
-    return await this.practicesRepository.find({
-      where: {
-        organizationId: organization.id,
-      },
-      relations: ['integrations']
-    })
+  async findAll (options?: FindManyOptions<Practice>) {
+    return await this.practicesRepository.find(options)
   }
 
   async create (organization: Organization, practiceDto: CreatePracticeDto) {
-    return await this.practicesRepository.save({
+    const newPractice = this.practicesRepository.create({
       ...practiceDto,
       organization,
     })
+
+    return await this.practicesRepository.save(newPractice)
   }
 
   async delete (organization: Organization, practiceId: string) {

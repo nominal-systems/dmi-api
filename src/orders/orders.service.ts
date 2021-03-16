@@ -10,9 +10,9 @@ export class OrdersService {
   ) {}
 
   async sendOrder (createOrderDto: CreateOrderDto) {
-    const integration = await this.integrationsService.findOne(
-      createOrderDto.integrationId,
-    )
+    const integration = await this.integrationsService.findOne({
+      id: createOrderDto.integrationId,
+    })
 
     if (!integration) {
       throw new NotFoundException('The integration was not found')
