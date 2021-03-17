@@ -5,9 +5,9 @@ import {
 } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, FindManyOptions } from 'typeorm'
-import { Organization } from '../organizations/entities/organization.entity'
-import { ProvidersService } from '../providers/providers.service'
-import { ProviderConfiguration } from './entities/provider-configuration.entity'
+import { Organization } from '../../organizations/entities/organization.entity'
+import { ProvidersService } from './providers.service'
+import { ProviderConfiguration } from '../entities/provider-configuration.entity'
 import * as createValidator from 'is-my-json-valid'
 import { ModuleRef } from '@nestjs/core'
 

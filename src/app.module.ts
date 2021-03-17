@@ -9,8 +9,7 @@ import { ProvidersModule } from './providers/providers.module'
 import { PracticesModule } from './practices/practices.module'
 import { IntegrationsModule } from './integrations/integrations.module'
 import { OrdersModule } from './orders/orders.module'
-import { ProviderConfigurationsModule } from './provider-configurations/provider-configurations.module'
-import { RefsModule } from './refs/refs.module';
+import { RefsModule } from './refs/refs.module'
 import configuration from './config/configuration'
 import * as path from 'path'
 
@@ -32,7 +31,6 @@ import * as path from 'path'
     }),
     UsersModule,
     OrganizationsModule,
-    ProviderConfigurationsModule,
     ProvidersModule,
     PracticesModule,
     IntegrationsModule,

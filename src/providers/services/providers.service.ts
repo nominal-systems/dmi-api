@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common'
-import providersList from './constants/provider-list.constant'
+import providersList from '../constants/provider-list.constant'
 
 @Injectable()
 export class ProvidersService {

@@ -10,7 +10,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm'
 import { Practice } from '../../practices/entities/practice.entity'
-import { ProviderConfiguration } from '../../provider-configurations/entities/provider-configuration.entity'
+import { ProviderConfiguration } from '../../providers/entities/provider-configuration.entity'
 import { User } from '../../users/entity/user.entity'
 
 @Entity()

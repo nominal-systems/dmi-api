@@ -1,7 +1,7 @@
 import { Type } from 'class-transformer'
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm'
 import { Practice } from '../../practices/entities/practice.entity'
-import { ProviderConfiguration } from '../../provider-configurations/entities/provider-configuration.entity'
+import { ProviderConfiguration } from '../../providers/entities/provider-configuration.entity'
 
 @Entity()
 export class Integration {

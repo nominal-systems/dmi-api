@@ -10,8 +10,8 @@ import {
 import { Organization } from '../common/decorators/organization.decorator'
 import { ApiGuard } from '../common/guards/api.guard'
 import { Organization as OrganizationEntity } from '../organizations/entities/organization.entity'
-import { ProviderConfigurationsService } from '../provider-configurations/provider-configurations.service'
-import { ProvidersService } from './providers.service'
+import { ProviderConfigurationsService } from './services/provider-configurations.service'
+import { ProvidersService } from './services/providers.service'
 
 @Controller('providers')
 @UseGuards(ApiGuard)
