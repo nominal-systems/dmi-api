@@ -31,6 +31,6 @@ async function bootstrap () {
 
   await app.listen(PORT, '0.0.0.0')
 
-  Logger.log(`App listening on port ${PORT}`)
+  Logger.log(`App listening on port ${PORT}`, 'NestApplication')
 }
 bootstrap()
