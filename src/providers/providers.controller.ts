@@ -38,17 +38,8 @@ export class ProvidersController {
   }
 
   @Get(':id/services')
-  async getProviderTests () {
-    return [
-      {
-        code: 'HEM',
-        name: 'Hematology',
-        category: 'Chemistry',
-        type: 'IN_HOUSE',
-        price: 195.99,
-        currency: 'USD',
-      },
-    ]
+  async getProviderServices (@Param('id') providerId: string) {
+    return await this.providersService.getProviderServices(providerId)
   }
 
   @Get(':id/configurations')

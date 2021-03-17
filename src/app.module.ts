@@ -10,6 +10,7 @@ import { PracticesModule } from './practices/practices.module'
 import { IntegrationsModule } from './integrations/integrations.module'
 import { OrdersModule } from './orders/orders.module'
 import { ProviderConfigurationsModule } from './provider-configurations/provider-configurations.module'
+import { RefsModule } from './refs/refs.module';
 import configuration from './config/configuration'
 import * as path from 'path'
 
@@ -36,6 +37,7 @@ import * as path from 'path'
     PracticesModule,
     IntegrationsModule,
     OrdersModule,
+    RefsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
