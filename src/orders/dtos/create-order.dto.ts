@@ -1,4 +1,5 @@
 import { Type } from 'class-transformer'
+import { IsNotEmpty } from 'class-validator'
 
 export class CreateOrderDtoClient {
   id: string
@@ -23,10 +24,16 @@ export class CreateOrderDtoPatient {
 }
 
 export class CreateOrderDto {
+  @IsNotEmpty()
   integrationId: string
-  notes: string
+
+  @IsNotEmpty()
   technician: string
+
+  @IsNotEmpty()
   editable: boolean
+
+  notes: string
 
   @Type(() => CreateOrderDtoPatient)
   patient: CreateOrderDtoPatient
