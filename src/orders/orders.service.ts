@@ -123,13 +123,14 @@ export class OrdersService {
 
     const { providerConfiguration, integrationOptions } = integration
     const messageType = `${providerConfiguration.diagnosticProviderId}.orders.create`
+    const { providerConfigurationOptions } = providerConfiguration
 
     const message = {
       id: uuidv4(),
       type: messageType,
       version: '0.0.1',
       data: {
-        providerConfiguration,
+        providerConfiguration: providerConfigurationOptions,
         integrationOptions,
         payload: order,
       },

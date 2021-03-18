@@ -1,7 +1,7 @@
 export default [
   {
     id: 'zoetis-v1',
-    description: 'Zoetis',
+    description: 'Zoetis Vetsync v1',
     providerConfigurationUri: '/providers/zoetis-v1/configurations',
     providerConfigurationOptions: [
       {
