@@ -61,46 +61,22 @@ export class OrdersService {
     }
 
     if (format === 'json') {
-      return {
-        id: 'string',
-        orderId: 'string',
-        status: 'string',
-        modality: 'string',
-        updatedAt: 'string',
-        createdAt: 'string',
-        results: [
-          {
-            code: 'string',
-            name: 'string',
-            notes: 'string',
-            runDate: 'string',
-            sampleType: 'string',
-            items: [
-              {
-                code: 'string',
-                analyte: 'string',
-                name: 'string',
-                status: 'string',
-                indicator: '"LOW"',
-                result: {
-                  type: 'string',
-                  valueText: 'string',
-                  valueNumber: 'string',
-                },
-                low: 0,
-                high: 0,
-                criticalLow: 0,
-                criticalHigh: 0,
-                units: 'string',
-                notes: 'string',
-              },
-            ],
+      const messageType = `${providerConfiguration.diagnosticProviderId}.orders.results`
+
+      const message = {
+        id: uuidv4(),
+        type: messageType,
+        version: '0.0.1',
+        data: {
+          payload: {
+            id: orderId,
           },
-        ],
+        },
       }
+
+      return await this.client.send(messageType, message).toPromise()
     } else if (format === 'pdf') {
       const filePath = path.join(__dirname, '../../assets', 'Random PDF.pdf')
-      this.logger.debug(filePath)
       return fs.createReadStream(filePath)
     }
   }
