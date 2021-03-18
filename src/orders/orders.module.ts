@@ -23,8 +23,7 @@ import { Veterinarian } from './entities/veterinarian.entity'
         useFactory: async (configService: ConfigService) => ({
           transport: Transport.MQTT,
           options: {
-            host: configService.get('integrationEngine').host,
-            port: configService.get('integrationEngine').microservicePort,
+            ...configService.get('integrationEngine'),
           },
         }),
       },

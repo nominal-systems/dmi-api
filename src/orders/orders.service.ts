@@ -1,4 +1,10 @@
-import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common'
+import {
+  ForbiddenException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common'
 import { ClientProxy } from '@nestjs/microservices'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
@@ -7,6 +13,9 @@ import { CreateOrderDto } from './dtos/create-order.dto'
 import { Order } from './entities/order.entity'
 import { v4 as uuidv4 } from 'uuid'
 import { FindOneOfTypeOptions } from '../common/typings/find-one-of-type-options.interface'
+import { Organization } from '../organizations/entities/organization.entity'
+import * as fs from 'fs'
+import * as path from 'path'
 
 @Injectable()
 export class OrdersService {
@@ -20,7 +29,80 @@ export class OrdersService {
   ) {}
 
   async findOne (args: FindOneOfTypeOptions<Order>) {
-    return await this.ordersRepository.findOne(args.id, args.options)
+    const order = await this.ordersRepository.findOne(args.id, args.options)
+
+    if (!order) {
+      throw new NotFoundException('The order was not found')
+    }
+
+    return order
+  }
+
+  async getOrderResults (
+    organization: Organization,
+    orderId: string,
+    format: 'json' | 'pdf',
+  ) {
+    this.logger.debug(
+      `Getting (placeholder) order results for order id "${orderId}"...`,
+    )
+
+    const {
+      integration: { providerConfiguration },
+    } = await this.findOne({
+      id: orderId,
+      options: {
+        relations: ['integration', 'integration.providerConfiguration'],
+      },
+    })
+
+    if (organization.id !== providerConfiguration.organizationId) {
+      throw new ForbiddenException("You don't have permissions to do that")
+    }
+
+    if (format === 'json') {
+      return {
+        id: 'string',
+        orderId: 'string',
+        status: 'string',
+        modality: 'string',
+        updatedAt: 'string',
+        createdAt: 'string',
+        results: [
+          {
+            code: 'string',
+            name: 'string',
+            notes: 'string',
+            runDate: 'string',
+            sampleType: 'string',
+            items: [
+              {
+                code: 'string',
+                analyte: 'string',
+                name: 'string',
+                status: 'string',
+                indicator: '"LOW"',
+                result: {
+                  type: 'string',
+                  valueText: 'string',
+                  valueNumber: 'string',
+                },
+                low: 0,
+                high: 0,
+                criticalLow: 0,
+                criticalHigh: 0,
+                units: 'string',
+                notes: 'string',
+              },
+            ],
+          },
+        ],
+      }
+    } else if (format === 'pdf') {
+      const filePath = path.join(__dirname, '../../assets', 'Random PDF.pdf')
+      this.logger.debug(filePath)
+      return fs.createReadStream(filePath)
+    }
   }
 
   async createOrder (createOrderDto: CreateOrderDto) {
@@ -40,10 +122,11 @@ export class OrdersService {
     await this.ordersRepository.save(order)
 
     const { providerConfiguration, integrationOptions } = integration
+    const messageType = `${providerConfiguration.diagnosticProviderId}.orders.create`
 
     const message = {
       id: uuidv4(),
-      type: `${providerConfiguration.diagnosticProviderId}.orders.create`,
+      type: messageType,
       version: '0.0.1',
       data: {
         providerConfiguration,
@@ -55,15 +138,50 @@ export class OrdersService {
     this.logger.debug(message)
 
     // @TODO: Confirm that below works after IE has this implemented
-    const res = await this.client
-      .send(
-        `${providerConfiguration.diagnosticProviderId}.orders.create`,
-        message,
-      )
-      .toPromise()
+    const res = await this.client.send(messageType, message).toPromise()
 
     this.logger.debug(res)
 
     return createOrderDto
+  }
+
+  async cancelOrder (organization: Organization, orderId: string) {
+    const {
+      integration: { providerConfiguration, integrationOptions },
+    } = await this.findOne({
+      id: orderId,
+      options: {
+        relations: ['integration', 'integration.providerConfiguration'],
+      },
+    })
+
+    if (organization.id !== providerConfiguration.organizationId) {
+      throw new ForbiddenException("You don't have permissions to do that")
+    }
+
+    const messageType = `${providerConfiguration.diagnosticProviderId}.orders.cancel`
+
+    const message = {
+      id: uuidv4(),
+      type: messageType,
+      version: '0.0.1',
+      data: {
+        providerConfiguration,
+        integrationOptions,
+        payload: {
+          id: orderId,
+        },
+      },
+    }
+
+    this.logger.debug(message)
+
+    // @TODO: Confirm that below works after IE has this implemented
+    const res = await this.client.send(messageType, message).toPromise()
+
+    this.logger.debug(res)
+
+    // @TODO: Should order be deleted from our database after cancelling? Or should it be soft-deleted?
+    // await this.ordersRepository.delete(orderId)
   }
 }

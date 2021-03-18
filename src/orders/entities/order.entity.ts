@@ -1,17 +1,25 @@
 import { Type } from 'class-transformer'
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm'
+import {
+  Column,
+  Entity,
+  JoinTable,
+  ManyToMany,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm'
+import { Integration } from '../../integrations/entities/integration.entity'
 import { Client } from './client.entity'
 import { Patient } from './patient.entity'
+import { Test } from './test.entity'
 import { Veterinarian } from './veterinarian.entity'
-
-export class Test {
-  code: string
-}
 
 @Entity()
 export class Order {
   @PrimaryGeneratedColumn('uuid')
   id: string
+
+  @Column()
+  integrationId: string
 
   @Column()
   notes: string
@@ -22,6 +30,10 @@ export class Order {
   @Column()
   editable: boolean
 
+  @Type(() => Integration)
+  @ManyToOne(() => Integration)
+  integration: Integration
+
   @Type(() => Patient)
   @ManyToOne(() => Patient, { cascade: true })
   patient: Patient
@@ -31,6 +43,8 @@ export class Order {
   client: Client
 
   @Type(() => Test)
+  @ManyToMany(() => Test, { cascade: true })
+  @JoinTable()
   tests: Test[]
 
   @Type(() => Veterinarian)
