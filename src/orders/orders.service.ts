@@ -40,13 +40,14 @@ export class OrdersService {
     await this.ordersRepository.save(order)
 
     const { providerConfiguration, integrationOptions } = integration
+    const { providerConfigurationOptions } = providerConfiguration
 
     const message = {
       id: uuidv4(),
       type: `${providerConfiguration.diagnosticProviderId}.orders.create`,
       version: '0.0.1',
       data: {
-        providerConfiguration,
+        providerConfiguration: providerConfigurationOptions,
         integrationOptions,
         payload: order,
       },

@@ -2,8 +2,7 @@ export default () => ({
   port: Number(process.env.PORT) || 3000,
   integrationEngine: {
     host: process.env.INTEGRATION_ENGINE_HOST ?? 'localhost',
-    port: process.env.INTEGRATION_ENGINE_PORT ?? 4000,
-    microservicePort: process.env.INTEGRATION_ENGINE_MICROSERVICE_PORT ?? 1883,
+    microservicePort: process.env.INTEGRATION_ENGINE_PORT ?? 4000,
   },
   database: {
     host: process.env.DATABASE_HOST,
