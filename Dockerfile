@@ -2,6 +2,7 @@ FROM node:14-alpine as base
 WORKDIR /app
 COPY package.json .
 RUN apk add --no-cache --virtual build-base
+RUN npm i -g npm
 RUN npm install -g node-gyp && npm install
 RUN apk del build-base
 RUN wget https://github.com/eficode/wait-for/releases/latest/download/wait-for -O /wait-for

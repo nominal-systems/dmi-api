@@ -3,11 +3,11 @@ import {
   Inject,
   Injectable,
   Logger,
-  NotFoundException,
+  NotFoundException
 } from '@nestjs/common'
 import { ClientProxy } from '@nestjs/microservices'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { FindManyOptions, Repository } from 'typeorm'
 import { IntegrationsService } from '../integrations/integrations.service'
 import { CreateOrderDto } from './dtos/create-order.dto'
 import { Order } from './entities/order.entity'
@@ -25,8 +25,12 @@ export class OrdersService {
     @InjectRepository(Order) private ordersRepository: Repository<Order>,
     @Inject(IntegrationsService)
     private integrationsService: IntegrationsService,
-    @Inject('INTEGRATION_ENGINE') private client: ClientProxy,
+    @Inject('INTEGRATION_ENGINE') private client: ClientProxy
   ) {}
+
+  async findAll (options?: FindManyOptions<Order>) {
+    return await this.ordersRepository.find(options)
+  }
 
   async findOne (args: FindOneOfTypeOptions<Order>) {
     const order = await this.ordersRepository.findOne(args.id, args.options)
@@ -41,19 +45,19 @@ export class OrdersService {
   async getOrderResults (
     organization: Organization,
     orderId: string,
-    format: 'json' | 'pdf',
+    format: 'json' | 'pdf'
   ) {
     this.logger.debug(
-      `Getting (placeholder) order results for order id "${orderId}"...`,
+      `Getting (placeholder) order results for order id "${orderId}"...`
     )
 
     const {
-      integration: { providerConfiguration },
+      integration: { providerConfiguration }
     } = await this.findOne({
       id: orderId,
       options: {
-        relations: ['integration', 'integration.providerConfiguration'],
-      },
+        relations: ['integration', 'integration.providerConfiguration']
+      }
     })
 
     if (organization.id !== providerConfiguration.organizationId) {
@@ -69,9 +73,9 @@ export class OrdersService {
         version: '0.0.1',
         data: {
           payload: {
-            id: orderId,
-          },
-        },
+            id: orderId
+          }
+        }
       }
 
       return await this.client.send(messageType, message).toPromise()
@@ -85,8 +89,8 @@ export class OrdersService {
     const integration = await this.integrationsService.findOne({
       id: createOrderDto.integrationId,
       options: {
-        relations: ['providerConfiguration'],
-      },
+        relations: ['providerConfiguration']
+      }
     })
 
     if (!integration) {
@@ -108,8 +112,8 @@ export class OrdersService {
       data: {
         providerConfiguration: providerConfigurationOptions,
         integrationOptions,
-        payload: order,
-      },
+        payload: order
+      }
     }
 
     this.logger.debug(message)
@@ -124,12 +128,12 @@ export class OrdersService {
 
   async cancelOrder (organization: Organization, orderId: string) {
     const {
-      integration: { providerConfiguration, integrationOptions },
+      integration: { providerConfiguration, integrationOptions }
     } = await this.findOne({
       id: orderId,
       options: {
-        relations: ['integration', 'integration.providerConfiguration'],
-      },
+        relations: ['integration', 'integration.providerConfiguration']
+      }
     })
 
     if (organization.id !== providerConfiguration.organizationId) {
@@ -146,9 +150,9 @@ export class OrdersService {
         providerConfiguration,
         integrationOptions,
         payload: {
-          id: orderId,
-        },
-      },
+          id: orderId
+        }
+      }
     }
 
     this.logger.debug(message)

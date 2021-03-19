@@ -2,7 +2,7 @@ module.exports = {
   env: {
     es2021: true,
     node: true,
-    jest: true,
+    jest: true
   },
   root: true,
   extends: ['plugin:@typescript-eslint/recommended', 'standard'],
@@ -10,6 +10,7 @@ module.exports = {
   parserOptions: {
     ecmaVersion: 12,
     sourceType: 'module',
+    project: './tsconfig.json'
   },
   plugins: ['@typescript-eslint/eslint-plugin', '@typescript-eslint'],
   ignorePatterns: ['.eslintrc.js'],
@@ -20,5 +21,5 @@ module.exports = {
     '@typescript-eslint/no-explicit-any': 'off',
     'comma-dangle': 'off',
     'no-useless-constructor': 'off'
-  },
+  }
 }

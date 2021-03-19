@@ -23,13 +23,14 @@ import { Veterinarian } from './entities/veterinarian.entity'
         useFactory: async (configService: ConfigService) => ({
           transport: Transport.MQTT,
           options: {
-            ...configService.get('integrationEngine'),
-          },
-        }),
-      },
-    ]),
+            ...configService.get('integrationEngine')
+          }
+        })
+      }
+    ])
   ],
   controllers: [OrdersController],
   providers: [OrdersService],
+  exports: [OrdersService]
 })
 export class OrdersModule {}

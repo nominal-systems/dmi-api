@@ -10,24 +10,35 @@ import { PracticesModule } from './practices/practices.module'
 import { IntegrationsModule } from './integrations/integrations.module'
 import { OrdersModule } from './orders/orders.module'
 import { RefsModule } from './refs/refs.module'
+import { EventsModule } from './events/events.module'
 import configuration from './config/configuration'
 import * as path from 'path'
+import { MongooseModule } from '@nestjs/mongoose'
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [configuration],
+      load: [configuration]
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
-        type: 'mysql',
-        ...configService.get('database'),
+        ...configService.get('typeorm'),
         entities: [path.join(__dirname, '/**/*.entity{.ts,.js}')],
-        dropSchema: false,
+        dropSchema: false
       }),
-      inject: [ConfigService],
+      inject: [ConfigService]
+    }),
+    MongooseModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        ...configService.get('mongoose'),
+        useCreateIndex: true,
+        useUnifiedTopology: true,
+        useFindAndModify: false
+      }),
+      inject: [ConfigService]
     }),
     UsersModule,
     OrganizationsModule,
@@ -36,8 +47,9 @@ import * as path from 'path'
     IntegrationsModule,
     OrdersModule,
     RefsModule,
+    EventsModule
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService]
 })
 export class AppModule {}
