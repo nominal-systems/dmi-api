@@ -1,7 +1,7 @@
 import {
   ConflictException,
   Injectable,
-  UnauthorizedException,
+  UnauthorizedException
 } from '@nestjs/common'
 import { CreateUserDto } from './dtos/create-user.dto'
 import { UserCredentialsDto } from './dtos/user-credentials.dto'
@@ -16,13 +16,13 @@ import { Organization } from '../organizations/entities/organization.entity'
 export class UsersService {
   constructor (
     @InjectRepository(User) private usersRepository: Repository<User>,
-    private jwtService: JwtService,
+    private jwtService: JwtService
   ) {}
 
   async findOne (user: Partial<User>) {
     return await this.usersRepository.findOne(null, {
       where: user,
-      relations: ['organization'],
+      relations: ['organization']
     })
   }
 
@@ -32,7 +32,7 @@ export class UsersService {
       await this.usersRepository.save(newUser)
 
       const token = await this.generateJwt(newUser)
-      return { token }
+      return { user: newUser, token }
     } catch (error) {
       if (error.code === 11000) {
         throw new ConflictException('The email already exists')
@@ -43,13 +43,13 @@ export class UsersService {
   async updateOrganization (user: User, organization: Organization) {
     return await this.usersRepository.update(
       { email: user.email },
-      { organization },
+      { organization }
     )
   }
 
   async authenticate (credentials: UserCredentialsDto) {
     const user = await this.usersRepository.findOne({
-      email: credentials.email,
+      email: credentials.email
     })
 
     if (!user) {
@@ -58,7 +58,7 @@ export class UsersService {
 
     const isPasswordCorrect = await argon2.verify(
       user.password,
-      credentials.password,
+      credentials.password
     )
 
     if (isPasswordCorrect) {

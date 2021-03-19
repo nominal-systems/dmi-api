@@ -6,7 +6,7 @@ import { Order } from '../orders/entities/order.entity'
 import { OrdersService } from '../orders/orders.service'
 import { Organization } from '../organizations/entities/organization.entity'
 import { Event, EventDocument } from './entities/event.entity'
-
+import { AddEventDto } from './dto/add-event.dto'
 @Injectable()
 export class EventsService {
   constructor (
@@ -16,6 +16,10 @@ export class EventsService {
 
   async findAll (options?: FilterQuery<Event>) {
     return await this.eventModel.find(options, { __v: 0, _id: 0 }).lean()
+  }
+
+  async addEvent (eventDto: AddEventDto) {
+    return await this.eventModel.create(eventDto)
   }
 
   async getEventsForOrganization (

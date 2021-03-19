@@ -1,4 +1,5 @@
 export default () => ({
+  nodeEnv: process.env.NODE_ENV,
   port: Number(process.env.PORT ?? 3000),
   integrationEngine: {
     host: process.env.INTEGRATION_ENGINE_HOST ?? 'localhost',

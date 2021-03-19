@@ -14,6 +14,7 @@ import { EventsModule } from './events/events.module'
 import configuration from './config/configuration'
 import * as path from 'path'
 import { MongooseModule } from '@nestjs/mongoose'
+import { SeederModule } from './seeder/seeder.module'
 
 @Module({
   imports: [
@@ -47,7 +48,8 @@ import { MongooseModule } from '@nestjs/mongoose'
     IntegrationsModule,
     OrdersModule,
     RefsModule,
-    EventsModule
+    EventsModule,
+    SeederModule
   ],
   controllers: [AppController],
   providers: [AppService]

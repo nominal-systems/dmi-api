@@ -11,7 +11,7 @@ export class EventValue {
 
 @Schema({ timestamps: { updatedAt: false } })
 export class Event {
-  @Prop()
+  @Prop({ unique: true })
   seq: number
 
   @Prop()

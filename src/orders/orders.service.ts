@@ -16,17 +16,23 @@ import { FindOneOfTypeOptions } from '../common/typings/find-one-of-type-options
 import { Organization } from '../organizations/entities/organization.entity'
 import * as fs from 'fs'
 import * as path from 'path'
+import { ConfigService } from '@nestjs/config'
+import { EVENTS_VERSION } from '../common/constants/api.constant'
 
 @Injectable()
 export class OrdersService {
   private readonly logger = new Logger(OrdersService.name)
+  private nodeEnv: string
 
   constructor (
+    private configService: ConfigService,
     @InjectRepository(Order) private ordersRepository: Repository<Order>,
     @Inject(IntegrationsService)
     private integrationsService: IntegrationsService,
     @Inject('INTEGRATION_ENGINE') private client: ClientProxy
-  ) {}
+  ) {
+    this.nodeEnv = configService.get('nodeEnv')
+  }
 
   async findAll (options?: FindManyOptions<Order>) {
     return await this.ordersRepository.find(options)
@@ -70,7 +76,7 @@ export class OrdersService {
       const message = {
         id: uuidv4(),
         type: messageType,
-        version: '0.0.1',
+        version: EVENTS_VERSION,
         data: {
           payload: {
             id: orderId
@@ -105,25 +111,24 @@ export class OrdersService {
     const messageType = `${providerConfiguration.diagnosticProviderId}.orders.create`
     const { providerConfigurationOptions } = providerConfiguration
 
-    const message = {
-      id: uuidv4(),
-      type: messageType,
-      version: '0.0.1',
-      data: {
-        providerConfiguration: providerConfigurationOptions,
-        integrationOptions,
-        payload: order
+    if (this.nodeEnv !== 'seed') {
+      const message = {
+        id: uuidv4(),
+        type: messageType,
+        version: EVENTS_VERSION,
+        data: {
+          providerConfiguration: providerConfigurationOptions,
+          integrationOptions,
+          payload: order
+        }
       }
+
+      const res = await this.client.send(messageType, message).toPromise()
+
+      return res
     }
 
-    this.logger.debug(message)
-
-    // @TODO: Confirm that below works after IE has this implemented
-    const res = await this.client.send(messageType, message).toPromise()
-
-    this.logger.debug(res)
-
-    return createOrderDto
+    return order
   }
 
   async cancelOrder (organization: Organization, orderId: string) {
@@ -145,7 +150,7 @@ export class OrdersService {
     const message = {
       id: uuidv4(),
       type: messageType,
-      version: '0.0.1',
+      version: EVENTS_VERSION,
       data: {
         providerConfiguration,
         integrationOptions,
@@ -155,9 +160,6 @@ export class OrdersService {
       }
     }
 
-    this.logger.debug(message)
-
-    // @TODO: Confirm that below works after IE has this implemented
     const res = await this.client.send(messageType, message).toPromise()
 
     this.logger.debug(res)

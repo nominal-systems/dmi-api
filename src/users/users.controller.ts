@@ -12,7 +12,8 @@ export class UsersController {
 
   @Post('sign_up')
   async signUp (@Body() createUserDto: CreateUserDto) {
-    return await this.usersService.create(createUserDto)
+    const { token } = await this.usersService.create(createUserDto)
+    return token
   }
 
   @Post('authenticate')

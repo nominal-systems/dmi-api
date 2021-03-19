@@ -14,7 +14,7 @@ export class CreateOrderDtoTest {
 export class CreateOrderDtoPatient {
   id: string
   lastName: string
-  firstname: string
+  firstName: string
   species: string
   gender: string
   birthdate: string
