@@ -6,7 +6,7 @@ import {
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
-  UpdateDateColumn,
+  UpdateDateColumn
 } from 'typeorm'
 import { Integration } from '../../integrations/entities/integration.entity'
 import { Organization } from '../../organizations/entities/organization.entity'
@@ -28,14 +28,14 @@ export class ProviderConfiguration {
 
   @OneToMany(
     () => Integration,
-    integration => integration.providerConfiguration,
+    integration => integration.providerConfiguration
   )
   @Type(() => Integration)
   integrations: Integration[]
 
   @ManyToOne(
     () => Organization,
-    organization => organization.providerConfigurations,
+    organization => organization.providerConfigurations
   )
   @Type(() => Organization)
   organization: Organization

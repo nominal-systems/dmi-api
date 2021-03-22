@@ -5,7 +5,7 @@ import {
   Entity,
   ManyToOne,
   PrimaryGeneratedColumn,
-  UpdateDateColumn,
+  UpdateDateColumn
 } from 'typeorm'
 import { Organization } from '../../organizations/entities/organization.entity'
 
@@ -24,7 +24,7 @@ export class User {
   @ManyToOne(
     () => Organization,
     organization => organization.members,
-    { onDelete: 'SET NULL' },
+    { onDelete: 'SET NULL' }
   )
   organization: Organization
 

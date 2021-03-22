@@ -7,7 +7,7 @@ import {
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
-  UpdateDateColumn,
+  UpdateDateColumn
 } from 'typeorm'
 import { Practice } from '../../practices/entities/practice.entity'
 import { ProviderConfiguration } from '../../providers/entities/provider-configuration.entity'
@@ -31,7 +31,7 @@ export class Organization {
 
   @OneToOne(
     () => User,
-    user => user.organization,
+    user => user.organization
   )
   @JoinColumn()
   @Type(() => User)
@@ -39,20 +39,20 @@ export class Organization {
 
   @OneToMany(
     () => User,
-    user => user.organization,
+    user => user.organization
   )
   @Type(() => User)
   members: User[]
 
   @OneToMany(
     () => Practice,
-    practice => practice.organization,
+    practice => practice.organization
   )
   practices: Practice[]
 
   @OneToMany(
     () => ProviderConfiguration,
-    providerConfiguration => providerConfiguration.organization,
+    providerConfiguration => providerConfiguration.organization
   )
   providerConfigurations: ProviderConfiguration[]
 

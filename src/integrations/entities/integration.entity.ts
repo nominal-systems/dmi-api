@@ -20,14 +20,14 @@ export class Integration {
   @ManyToOne(
     () => Practice,
     practice => practice.integrations,
-    { onDelete: 'CASCADE' },
+    { onDelete: 'CASCADE' }
   )
   @Type(() => Practice)
   practice: Practice
 
   @ManyToOne(
     () => ProviderConfiguration,
-    providerConfiguration => providerConfiguration.integrations,
+    providerConfiguration => providerConfiguration.integrations
   )
   @Type(() => ProviderConfiguration)
   providerConfiguration: ProviderConfiguration

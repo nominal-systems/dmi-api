@@ -5,7 +5,7 @@ module.exports = {
     jest: true
   },
   root: true,
-  extends: ['plugin:@typescript-eslint/recommended', 'standard'],
+  extends: ['plugin:@typescript-eslint/recommended', 'standard-with-typescript'],
   parser: '@typescript-eslint/parser',
   parserOptions: {
     ecmaVersion: 12,
@@ -16,10 +16,8 @@ module.exports = {
   ignorePatterns: ['.eslintrc.js'],
   rules: {
     '@typescript-eslint/interface-name-prefix': 'off',
-    '@typescript-eslint/explicit-function-return-type': 'off',
     '@typescript-eslint/explicit-module-boundary-types': 'off',
     '@typescript-eslint/no-explicit-any': 'off',
-    'comma-dangle': 'off',
-    'no-useless-constructor': 'off'
+    '@typescript-eslint/indent': 'off'
   }
 }

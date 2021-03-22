@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  OnModuleInit,
-} from '@nestjs/common'
+import { BadRequestException, Injectable, OnModuleInit } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, FindManyOptions } from 'typeorm'
 import { Organization } from '../../organizations/entities/organization.entity'
@@ -17,39 +13,45 @@ export class ProviderConfigurationsService implements OnModuleInit {
 
   constructor (
     @InjectRepository(ProviderConfiguration)
-    private providerConfigurationRepository: Repository<ProviderConfiguration>,
-    private moduleRef: ModuleRef,
+    private readonly providerConfigurationRepository: Repository<
+      ProviderConfiguration
+    >,
+    private readonly moduleRef: ModuleRef
   ) {}
 
-  onModuleInit () {
-    this.providersService = this.moduleRef.get(ProvidersService, { strict: false })
+  onModuleInit (): void {
+    this.providersService = this.moduleRef.get(ProvidersService, {
+      strict: false
+    })
   }
 
-  async findAll (options?: FindManyOptions<ProviderConfiguration>) {
+  async findAll (
+    options?: FindManyOptions<ProviderConfiguration>
+  ): Promise<ProviderConfiguration[]> {
     return await this.providerConfigurationRepository.find(options)
   }
 
   async create (
     organization: Organization,
     providerId: string,
-    providerConfiguration: any,
+    providerConfiguration: any
   ): Promise<ProviderConfiguration> {
     const provider = await this.providersService.findOneById(providerId)
 
-    if (!provider) {
+    if (provider == null) {
       throw new BadRequestException("The provider doesn't exist")
     }
 
     const validatorOptions = {
       required: true,
       type: 'object',
-      properties: {},
+      properties: {}
     }
 
     for (const option of provider.providerConfigurationOptions) {
       validatorOptions.properties[option.name] = {
         type: option.type,
-        required: option.required,
+        required: option.required
       }
     }
 
@@ -63,12 +65,12 @@ export class ProviderConfigurationsService implements OnModuleInit {
       {
         diagnosticProviderId: providerId,
         providerConfigurationOptions: providerConfiguration,
-        organization,
-      },
+        organization
+      }
     )
 
     return await this.providerConfigurationRepository.save(
-      newProviderConfiguration,
+      newProviderConfiguration
     )
   }
 }

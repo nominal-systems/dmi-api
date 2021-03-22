@@ -1,4 +1,4 @@
-import { SetMetadata } from '@nestjs/common'
+import { CustomDecorator, SetMetadata } from '@nestjs/common'
 
-export const DisableGuards = (...guards: string[]) =>
+export const DisableGuards = (...guards: string[]): CustomDecorator =>
   SetMetadata('disabledGuards', guards)

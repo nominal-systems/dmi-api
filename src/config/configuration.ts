@@ -1,9 +1,11 @@
-export default () => ({
-  nodeEnv: process.env.NODE_ENV,
+import { AppConfig } from './config.interface'
+
+export default (): AppConfig => ({
+  nodeEnv: process.env.NODE_ENV ?? 'development',
   port: Number(process.env.PORT ?? 3000),
   integrationEngine: {
     host: process.env.INTEGRATION_ENGINE_HOST ?? 'localhost',
-    port: process.env.INTEGRATION_ENGINE_PORT ?? 1883
+    port: Number(process.env.INTEGRATION_ENGINE_PORT ?? 1883)
   },
   typeorm: {
     type: process.env.DATABASE_TYPE ?? 'mysql',

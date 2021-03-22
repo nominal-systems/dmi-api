@@ -22,26 +22,27 @@ import { EVENTS_VERSION } from '../common/constants/api.constant'
 @Injectable()
 export class OrdersService {
   private readonly logger = new Logger(OrdersService.name)
-  private nodeEnv: string
+  private readonly nodeEnv: string | undefined
 
   constructor (
-    private configService: ConfigService,
-    @InjectRepository(Order) private ordersRepository: Repository<Order>,
+    private readonly configService: ConfigService,
+    @InjectRepository(Order)
+    private readonly ordersRepository: Repository<Order>,
     @Inject(IntegrationsService)
-    private integrationsService: IntegrationsService,
-    @Inject('INTEGRATION_ENGINE') private client: ClientProxy
+    private readonly integrationsService: IntegrationsService,
+    @Inject('INTEGRATION_ENGINE') private readonly client: ClientProxy
   ) {
-    this.nodeEnv = configService.get('nodeEnv')
+    this.nodeEnv = this.configService.get('nodeEnv')
   }
 
-  async findAll (options?: FindManyOptions<Order>) {
+  async findAll (options?: FindManyOptions<Order>): Promise<Order[]> {
     return await this.ordersRepository.find(options)
   }
 
-  async findOne (args: FindOneOfTypeOptions<Order>) {
+  async findOne (args: FindOneOfTypeOptions<Order>): Promise<Order> {
     const order = await this.ordersRepository.findOne(args.id, args.options)
 
-    if (!order) {
+    if (order == null) {
       throw new NotFoundException('The order was not found')
     }
 
@@ -52,7 +53,7 @@ export class OrdersService {
     organization: Organization,
     orderId: string,
     format: 'json' | 'pdf'
-  ) {
+  ): Promise<any> {
     this.logger.debug(
       `Getting (placeholder) order results for order id "${orderId}"...`
     )
@@ -91,7 +92,7 @@ export class OrdersService {
     }
   }
 
-  async createOrder (createOrderDto: CreateOrderDto) {
+  async createOrder (createOrderDto: CreateOrderDto): Promise<Order> {
     const integration = await this.integrationsService.findOne({
       id: createOrderDto.integrationId,
       options: {
@@ -99,7 +100,7 @@ export class OrdersService {
       }
     })
 
-    if (!integration) {
+    if (integration == null) {
       throw new NotFoundException('The integration was not found')
     }
 
@@ -131,7 +132,10 @@ export class OrdersService {
     return order
   }
 
-  async cancelOrder (organization: Organization, orderId: string) {
+  async cancelOrder (
+    organization: Organization,
+    orderId: string
+  ): Promise<void> {
     const {
       integration: { providerConfiguration, integrationOptions }
     } = await this.findOne({

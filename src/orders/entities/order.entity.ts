@@ -5,7 +5,7 @@ import {
   JoinTable,
   ManyToMany,
   ManyToOne,
-  PrimaryGeneratedColumn,
+  PrimaryGeneratedColumn
 } from 'typeorm'
 import { Integration } from '../../integrations/entities/integration.entity'
 import { Client } from './client.entity'

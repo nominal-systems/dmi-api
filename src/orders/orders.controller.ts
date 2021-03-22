@@ -7,12 +7,13 @@ import {
   Param,
   Post,
   Res,
-  UseGuards,
+  UseGuards
 } from '@nestjs/common'
 import { Organization } from '../common/decorators/organization.decorator'
 import { ApiGuard } from '../common/guards/api.guard'
 import { Organization as OrganizationEntity } from '../organizations/entities/organization.entity'
 import { CreateOrderDto } from './dtos/create-order.dto'
+import { Order } from './entities/order.entity'
 import { OrdersService } from './orders.service'
 
 @Controller('orders')
@@ -23,8 +24,8 @@ export class OrdersController {
   @Get(':id')
   async getOrder (
     @Organization() organization: OrganizationEntity,
-    @Param('id') id: string,
-  ) {
+    @Param('id') id: string
+  ): Promise<Order> {
     const order = await this.ordersService.findOne({
       id,
       options: {
@@ -34,9 +35,9 @@ export class OrdersController {
           'tests',
           'veterinarian',
           'integration',
-          'integration.providerConfiguration',
-        ],
-      },
+          'integration.providerConfiguration'
+        ]
+      }
     })
 
     if (
@@ -51,8 +52,8 @@ export class OrdersController {
   @Get(':id/result.json')
   async getOrderResultInJSON (
     @Organization() organization: OrganizationEntity,
-    @Param('id') id: string,
-  ) {
+    @Param('id') id: string
+  ): Promise<any> {
     return await this.ordersService.getOrderResults(organization, id, 'json')
   }
 
@@ -60,12 +61,12 @@ export class OrdersController {
   async getOrderResultInPDF (
     @Organization() organization: OrganizationEntity,
     @Param('id') id: string,
-    @Res({ passthrough: true }) res,
-  ) {
+    @Res({ passthrough: true }) res
+  ): Promise<any> {
     const pdfStream = await this.ordersService.getOrderResults(
       organization,
       id,
-      'pdf',
+      'pdf'
     )
 
     return res
@@ -75,15 +76,15 @@ export class OrdersController {
   }
 
   @Post()
-  async createOrder (@Body() createOrderDto: CreateOrderDto) {
+  async createOrder (@Body() createOrderDto: CreateOrderDto): Promise<Order> {
     return await this.ordersService.createOrder(createOrderDto)
   }
 
   @Delete(':id')
   async cancelOrder (
     @Organization() organization: OrganizationEntity,
-    @Param('id') id: string,
-  ) {
+    @Param('id') id: string
+  ): Promise<void> {
     return await this.ordersService.cancelOrder(organization, id)
   }
 }

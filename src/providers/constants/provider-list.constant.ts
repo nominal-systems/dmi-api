@@ -8,28 +8,28 @@ export default [
         type: 'string',
         name: 'url',
         description: 'Base URL',
-        required: true,
+        required: true
       },
       {
         type: 'string',
         name: 'partnerId',
         description: 'Partner ID',
-        required: true,
+        required: true
       },
       {
         type: 'string',
         name: 'partnerToken',
         description: 'Partner Token',
-        required: true,
-      },
+        required: true
+      }
     ],
     integrationOptions: [
       {
         type: 'string',
         name: 'clientId',
         description: 'FUSE Client ID',
-        required: true,
-      },
-    ],
-  },
+        required: true
+      }
+    ]
+  }
 ]

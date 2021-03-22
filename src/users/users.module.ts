@@ -13,9 +13,9 @@ import { UserSubscriber } from './entity/user.subscriber'
     JwtModule.registerAsync({
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get('JWT_SECRET_KEY'),
-        signOptions: { expiresIn: '30m' },
+        signOptions: { expiresIn: '30m' }
       }),
-      inject: [ConfigService],
+      inject: [ConfigService]
     }),
     TypeOrmModule.forFeature([User])
   ],

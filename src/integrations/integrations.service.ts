@@ -2,7 +2,7 @@ import {
   ForbiddenException,
   Inject,
   Injectable,
-  NotFoundException,
+  NotFoundException
 } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { FindManyOptions, Repository } from 'typeorm'
@@ -16,32 +16,44 @@ import { Integration } from './entities/integration.entity'
 export class IntegrationsService {
   constructor (
     @InjectRepository(Integration)
-    private integrationsRepository: Repository<Integration>,
+    private readonly integrationsRepository: Repository<Integration>,
     @Inject(OrganizationsService)
-    private organizationsService: OrganizationsService,
+    private readonly organizationsService: OrganizationsService
   ) {}
 
-  async findAll (options?: FindManyOptions<Integration>) {
+  async findAll (
+    options?: FindManyOptions<Integration>
+  ): Promise<Integration[]> {
     return await this.integrationsRepository.find(options)
   }
 
-  async findOne (args: FindOneOfTypeOptions<Integration>) {
-    return await this.integrationsRepository.findOne(
+  async findOne (
+    args: FindOneOfTypeOptions<Integration>
+  ): Promise<Integration> {
+    const integration = await this.integrationsRepository.findOne(
       args.id,
-      args.options,
+      args.options
     )
+
+    if (integration == null) {
+      throw new NotFoundException('The integration was not found')
+    }
+
+    return integration
   }
 
-  async create (createIntegrationDto: CreateIntegrationDto) {
+  async create (
+    createIntegrationDto: CreateIntegrationDto
+  ): Promise<Integration> {
     try {
       const newIntegration = this.integrationsRepository.create(
-        createIntegrationDto,
+        createIntegrationDto
       )
       return await this.integrationsRepository.save(newIntegration)
     } catch (error) {
       if (error.code === 'ER_NO_REFERENCED_ROW_2') {
         throw new NotFoundException(
-          'The practice or providerConfiguration was not found',
+          'The practice or providerConfiguration was not found'
         )
       }
 
@@ -49,16 +61,19 @@ export class IntegrationsService {
     }
   }
 
-  async delete (organization: Organization, integrationId: string) {
+  async delete (
+    organization: Organization,
+    integrationId: string
+  ): Promise<void> {
     const organizationsIntegrations = await this.organizationsService.getIntegrations(
-      organization.id,
+      organization.id
     )
 
-    const integrationBelongsToOrganization = organizationsIntegrations.find(
-      integration => integration && integration.id === integrationId,
+    const integrationBelongsToOrganization = organizationsIntegrations?.find(
+      integration => integration.id === integrationId
     )
 
-    if (!integrationBelongsToOrganization) {
+    if (integrationBelongsToOrganization == null) {
       throw new ForbiddenException("You don't have access to this resource")
     }
 

@@ -1,7 +1,7 @@
 import {
   ForbiddenException,
   Injectable,
-  NotFoundException,
+  NotFoundException
 } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { FindManyOptions, Repository } from 'typeorm'
@@ -13,30 +13,33 @@ import { Practice } from './entities/practice.entity'
 export class PracticesService {
   constructor (
     @InjectRepository(Practice)
-    private practicesRepository: Repository<Practice>,
+    private readonly practicesRepository: Repository<Practice>
   ) {}
 
-  async findAll (options?: FindManyOptions<Practice>) {
+  async findAll (options?: FindManyOptions<Practice>): Promise<Practice[]> {
     return await this.practicesRepository.find(options)
   }
 
-  async create (organization: Organization, practiceDto: CreatePracticeDto) {
+  async create (
+    organization: Organization,
+    practiceDto: CreatePracticeDto
+  ): Promise<Practice> {
     const newPractice = this.practicesRepository.create({
       ...practiceDto,
-      organization,
+      organization
     })
 
     return await this.practicesRepository.save(newPractice)
   }
 
-  async delete (organization: Organization, practiceId: string) {
+  async delete (organization: Organization, practiceId: string): Promise<void> {
     const practice = await this.practicesRepository.findOne({
       where: {
-        id: practiceId,
-      },
+        id: practiceId
+      }
     })
 
-    if (!practice) {
+    if (practice == null) {
       throw new NotFoundException("The practice doesn't exist")
     }
 

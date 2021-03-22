@@ -6,7 +6,7 @@ import {
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
-  UpdateDateColumn,
+  UpdateDateColumn
 } from 'typeorm'
 import { Integration } from '../../integrations/entities/integration.entity'
 import { Organization } from '../../organizations/entities/organization.entity'
@@ -25,14 +25,14 @@ export class Practice {
 
   @OneToMany(
     () => Integration,
-    integration => integration.practice,
+    integration => integration.practice
   )
   @Type(() => Integration)
   integrations: Integration[]
 
   @ManyToOne(
     () => Organization,
-    organization => organization.practices,
+    organization => organization.practices
   )
   @Type(() => Organization)
   organization: Organization

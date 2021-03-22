@@ -14,26 +14,31 @@ import { ProviderConfiguration } from '../providers/entities/provider-configurat
 import { Integration } from '../integrations/entities/integration.entity'
 import { EventsService } from '../events/events.service'
 import { Order } from '../orders/entities/order.entity'
+import { Event } from '../events/entities/event.entity'
+import { SeedIntegrationsParams } from './typings/seed-integrations-params.interface'
+import { IdFirstAndLastName } from './typings/id-first-and-last-name.interface'
 
 @Injectable()
 export class SeederService {
   private readonly logger = new Logger(SeederService.name)
 
   constructor (
-    @Inject(UsersService) private usersService: UsersService,
-    @Inject(OrdersService) private ordersService: OrdersService,
-    @Inject(EventsService) private eventsService: EventsService,
-    @Inject(ProvidersService) private providersService: ProvidersService,
-    @Inject(PracticesService) private practicesService: PracticesService,
+    @Inject(UsersService) private readonly usersService: UsersService,
+    @Inject(OrdersService) private readonly ordersService: OrdersService,
+    @Inject(EventsService) private readonly eventsService: EventsService,
+    @Inject(ProvidersService)
+    private readonly providersService: ProvidersService,
+    @Inject(PracticesService)
+    private readonly practicesService: PracticesService,
     @Inject(IntegrationsService)
-    private integrationsService: IntegrationsService,
+    private readonly integrationsService: IntegrationsService,
     @Inject(OrganizationsService)
-    private organizationsService: OrganizationsService,
+    private readonly organizationsService: OrganizationsService,
     @Inject(ProviderConfigurationsService)
-    private providerConfigurationsService: ProviderConfigurationsService
+    private readonly providerConfigurationsService: ProviderConfigurationsService
   ) {}
 
-  async seed () {
+  async run (): Promise<void> {
     const users = await this.seedUsers()
 
     const organizations = await this.seedOrganizations(users)
@@ -52,11 +57,11 @@ export class SeederService {
 
     const orders = await this.seedOrders(integrations)
 
-    const events = await this.seedEvents(orders)
+    await this.seedEvents(orders)
   }
 
-  private async seedUsers (amount = 5) {
-    const users = []
+  private async seedUsers (amount = 5): Promise<User[]> {
+    const users: User[] = []
     const password = 'qwer1234'
 
     for (let i = 0; i < amount; i++) {
@@ -75,8 +80,8 @@ export class SeederService {
     return users
   }
 
-  private async seedOrganizations (users: User[]) {
-    const organizations = []
+  private async seedOrganizations (users: User[]): Promise<Organization[]> {
+    const organizations: Organization[] = []
 
     for (const user of users) {
       const organization = await this.organizationsService.create(
@@ -92,8 +97,10 @@ export class SeederService {
     return organizations
   }
 
-  private async seedPractices (organizations: Organization[]) {
-    const practices = []
+  private async seedPractices (
+    organizations: Organization[]
+  ): Promise<Practice[]> {
+    const practices: Practice[] = []
 
     for (const organization of organizations) {
       const practice = await this.practicesService.create(organization, {
@@ -108,8 +115,10 @@ export class SeederService {
     return practices
   }
 
-  private async seedProviderConfigurations (organizations: Organization[]) {
-    const providerConfigurations = []
+  private async seedProviderConfigurations (
+    organizations: Organization[]
+  ): Promise<ProviderConfiguration[]> {
+    const providerConfigurations: ProviderConfiguration[] = []
 
     const providers = await this.providersService.findAll()
 
@@ -138,12 +147,8 @@ export class SeederService {
     organizations,
     practices,
     providerConfigurations
-  }: {
-    organizations: Organization[]
-    practices: Practice[]
-    providerConfigurations: ProviderConfiguration[]
-  }) {
-    const integrations = []
+  }: SeedIntegrationsParams): Promise<Integration[]> {
+    const integrations: Integration[] = []
 
     for (let i = 0; i < organizations.length; i++) {
       const organization = organizations[i]
@@ -154,6 +159,10 @@ export class SeederService {
         providerConfiguration =>
           providerConfiguration.organizationId === organization.id
       )
+
+      if (practice == null || providerConfiguration == null) {
+        continue
+      }
 
       const integration = await this.integrationsService.create({
         practiceId: practice.id,
@@ -172,8 +181,8 @@ export class SeederService {
   private async seedOrders (
     integrations: Integration[],
     ordersPerIntegration = 5
-  ) {
-    const orders = []
+  ): Promise<Order[]> {
+    const orders: Order[] = []
 
     for (const integration of integrations) {
       for (let i = 0; i < ordersPerIntegration; i++) {
@@ -209,8 +218,8 @@ export class SeederService {
     return orders
   }
 
-  private async seedEvents (orders: Order[]) {
-    const events = []
+  private async seedEvents (orders: Order[]): Promise<Event[]> {
+    const events: Event[] = []
 
     for (const order of orders) {
       const event = await this.eventsService.addEvent({
@@ -230,7 +239,7 @@ export class SeederService {
     return events
   }
 
-  private generateIdAndFirstLastName () {
+  private generateIdAndFirstLastName (): IdFirstAndLastName {
     return {
       id: faker.random.uuid(),
       lastName: faker.name.firstName(),
