@@ -10,7 +10,7 @@ $ npm install
 ```
 
 ## Running the app
-1. Create a `.env` file if it doesn't already exist. Take a look at the `.env.example` file for reference.
+1. Create a `.env` file if setting up locally, or `.env.docker` if using docker-compose, if it doesn't already exist. Take a look at the `.env.example` file for reference.
 2. Change credentials such as the Database password in the `docker-compose*.yaml` files as you see fit, and make sure it's the same password in the `.env` file.
 3. Choose one of the methods below
 

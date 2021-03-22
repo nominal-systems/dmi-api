@@ -2,12 +2,16 @@ FROM node:14-alpine as base
 WORKDIR /app
 COPY package.json .
 RUN apk add --no-cache --virtual build-base
-RUN npm i -g npm
-RUN npm install -g node-gyp && npm install
+RUN npm install -g npm node-gyp && npm install
 RUN apk del build-base
 RUN wget https://github.com/eficode/wait-for/releases/latest/download/wait-for -O /wait-for
 RUN chmod +x /wait-for
 COPY . .
+RUN chmod +x ./scripts/wait-for-all.sh
+
+FROM base as seed
+ENV NODE_ENV=seed
+CMD ["npm", "run", "seed"]
 
 FROM base as development
 ENV NODE_ENV=development
