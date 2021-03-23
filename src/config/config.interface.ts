@@ -7,7 +7,7 @@ export interface AppConfig {
 }
 
 export interface IntegrationEngineConfig {
-  host: string
+  hostname: string
   port: number
 }
 

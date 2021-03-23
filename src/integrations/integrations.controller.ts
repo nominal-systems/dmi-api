@@ -7,6 +7,7 @@ import {
   Post,
   UseGuards
 } from '@nestjs/common'
+import { SelectQueryBuilder } from 'typeorm'
 import { Organization } from '../common/decorators/organization.decorator'
 import { ApiGuard } from '../common/guards/api.guard'
 import { Organization as OrganizationEntity } from '../organizations/entities/organization.entity'
@@ -20,8 +21,22 @@ export class IntegrationsController {
   constructor (private readonly integrationsService: IntegrationsService) {}
 
   @Get()
-  async getAllIntegrations (): Promise<Integration[]> {
-    return await this.integrationsService.findAll()
+  async getAllIntegrations (
+    @Organization() organization: OrganizationEntity
+  ): Promise<Integration[]> {
+    return await this.integrationsService.findAll({
+      where: (qb: SelectQueryBuilder<Integration>) => {
+        qb.where('providerConfiguration.organizationId = :organizationId', {
+          organizationId: organization.id
+        })
+      },
+      join: {
+        alias: 'integration',
+        leftJoin: {
+          providerConfiguration: 'integration.providerConfiguration'
+        }
+      }
+    })
   }
 
   @Post()

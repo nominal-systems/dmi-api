@@ -41,16 +41,16 @@ export default [
         type: 'string',
         name: 'token',
         description: 'Demo Token',
-        required: true,
-      },
+        required: true
+      }
     ],
     integrationOptions: [
       {
         type: 'string',
         name: 'namespace',
         description: 'Practice Namespace',
-        required: true,
-      },
-    ],
+        required: true
+      }
+    ]
   }
 ]

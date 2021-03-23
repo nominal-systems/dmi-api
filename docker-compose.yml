@@ -13,10 +13,14 @@ services:
     command: ['./scripts/wait-for-all.sh', 'npm run start:prod']
   mongo:
     image: mongo:4
+    volumes: 
+      - ./docker/mongo/data:/data/db
     ports:
       - '27017:27017'
   mysql:
     image: mysql:8
+    volumes: 
+      - ./docker/mysql/data:/var/lib/mysql
     ports:
       - '3306:3306'
     environment:

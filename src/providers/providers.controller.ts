@@ -5,13 +5,18 @@ import {
   NotFoundException,
   Param,
   Post,
+  Query,
   UseGuards
 } from '@nestjs/common'
 import { Organization } from '../common/decorators/organization.decorator'
 import { ApiGuard } from '../common/guards/api.guard'
+import { Breeds } from '../common/typings/breeds.interface'
+import { Genders } from '../common/typings/gender.interface'
 import { ProviderService } from '../common/typings/provider-services.interface'
 import { Provider } from '../common/typings/provider.interface'
+import { Species } from '../common/typings/species.interface'
 import { Organization as OrganizationEntity } from '../organizations/entities/organization.entity'
+import { ReferenceDataQueryParams } from './dtos/reference-data-queryparams.dto'
 import { ProviderConfiguration } from './entities/provider-configuration.entity'
 import { ProviderConfigurationsService } from './services/provider-configurations.service'
 import { ProvidersService } from './services/providers.service'
@@ -71,5 +76,29 @@ export class ProvidersController {
       providerId,
       providerConfiguration
     )
+  }
+
+  @Get(':id/breeds')
+  async getBreeds (
+    @Param('id') providerId: string,
+    @Query() { integrationId }: ReferenceDataQueryParams
+  ): Promise<Breeds> {
+    return await this.providersService.getBreeds(providerId, integrationId)
+  }
+
+  @Get(':id/genders')
+  async getGenders (
+    @Param('id') providerId: string,
+    @Query() { integrationId }: ReferenceDataQueryParams
+  ): Promise<Genders> {
+    return await this.providersService.getGenders(providerId, integrationId)
+  }
+
+  @Get(':id/species')
+  async getSpecies (
+    @Param('id') providerId: string,
+    @Query() { integrationId }: ReferenceDataQueryParams
+  ): Promise<Species> {
+    return await this.providersService.getSpecies(providerId, integrationId)
   }
 }

@@ -4,7 +4,7 @@ export default (): AppConfig => ({
   nodeEnv: process.env.NODE_ENV ?? 'development',
   port: Number(process.env.PORT ?? 3000),
   integrationEngine: {
-    host: process.env.INTEGRATION_ENGINE_HOST ?? 'localhost',
+    hostname: process.env.INTEGRATION_ENGINE_HOSTNAME ?? 'localhost',
     port: Number(process.env.INTEGRATION_ENGINE_PORT ?? 1883)
   },
   typeorm: {

@@ -11,13 +11,12 @@ import { FindManyOptions, Repository } from 'typeorm'
 import { IntegrationsService } from '../integrations/integrations.service'
 import { CreateOrderDto } from './dtos/create-order.dto'
 import { Order } from './entities/order.entity'
-import { v4 as uuidv4 } from 'uuid'
 import { FindOneOfTypeOptions } from '../common/typings/find-one-of-type-options.interface'
 import { Organization } from '../organizations/entities/organization.entity'
 import * as fs from 'fs'
 import * as path from 'path'
 import { ConfigService } from '@nestjs/config'
-import { EVENTS_VERSION } from '../common/constants/api.constant'
+import ieMessageBuilder from '../common/utils/ieMessageBuilder'
 
 @Injectable()
 export class OrdersService {
@@ -54,10 +53,6 @@ export class OrdersService {
     orderId: string,
     format: 'json' | 'pdf'
   ): Promise<any> {
-    this.logger.debug(
-      `Getting (placeholder) order results for order id "${orderId}"...`
-    )
-
     const {
       integration: { providerConfiguration }
     } = await this.findOne({
@@ -72,20 +67,18 @@ export class OrdersService {
     }
 
     if (format === 'json') {
-      const messageType = `${providerConfiguration.diagnosticProviderId}.orders.results`
-
-      const message = {
-        id: uuidv4(),
-        type: messageType,
-        version: EVENTS_VERSION,
-        data: {
-          payload: {
-            id: orderId
+      const { message, messagePattern } = ieMessageBuilder(
+        providerConfiguration.diagnosticProviderId,
+        {
+          resource: 'orders',
+          operation: 'results',
+          data: {
+            payload: { id: orderId }
           }
         }
-      }
+      )
 
-      return await this.client.send(messageType, message).toPromise()
+      return await this.client.send(messagePattern, message).toPromise()
     } else if (format === 'pdf') {
       const filePath = path.join(__dirname, '../../assets', 'Random PDF.pdf')
       return fs.createReadStream(filePath)
@@ -100,33 +93,31 @@ export class OrdersService {
       }
     })
 
-    if (integration == null) {
-      throw new NotFoundException('The integration was not found')
-    }
-
     const order = this.ordersRepository.create(createOrderDto)
 
     await this.ordersRepository.save(order)
 
     const { providerConfiguration, integrationOptions } = integration
-    const messageType = `${providerConfiguration.diagnosticProviderId}.orders.create`
-    const { providerConfigurationOptions } = providerConfiguration
+    const {
+      providerConfigurationOptions,
+      diagnosticProviderId
+    } = providerConfiguration
 
     if (this.nodeEnv !== 'seed') {
-      const message = {
-        id: uuidv4(),
-        type: messageType,
-        version: EVENTS_VERSION,
-        data: {
-          providerConfiguration: providerConfigurationOptions,
-          integrationOptions,
-          payload: order
+      const { message, messagePattern } = ieMessageBuilder(
+        diagnosticProviderId,
+        {
+          resource: 'orders',
+          operation: 'create',
+          data: {
+            providerConfiguration: providerConfigurationOptions,
+            integrationOptions,
+            payload: order
+          }
         }
-      }
+      )
 
-      const res = await this.client.send(messageType, message).toPromise()
-
-      return res
+      return await this.client.send(messagePattern, message).toPromise()
     }
 
     return order
@@ -149,24 +140,23 @@ export class OrdersService {
       throw new ForbiddenException("You don't have permissions to do that")
     }
 
-    const messageType = `${providerConfiguration.diagnosticProviderId}.orders.cancel`
-
-    const message = {
-      id: uuidv4(),
-      type: messageType,
-      version: EVENTS_VERSION,
-      data: {
-        providerConfiguration,
-        integrationOptions,
-        payload: {
-          id: orderId
+    const { message, messagePattern } = ieMessageBuilder(
+      providerConfiguration.diagnosticProviderId,
+      {
+        resource: 'orders',
+        operation: 'cancel',
+        data: {
+          providerConfiguration:
+            providerConfiguration.providerConfigurationOptions,
+          integrationOptions,
+          payload: {
+            id: orderId
+          }
         }
       }
-    }
+    )
 
-    const res = await this.client.send(messageType, message).toPromise()
-
-    this.logger.debug(res)
+    return await this.client.send(messagePattern, message).toPromise()
 
     // @TODO: Should order be deleted from our database after cancelling? Or should it be soft-deleted?
     // await this.ordersRepository.delete(orderId)
