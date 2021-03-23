@@ -31,5 +31,26 @@ export default [
         required: true
       }
     ]
+  },
+  {
+    id: 'demo',
+    description: 'Demo Provider',
+    providerConfigurationUri: '/providers/demo/configurations',
+    providerConfigurationOptions: [
+      {
+        type: 'string',
+        name: 'token',
+        description: 'Demo Token',
+        required: true,
+      },
+    ],
+    integrationOptions: [
+      {
+        type: 'string',
+        name: 'namespace',
+        description: 'Practice Namespace',
+        required: true,
+      },
+    ],
   }
 ]
