@@ -7,7 +7,6 @@ import { ProvidersModule } from './providers/providers.module'
 import { PracticesModule } from './practices/practices.module'
 import { IntegrationsModule } from './integrations/integrations.module'
 import { OrdersModule } from './orders/orders.module'
-import { RefsModule } from './refs/refs.module'
 import { EventsModule } from './events/events.module'
 import configuration from './config/configuration'
 import * as path from 'path'
@@ -45,7 +44,6 @@ import { SeederModule } from './seeder/seeder.module'
     PracticesModule,
     IntegrationsModule,
     OrdersModule,
-    RefsModule,
     EventsModule,
     SeederModule
   ]

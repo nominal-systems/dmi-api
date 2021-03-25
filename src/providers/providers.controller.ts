@@ -14,6 +14,7 @@ import { Breeds } from '../common/typings/breeds.interface'
 import { Genders } from '../common/typings/gender.interface'
 import { ProviderService } from '../common/typings/provider-services.interface'
 import { Provider } from '../common/typings/provider.interface'
+import { ReferenceDataStatus } from '../common/typings/reference-data-status.interface'
 import { Species } from '../common/typings/species.interface'
 import { Organization as OrganizationEntity } from '../organizations/entities/organization.entity'
 import { ReferenceDataQueryParams } from './dtos/reference-data-queryparams.dto'
@@ -47,9 +48,10 @@ export class ProvidersController {
 
   @Get(':id/services')
   async getProviderServices (
-    @Param('id') providerId: string
-  ): Promise<ProviderService[]> {
-    return await this.providersService.getProviderServices(providerId)
+    @Param('id') providerId: string,
+    @Query() { integrationId }: ReferenceDataQueryParams
+    ): Promise<ProviderService[]> {
+    return await this.providersService.getProviderServices(providerId, integrationId)
   }
 
   @Get(':id/configurations')
@@ -78,7 +80,15 @@ export class ProvidersController {
     )
   }
 
-  @Get(':id/breeds')
+  @Get(':id/refs')
+  async getDataStatus (
+    @Param('id') providerId: string,
+    @Query() { integrationId }: ReferenceDataQueryParams
+  ): Promise<ReferenceDataStatus> {
+    return await this.providersService.getDataStatus(providerId, integrationId)
+  }
+
+  @Get(':id/refs/breeds')
   async getBreeds (
     @Param('id') providerId: string,
     @Query() { integrationId }: ReferenceDataQueryParams
@@ -86,7 +96,7 @@ export class ProvidersController {
     return await this.providersService.getBreeds(providerId, integrationId)
   }
 
-  @Get(':id/genders')
+  @Get(':id/refs/genders')
   async getGenders (
     @Param('id') providerId: string,
     @Query() { integrationId }: ReferenceDataQueryParams
@@ -94,7 +104,7 @@ export class ProvidersController {
     return await this.providersService.getGenders(providerId, integrationId)
   }
 
-  @Get(':id/species')
+  @Get(':id/refs/species')
   async getSpecies (
     @Param('id') providerId: string,
     @Query() { integrationId }: ReferenceDataQueryParams

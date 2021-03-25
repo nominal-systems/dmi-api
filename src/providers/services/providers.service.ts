@@ -8,6 +8,7 @@ import { Species } from '../../common/typings/species.interface'
 import { ClientProxy } from '@nestjs/microservices'
 import { IntegrationsService } from '../../integrations/integrations.service'
 import ieMessageBuilder from '../../common/utils/ieMessageBuilder'
+import { ReferenceDataStatus } from '../../common/typings/reference-data-status.interface'
 
 @Injectable()
 export class ProvidersService {
@@ -33,21 +34,54 @@ export class ProvidersService {
     return provider
   }
 
-  async getProviderServices (providerId: string): Promise<ProviderService[]> {
-    this.logger.debug(
-      `Getting (placeholder) services for provider "${providerId}"...`
-    )
-
-    return [
-      {
-        code: 'HEM',
-        name: 'Hematology',
-        category: 'Chemistry',
-        type: 'IN_HOUSE',
-        price: 195.99,
-        currency: 'USD'
+  async getProviderServices (
+    providerId: string,
+    integrationId: string
+  ): Promise<ProviderService[]> {
+    const {
+      providerConfiguration: {
+        providerConfigurationOptions: providerConfiguration
+      },
+      integrationOptions
+    } = await this.integrationsService.findOne({
+      id: integrationId,
+      options: {
+        relations: ['providerConfiguration']
       }
-    ]
+    })
+
+    const { message, messagePattern } = ieMessageBuilder(providerId, {
+      resource: 'services',
+      operation: 'list',
+      data: { providerConfiguration, integrationOptions }
+    })
+
+    return await this.client.send(messagePattern, message).toPromise()
+  }
+
+  async getDataStatus (
+    providerId: string,
+    integrationId: string
+  ): Promise<ReferenceDataStatus> {
+    const {
+      providerConfiguration: {
+        providerConfigurationOptions: providerConfiguration
+      },
+      integrationOptions
+    } = await this.integrationsService.findOne({
+      id: integrationId,
+      options: {
+        relations: ['providerConfiguration']
+      }
+    })
+
+    const { message, messagePattern } = ieMessageBuilder(providerId, {
+      resource: 'refs',
+      operation: 'version',
+      data: { providerConfiguration, integrationOptions }
+    })
+
+    return await this.client.send(messagePattern, message).toPromise()
   }
 
   async getBreeds (providerId: string, integrationId: string): Promise<Breeds> {

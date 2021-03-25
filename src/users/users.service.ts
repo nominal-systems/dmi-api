@@ -1,6 +1,7 @@
 import {
   ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
   UnauthorizedException
 } from '@nestjs/common'
@@ -14,9 +15,12 @@ import { Repository } from 'typeorm'
 import { Organization } from '../organizations/entities/organization.entity'
 import { TokenResponseDto } from './dtos/token-response.dto'
 import { FindOneOfTypeOptions } from '../common/typings/find-one-of-type-options.interface'
+import { DBErrorCodes } from '../common/constants/db-error-codes.enum'
 
 @Injectable()
 export class UsersService {
+  private readonly logger = new Logger(UsersService.name)
+
   constructor (
     @InjectRepository(User) private readonly usersRepository: Repository<User>,
     private readonly jwtService: JwtService
@@ -38,9 +42,13 @@ export class UsersService {
     try {
       await this.usersRepository.save(newUser)
     } catch (error) {
-      if (error.code === 11000) {
+      if (error.code === DBErrorCodes.DuplicateEntry) {
         throw new ConflictException('The email already exists')
       }
+
+      this.logger.debug(JSON.stringify(error, null, 2))
+
+      throw error
     }
 
     const token = await this.generateJwt(newUser)
@@ -58,13 +66,12 @@ export class UsersService {
   async authenticate (
     credentials: UserCredentialsDto
   ): Promise<TokenResponseDto> {
-    const user = await this.usersRepository.findOne({
-      email: credentials.email
+    const user = await this.findOne({
+      options: {
+        where: { email: credentials.email },
+        relations: ['organization']
+      }
     })
-
-    if (user == null) {
-      throw new UnauthorizedException('Username or password is incorrect')
-    }
 
     const isPasswordCorrect = await argon2.verify(
       user.password,
