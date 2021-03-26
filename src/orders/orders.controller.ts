@@ -7,10 +7,12 @@ import {
   Param,
   Post,
   Res,
-  UseGuards
+  UseGuards,
+  UseInterceptors
 } from '@nestjs/common'
 import { Organization } from '../common/decorators/organization.decorator'
 import { ApiGuard } from '../common/guards/api.guard'
+import { RpcExceptionInterceptor } from '../common/interceptors/rpc-exception.interceptor'
 import { Organization as OrganizationEntity } from '../organizations/entities/organization.entity'
 import { CreateOrderDto } from './dtos/create-order.dto'
 import { Order } from './entities/order.entity'
@@ -76,6 +78,7 @@ export class OrdersController {
   }
 
   @Post()
+  @UseInterceptors(RpcExceptionInterceptor)
   async createOrder (@Body() createOrderDto: CreateOrderDto): Promise<Order> {
     return await this.ordersService.createOrder(createOrderDto)
   }

@@ -95,8 +95,6 @@ export class OrdersService {
 
     const order = this.ordersRepository.create(createOrderDto)
 
-    await this.ordersRepository.save(order)
-
     const { providerConfiguration, integrationOptions } = integration
     const {
       providerConfigurationOptions,
@@ -117,8 +115,14 @@ export class OrdersService {
         }
       )
 
-      return await this.client.send(messagePattern, message).toPromise()
+      const response = await this.client
+        .send(messagePattern, message)
+        .toPromise()
+
+      Object.assign(order, response)
     }
+
+    await this.ordersRepository.save(order)
 
     return order
   }
@@ -128,6 +132,7 @@ export class OrdersService {
     orderId: string
   ): Promise<void> {
     const {
+      externalId,
       integration: { providerConfiguration, integrationOptions }
     } = await this.findOne({
       id: orderId,
@@ -150,15 +155,16 @@ export class OrdersService {
             providerConfiguration.providerConfigurationOptions,
           integrationOptions,
           payload: {
-            id: orderId
+            id: externalId
           }
         }
       }
     )
 
-    return await this.client.send(messagePattern, message).toPromise()
+    const response = await this.client.send(messagePattern, message).toPromise()
 
-    // @TODO: Should order be deleted from our database after cancelling? Or should it be soft-deleted?
-    // await this.ordersRepository.delete(orderId)
+    await this.ordersRepository.delete(orderId)
+
+    return response
   }
 }

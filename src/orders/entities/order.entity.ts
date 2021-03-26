@@ -19,6 +19,9 @@ export class Order {
   id: string
 
   @Column()
+  externalId: string
+
+  @Column()
   integrationId: string
 
   @Column()
@@ -29,6 +32,15 @@ export class Order {
 
   @Column()
   editable: boolean
+
+  @Column()
+  manifestUri: string
+
+  @Column()
+  submissionUri: string
+
+  @Column()
+  status: string
 
   @Type(() => Integration)
   @ManyToOne(() => Integration)
