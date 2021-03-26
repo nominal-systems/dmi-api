@@ -48,12 +48,65 @@ export class OrdersService {
     return order
   }
 
+  async getOrder (id: string, organization: Organization): Promise<Order> {
+    const order = await this.findOne({
+      id,
+      options: {
+        relations: [
+          'patient',
+          'client',
+          'tests',
+          'veterinarian',
+          'integration',
+          'integration.providerConfiguration'
+        ]
+      }
+    })
+
+    const {
+      externalId,
+      manifestUri,
+      integration: { providerConfiguration, integrationOptions }
+    } = order
+
+    if (providerConfiguration.organizationId !== organization.id) {
+      throw new ForbiddenException("You don't have access to this resource")
+    }
+
+    if (manifestUri == null) {
+      const { message, messagePattern } = ieMessageBuilder(
+        providerConfiguration.diagnosticProviderId,
+        {
+          resource: 'orders',
+          operation: 'get',
+          data: {
+            integrationOptions,
+            payload: { id: externalId },
+            providerConfiguration:
+              providerConfiguration.providerConfigurationOptions
+          }
+        }
+      )
+
+      const response = await this.client.send(messagePattern, message).toPromise()
+
+      if (response.manifestUri != null || response.status !== order.status) {
+        Object.assign(order, response)
+
+        await this.ordersRepository.save(order)
+      }
+    }
+
+    return order
+  }
+
   async getOrderResults (
     organization: Organization,
     orderId: string,
     format: 'json' | 'pdf'
   ): Promise<any> {
     const {
+      externalId,
       integration: { providerConfiguration }
     } = await this.findOne({
       id: orderId,
@@ -73,7 +126,7 @@ export class OrdersService {
           resource: 'orders',
           operation: 'results',
           data: {
-            payload: { id: orderId }
+            payload: { id: externalId }
           }
         }
       )

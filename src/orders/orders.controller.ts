@@ -2,7 +2,6 @@ import {
   Body,
   Controller,
   Delete,
-  ForbiddenException,
   Get,
   Param,
   Post,
@@ -20,6 +19,7 @@ import { OrdersService } from './orders.service'
 
 @Controller('orders')
 @UseGuards(ApiGuard)
+@UseInterceptors(RpcExceptionInterceptor)
 export class OrdersController {
   constructor (private readonly ordersService: OrdersService) {}
 
@@ -28,27 +28,7 @@ export class OrdersController {
     @Organization() organization: OrganizationEntity,
     @Param('id') id: string
   ): Promise<Order> {
-    const order = await this.ordersService.findOne({
-      id,
-      options: {
-        relations: [
-          'patient',
-          'client',
-          'tests',
-          'veterinarian',
-          'integration',
-          'integration.providerConfiguration'
-        ]
-      }
-    })
-
-    if (
-      order.integration.providerConfiguration.organizationId !== organization.id
-    ) {
-      throw new ForbiddenException("You don't have access to this resource")
-    }
-
-    return order
+    return await this.ordersService.getOrder(id, organization)
   }
 
   @Get(':id/result.json')
@@ -78,7 +58,6 @@ export class OrdersController {
   }
 
   @Post()
-  @UseInterceptors(RpcExceptionInterceptor)
   async createOrder (@Body() createOrderDto: CreateOrderDto): Promise<Order> {
     return await this.ordersService.createOrder(createOrderDto)
   }

@@ -1,4 +1,4 @@
-import { Type } from 'class-transformer'
+import { Exclude, Type } from 'class-transformer'
 import {
   Column,
   Entity,
@@ -33,7 +33,7 @@ export class Order {
   @Column()
   editable: boolean
 
-  @Column()
+  @Column({ nullable: true })
   manifestUri: string
 
   @Column()
@@ -44,6 +44,7 @@ export class Order {
 
   @Type(() => Integration)
   @ManyToOne(() => Integration)
+  @Exclude()
   integration: Integration
 
   @Type(() => Patient)
