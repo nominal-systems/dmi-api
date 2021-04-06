@@ -1,28 +1,26 @@
-import { BadRequestException, Injectable, OnModuleInit } from '@nestjs/common'
+import { BadRequestException, Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, FindManyOptions } from 'typeorm'
 import { Organization } from '../../organizations/entities/organization.entity'
 import { ProvidersService } from './providers.service'
 import { ProviderConfiguration } from '../entities/provider-configuration.entity'
 import * as createValidator from 'is-my-json-valid'
-import { ModuleRef } from '@nestjs/core'
+import { ConfigService } from '@nestjs/config'
+import { encrypt } from '../../common/utils/crypto.utils'
 
 @Injectable()
-export class ProviderConfigurationsService implements OnModuleInit {
-  private providersService: ProvidersService
+export class ProviderConfigurationsService {
+  private readonly secretKey: string
 
   constructor (
     @InjectRepository(ProviderConfiguration)
     private readonly providerConfigurationRepository: Repository<
       ProviderConfiguration
     >,
-    private readonly moduleRef: ModuleRef
-  ) {}
-
-  onModuleInit (): void {
-    this.providersService = this.moduleRef.get(ProvidersService, {
-      strict: false
-    })
+    private readonly providersService: ProvidersService,
+    private readonly configService: ConfigService
+  ) {
+    this.secretKey = this.configService.get('secretKey') ?? ''
   }
 
   async findAll (
@@ -34,8 +32,8 @@ export class ProviderConfigurationsService implements OnModuleInit {
   async create (
     organization: Organization,
     providerId: string,
-    providerConfiguration: any
-  ): Promise<ProviderConfiguration> {
+    providerConfigurationOptions: any
+  ): Promise<any> {
     const provider = await this.providersService.findOneById(providerId)
 
     if (provider == null) {
@@ -57,14 +55,17 @@ export class ProviderConfigurationsService implements OnModuleInit {
 
     const providerValidator = createValidator(validatorOptions as any)
 
-    if (!providerValidator(providerConfiguration)) {
+    if (!providerValidator(providerConfigurationOptions)) {
       throw new BadRequestException('There is an issue with the request body')
     }
 
     const newProviderConfiguration = this.providerConfigurationRepository.create(
       {
         diagnosticProviderId: providerId,
-        providerConfigurationOptions: providerConfiguration,
+        providerConfigurationOptions: encrypt(
+          providerConfigurationOptions,
+          this.secretKey
+        ),
         organization
       }
     )

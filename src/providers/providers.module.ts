@@ -7,7 +7,7 @@ import { ProviderConfigurationsService } from './services/provider-configuration
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { IntegrationsModule } from '../integrations/integrations.module'
 import { ClientsModule, Transport } from '@nestjs/microservices'
-import { ConfigService } from '@nestjs/config'
+import { ConfigModule, ConfigService } from '@nestjs/config'
 
 @Module({
   imports: [
@@ -25,7 +25,8 @@ import { ConfigService } from '@nestjs/config'
       }
     ]),
     OrganizationsModule,
-    IntegrationsModule
+    IntegrationsModule,
+    ConfigModule
   ],
   controllers: [ProvidersController],
   providers: [ProvidersService, ProviderConfigurationsService],

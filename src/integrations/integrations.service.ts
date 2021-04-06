@@ -4,9 +4,11 @@ import {
   Injectable,
   NotFoundException
 } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
 import { InjectRepository } from '@nestjs/typeorm'
 import { FindManyOptions, Repository } from 'typeorm'
 import { FindOneOfTypeOptions } from '../common/typings/find-one-of-type-options.interface'
+import { encrypt } from '../common/utils/crypto.utils'
 import { Organization } from '../organizations/entities/organization.entity'
 import { OrganizationsService } from '../organizations/organizations.service'
 import { CreateIntegrationDto } from './dtos/create-integration.dto'
@@ -14,12 +16,17 @@ import { Integration } from './entities/integration.entity'
 
 @Injectable()
 export class IntegrationsService {
+  private readonly secretKey: string
+
   constructor (
+    private readonly configService: ConfigService,
     @InjectRepository(Integration)
     private readonly integrationsRepository: Repository<Integration>,
     @Inject(OrganizationsService)
     private readonly organizationsService: OrganizationsService
-  ) {}
+  ) {
+    this.secretKey = this.configService.get('secretKey') ?? ''
+  }
 
   async findAll (
     options?: FindManyOptions<Integration>
@@ -46,6 +53,8 @@ export class IntegrationsService {
     createIntegrationDto: CreateIntegrationDto
   ): Promise<Integration> {
     try {
+      createIntegrationDto.integrationOptions = encrypt(createIntegrationDto.integrationOptions, this.secretKey)
+
       const newIntegration = this.integrationsRepository.create(
         createIntegrationDto
       )

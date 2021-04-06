@@ -3,6 +3,7 @@ import { AppConfig } from './config.interface'
 export default (): AppConfig => ({
   nodeEnv: process.env.NODE_ENV ?? 'development',
   port: Number(process.env.PORT ?? 3000),
+  secretKey: process.env.SECRET_KEY,
   integrationEngine: {
     hostname: process.env.INTEGRATION_ENGINE_HOSTNAME ?? 'localhost',
     port: Number(process.env.INTEGRATION_ENGINE_PORT ?? 1883)

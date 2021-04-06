@@ -17,11 +17,13 @@ import * as fs from 'fs'
 import * as path from 'path'
 import { ConfigService } from '@nestjs/config'
 import ieMessageBuilder from '../common/utils/ieMessageBuilder'
+import { decryptProviderConfigAndIntegrationOpts } from '../common/utils/crypto.utils'
 
 @Injectable()
 export class OrdersService {
   private readonly logger = new Logger(OrdersService.name)
   private readonly nodeEnv: string | undefined
+  private readonly secretKey: string
 
   constructor (
     private readonly configService: ConfigService,
@@ -32,6 +34,7 @@ export class OrdersService {
     @Inject('INTEGRATION_ENGINE') private readonly client: ClientProxy
   ) {
     this.nodeEnv = this.configService.get('nodeEnv')
+    this.secretKey = this.configService.get('secretKey') ?? ''
   }
 
   async findAll (options?: FindManyOptions<Order>): Promise<Order[]> {
@@ -74,21 +77,29 @@ export class OrdersService {
     }
 
     if (manifestUri == null) {
+      const decrypted = decryptProviderConfigAndIntegrationOpts({
+        integrationOptions,
+        providerConfigurationOptions:
+          providerConfiguration.providerConfigurationOptions,
+        secretKey: this.secretKey
+      })
+
       const { message, messagePattern } = ieMessageBuilder(
         providerConfiguration.diagnosticProviderId,
         {
           resource: 'orders',
           operation: 'get',
           data: {
-            integrationOptions,
             payload: { id: externalId },
-            providerConfiguration:
-              providerConfiguration.providerConfigurationOptions
+            integrationOptions: decrypted.integrationOptions,
+            providerConfiguration: decrypted.providerConfigurationOptions
           }
         }
       )
 
-      const response = await this.client.send(messagePattern, message).toPromise()
+      const response = await this.client
+        .send(messagePattern, message)
+        .toPromise()
 
       if (response.manifestUri != null || response.status !== order.status) {
         Object.assign(order, response)
@@ -155,15 +166,21 @@ export class OrdersService {
     } = providerConfiguration
 
     if (this.nodeEnv !== 'seed') {
+      const decrypted = decryptProviderConfigAndIntegrationOpts({
+        integrationOptions,
+        providerConfigurationOptions,
+        secretKey: this.secretKey
+      })
+
       const { message, messagePattern } = ieMessageBuilder(
         diagnosticProviderId,
         {
           resource: 'orders',
           operation: 'create',
           data: {
-            providerConfiguration: providerConfigurationOptions,
-            integrationOptions,
-            payload: order
+            payload: order,
+            integrationOptions: decrypted.integrationOptions,
+            providerConfiguration: decrypted.providerConfigurationOptions
           }
         }
       )
@@ -198,15 +215,21 @@ export class OrdersService {
       throw new ForbiddenException("You don't have permissions to do that")
     }
 
+    const decrypted = decryptProviderConfigAndIntegrationOpts({
+      integrationOptions,
+      providerConfigurationOptions:
+        providerConfiguration.providerConfigurationOptions,
+      secretKey: this.secretKey
+    })
+
     const { message, messagePattern } = ieMessageBuilder(
       providerConfiguration.diagnosticProviderId,
       {
         resource: 'orders',
         operation: 'cancel',
         data: {
-          providerConfiguration:
-            providerConfiguration.providerConfigurationOptions,
-          integrationOptions,
+          providerConfiguration: decrypted.providerConfigurationOptions,
+          integrationOptions: decrypted.integrationOptions,
           payload: {
             id: externalId
           }
