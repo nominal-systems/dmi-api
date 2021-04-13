@@ -5,8 +5,11 @@ export default (): AppConfig => ({
   port: Number(process.env.PORT ?? 3000),
   secretKey: process.env.SECRET_KEY,
   integrationEngine: {
+    protocol: process.env.INTEGRATION_ENGINE_PROTOCOL ?? 'mqtt',
     hostname: process.env.INTEGRATION_ENGINE_HOSTNAME ?? 'localhost',
-    port: Number(process.env.INTEGRATION_ENGINE_PORT ?? 1883)
+    port: Number(process.env.INTEGRATION_ENGINE_PORT ?? 1883),
+    username: process.env.INTEGRATION_ENGINE_USERNAME ?? '',
+    password: process.env.INTEGRATION_ENGINE_PASSWORD ?? ''
   },
   typeorm: {
     type: process.env.DATABASE_TYPE ?? 'mysql',

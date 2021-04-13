@@ -8,8 +8,11 @@ export interface AppConfig {
 }
 
 export interface IntegrationEngineConfig {
+  protocol: string
   hostname: string
   port: number
+  username: string
+  password: string
 }
 
 export interface MongooseConfig {
