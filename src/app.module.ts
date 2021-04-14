@@ -12,6 +12,7 @@ import configuration from './config/configuration'
 import * as path from 'path'
 import { MongooseModule } from '@nestjs/mongoose'
 import { SeederModule } from './seeder/seeder.module'
+import { AppController } from './app.controller'
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { SeederModule } from './seeder/seeder.module'
     OrdersModule,
     EventsModule,
     SeederModule
-  ]
+  ],
+  controllers: [AppController]
 })
 export class AppModule {}
