@@ -86,16 +86,16 @@ const providers: Provider[] = [
     providerConfigurationOptions: [
       {
         type: 'string',
-        name: 'token',
-        description: 'Demo Token',
+        name: 'url',
+        description: 'Demo Provider URL',
         required: true
       }
     ],
     integrationOptions: [
       {
         type: 'string',
-        name: 'namespace',
-        description: 'Practice Namespace',
+        name: 'apiKey',
+        description: 'API Key',
         required: true
       }
     ]
