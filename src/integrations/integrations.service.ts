@@ -9,7 +9,10 @@ import { ClientProxy } from '@nestjs/microservices'
 import { InjectRepository } from '@nestjs/typeorm'
 import { FindManyOptions, Repository } from 'typeorm'
 import { FindOneOfTypeOptions } from '../common/typings/find-one-of-type-options.interface'
-import { encrypt } from '../common/utils/crypto.utils'
+import {
+  decryptProviderConfigAndIntegrationOpts,
+  encrypt
+} from '../common/utils/crypto.utils'
 import ieMessageBuilder from '../common/utils/ieMessageBuilder'
 import { Organization } from '../organizations/entities/organization.entity'
 import { OrganizationsService } from '../organizations/organizations.service'
@@ -76,15 +79,21 @@ export class IntegrationsService {
         options: { relations: ['providerConfiguration'] }
       })
 
+      const decrypted = decryptProviderConfigAndIntegrationOpts({
+        integrationOptions,
+        providerConfigurationOptions:
+          providerConfiguration.providerConfigurationOptions,
+        secretKey: this.secretKey
+      })
+
       const { message, messagePattern } = ieMessageBuilder(
         providerConfiguration.id,
         {
           resource: 'integration',
           operation: 'create',
           data: {
-            integrationOptions: integrationOptions,
-            providerConfiguration:
-              providerConfiguration.providerConfigurationOptions,
+            integrationOptions: decrypted.integrationOptions,
+            providerConfiguration: decrypted.providerConfigurationOptions,
             payload: {
               integrationId
             }
