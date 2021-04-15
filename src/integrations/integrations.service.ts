@@ -87,7 +87,7 @@ export class IntegrationsService {
       })
 
       const { message, messagePattern } = ieMessageBuilder(
-        providerConfiguration.id,
+        providerConfiguration.diagnosticProviderId,
         {
           resource: 'integration',
           operation: 'create',
@@ -100,6 +100,8 @@ export class IntegrationsService {
           }
         }
       )
+
+      console.log(messagePattern, message)
 
       this.client.emit(messagePattern, message)
 
