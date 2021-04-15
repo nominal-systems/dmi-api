@@ -1,4 +1,4 @@
-import { SetMetadata } from '@nestjs/common'
+import { CustomDecorator, SetMetadata } from '@nestjs/common'
 
-export const NeedsOrganizationOwner = () =>
+export const NeedsOrganizationOwner = (): CustomDecorator =>
   SetMetadata('needsOrganizationOwner', true)

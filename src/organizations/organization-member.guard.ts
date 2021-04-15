@@ -6,38 +6,41 @@ import { OrganizationsService } from './organizations.service'
 @Injectable()
 export class OrganizationMemberGuard implements CanActivate {
   constructor (
-    private reflector: Reflector,
-    private organizationsService: OrganizationsService,
+    private readonly reflector: Reflector,
+    private readonly organizationsService: OrganizationsService
   ) {}
 
   async canActivate (context: ExecutionContext): Promise<boolean> {
     const disabledGuards = this.reflector.get<string[]>(
       'disabledGuards',
-      context.getHandler(),
+      context.getHandler()
     )
 
-    if (disabledGuards && disabledGuards.includes(OrganizationMemberGuard.name)) {
+    if (disabledGuards?.includes(OrganizationMemberGuard.name)) {
       return true
     }
 
     const request = context.switchToHttp().getRequest()
     const needsOwner = this.reflector.get<string[]>(
       'needsOrganizationOwner',
-      context.getHandler(),
+      context.getHandler()
     )
     const organizationId = request.params.id
     const user: User = request.user
 
-    if (needsOwner) {
+    if (needsOwner != null) {
       const organization = await this.organizationsService.findOne({
         id: organizationId,
+        options: {
+          relations: ['owner']
+        }
       })
 
-      if (organization.owner.id !== user.id) {
+      if (organization?.owner.id !== user.id) {
         return false
       }
     }
 
-    return user.organization && user.organization.id === organizationId
+    return user.organization?.id === organizationId
   }
 }

@@ -1,7 +1,9 @@
 import {
   ConflictException,
   Injectable,
-  UnauthorizedException,
+  Logger,
+  NotFoundException,
+  UnauthorizedException
 } from '@nestjs/common'
 import { CreateUserDto } from './dtos/create-user.dto'
 import { UserCredentialsDto } from './dtos/user-credentials.dto'
@@ -11,62 +13,81 @@ import { JwtService } from '@nestjs/jwt'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { Organization } from '../organizations/entities/organization.entity'
+import { TokenResponseDto } from './dtos/token-response.dto'
+import { FindOneOfTypeOptions } from '../common/typings/find-one-of-type-options.interface'
+import { DBErrorCodes } from '../common/constants/db-error-codes.enum'
 
 @Injectable()
 export class UsersService {
+  private readonly logger = new Logger(UsersService.name)
+
   constructor (
-    @InjectRepository(User) private usersRepository: Repository<User>,
-    private jwtService: JwtService,
+    @InjectRepository(User) private readonly usersRepository: Repository<User>,
+    private readonly jwtService: JwtService
   ) {}
 
-  async findOne (user: Partial<User>) {
-    return await this.usersRepository.findOne(null, { where: user, relations: ['organization'] })
+  async findOne (args: FindOneOfTypeOptions<User>): Promise<User> {
+    const user = await this.usersRepository.findOne(args.id, args.options)
+
+    if (user == null) {
+      throw new NotFoundException('The user was not found')
+    }
+
+    return user
   }
 
-  async create (user: CreateUserDto) {
+  async create (user: CreateUserDto): Promise<TokenResponseDto> {
+    const newUser = this.usersRepository.create(user)
+
     try {
-      const newUser = await this.usersRepository.save(user)
-      const token = await this.generateJwt(newUser)
-      return { token }
+      await this.usersRepository.save(newUser)
     } catch (error) {
-      if (error.code === 11000) {
+      if (error.code === DBErrorCodes.DuplicateEntry) {
         throw new ConflictException('The email already exists')
       }
+
+      this.logger.debug(JSON.stringify(error, null, 2))
+
+      throw error
     }
+
+    const token = await this.generateJwt(newUser)
+
+    return { user: newUser, token }
   }
 
-  async updateOrganization (user: User, organization: Organization) {
-    return await this.usersRepository.update(
-      { email: user.email },
-      { organization },
-    )
+  async updateOrganization (
+    user: User,
+    organization: Organization
+  ): Promise<void> {
+    await this.usersRepository.update({ email: user.email }, { organization })
   }
 
-  async authenticate (credentials: UserCredentialsDto) {
-    const user = await this.usersRepository.findOne(
-      { email: credentials.email },
-      { select: ['id', 'password'] },
-    )
-
-    if (!user) {
-      throw new UnauthorizedException('Username or password is incorrect')
-    }
+  async authenticate (
+    credentials: UserCredentialsDto
+  ): Promise<TokenResponseDto> {
+    const user = await this.findOne({
+      options: {
+        where: { email: credentials.email },
+        relations: ['organization']
+      }
+    })
 
     const isPasswordCorrect = await argon2.verify(
       user.password,
-      credentials.password,
+      credentials.password
     )
 
     if (isPasswordCorrect) {
       const token = await this.generateJwt(user)
 
-      return { token }
+      return { user, token }
     }
 
     throw new UnauthorizedException('Username or password is incorrect')
   }
 
-  async generateJwt (user: User) {
+  async generateJwt (user: User): Promise<string> {
     const token = await this.jwtService.signAsync({}, { subject: user.id })
 
     return token

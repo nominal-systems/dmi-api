@@ -1,3 +1,11 @@
-import { CreateUserDto } from './create-user.dto'
+import { IsEmail, IsNotEmpty, MinLength } from 'class-validator'
 
-export class UserCredentialsDto extends CreateUserDto {}
+export class UserCredentialsDto {
+  @IsEmail()
+  @IsNotEmpty()
+  email: string
+
+  @IsNotEmpty()
+  @MinLength(4)
+  password: string
+}

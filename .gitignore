@@ -35,3 +35,9 @@ lerna-debug.log*
 
 # Dotenv
 .env
+.env.docker
+
+# NVM
+.nvmrc
+
+/docker

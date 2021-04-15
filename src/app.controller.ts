@@ -1,12 +1,10 @@
 import { Controller, Get } from '@nestjs/common'
-import { AppService } from './app.service'
+import { API_VERSION } from './common/constants/api.constant'
 
 @Controller()
 export class AppController {
-  constructor (private readonly appService: AppService) {}
-
-  @Get()
-  getHello (): string {
-    return this.appService.getHello()
+  @Get('/status')
+  getStatus (): any {
+    return { status: 'ok', version: API_VERSION, time: new Date() }
   }
 }

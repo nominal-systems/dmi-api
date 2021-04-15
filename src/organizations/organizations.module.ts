@@ -8,11 +8,14 @@ import { TypeOrmModule } from '@nestjs/typeorm'
 @Module({
   imports: [
     TypeOrmModule.forFeature([Organization]),
-    UsersModule,
+    UsersModule
   ],
   controllers: [OrganizationsController],
   providers: [
     OrganizationsService
   ],
+  exports: [
+    OrganizationsService
+  ]
 })
 export class OrganizationsModule {}

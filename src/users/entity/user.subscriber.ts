@@ -3,7 +3,7 @@ import {
   EntitySubscriberInterface,
   EventSubscriber,
   InsertEvent,
-  UpdateEvent,
+  UpdateEvent
 } from 'typeorm'
 import { User } from './user.entity'
 import * as argon2 from 'argon2'
@@ -14,22 +14,24 @@ export class UserSubscriber implements EntitySubscriberInterface<User> {
     connection.subscribers.push(this)
   }
 
-  listenTo () {
+  listenTo (): any {
     return User
   }
 
-  async beforeInsert (event: InsertEvent<User>) {
+  async beforeInsert (event: InsertEvent<User>): Promise<void> {
     await this.hashPassword(event)
   }
 
-  async beforeUpdate (event: UpdateEvent<User>) {
+  async beforeUpdate (event: UpdateEvent<User>): Promise<void> {
     await this.hashPassword(event)
   }
 
-  private async hashPassword (event: InsertEvent<User>) {
-    if (event.entity.password && !event.entity.password.startsWith('$argon2id$v=')) {
-      event.entity.password = await argon2.hash(event.entity.password, {
-        type: argon2.argon2id,
+  private async hashPassword (event: InsertEvent<User>): Promise<void> {
+    const { password } = event.entity
+
+    if (password != null && !password.startsWith('$argon2id$v=')) {
+      event.entity.password = await argon2.hash(password, {
+        type: argon2.argon2id
       })
     }
   }

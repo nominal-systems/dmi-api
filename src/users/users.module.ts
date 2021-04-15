@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common'
 import { UsersService } from './users.service'
 import { UsersController } from './users.controller'
-import * as argon2 from 'argon2'
 import { JwtModule } from '@nestjs/jwt'
 import { ConfigService } from '@nestjs/config'
 import { JwtStrategy } from './jwt.strategy'
@@ -14,9 +13,9 @@ import { UserSubscriber } from './entity/user.subscriber'
     JwtModule.registerAsync({
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get('JWT_SECRET_KEY'),
-        signOptions: { expiresIn: '30m' },
+        signOptions: { expiresIn: '30m' }
       }),
-      inject: [ConfigService],
+      inject: [ConfigService]
     }),
     TypeOrmModule.forFeature([User])
   ],

@@ -9,14 +9,22 @@ services:
       - '3000:3000'
     depends_on:
       - mysql
-    env_file: .env
+    env_file: .env.docker
     environment:
       DATABASE_HOST: mysql
     volumes:
       - ./src:/app/src
-    command: ['/wait-for', 'mysql:3306', '--', 'npm', 'run', 'start:dev']
+    command: ['./scripts/wait-for-all.sh', 'npm run start:dev']
+  mongo:
+    image: mongo:4
+    volumes: 
+      - ./docker/mongo/data:/data/db
+    ports:
+      - '27017:27017'
   mysql:
     image: mysql:8
+    volumes: 
+      - ./docker/mysql/data:/var/lib/mysql
     ports:
       - '3306:3306'
     environment:

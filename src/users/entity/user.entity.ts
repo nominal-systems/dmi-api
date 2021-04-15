@@ -1,8 +1,11 @@
+import { Exclude } from 'class-transformer'
 import {
   Column,
+  CreateDateColumn,
   Entity,
   ManyToOne,
   PrimaryGeneratedColumn,
+  UpdateDateColumn
 } from 'typeorm'
 import { Organization } from '../../organizations/entities/organization.entity'
 
@@ -11,15 +14,23 @@ export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string
 
-  @Column()
+  @Column({ unique: true })
   email: string
 
-  @Column({ select: false })
+  @Column()
+  @Exclude()
   password: string
 
   @ManyToOne(
     () => Organization,
     organization => organization.members,
+    { onDelete: 'SET NULL' }
   )
   organization: Organization
+
+  @CreateDateColumn()
+  createdAt: Date
+
+  @UpdateDateColumn()
+  updatedAt: Date
 }
