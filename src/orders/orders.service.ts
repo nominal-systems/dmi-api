@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common'
 import { ClientProxy } from '@nestjs/microservices'
 import { InjectRepository } from '@nestjs/typeorm'
-import { FindManyOptions, Repository } from 'typeorm'
+import { FindManyOptions, In, Repository } from 'typeorm'
 import { IntegrationsService } from '../integrations/integrations.service'
 import { CreateOrderDto } from './dtos/create-order.dto'
 import { Order } from './entities/order.entity'
@@ -18,6 +18,8 @@ import * as path from 'path'
 import { ConfigService } from '@nestjs/config'
 import ieMessageBuilder from '../common/utils/ieMessageBuilder'
 import { decryptProviderConfigAndIntegrationOpts } from '../common/utils/crypto.utils'
+import { ExternalOrdersEventData } from '../common/typings/external-order-event-data.interface'
+import { EventsService } from '../events/events.service'
 
 @Injectable()
 export class OrdersService {
@@ -31,6 +33,7 @@ export class OrdersService {
     private readonly ordersRepository: Repository<Order>,
     @Inject(IntegrationsService)
     private readonly integrationsService: IntegrationsService,
+    @Inject(EventsService) private readonly eventsService: EventsService,
     @Inject('INTEGRATION_ENGINE') private readonly client: ClientProxy
   ) {
     this.nodeEnv = this.configService.get('nodeEnv')
@@ -244,25 +247,54 @@ export class OrdersService {
     return response
   }
 
-  async handleExternalOrder (externalOrder: Order): Promise<Order> {
-    try {
-      const order = await this.findOne({
-        options: { where: { externalId: externalOrder.externalId } }
-      })
+  async handleExternalOrders ({
+    integrationId,
+    data
+  }: ExternalOrdersEventData): Promise<void> {
+    const externalOrdersExternalIds = data.map(order => order.externalId)
+    const existingOrders = await this.findAll({
+      where: {
+        integrationId: integrationId,
+        externalId: In(externalOrdersExternalIds)
+      }
+    })
 
-      await this.ordersRepository.save({ ...externalOrder, id: order.id })
+    const updatedOrders: Order[] = []
 
-      return externalOrder
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        const newOrder = this.ordersRepository.create(externalOrder)
+    for (const existingOrder of existingOrders) {
+      const externalOrder = data.find(
+        order => order.externalId === existingOrder.externalId
+      )
 
-        await this.ordersRepository.save(newOrder)
-
-        return newOrder
+      if (
+        externalOrder == null ||
+        existingOrder.status === externalOrder.status
+      ) {
+        continue
       }
 
-      throw error
+      updatedOrders.push({
+        ...existingOrder,
+        status: externalOrder.status
+      })
+    }
+
+    const existingOrdersExternalIds = existingOrders.map(
+      order => order.externalId
+    )
+    const nonExistingOrders = data.filter(
+      order => !existingOrdersExternalIds.includes(order.externalId)
+    )
+    const newOrders = this.ordersRepository.create(nonExistingOrders)
+
+    await this.ordersRepository.save([...newOrders, ...updatedOrders])
+
+    for (const updatedOrder of updatedOrders) {
+      await this.eventsService.addEvent({
+        namespace: 'orders',
+        type: 'order:status',
+        value: { orderId: updatedOrder.id, status: updatedOrder.status }
+      })
     }
   }
 }

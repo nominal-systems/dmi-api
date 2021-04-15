@@ -101,8 +101,6 @@ export class IntegrationsService {
         }
       )
 
-      console.log(messagePattern, message)
-
       this.client.emit(messagePattern, message)
 
       return newIntegration
