@@ -243,4 +243,26 @@ export class OrdersService {
 
     return response
   }
+
+  async handleExternalOrder (externalOrder: Order): Promise<Order> {
+    try {
+      const order = await this.findOne({
+        options: { where: { externalId: externalOrder.externalId } }
+      })
+
+      await this.ordersRepository.save({ ...externalOrder, id: order.id })
+
+      return externalOrder
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        const newOrder = this.ordersRepository.create(externalOrder)
+
+        await this.ordersRepository.save(newOrder)
+
+        return newOrder
+      }
+
+      throw error
+    }
+  }
 }

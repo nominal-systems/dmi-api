@@ -9,6 +9,7 @@ import {
   UseGuards,
   UseInterceptors
 } from '@nestjs/common'
+import { EventPattern } from '@nestjs/microservices'
 import { Organization } from '../common/decorators/organization.decorator'
 import { ApiGuard } from '../common/guards/api.guard'
 import { RpcExceptionInterceptor } from '../common/interceptors/rpc-exception.interceptor'
@@ -68,5 +69,10 @@ export class OrdersController {
     @Param('id') id: string
   ): Promise<void> {
     return await this.ordersService.cancelOrder(organization, id)
+  }
+
+  @EventPattern('external_orders')
+  async handleExternalOrder (order: Order): Promise<void> {
+    await this.ordersService.handleExternalOrder(order)
   }
 }
