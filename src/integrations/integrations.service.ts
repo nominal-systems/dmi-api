@@ -67,7 +67,11 @@ export class IntegrationsService {
 
       await this.integrationsRepository.save(newIntegration)
 
-      const { providerConfiguration, integrationOptions } = await this.findOne({
+      const {
+        id: integrationId,
+        providerConfiguration,
+        integrationOptions
+      } = await this.findOne({
         id: newIntegration.id,
         options: { relations: ['providerConfiguration'] }
       })
@@ -80,7 +84,10 @@ export class IntegrationsService {
           data: {
             integrationOptions: integrationOptions,
             providerConfiguration:
-              providerConfiguration.providerConfigurationOptions
+              providerConfiguration.providerConfigurationOptions,
+            payload: {
+              integrationId
+            }
           }
         }
       )
