@@ -8,6 +8,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn
 } from 'typeorm'
+import { Hash } from '../../common/typings/hash.interface'
 import { Integration } from '../../integrations/entities/integration.entity'
 import { Organization } from '../../organizations/entities/organization.entity'
 
@@ -20,7 +21,7 @@ export class ProviderConfiguration {
   diagnosticProviderId: string
 
   @Column('json')
-  providerConfigurationOptions: any
+  providerConfigurationOptions: Hash
 
   @Column()
   @Exclude()

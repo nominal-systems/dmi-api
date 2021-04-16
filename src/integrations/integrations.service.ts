@@ -79,7 +79,7 @@ export class IntegrationsService {
         options: { relations: ['providerConfiguration'] }
       })
 
-      const decrypted = decryptProviderConfigAndIntegrationOpts({
+      const decryptedOptions = decryptProviderConfigAndIntegrationOpts({
         integrationOptions,
         providerConfigurationOptions:
           providerConfiguration.providerConfigurationOptions,
@@ -92,8 +92,8 @@ export class IntegrationsService {
           resource: 'integration',
           operation: 'create',
           data: {
-            integrationOptions: decrypted.integrationOptions,
-            providerConfiguration: decrypted.providerConfigurationOptions,
+            integrationOptions: decryptedOptions.integrationOptions,
+            providerConfiguration: decryptedOptions.providerConfigurationOptions,
             payload: {
               integrationId
             }

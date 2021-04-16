@@ -3,6 +3,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   Post,
   Res,
@@ -65,6 +67,7 @@ export class OrdersController {
   }
 
   @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
   async cancelOrder (
     @Organization() organization: OrganizationEntity,
     @Param('id') id: string

@@ -80,7 +80,7 @@ export class OrdersService {
     }
 
     if (manifestUri == null) {
-      const decrypted = decryptProviderConfigAndIntegrationOpts({
+      const decryptedOptions = decryptProviderConfigAndIntegrationOpts({
         integrationOptions,
         providerConfigurationOptions:
           providerConfiguration.providerConfigurationOptions,
@@ -94,8 +94,8 @@ export class OrdersService {
           operation: 'get',
           data: {
             payload: { id: externalId },
-            integrationOptions: decrypted.integrationOptions,
-            providerConfiguration: decrypted.providerConfigurationOptions
+            integrationOptions: decryptedOptions.integrationOptions,
+            providerConfiguration: decryptedOptions.providerConfigurationOptions
           }
         }
       )
@@ -121,7 +121,7 @@ export class OrdersService {
   ): Promise<any> {
     const {
       externalId,
-      integration: { providerConfiguration }
+      integration: { providerConfiguration, integrationOptions }
     } = await this.findOne({
       id: orderId,
       options: {
@@ -134,13 +134,22 @@ export class OrdersService {
     }
 
     if (format === 'json') {
+      const decryptedOptions = decryptProviderConfigAndIntegrationOpts({
+        secretKey: this.secretKey,
+        integrationOptions: integrationOptions,
+        providerConfigurationOptions:
+          providerConfiguration.providerConfigurationOptions
+      })
+
       const { message, messagePattern } = ieMessageBuilder(
         providerConfiguration.diagnosticProviderId,
         {
           resource: 'orders',
           operation: 'results',
           data: {
-            payload: { id: externalId }
+            payload: { id: externalId },
+            integrationOptions: decryptedOptions.integrationOptions,
+            providerConfiguration: decryptedOptions.providerConfigurationOptions
           }
         }
       )
@@ -169,7 +178,7 @@ export class OrdersService {
     } = providerConfiguration
 
     if (this.nodeEnv !== 'seed') {
-      const decrypted = decryptProviderConfigAndIntegrationOpts({
+      const decryptedOptions = decryptProviderConfigAndIntegrationOpts({
         integrationOptions,
         providerConfigurationOptions,
         secretKey: this.secretKey
@@ -182,8 +191,8 @@ export class OrdersService {
           operation: 'create',
           data: {
             payload: order,
-            integrationOptions: decrypted.integrationOptions,
-            providerConfiguration: decrypted.providerConfigurationOptions
+            integrationOptions: decryptedOptions.integrationOptions,
+            providerConfiguration: decryptedOptions.providerConfigurationOptions
           }
         }
       )
@@ -218,7 +227,7 @@ export class OrdersService {
       throw new ForbiddenException("You don't have permissions to do that")
     }
 
-    const decrypted = decryptProviderConfigAndIntegrationOpts({
+    const decryptedOptions = decryptProviderConfigAndIntegrationOpts({
       integrationOptions,
       providerConfigurationOptions:
         providerConfiguration.providerConfigurationOptions,
@@ -231,8 +240,8 @@ export class OrdersService {
         resource: 'orders',
         operation: 'cancel',
         data: {
-          providerConfiguration: decrypted.providerConfigurationOptions,
-          integrationOptions: decrypted.integrationOptions,
+          providerConfiguration: decryptedOptions.providerConfigurationOptions,
+          integrationOptions: decryptedOptions.integrationOptions,
           payload: {
             id: externalId
           }

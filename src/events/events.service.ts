@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common'
+import { Injectable, OnModuleInit } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { FilterQuery, Model } from 'mongoose'
 import { SelectQueryBuilder } from 'typeorm'
@@ -8,12 +8,19 @@ import { Organization } from '../organizations/entities/organization.entity'
 import { Event, EventDocument } from './entities/event.entity'
 import { AddEventDto } from './dto/add-event.dto'
 import { EventsQueryDto } from './dto/events-query.dto'
+import { ModuleRef } from '@nestjs/core'
 @Injectable()
-export class EventsService {
+export class EventsService implements OnModuleInit {
+  private ordersService: OrdersService
+
   constructor (
-    @InjectModel(Event.name) private readonly eventModel: Model<EventDocument>,
-    @Inject(OrdersService) private readonly ordersService: OrdersService
+    private readonly moduleRef: ModuleRef,
+    @InjectModel(Event.name) private readonly eventModel: Model<EventDocument>
   ) {}
+
+  onModuleInit (): void {
+    this.ordersService = this.moduleRef.get(OrdersService, { strict: false })
+  }
 
   async findAll (options: FilterQuery<Event> = {}): Promise<Event[]> {
     return await this.eventModel.find(options, { __v: 0, _id: 0 }).lean()

@@ -10,11 +10,13 @@ import { Order } from './entities/order.entity'
 import { Patient } from './entities/patient.entity'
 import { Client } from './entities/client.entity'
 import { Veterinarian } from './entities/veterinarian.entity'
+import { EventsModule } from '../events/events.module'
 
 @Module({
   imports: [
     OrganizationsModule,
     IntegrationsModule,
+    EventsModule,
     TypeOrmModule.forFeature([Order, Patient, Client, Veterinarian]),
     ClientsModule.registerAsync([
       {

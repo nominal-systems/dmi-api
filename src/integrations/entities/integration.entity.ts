@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer'
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm'
+import { Hash } from '../../common/typings/hash.interface'
 import { Practice } from '../../practices/entities/practice.entity'
 import { ProviderConfiguration } from '../../providers/entities/provider-configuration.entity'
 
@@ -15,7 +16,7 @@ export class Integration {
   providerConfigurationId: string
 
   @Column('json')
-  integrationOptions: any
+  integrationOptions: Hash
 
   @ManyToOne(
     () => Practice,

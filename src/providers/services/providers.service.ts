@@ -54,7 +54,7 @@ export class ProvidersService {
       }
     })
 
-    const decrypted = decryptProviderConfigAndIntegrationOpts({
+    const decryptedOptions = decryptProviderConfigAndIntegrationOpts({
       integrationOptions,
       providerConfigurationOptions,
       secretKey: this.secretKey
@@ -64,8 +64,8 @@ export class ProvidersService {
       resource: 'services',
       operation: 'list',
       data: {
-        providerConfiguration: decrypted.providerConfigurationOptions,
-        integrationOptions: decrypted.integrationOptions
+        providerConfiguration: decryptedOptions.providerConfigurationOptions,
+        integrationOptions: decryptedOptions.integrationOptions
       }
     })
 
@@ -86,7 +86,7 @@ export class ProvidersService {
       }
     })
 
-    const decrypted = decryptProviderConfigAndIntegrationOpts({
+    const decryptedOptions = decryptProviderConfigAndIntegrationOpts({
       integrationOptions,
       providerConfigurationOptions,
       secretKey: this.secretKey
@@ -96,8 +96,8 @@ export class ProvidersService {
       resource: 'refs',
       operation: 'version',
       data: {
-        providerConfiguration: decrypted.providerConfigurationOptions,
-        integrationOptions: decrypted.integrationOptions
+        providerConfiguration: decryptedOptions.providerConfigurationOptions,
+        integrationOptions: decryptedOptions.integrationOptions
       }
     })
 
@@ -115,7 +115,7 @@ export class ProvidersService {
       }
     })
 
-    const decrypted = decryptProviderConfigAndIntegrationOpts({
+    const decryptedOptions = decryptProviderConfigAndIntegrationOpts({
       integrationOptions,
       providerConfigurationOptions,
       secretKey: this.secretKey
@@ -125,8 +125,8 @@ export class ProvidersService {
       resource: 'breeds',
       operation: 'list',
       data: {
-        providerConfiguration: decrypted.providerConfigurationOptions,
-        integrationOptions: decrypted.integrationOptions
+        providerConfiguration: decryptedOptions.providerConfigurationOptions,
+        integrationOptions: decryptedOptions.integrationOptions
       }
     })
 
@@ -147,7 +147,7 @@ export class ProvidersService {
       }
     })
 
-    const decrypted = decryptProviderConfigAndIntegrationOpts({
+    const decryptedOptions = decryptProviderConfigAndIntegrationOpts({
       integrationOptions,
       providerConfigurationOptions,
       secretKey: this.secretKey
@@ -157,8 +157,8 @@ export class ProvidersService {
       resource: 'genders',
       operation: 'list',
       data: {
-        providerConfiguration: decrypted.providerConfigurationOptions,
-        integrationOptions: decrypted.integrationOptions
+        providerConfiguration: decryptedOptions.providerConfigurationOptions,
+        integrationOptions: decryptedOptions.integrationOptions
       }
     })
 
@@ -179,7 +179,7 @@ export class ProvidersService {
       }
     })
 
-    const decrypted = decryptProviderConfigAndIntegrationOpts({
+    const decryptedOptions = decryptProviderConfigAndIntegrationOpts({
       integrationOptions,
       providerConfigurationOptions,
       secretKey: this.secretKey
@@ -189,8 +189,8 @@ export class ProvidersService {
       resource: 'species',
       operation: 'list',
       data: {
-        providerConfiguration: decrypted.providerConfigurationOptions,
-        integrationOptions: decrypted.integrationOptions
+        providerConfiguration: decryptedOptions.providerConfigurationOptions,
+        integrationOptions: decryptedOptions.integrationOptions
       }
     })
 

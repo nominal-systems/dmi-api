@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common'
+import { forwardRef, Module } from '@nestjs/common'
 import { EventsService } from './events.service'
 import { EventsController } from './events.controller'
 import { Event, EventSchema } from './entities/event.entity'
@@ -27,7 +27,7 @@ import { ConfigModule } from '@nestjs/config'
     ]),
     ConfigModule,
     OrganizationsModule,
-    OrdersModule
+    forwardRef(() => OrdersModule)
   ],
   controllers: [EventsController],
   providers: [EventsService],
