@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common'
 import { ClientProxy } from '@nestjs/microservices'
 import { InjectRepository } from '@nestjs/typeorm'
-import { FindManyOptions, Repository } from 'typeorm'
+import { FindManyOptions, In, Repository } from 'typeorm'
 import { IntegrationsService } from '../integrations/integrations.service'
 import { CreateOrderDto } from './dtos/create-order.dto'
 import { Order } from './entities/order.entity'
@@ -18,6 +18,8 @@ import * as path from 'path'
 import { ConfigService } from '@nestjs/config'
 import ieMessageBuilder from '../common/utils/ieMessageBuilder'
 import { decryptProviderConfigAndIntegrationOpts } from '../common/utils/crypto.utils'
+import { ExternalOrdersEventData } from '../common/typings/external-order-event-data.interface'
+import { EventsService } from '../events/events.service'
 
 @Injectable()
 export class OrdersService {
@@ -31,7 +33,8 @@ export class OrdersService {
     private readonly ordersRepository: Repository<Order>,
     @Inject(IntegrationsService)
     private readonly integrationsService: IntegrationsService,
-    @Inject('INTEGRATION_ENGINE') private readonly client: ClientProxy
+    @Inject(EventsService) private readonly eventsService: EventsService,
+    @Inject('ACTIVEMQ') private readonly client: ClientProxy
   ) {
     this.nodeEnv = this.configService.get('nodeEnv')
     this.secretKey = this.configService.get('secretKey') ?? ''
@@ -77,7 +80,7 @@ export class OrdersService {
     }
 
     if (manifestUri == null) {
-      const decrypted = decryptProviderConfigAndIntegrationOpts({
+      const decryptedOptions = decryptProviderConfigAndIntegrationOpts({
         integrationOptions,
         providerConfigurationOptions:
           providerConfiguration.providerConfigurationOptions,
@@ -91,8 +94,8 @@ export class OrdersService {
           operation: 'get',
           data: {
             payload: { id: externalId },
-            integrationOptions: decrypted.integrationOptions,
-            providerConfiguration: decrypted.providerConfigurationOptions
+            integrationOptions: decryptedOptions.integrationOptions,
+            providerConfiguration: decryptedOptions.providerConfigurationOptions
           }
         }
       )
@@ -118,7 +121,7 @@ export class OrdersService {
   ): Promise<any> {
     const {
       externalId,
-      integration: { providerConfiguration }
+      integration: { providerConfiguration, integrationOptions }
     } = await this.findOne({
       id: orderId,
       options: {
@@ -131,13 +134,22 @@ export class OrdersService {
     }
 
     if (format === 'json') {
+      const decryptedOptions = decryptProviderConfigAndIntegrationOpts({
+        secretKey: this.secretKey,
+        integrationOptions: integrationOptions,
+        providerConfigurationOptions:
+          providerConfiguration.providerConfigurationOptions
+      })
+
       const { message, messagePattern } = ieMessageBuilder(
         providerConfiguration.diagnosticProviderId,
         {
           resource: 'orders',
           operation: 'results',
           data: {
-            payload: { id: externalId }
+            payload: { id: externalId },
+            integrationOptions: decryptedOptions.integrationOptions,
+            providerConfiguration: decryptedOptions.providerConfigurationOptions
           }
         }
       )
@@ -166,7 +178,7 @@ export class OrdersService {
     } = providerConfiguration
 
     if (this.nodeEnv !== 'seed') {
-      const decrypted = decryptProviderConfigAndIntegrationOpts({
+      const decryptedOptions = decryptProviderConfigAndIntegrationOpts({
         integrationOptions,
         providerConfigurationOptions,
         secretKey: this.secretKey
@@ -179,8 +191,8 @@ export class OrdersService {
           operation: 'create',
           data: {
             payload: order,
-            integrationOptions: decrypted.integrationOptions,
-            providerConfiguration: decrypted.providerConfigurationOptions
+            integrationOptions: decryptedOptions.integrationOptions,
+            providerConfiguration: decryptedOptions.providerConfigurationOptions
           }
         }
       )
@@ -193,6 +205,12 @@ export class OrdersService {
     }
 
     await this.ordersRepository.save(order)
+
+    await this.eventsService.addEvent({
+      namespace: 'orders',
+      type: 'order:status',
+      value: { orderId: order.id, status: order.status }
+    })
 
     return order
   }
@@ -215,7 +233,7 @@ export class OrdersService {
       throw new ForbiddenException("You don't have permissions to do that")
     }
 
-    const decrypted = decryptProviderConfigAndIntegrationOpts({
+    const decryptedOptions = decryptProviderConfigAndIntegrationOpts({
       integrationOptions,
       providerConfigurationOptions:
         providerConfiguration.providerConfigurationOptions,
@@ -228,8 +246,8 @@ export class OrdersService {
         resource: 'orders',
         operation: 'cancel',
         data: {
-          providerConfiguration: decrypted.providerConfigurationOptions,
-          integrationOptions: decrypted.integrationOptions,
+          providerConfiguration: decryptedOptions.providerConfigurationOptions,
+          integrationOptions: decryptedOptions.integrationOptions,
           payload: {
             id: externalId
           }
@@ -242,5 +260,57 @@ export class OrdersService {
     await this.ordersRepository.delete(orderId)
 
     return response
+  }
+
+  async handleExternalOrders ({
+    integrationId,
+    data
+  }: ExternalOrdersEventData): Promise<void> {
+    const externalOrdersExternalIds = data.map(order => order.externalId)
+    const existingOrders = await this.findAll({
+      where: {
+        integrationId: integrationId,
+        externalId: In(externalOrdersExternalIds)
+      }
+    })
+
+    const updatedOrders: Order[] = []
+
+    for (const existingOrder of existingOrders) {
+      const externalOrder = data.find(
+        order => order.externalId === existingOrder.externalId
+      )
+
+      if (
+        externalOrder == null ||
+        existingOrder.status === externalOrder.status
+      ) {
+        continue
+      }
+
+      updatedOrders.push({
+        ...existingOrder,
+        status: externalOrder.status
+      })
+    }
+
+    const existingOrdersExternalIds = existingOrders.map(
+      order => order.externalId
+    )
+    const nonExistingOrders = data.filter(
+      order => !existingOrdersExternalIds.includes(order.externalId)
+    )
+    const newOrders = this.ordersRepository.create(nonExistingOrders)
+    const allOrders = [...newOrders, ...updatedOrders]
+
+    await this.ordersRepository.save(allOrders)
+
+    for (const order of allOrders) {
+      await this.eventsService.addEvent({
+        namespace: 'orders',
+        type: 'order:status',
+        value: { orderId: order.id, status: order.status }
+      })
+    }
   }
 }

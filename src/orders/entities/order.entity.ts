@@ -36,7 +36,7 @@ export class Order {
   @Column({ nullable: true })
   manifestUri: string
 
-  @Column()
+  @Column({ nullable: true })
   submissionUri: string
 
   @Column()

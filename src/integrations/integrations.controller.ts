@@ -3,6 +3,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   Post,
   UseGuards
@@ -47,6 +49,7 @@ export class IntegrationsController {
   }
 
   @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
   async deleteIntegration (
     @Organization() organization: OrganizationEntity,
     @Param('id') integrationId: string

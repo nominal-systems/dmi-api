@@ -5,10 +5,15 @@ import {
   NotFoundException
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
+import { ClientProxy } from '@nestjs/microservices'
 import { InjectRepository } from '@nestjs/typeorm'
 import { FindManyOptions, Repository } from 'typeorm'
 import { FindOneOfTypeOptions } from '../common/typings/find-one-of-type-options.interface'
-import { encrypt } from '../common/utils/crypto.utils'
+import {
+  decryptProviderConfigAndIntegrationOpts,
+  encrypt
+} from '../common/utils/crypto.utils'
+import ieMessageBuilder from '../common/utils/ieMessageBuilder'
 import { Organization } from '../organizations/entities/organization.entity'
 import { OrganizationsService } from '../organizations/organizations.service'
 import { CreateIntegrationDto } from './dtos/create-integration.dto'
@@ -23,7 +28,8 @@ export class IntegrationsService {
     @InjectRepository(Integration)
     private readonly integrationsRepository: Repository<Integration>,
     @Inject(OrganizationsService)
-    private readonly organizationsService: OrganizationsService
+    private readonly organizationsService: OrganizationsService,
+    @Inject('ACTIVEMQ') private readonly client: ClientProxy
   ) {
     this.secretKey = this.configService.get('secretKey') ?? ''
   }
@@ -53,12 +59,51 @@ export class IntegrationsService {
     createIntegrationDto: CreateIntegrationDto
   ): Promise<Integration> {
     try {
-      createIntegrationDto.integrationOptions = encrypt(createIntegrationDto.integrationOptions, this.secretKey)
+      createIntegrationDto.integrationOptions = encrypt(
+        createIntegrationDto.integrationOptions,
+        this.secretKey
+      )
 
       const newIntegration = this.integrationsRepository.create(
         createIntegrationDto
       )
-      return await this.integrationsRepository.save(newIntegration)
+
+      await this.integrationsRepository.save(newIntegration)
+
+      const {
+        id: integrationId,
+        providerConfiguration,
+        integrationOptions
+      } = await this.findOne({
+        id: newIntegration.id,
+        options: { relations: ['providerConfiguration'] }
+      })
+
+      const decryptedOptions = decryptProviderConfigAndIntegrationOpts({
+        integrationOptions,
+        providerConfigurationOptions:
+          providerConfiguration.providerConfigurationOptions,
+        secretKey: this.secretKey
+      })
+
+      const { message, messagePattern } = ieMessageBuilder(
+        providerConfiguration.diagnosticProviderId,
+        {
+          resource: 'integration',
+          operation: 'create',
+          data: {
+            integrationOptions: decryptedOptions.integrationOptions,
+            providerConfiguration: decryptedOptions.providerConfigurationOptions,
+            payload: {
+              integrationId
+            }
+          }
+        }
+      )
+
+      this.client.emit(messagePattern, message)
+
+      return newIntegration
     } catch (error) {
       if (error.code === 'ER_NO_REFERENCED_ROW_2') {
         throw new NotFoundException(

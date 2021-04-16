@@ -2,12 +2,12 @@ export interface AppConfig {
   nodeEnv: string
   port: number
   secretKey: string | undefined
-  integrationEngine: IntegrationEngineConfig
+  activeMQ: ActiveMQConfig
   typeorm: TypeormConfig
   mongoose: MongooseConfig
 }
 
-export interface IntegrationEngineConfig {
+export interface ActiveMQConfig {
   protocol: string
   hostname: string
   port: number

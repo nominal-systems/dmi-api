@@ -4,12 +4,12 @@ export default (): AppConfig => ({
   nodeEnv: process.env.NODE_ENV ?? 'development',
   port: Number(process.env.PORT ?? 3000),
   secretKey: process.env.SECRET_KEY,
-  integrationEngine: {
-    protocol: process.env.INTEGRATION_ENGINE_PROTOCOL ?? 'mqtt',
-    hostname: process.env.INTEGRATION_ENGINE_HOSTNAME ?? 'localhost',
-    port: Number(process.env.INTEGRATION_ENGINE_PORT ?? 1883),
-    username: process.env.INTEGRATION_ENGINE_USERNAME ?? '',
-    password: process.env.INTEGRATION_ENGINE_PASSWORD ?? ''
+  activeMQ: {
+    protocol: process.env.ACTIVEMQ_PROTOCOL ?? 'mqtt',
+    hostname: process.env.ACTIVEMQ_HOSTNAME ?? 'localhost',
+    port: Number(process.env.ACTIVEMQ_PORT ?? 1883),
+    username: process.env.ACTIVEMQ_USERNAME ?? '',
+    password: process.env.ACTIVEMQ_PASSWORD ?? ''
   },
   typeorm: {
     type: process.env.DATABASE_TYPE ?? 'mysql',

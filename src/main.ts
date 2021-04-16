@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { NestFactory, Reflector } from '@nestjs/core'
+import { MicroserviceOptions, Transport } from '@nestjs/microservices'
 import {
   FastifyAdapter,
   NestFastifyApplication
@@ -19,6 +20,15 @@ async function bootstrap (): Promise<void> {
     AppModule,
     new FastifyAdapter()
   )
+
+  const configService = app.get<ConfigService<AppConfig>>(ConfigService)
+
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.MQTT,
+    options: {
+      ...configService.get('activeMQ')
+    }
+  })
   app.setGlobalPrefix(`/api/${API_VERSION}`)
   app.useGlobalPipes(
     new ValidationPipe({
@@ -28,7 +38,6 @@ async function bootstrap (): Promise<void> {
   )
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)))
 
-  const configService = app.get<ConfigService<AppConfig>>(ConfigService)
   const PORT = configService.get<number>('port', 3000)
 
   await app.listen(PORT, '0.0.0.0')
