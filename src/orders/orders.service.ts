@@ -34,7 +34,7 @@ export class OrdersService {
     @Inject(IntegrationsService)
     private readonly integrationsService: IntegrationsService,
     @Inject(EventsService) private readonly eventsService: EventsService,
-    @Inject('INTEGRATION_ENGINE') private readonly client: ClientProxy
+    @Inject('ACTIVEMQ') private readonly client: ClientProxy
   ) {
     this.nodeEnv = this.configService.get('nodeEnv')
     this.secretKey = this.configService.get('secretKey') ?? ''
@@ -206,6 +206,12 @@ export class OrdersService {
 
     await this.ordersRepository.save(order)
 
+    await this.eventsService.addEvent({
+      namespace: 'orders',
+      type: 'order:status',
+      value: { orderId: order.id, status: order.status }
+    })
+
     return order
   }
 
@@ -295,14 +301,15 @@ export class OrdersService {
       order => !existingOrdersExternalIds.includes(order.externalId)
     )
     const newOrders = this.ordersRepository.create(nonExistingOrders)
+    const allOrders = [...newOrders, ...updatedOrders]
 
-    await this.ordersRepository.save([...newOrders, ...updatedOrders])
+    await this.ordersRepository.save(allOrders)
 
-    for (const updatedOrder of updatedOrders) {
+    for (const order of allOrders) {
       await this.eventsService.addEvent({
         namespace: 'orders',
         type: 'order:status',
-        value: { orderId: updatedOrder.id, status: updatedOrder.status }
+        value: { orderId: order.id, status: order.status }
       })
     }
   }

@@ -21,7 +21,7 @@ export class ProvidersService {
     private readonly configService: ConfigService,
     @Inject(IntegrationsService)
     private readonly integrationsService: IntegrationsService,
-    @Inject('INTEGRATION_ENGINE') private readonly client: ClientProxy
+    @Inject('ACTIVEMQ') private readonly client: ClientProxy
   ) {
     this.secretKey = this.configService.get('secretKey') ?? ''
   }

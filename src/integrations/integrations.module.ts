@@ -4,24 +4,14 @@ import { IntegrationsController } from './integrations.controller'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { Integration } from './entities/integration.entity'
 import { OrganizationsModule } from '../organizations/organizations.module'
-import { ConfigModule, ConfigService } from '@nestjs/config'
-import { ClientsModule, Transport } from '@nestjs/microservices'
+import { ConfigModule } from '@nestjs/config'
+import { ClientsModule } from '@nestjs/microservices'
+import activeMQClientProvider from '../common/providers/activemq-client.provider'
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Integration]),
-    ClientsModule.registerAsync([
-      {
-        name: 'INTEGRATION_ENGINE',
-        inject: [ConfigService],
-        useFactory: async (configService: ConfigService) => ({
-          transport: Transport.MQTT,
-          options: {
-            ...configService.get('integrationEngine')
-          }
-        })
-      }
-    ]),
+    ClientsModule.registerAsync([activeMQClientProvider]),
     OrganizationsModule,
     ConfigModule
   ],

@@ -29,7 +29,7 @@ export class IntegrationsService {
     private readonly integrationsRepository: Repository<Integration>,
     @Inject(OrganizationsService)
     private readonly organizationsService: OrganizationsService,
-    @Inject('INTEGRATION_ENGINE') private readonly client: ClientProxy
+    @Inject('ACTIVEMQ') private readonly client: ClientProxy
   ) {
     this.secretKey = this.configService.get('secretKey') ?? ''
   }
