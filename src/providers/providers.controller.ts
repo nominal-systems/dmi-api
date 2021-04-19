@@ -2,6 +2,8 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   NotFoundException,
   Param,
   Post,
@@ -50,8 +52,11 @@ export class ProvidersController {
   async getProviderServices (
     @Param('id') providerId: string,
     @Query() { integrationId }: ReferenceDataQueryParams
-    ): Promise<ProviderService[]> {
-    return await this.providersService.getProviderServices(providerId, integrationId)
+  ): Promise<ProviderService[]> {
+    return await this.providersService.getProviderServices(
+      providerId,
+      integrationId
+    )
   }
 
   @Get(':id/configurations')
@@ -68,6 +73,7 @@ export class ProvidersController {
   }
 
   @Post(':id/configurations')
+  @HttpCode(HttpStatus.CREATED)
   async configureProvider (
     @Organization() organization: OrganizationEntity,
     @Param('id') providerId: string,

@@ -34,6 +34,7 @@ export class PracticesController {
   }
 
   @Post()
+  @HttpCode(HttpStatus.CREATED)
   async createPractice (
     @Organization() organization: OrganizationEntity,
     @Body() practiceDto: CreatePracticeDto

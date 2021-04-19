@@ -56,6 +56,7 @@ export class IntegrationsService {
   }
 
   async create (
+    organizationId: string,
     createIntegrationDto: CreateIntegrationDto
   ): Promise<Integration> {
     try {
@@ -64,9 +65,10 @@ export class IntegrationsService {
         this.secretKey
       )
 
-      const newIntegration = this.integrationsRepository.create(
-        createIntegrationDto
-      )
+      const newIntegration = this.integrationsRepository.create({
+        ...createIntegrationDto,
+        organizationId: organizationId
+      })
 
       await this.integrationsRepository.save(newIntegration)
 
@@ -93,7 +95,8 @@ export class IntegrationsService {
           operation: 'create',
           data: {
             integrationOptions: decryptedOptions.integrationOptions,
-            providerConfiguration: decryptedOptions.providerConfigurationOptions,
+            providerConfiguration:
+              decryptedOptions.providerConfigurationOptions,
             payload: {
               integrationId
             }
@@ -119,17 +122,29 @@ export class IntegrationsService {
     organization: Organization,
     integrationId: string
   ): Promise<void> {
-    const organizationsIntegrations = await this.organizationsService.getIntegrations(
-      organization.id
-    )
+    const integration = await this.findOne({
+      id: integrationId,
+      options: { relations: ['providerConfiguration'] }
+    })
 
-    const integrationBelongsToOrganization = organizationsIntegrations?.find(
-      integration => integration.id === integrationId
-    )
-
-    if (integrationBelongsToOrganization == null) {
+    if (integration.organizationId !== organization.id) {
       throw new ForbiddenException("You don't have access to this resource")
     }
+
+    const { message, messagePattern } = ieMessageBuilder(
+      integration.providerConfiguration.diagnosticProviderId,
+      {
+        resource: 'integration',
+        operation: 'remove',
+        data: {
+          payload: {
+            integrationId
+          }
+        }
+      }
+    )
+
+    this.client.emit(messagePattern, message)
 
     await this.integrationsRepository.delete(integrationId)
   }
