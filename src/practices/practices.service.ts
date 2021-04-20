@@ -1,10 +1,11 @@
 import {
-  ForbiddenException,
+  ConflictException,
   Injectable,
   NotFoundException
 } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { FindManyOptions, Repository } from 'typeorm'
+import { DBErrorCodes } from '../common/constants/db-error-codes.enum'
 import { Organization } from '../organizations/entities/organization.entity'
 import { CreatePracticeDto } from './dto/create-practice.dto'
 import { Practice } from './entities/practice.entity'
@@ -29,13 +30,26 @@ export class PracticesService {
       organization
     })
 
-    return await this.practicesRepository.save(newPractice)
+    try {
+      await this.practicesRepository.save(newPractice)
+    } catch (error) {
+      if (error.code === DBErrorCodes.DuplicateEntry) {
+        throw new ConflictException(
+          `A practice with the name "${newPractice.name}" already exists within the organization`
+        )
+      }
+
+      throw error
+    }
+
+    return newPractice
   }
 
   async delete (organization: Organization, practiceId: string): Promise<void> {
     const practice = await this.practicesRepository.findOne({
       where: {
-        id: practiceId
+        slug: practiceId,
+        organization
       }
     })
 
@@ -43,10 +57,6 @@ export class PracticesService {
       throw new NotFoundException("The practice doesn't exist")
     }
 
-    if (practice.organizationId !== organization.id) {
-      throw new ForbiddenException("You don't have permissions to do that")
-    }
-
-    await this.practicesRepository.delete(practiceId)
+    await this.practicesRepository.delete(practice)
   }
 }

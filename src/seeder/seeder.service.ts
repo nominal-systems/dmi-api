@@ -4,7 +4,6 @@ import { OrdersService } from '../orders/orders.service'
 import { OrganizationsService } from '../organizations/organizations.service'
 import { PracticesService } from '../practices/practices.service'
 import { ProviderConfigurationsService } from '../providers/services/provider-configurations.service'
-import { ProvidersService } from '../providers/services/providers.service'
 import { UsersService } from '../users/users.service'
 import * as faker from 'faker'
 import { User } from '../users/entity/user.entity'
@@ -26,8 +25,6 @@ export class SeederService {
     @Inject(UsersService) private readonly usersService: UsersService,
     @Inject(OrdersService) private readonly ordersService: OrdersService,
     @Inject(EventsService) private readonly eventsService: EventsService,
-    @Inject(ProvidersService)
-    private readonly providersService: ProvidersService,
     @Inject(PracticesService)
     private readonly practicesService: PracticesService,
     @Inject(IntegrationsService)
@@ -120,12 +117,10 @@ export class SeederService {
   ): Promise<ProviderConfiguration[]> {
     const providerConfigurations: ProviderConfiguration[] = []
 
-    const providers = await this.providersService.findAll()
-
     for (const organization of organizations) {
       const providerConfiguration = await this.providerConfigurationsService.create(
         organization,
-        providers[0].id,
+        'zoetis-v1',
         {
           url: 'https://qa.vetscanconnect.zoetis.com',
           partnerId: faker.random.uuid(),
@@ -164,11 +159,16 @@ export class SeederService {
         continue
       }
 
-      const integration = await this.integrationsService.create({
-        practiceId: practice.id,
-        providerConfigurationId: providerConfiguration.id,
-        integrationOptions: { clientId: 'f1cc5ab3-c563-47be-86f8-837e14a2228f' }
-      })
+      const integration = await this.integrationsService.create(
+        organization.id,
+        {
+          practiceSlug: practice.slug,
+          providerConfigurationId: providerConfiguration.id,
+          integrationOptions: {
+            clientId: 'f1cc5ab3-c563-47be-86f8-837e14a2228f'
+          }
+        }
+      )
 
       integrations.push(integration)
     }
@@ -188,6 +188,8 @@ export class SeederService {
       for (let i = 0; i < ordersPerIntegration; i++) {
         const order = await this.ordersService.createOrder({
           integrationId: integration.id,
+          status: 'completed',
+          externalId: 'fake-id',
           patient: {
             ...this.generateIdAndFirstLastName(),
             species: 'CANINE',

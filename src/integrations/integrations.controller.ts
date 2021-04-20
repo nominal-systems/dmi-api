@@ -42,10 +42,15 @@ export class IntegrationsController {
   }
 
   @Post()
+  @HttpCode(HttpStatus.CREATED)
   async createIntegration (
+    @Organization() organization: OrganizationEntity,
     @Body() createIntegrationDto: CreateIntegrationDto
   ): Promise<Integration> {
-    return await this.integrationsService.create(createIntegrationDto)
+    return await this.integrationsService.create(
+      organization.id,
+      createIntegrationDto
+    )
   }
 
   @Delete(':id')

@@ -34,6 +34,8 @@ export class CreateOrderDto {
   editable: boolean
 
   notes: string
+  externalId?: string
+  status?: string
 
   @Type(() => CreateOrderDtoPatient)
   patient: CreateOrderDtoPatient
