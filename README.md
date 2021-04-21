@@ -1,7 +1,8 @@
 # Diagnostic Modality Integration API
-## Description
 
 Repository for the DMI API built using [Nest](https://github.com/nestjs/nest).
+
+[![Build and Deploy - Staging](https://github.com/line-studio/diagnostic-modality-integration-api/actions/workflows/build-deploy-staging.yml/badge.svg?branch=main&event=push)](https://github.com/line-studio/diagnostic-modality-integration-api/actions/workflows/build-deploy-staging.yml)
 
 ## Installation
 
