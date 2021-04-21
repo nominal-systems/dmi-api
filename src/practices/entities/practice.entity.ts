@@ -1,6 +1,7 @@
 import { Exclude, Type } from 'class-transformer'
 import {
   BeforeInsert,
+  BeforeUpdate,
   Column,
   CreateDateColumn,
   Entity,
@@ -46,6 +47,7 @@ export class Practice {
   updatedAt: Date
 
   @BeforeInsert()
+  @BeforeUpdate()
   generateSlugId (): void {
     this.slug = slugify(this.name, { lower: true })
   }
