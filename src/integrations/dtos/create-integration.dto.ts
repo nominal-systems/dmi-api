@@ -2,7 +2,7 @@ import { IsNotEmpty } from 'class-validator'
 
 export class CreateIntegrationDto {
   @IsNotEmpty()
-  practiceSlug: string
+  practiceId: string
 
   @IsNotEmpty()
   providerConfigurationId: string

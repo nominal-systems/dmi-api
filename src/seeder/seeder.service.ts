@@ -159,16 +159,13 @@ export class SeederService {
         continue
       }
 
-      const integration = await this.integrationsService.create(
-        organization.id,
-        {
-          practiceSlug: practice.slug,
-          providerConfigurationId: providerConfiguration.id,
-          integrationOptions: {
-            clientId: 'f1cc5ab3-c563-47be-86f8-837e14a2228f'
-          }
+      const integration = await this.integrationsService.create({
+        practiceId: practice.id,
+        providerConfigurationId: providerConfiguration.id,
+        integrationOptions: {
+          clientId: 'f1cc5ab3-c563-47be-86f8-837e14a2228f'
         }
-      )
+      })
 
       integrations.push(integration)
     }

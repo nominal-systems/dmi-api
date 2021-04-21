@@ -9,7 +9,6 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn
 } from 'typeorm'
-import { Integration } from '../../integrations/entities/integration.entity'
 import { Practice } from '../../practices/entities/practice.entity'
 import { ProviderConfiguration } from '../../providers/entities/provider-configuration.entity'
 import { User } from '../../users/entity/user.entity'
@@ -51,13 +50,6 @@ export class Organization {
   )
   @Type(() => Practice)
   practices: Practice[]
-
-  @OneToMany(
-    () => Integration,
-    integration => integration.organization
-  )
-  @Type(() => Integration)
-  integrations: Integration[]
 
   @OneToMany(
     () => ProviderConfiguration,
