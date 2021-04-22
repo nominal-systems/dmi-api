@@ -1,6 +1,13 @@
 import { Type } from 'class-transformer'
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm'
-import { Hash } from '../../common/typings/hash.interface'
+import {
+  AfterLoad,
+  Column,
+  Entity,
+  ManyToOne,
+  PrimaryGeneratedColumn
+} from 'typeorm'
+import { decrypt } from '../../common/utils/crypto.utils'
+import configuration from '../../config/configuration'
 import { Practice } from '../../practices/entities/practice.entity'
 import { ProviderConfiguration } from '../../providers/entities/provider-configuration.entity'
 
@@ -16,7 +23,7 @@ export class Integration {
   providerConfigurationId: string
 
   @Column('json')
-  integrationOptions: Hash
+  integrationOptions: any
 
   @ManyToOne(
     () => Practice,
@@ -32,4 +39,12 @@ export class Integration {
   )
   @Type(() => ProviderConfiguration)
   providerConfiguration: ProviderConfiguration
+
+  @AfterLoad()
+  decryptOptions (): void {
+    this.integrationOptions = decrypt(
+      this.integrationOptions,
+      configuration().secretKey
+    )
+  }
 }

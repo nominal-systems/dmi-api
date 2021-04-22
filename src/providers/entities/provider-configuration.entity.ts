@@ -1,5 +1,6 @@
 import { Exclude, Type } from 'class-transformer'
 import {
+  AfterLoad,
   Column,
   CreateDateColumn,
   Entity,
@@ -8,7 +9,8 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn
 } from 'typeorm'
-import { Hash } from '../../common/typings/hash.interface'
+import { decrypt } from '../../common/utils/crypto.utils'
+import configuration from '../../config/configuration'
 import { Integration } from '../../integrations/entities/integration.entity'
 import { Organization } from '../../organizations/entities/organization.entity'
 
@@ -21,7 +23,7 @@ export class ProviderConfiguration {
   diagnosticProviderId: string
 
   @Column('json')
-  providerConfigurationOptions: Hash
+  providerConfigurationOptions: any
 
   @Column()
   @Exclude()
@@ -46,4 +48,12 @@ export class ProviderConfiguration {
 
   @UpdateDateColumn()
   updatedAt: Date
+
+  @AfterLoad()
+  decryptOptions (): void {
+    this.providerConfigurationOptions = decrypt(
+      this.providerConfigurationOptions,
+      configuration().secretKey
+    )
+  }
 }

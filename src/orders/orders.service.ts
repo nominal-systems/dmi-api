@@ -17,7 +17,6 @@ import * as fs from 'fs'
 import * as path from 'path'
 import { ConfigService } from '@nestjs/config'
 import ieMessageBuilder from '../common/utils/ieMessageBuilder'
-import { decryptProviderConfigAndIntegrationOpts } from '../common/utils/crypto.utils'
 import { ExternalOrdersEventData } from '../common/typings/external-order-event-data.interface'
 import { EventsService } from '../events/events.service'
 
@@ -25,7 +24,6 @@ import { EventsService } from '../events/events.service'
 export class OrdersService {
   private readonly logger = new Logger(OrdersService.name)
   private readonly nodeEnv: string | undefined
-  private readonly secretKey: string
 
   constructor (
     private readonly configService: ConfigService,
@@ -37,7 +35,6 @@ export class OrdersService {
     @Inject('ACTIVEMQ') private readonly client: ClientProxy
   ) {
     this.nodeEnv = this.configService.get('nodeEnv')
-    this.secretKey = this.configService.get('secretKey') ?? ''
   }
 
   async findAll (options?: FindManyOptions<Order>): Promise<Order[]> {
@@ -80,13 +77,6 @@ export class OrdersService {
     }
 
     if (manifestUri == null) {
-      const decryptedOptions = decryptProviderConfigAndIntegrationOpts({
-        integrationOptions,
-        providerConfigurationOptions:
-          providerConfiguration.providerConfigurationOptions,
-        secretKey: this.secretKey
-      })
-
       const { message, messagePattern } = ieMessageBuilder(
         providerConfiguration.diagnosticProviderId,
         {
@@ -94,8 +84,9 @@ export class OrdersService {
           operation: 'get',
           data: {
             payload: { id: externalId },
-            integrationOptions: decryptedOptions.integrationOptions,
-            providerConfiguration: decryptedOptions.providerConfigurationOptions
+            integrationOptions,
+            providerConfiguration:
+              providerConfiguration.providerConfigurationOptions
           }
         }
       )
@@ -134,13 +125,6 @@ export class OrdersService {
     }
 
     if (format === 'json') {
-      const decryptedOptions = decryptProviderConfigAndIntegrationOpts({
-        secretKey: this.secretKey,
-        integrationOptions: integrationOptions,
-        providerConfigurationOptions:
-          providerConfiguration.providerConfigurationOptions
-      })
-
       const { message, messagePattern } = ieMessageBuilder(
         providerConfiguration.diagnosticProviderId,
         {
@@ -148,8 +132,9 @@ export class OrdersService {
           operation: 'results',
           data: {
             payload: { id: externalId },
-            integrationOptions: decryptedOptions.integrationOptions,
-            providerConfiguration: decryptedOptions.providerConfigurationOptions
+            integrationOptions,
+            providerConfiguration:
+              providerConfiguration.providerConfigurationOptions
           }
         }
       )
@@ -178,12 +163,6 @@ export class OrdersService {
     } = providerConfiguration
 
     if (this.nodeEnv !== 'seed') {
-      const decryptedOptions = decryptProviderConfigAndIntegrationOpts({
-        integrationOptions,
-        providerConfigurationOptions,
-        secretKey: this.secretKey
-      })
-
       const { message, messagePattern } = ieMessageBuilder(
         diagnosticProviderId,
         {
@@ -191,8 +170,8 @@ export class OrdersService {
           operation: 'create',
           data: {
             payload: order,
-            integrationOptions: decryptedOptions.integrationOptions,
-            providerConfiguration: decryptedOptions.providerConfigurationOptions
+            integrationOptions,
+            providerConfiguration: providerConfigurationOptions
           }
         }
       )
@@ -233,21 +212,15 @@ export class OrdersService {
       throw new ForbiddenException("You don't have permissions to do that")
     }
 
-    const decryptedOptions = decryptProviderConfigAndIntegrationOpts({
-      integrationOptions,
-      providerConfigurationOptions:
-        providerConfiguration.providerConfigurationOptions,
-      secretKey: this.secretKey
-    })
-
     const { message, messagePattern } = ieMessageBuilder(
       providerConfiguration.diagnosticProviderId,
       {
         resource: 'orders',
         operation: 'cancel',
         data: {
-          providerConfiguration: decryptedOptions.providerConfigurationOptions,
-          integrationOptions: decryptedOptions.integrationOptions,
+          providerConfiguration:
+            providerConfiguration.providerConfigurationOptions,
+          integrationOptions,
           payload: {
             id: externalId
           }
