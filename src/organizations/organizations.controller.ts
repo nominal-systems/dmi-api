@@ -39,7 +39,7 @@ export class OrganizationsController {
   }
 
   @Post()
-  @DisableGuards(OrganizationMemberGuard.name)
+  @DisableGuards(OrganizationMemberGuard)
   async createOrganization (
     @Body() createOrganizationDto: CreateOrganizationDto,
     @User() user

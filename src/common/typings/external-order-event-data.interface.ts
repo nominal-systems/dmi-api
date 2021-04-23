@@ -1,6 +1,6 @@
-import { Order } from '../../orders/entities/order.entity'
+import { ExternalOrder } from '../../orders/dtos/external-order.dto'
 
 export interface ExternalOrdersEventData {
   integrationId: string
-  data: Order[]
+  orders: ExternalOrder[]
 }

@@ -40,6 +40,7 @@ async function bootstrap (): Promise<void> {
 
   const PORT = configService.get<number>('port', 3000)
 
+  await app.startAllMicroservices()
   await app.listen(PORT, '0.0.0.0')
 
   Logger.log(`App listening on port ${PORT}`, 'NestApplication')

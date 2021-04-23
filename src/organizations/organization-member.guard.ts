@@ -1,5 +1,6 @@
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
+import { ClassType } from '../common/typings/class.type'
 import { User } from '../users/entity/user.entity'
 import { OrganizationsService } from './organizations.service'
 
@@ -11,12 +12,12 @@ export class OrganizationMemberGuard implements CanActivate {
   ) {}
 
   async canActivate (context: ExecutionContext): Promise<boolean> {
-    const disabledGuards = this.reflector.get<string[]>(
+    const disabledGuards = this.reflector.get<ClassType[]>(
       'disabledGuards',
       context.getHandler()
     )
 
-    if (disabledGuards?.includes(OrganizationMemberGuard.name)) {
+    if (disabledGuards?.includes(OrganizationMemberGuard)) {
       return true
     }
 
