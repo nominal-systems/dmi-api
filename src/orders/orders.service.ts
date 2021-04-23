@@ -237,9 +237,9 @@ export class OrdersService {
 
   async handleExternalOrders ({
     integrationId,
-    data
+    orders
   }: ExternalOrdersEventData): Promise<void> {
-    const externalOrdersExternalIds = data.map(order => order.externalId)
+    const externalOrdersExternalIds = orders.map(order => order.externalId)
     const existingOrders = await this.findAll({
       where: {
         integrationId: integrationId,
@@ -250,7 +250,7 @@ export class OrdersService {
     const updatedOrders: Order[] = []
 
     for (const existingOrder of existingOrders) {
-      const externalOrder = data.find(
+      const externalOrder = orders.find(
         order => order.externalId === existingOrder.externalId
       )
 
@@ -270,9 +270,14 @@ export class OrdersService {
     const existingOrdersExternalIds = existingOrders.map(
       order => order.externalId
     )
-    const nonExistingOrders = data.filter(
-      order => !existingOrdersExternalIds.includes(order.externalId)
-    )
+    const nonExistingOrders = orders
+      .filter(order => !existingOrdersExternalIds.includes(order.externalId))
+      .map(order => {
+        return {
+          ...order,
+          integrationId
+        }
+      })
     const newOrders = this.ordersRepository.create(nonExistingOrders)
     const allOrders = [...newOrders, ...updatedOrders]
 
