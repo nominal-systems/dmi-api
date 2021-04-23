@@ -1,7 +1,6 @@
 import { Type } from 'class-transformer'
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm'
 import { Hash } from '../../common/typings/hash.interface'
-import { Organization } from '../../organizations/entities/organization.entity'
 import { Practice } from '../../practices/entities/practice.entity'
 import { ProviderConfiguration } from '../../providers/entities/provider-configuration.entity'
 
@@ -11,10 +10,7 @@ export class Integration {
   id: string
 
   @Column()
-  practiceSlug: string
-
-  @Column()
-  organizationId: string
+  practiceId: string
 
   @Column()
   providerConfigurationId: string
@@ -29,14 +25,6 @@ export class Integration {
   )
   @Type(() => Practice)
   practice: Practice
-
-  @ManyToOne(
-    () => Organization,
-    organization => organization.integrations,
-    { onDelete: 'CASCADE' }
-  )
-  @Type(() => Organization)
-  organization: Organization
 
   @ManyToOne(
     () => ProviderConfiguration,

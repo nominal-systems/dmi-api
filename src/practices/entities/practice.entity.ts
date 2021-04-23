@@ -1,27 +1,25 @@
 import { Exclude, Type } from 'class-transformer'
 import {
-  BeforeInsert,
   Column,
   CreateDateColumn,
   Entity,
   ManyToOne,
   OneToMany,
-  PrimaryColumn,
+  PrimaryGeneratedColumn,
   UpdateDateColumn
 } from 'typeorm'
 import { Integration } from '../../integrations/entities/integration.entity'
 import { Organization } from '../../organizations/entities/organization.entity'
-import slugify from 'slugify'
 
 @Entity()
 export class Practice {
-  @PrimaryColumn()
-  slug: string
+  @PrimaryGeneratedColumn('uuid')
+  id: string
 
   @Column()
   name: string
 
-  @PrimaryColumn()
+  @Column()
   @Exclude()
   organizationId: string
 
@@ -44,9 +42,4 @@ export class Practice {
 
   @UpdateDateColumn()
   updatedAt: Date
-
-  @BeforeInsert()
-  generateSlugId (): void {
-    this.slug = slugify(this.name, { lower: true })
-  }
 }

@@ -5,7 +5,6 @@ import {
 } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { FindManyOptions, Repository } from 'typeorm'
-import { DBErrorCodes } from '../common/constants/db-error-codes.enum'
 import { Organization } from '../organizations/entities/organization.entity'
 import { CreatePracticeDto } from './dto/create-practice.dto'
 import { Practice } from './entities/practice.entity'
@@ -25,22 +24,22 @@ export class PracticesService {
     organization: Organization,
     practiceDto: CreatePracticeDto
   ): Promise<Practice> {
+    const existingPractice = await this.practicesRepository.findOne({
+      where: { name: practiceDto.name, organization }
+    })
+
+    if (existingPractice != null) {
+      throw new ConflictException(
+        `A practice with the name "${practiceDto.name}" already exists within the organization`
+      )
+    }
+
     const newPractice = this.practicesRepository.create({
       ...practiceDto,
       organization
     })
 
-    try {
-      await this.practicesRepository.save(newPractice)
-    } catch (error) {
-      if (error.code === DBErrorCodes.DuplicateEntry) {
-        throw new ConflictException(
-          `A practice with the name "${newPractice.name}" already exists within the organization`
-        )
-      }
-
-      throw error
-    }
+    await this.practicesRepository.save(newPractice)
 
     return newPractice
   }
@@ -48,7 +47,7 @@ export class PracticesService {
   async delete (organization: Organization, practiceId: string): Promise<void> {
     const practice = await this.practicesRepository.findOne({
       where: {
-        slug: practiceId,
+        id: practiceId,
         organization
       }
     })
@@ -57,6 +56,6 @@ export class PracticesService {
       throw new NotFoundException("The practice doesn't exist")
     }
 
-    await this.practicesRepository.delete(practice)
+    await this.practicesRepository.delete(practice.id)
   }
 }

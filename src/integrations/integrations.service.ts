@@ -1,13 +1,8 @@
-import {
-  ForbiddenException,
-  Inject,
-  Injectable,
-  NotFoundException
-} from '@nestjs/common'
+import { Inject, Injectable, NotFoundException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { ClientProxy } from '@nestjs/microservices'
 import { InjectRepository } from '@nestjs/typeorm'
-import { FindManyOptions, Repository } from 'typeorm'
+import { FindManyOptions, Repository, SelectQueryBuilder } from 'typeorm'
 import { FindOneOfTypeOptions } from '../common/typings/find-one-of-type-options.interface'
 import {
   decryptProviderConfigAndIntegrationOpts,
@@ -56,7 +51,6 @@ export class IntegrationsService {
   }
 
   async create (
-    organizationId: string,
     createIntegrationDto: CreateIntegrationDto
   ): Promise<Integration> {
     try {
@@ -66,8 +60,7 @@ export class IntegrationsService {
       )
 
       const newIntegration = this.integrationsRepository.create({
-        ...createIntegrationDto,
-        organizationId: organizationId
+        ...createIntegrationDto
       })
 
       await this.integrationsRepository.save(newIntegration)
@@ -124,12 +117,15 @@ export class IntegrationsService {
   ): Promise<void> {
     const integration = await this.findOne({
       id: integrationId,
-      options: { relations: ['providerConfiguration'] }
+      options: {
+        relations: ['providerConfiguration'],
+        where: (qb: SelectQueryBuilder<Integration>) => {
+          qb.where('providerConfiguration.organizationId = :organizationId', {
+            organizationId: organization.id
+          })
+        }
+      }
     })
-
-    if (integration.organizationId !== organization.id) {
-      throw new ForbiddenException("You don't have access to this resource")
-    }
 
     const { message, messagePattern } = ieMessageBuilder(
       integration.providerConfiguration.diagnosticProviderId,
