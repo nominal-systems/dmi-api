@@ -3,7 +3,7 @@ import { AppConfig } from './config.interface'
 export default (): AppConfig => ({
   nodeEnv: process.env.NODE_ENV ?? 'development',
   port: Number(process.env.PORT ?? 3000),
-  secretKey: process.env.SECRET_KEY,
+  secretKey: process.env.SECRET_KEY ?? '',
   activeMQ: {
     protocol: process.env.ACTIVEMQ_PROTOCOL ?? 'mqtt',
     hostname: process.env.ACTIVEMQ_HOSTNAME ?? 'localhost',

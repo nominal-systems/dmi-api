@@ -4,8 +4,8 @@ import { Hash } from '../typings/hash.interface'
 import { isJson, isObject, isString } from './shared.utils'
 
 export interface EncryptedProviderConfigAndIntegrationOptsArgs {
-  providerConfigurationOptions?: Hash
-  integrationOptions?: Hash
+  providerConfigurationOptions?: any
+  integrationOptions?: any
   secretKey: string
 }
 
@@ -60,26 +60,4 @@ export function decrypt (hash: Hash, secretKey: string): string {
   }
 
   return decryptedText
-}
-
-export function decryptProviderConfigAndIntegrationOpts ({
-  providerConfigurationOptions,
-  integrationOptions,
-  secretKey
-}: EncryptedProviderConfigAndIntegrationOptsArgs): DecryptedProviderConfigAndIntegrationOpts {
-  if (providerConfigurationOptions?.iv != null) {
-    providerConfigurationOptions = decrypt(
-      providerConfigurationOptions,
-      secretKey
-    ) as any
-  }
-
-  if (integrationOptions?.iv != null) {
-    integrationOptions = decrypt(integrationOptions, secretKey) as any
-  }
-
-  return {
-    providerConfigurationOptions,
-    integrationOptions
-  } as any
 }

@@ -4,13 +4,9 @@ import { ClientProxy } from '@nestjs/microservices'
 import { InjectRepository } from '@nestjs/typeorm'
 import { FindManyOptions, Repository, SelectQueryBuilder } from 'typeorm'
 import { FindOneOfTypeOptions } from '../common/typings/find-one-of-type-options.interface'
-import {
-  decryptProviderConfigAndIntegrationOpts,
-  encrypt
-} from '../common/utils/crypto.utils'
+import { encrypt } from '../common/utils/crypto.utils'
 import ieMessageBuilder from '../common/utils/ieMessageBuilder'
 import { Organization } from '../organizations/entities/organization.entity'
-import { OrganizationsService } from '../organizations/organizations.service'
 import { CreateIntegrationDto } from './dtos/create-integration.dto'
 import { Integration } from './entities/integration.entity'
 
@@ -22,8 +18,6 @@ export class IntegrationsService {
     private readonly configService: ConfigService,
     @InjectRepository(Integration)
     private readonly integrationsRepository: Repository<Integration>,
-    @Inject(OrganizationsService)
-    private readonly organizationsService: OrganizationsService,
     @Inject('ACTIVEMQ') private readonly client: ClientProxy
   ) {
     this.secretKey = this.configService.get('secretKey') ?? ''
@@ -74,22 +68,15 @@ export class IntegrationsService {
         options: { relations: ['providerConfiguration'] }
       })
 
-      const decryptedOptions = decryptProviderConfigAndIntegrationOpts({
-        integrationOptions,
-        providerConfigurationOptions:
-          providerConfiguration.providerConfigurationOptions,
-        secretKey: this.secretKey
-      })
-
       const { message, messagePattern } = ieMessageBuilder(
         providerConfiguration.diagnosticProviderId,
         {
           resource: 'integration',
           operation: 'create',
           data: {
-            integrationOptions: decryptedOptions.integrationOptions,
+            integrationOptions: integrationOptions,
             providerConfiguration:
-              decryptedOptions.providerConfigurationOptions,
+              providerConfiguration.providerConfigurationOptions,
             payload: {
               integrationId
             }
@@ -98,6 +85,8 @@ export class IntegrationsService {
       )
 
       this.client.emit(messagePattern, message)
+
+      newIntegration.integrationOptions = integrationOptions
 
       return newIntegration
     } catch (error) {
@@ -116,13 +105,22 @@ export class IntegrationsService {
     integrationId: string
   ): Promise<void> {
     const integration = await this.findOne({
-      id: integrationId,
       options: {
-        relations: ['providerConfiguration'],
         where: (qb: SelectQueryBuilder<Integration>) => {
-          qb.where('providerConfiguration.organizationId = :organizationId', {
-            organizationId: organization.id
-          })
+          qb.where('integration.id = :integrationId', {
+            integrationId
+          }).andWhere(
+            'providerConfiguration.organizationId = :organizationId',
+            {
+              organizationId: organization.id
+            }
+          )
+        },
+        join: {
+          alias: 'integration',
+          leftJoinAndSelect: {
+            providerConfiguration: 'integration.providerConfiguration'
+          }
         }
       }
     })

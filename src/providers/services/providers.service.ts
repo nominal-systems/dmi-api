@@ -9,22 +9,16 @@ import { ClientProxy } from '@nestjs/microservices'
 import { IntegrationsService } from '../../integrations/integrations.service'
 import ieMessageBuilder from '../../common/utils/ieMessageBuilder'
 import { ReferenceDataStatus } from '../../common/typings/reference-data-status.interface'
-import { decryptProviderConfigAndIntegrationOpts } from '../../common/utils/crypto.utils'
-import { ConfigService } from '@nestjs/config'
 
 @Injectable()
 export class ProvidersService {
   private readonly logger = new Logger(ProvidersService.name)
-  private readonly secretKey: string
 
   constructor (
-    private readonly configService: ConfigService,
     @Inject(IntegrationsService)
     private readonly integrationsService: IntegrationsService,
     @Inject('ACTIVEMQ') private readonly client: ClientProxy
-  ) {
-    this.secretKey = this.configService.get('secretKey') ?? ''
-  }
+  ) {}
 
   async findAll (): Promise<Provider[]> {
     return providersList
@@ -54,18 +48,12 @@ export class ProvidersService {
       }
     })
 
-    const decryptedOptions = decryptProviderConfigAndIntegrationOpts({
-      integrationOptions,
-      providerConfigurationOptions,
-      secretKey: this.secretKey
-    })
-
     const { message, messagePattern } = ieMessageBuilder(providerId, {
       resource: 'services',
       operation: 'list',
       data: {
-        providerConfiguration: decryptedOptions.providerConfigurationOptions,
-        integrationOptions: decryptedOptions.integrationOptions
+        integrationOptions,
+        providerConfiguration: providerConfigurationOptions
       }
     })
 
@@ -86,18 +74,12 @@ export class ProvidersService {
       }
     })
 
-    const decryptedOptions = decryptProviderConfigAndIntegrationOpts({
-      integrationOptions,
-      providerConfigurationOptions,
-      secretKey: this.secretKey
-    })
-
     const { message, messagePattern } = ieMessageBuilder(providerId, {
       resource: 'refs',
       operation: 'version',
       data: {
-        providerConfiguration: decryptedOptions.providerConfigurationOptions,
-        integrationOptions: decryptedOptions.integrationOptions
+        integrationOptions,
+        providerConfiguration: providerConfigurationOptions
       }
     })
 
@@ -115,18 +97,12 @@ export class ProvidersService {
       }
     })
 
-    const decryptedOptions = decryptProviderConfigAndIntegrationOpts({
-      integrationOptions,
-      providerConfigurationOptions,
-      secretKey: this.secretKey
-    })
-
     const { message, messagePattern } = ieMessageBuilder(providerId, {
       resource: 'breeds',
       operation: 'list',
       data: {
-        providerConfiguration: decryptedOptions.providerConfigurationOptions,
-        integrationOptions: decryptedOptions.integrationOptions
+        integrationOptions,
+        providerConfiguration: providerConfigurationOptions
       }
     })
 
@@ -147,18 +123,12 @@ export class ProvidersService {
       }
     })
 
-    const decryptedOptions = decryptProviderConfigAndIntegrationOpts({
-      integrationOptions,
-      providerConfigurationOptions,
-      secretKey: this.secretKey
-    })
-
     const { message, messagePattern } = ieMessageBuilder(providerId, {
       resource: 'genders',
       operation: 'list',
       data: {
-        providerConfiguration: decryptedOptions.providerConfigurationOptions,
-        integrationOptions: decryptedOptions.integrationOptions
+        integrationOptions,
+        providerConfiguration: providerConfigurationOptions
       }
     })
 
@@ -179,18 +149,12 @@ export class ProvidersService {
       }
     })
 
-    const decryptedOptions = decryptProviderConfigAndIntegrationOpts({
-      integrationOptions,
-      providerConfigurationOptions,
-      secretKey: this.secretKey
-    })
-
     const { message, messagePattern } = ieMessageBuilder(providerId, {
       resource: 'species',
       operation: 'list',
       data: {
-        providerConfiguration: decryptedOptions.providerConfigurationOptions,
-        integrationOptions: decryptedOptions.integrationOptions
+        integrationOptions,
+        providerConfiguration: providerConfigurationOptions
       }
     })
 

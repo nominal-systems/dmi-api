@@ -1,7 +1,7 @@
 export interface AppConfig {
   nodeEnv: string
   port: number
-  secretKey: string | undefined
+  secretKey: string
   activeMQ: ActiveMQConfig
   typeorm: TypeormConfig
   mongoose: MongooseConfig
