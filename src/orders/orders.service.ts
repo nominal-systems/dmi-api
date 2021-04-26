@@ -242,7 +242,6 @@ export class OrdersService {
     const externalOrdersExternalIds = orders.map(order => order.externalId)
     const existingOrders = await this.findAll({
       where: {
-        integrationId: integrationId,
         externalId: In(externalOrdersExternalIds)
       }
     })
