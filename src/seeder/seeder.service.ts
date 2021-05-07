@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common'
 import { IntegrationsService } from '../integrations/integrations.service'
 import { OrdersService } from '../orders/orders.service'
-import { OrganizationsService } from '../organizations/organizations.service'
+import { OrganizationsService } from '../organizations/services/organizations.service'
 import { PracticesService } from '../practices/practices.service'
 import { ProviderConfigurationsService } from '../providers/services/provider-configurations.service'
 import { UsersService } from '../users/users.service'

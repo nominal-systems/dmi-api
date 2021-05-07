@@ -1,6 +1,6 @@
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
-import { OrganizationsService } from '../../organizations/organizations.service'
+import { OrganizationsService } from '../../organizations/services/organizations.service'
 import { ClassType } from '../typings/class.type'
 
 @Injectable()

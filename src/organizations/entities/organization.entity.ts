@@ -58,6 +58,10 @@ export class Organization {
   @Type(() => ProviderConfiguration)
   providerConfigurations: ProviderConfiguration[]
 
+  @Column({ nullable: true })
+  @Exclude()
+  ownerId: string
+
   @CreateDateColumn()
   createdAt: Date
 
