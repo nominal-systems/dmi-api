@@ -19,6 +19,7 @@ import { ApiGuard } from '../common/guards/api.guard'
 import { RpcExceptionInterceptor } from '../common/interceptors/rpc-exception.interceptor'
 import { ExternalOrdersEventData } from '../common/typings/external-order-event-data.interface'
 import { Organization as OrganizationEntity } from '../organizations/entities/organization.entity'
+import { AddTestsToOrderDTO } from './dtos/add-tests-to-order.dto'
 import { CreateOrderDto } from './dtos/create-order.dto'
 import { OrderSearchQueryParams } from './dtos/order-search-queryparams.dto'
 import { Order } from './entities/order.entity'
@@ -44,6 +45,32 @@ export class OrdersController {
     @Param('id') id: string
   ): Promise<Order> {
     return await this.ordersService.getOrder(id, organization)
+  }
+
+  @Post(':id/tests')
+  async addTestsToOrder (
+    @Organization() organization: OrganizationEntity,
+    @Param('id') id: string,
+    @Body() { tests }: AddTestsToOrderDTO
+  ): Promise<Order> {
+    return await this.ordersService.addTestsToOrder({
+      orderId: id,
+      tests,
+      organizationId: organization.id
+    })
+  }
+
+  @Delete(':id/tests')
+  async cancelOrderTests (
+    @Organization() organization: OrganizationEntity,
+    @Param('id') id: string,
+    @Body() { tests }: AddTestsToOrderDTO
+  ): Promise<void> {
+    await this.ordersService.cancelOrderTests({
+      orderId: id,
+      tests,
+      organizationId: organization.id
+    })
   }
 
   @Get(':id/result.json')

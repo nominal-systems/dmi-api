@@ -20,6 +20,13 @@ import ieMessageBuilder from '../common/utils/ieMessageBuilder'
 import { ExternalOrdersEventData } from '../common/typings/external-order-event-data.interface'
 import { EventsService } from '../events/events.service'
 import { OrderSearchQueryParams } from './dtos/order-search-queryparams.dto'
+import { Test } from './entities/test.entity'
+
+interface OrderTestCancelOrAddParams {
+  orderId: string
+  tests: Test[]
+  organizationId: string
+}
 
 @Injectable()
 export class OrdersService {
@@ -289,6 +296,116 @@ export class OrdersService {
     await this.ordersRepository.delete(orderId)
 
     return response
+  }
+
+  async addTestsToOrder ({
+    orderId,
+    tests: newTests,
+    organizationId
+  }: OrderTestCancelOrAddParams): Promise<Order> {
+    const order = await this.findOne({
+      options: {
+        where: (qb: SelectQueryBuilder<Order>) => {
+          qb.where('order.id = :orderId', { orderId }).andWhere(
+            'providerConfiguration.organizationId = :organizationId',
+            {
+              organizationId
+            }
+          )
+        },
+        join: {
+          alias: 'order',
+          leftJoin: {
+            integration: 'order.integration',
+            providerConfiguration: 'integration.providerConfiguration'
+          }
+        }
+      }
+    })
+
+    const {
+      externalId,
+      integration: { providerConfiguration, integrationOptions }
+    } = order
+
+    const { message, messagePattern } = ieMessageBuilder(
+      providerConfiguration.diagnosticProviderId,
+      {
+        resource: 'orders',
+        operation: 'tests.add',
+        data: {
+          providerConfiguration:
+            providerConfiguration.providerConfigurationOptions,
+          integrationOptions,
+          payload: {
+            id: externalId,
+            tests: newTests
+          }
+        }
+      }
+    )
+
+    await this.client.send(messagePattern, message).toPromise()
+
+    return await this.ordersRepository.save({
+      ...order,
+      tests: [...order.tests, ...newTests]
+    })
+  }
+
+  async cancelOrderTests ({
+    orderId,
+    tests,
+    organizationId
+  }: OrderTestCancelOrAddParams): Promise<void> {
+    const order = await this.findOne({
+      options: {
+        where: (qb: SelectQueryBuilder<Order>) => {
+          qb.where('order.id = :orderId', { orderId }).andWhere(
+            'providerConfiguration.organizationId = :organizationId',
+            {
+              organizationId
+            }
+          )
+        },
+        join: {
+          alias: 'order',
+          leftJoin: {
+            integration: 'order.integration',
+            providerConfiguration: 'integration.providerConfiguration'
+          }
+        }
+      }
+    })
+
+    const {
+      externalId,
+      integration: { providerConfiguration, integrationOptions }
+    } = order
+
+    const { message, messagePattern } = ieMessageBuilder(
+      providerConfiguration.diagnosticProviderId,
+      {
+        resource: 'orders',
+        operation: 'tests.cancel',
+        data: {
+          providerConfiguration:
+            providerConfiguration.providerConfigurationOptions,
+          integrationOptions,
+          payload: {
+            id: externalId,
+            tests
+          }
+        }
+      }
+    )
+
+    await this.client.send(messagePattern, message).toPromise()
+
+    await this.ordersRepository.save({
+      ...order,
+      tests: [...order.tests, ...tests]
+    })
   }
 
   async handleExternalOrders ({
