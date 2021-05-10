@@ -7,6 +7,7 @@ import {
   HttpStatus,
   Param,
   Post,
+  Query,
   Res,
   UseGuards,
   UseInterceptors
@@ -19,6 +20,7 @@ import { RpcExceptionInterceptor } from '../common/interceptors/rpc-exception.in
 import { ExternalOrdersEventData } from '../common/typings/external-order-event-data.interface'
 import { Organization as OrganizationEntity } from '../organizations/entities/organization.entity'
 import { CreateOrderDto } from './dtos/create-order.dto'
+import { OrderSearchQueryParams } from './dtos/order-search-queryparams.dto'
 import { Order } from './entities/order.entity'
 import { OrdersService } from './orders.service'
 
@@ -27,6 +29,14 @@ import { OrdersService } from './orders.service'
 @UseInterceptors(RpcExceptionInterceptor)
 export class OrdersController {
   constructor (private readonly ordersService: OrdersService) {}
+
+  @Get()
+  async searchOrders (
+    @Organization() organization: OrganizationEntity,
+    @Query() searchQuery: OrderSearchQueryParams
+  ): Promise<Order[]> {
+    return await this.ordersService.searchOrders(organization.id, searchQuery)
+  }
 
   @Get(':id')
   async getOrder (

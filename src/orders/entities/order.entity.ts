@@ -1,11 +1,13 @@
 import { Exclude, Type } from 'class-transformer'
 import {
   Column,
+  CreateDateColumn,
   Entity,
   JoinTable,
   ManyToMany,
   ManyToOne,
-  PrimaryGeneratedColumn
+  PrimaryGeneratedColumn,
+  UpdateDateColumn
 } from 'typeorm'
 import { Integration } from '../../integrations/entities/integration.entity'
 import { Client } from './client.entity'
@@ -63,4 +65,10 @@ export class Order {
   @Type(() => Veterinarian)
   @ManyToOne(() => Veterinarian, { cascade: true })
   veterinarian: Veterinarian
+
+  @CreateDateColumn()
+  createdAt: Date
+
+  @UpdateDateColumn()
+  updatedAt: Date
 }
