@@ -1,4 +1,9 @@
-import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common'
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  NotFoundException
+} from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
 import { OrganizationsService } from '../../organizations/services/organizations.service'
 import { ClassType } from '../typings/class.type'
@@ -25,11 +30,17 @@ export class ApiGuard implements CanActivate {
 
     if (apiKey == null) return false
 
-    const organization = await this.organizationsService.findOne({
-      options: { where: [{ prodKey: apiKey }, { testKey: apiKey }] }
-    })
+    let organization
 
-    if (organization == null) return false
+    try {
+      organization = await this.organizationsService.findOne({
+        options: { where: [{ prodKey: apiKey }, { testKey: apiKey }] }
+      })
+    } catch (error) {
+      if (error instanceof NotFoundException) return false
+
+      throw error
+    }
 
     const { testKey, prodKey, ...rest } = organization
 

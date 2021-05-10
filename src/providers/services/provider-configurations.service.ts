@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common'
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException
+} from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, FindManyOptions } from 'typeorm'
 import { Organization } from '../../organizations/entities/organization.entity'
@@ -7,6 +11,7 @@ import { ProviderConfiguration } from '../entities/provider-configuration.entity
 import * as createValidator from 'is-my-json-valid'
 import { ConfigService } from '@nestjs/config'
 import { encrypt } from '../../common/utils/crypto.utils'
+import { FindOneOfTypeOptions } from '../../common/typings/find-one-of-type-options.interface'
 
 @Injectable()
 export class ProviderConfigurationsService {
@@ -27,6 +32,21 @@ export class ProviderConfigurationsService {
     options?: FindManyOptions<ProviderConfiguration>
   ): Promise<ProviderConfiguration[]> {
     return await this.providerConfigurationRepository.find(options)
+  }
+
+  async findOne (
+    args: FindOneOfTypeOptions<ProviderConfiguration>
+  ): Promise<ProviderConfiguration> {
+    const providerConfig = await this.providerConfigurationRepository.findOne(
+      args.id,
+      args.options
+    )
+
+    if (providerConfig == null) {
+      throw new NotFoundException('The provider configuration was not found')
+    }
+
+    return providerConfig
   }
 
   async create (
@@ -73,5 +93,17 @@ export class ProviderConfigurationsService {
     return await this.providerConfigurationRepository.save(
       newProviderConfiguration
     )
+  }
+
+  async delete (
+    args: FindOneOfTypeOptions<ProviderConfiguration>
+  ): Promise<void> {
+    const providerConfig = await this.findOne(args)
+
+    if (providerConfig == null) {
+      throw new NotFoundException("The provider configuration doesn't exist")
+    }
+
+    await this.providerConfigurationRepository.delete(providerConfig.id)
   }
 }

@@ -41,6 +41,32 @@ export class IntegrationsController {
     })
   }
 
+  @Get(':id')
+  async getIntergation (
+    @Organization() organization: OrganizationEntity,
+    @Param('id') id: string
+  ): Promise<Integration> {
+    return await this.integrationsService.findOne({
+      options: {
+        where: (qb: SelectQueryBuilder<Integration>) => {
+          qb.where('integration.id = :id', { id }).andWhere(
+            'providerConfiguration.organizationId = :organizationId',
+            {
+              organizationId: organization.id
+            }
+          )
+        },
+        join: {
+          alias: 'integration',
+          leftJoinAndSelect: {
+            practice: 'integration.practice',
+            providerConfiguration: 'integration.providerConfiguration'
+          }
+        }
+      }
+    })
+  }
+
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async createIntegration (

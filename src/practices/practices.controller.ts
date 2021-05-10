@@ -33,6 +33,22 @@ export class PracticesController {
     })
   }
 
+  @Get(':id')
+  async getPractice (
+    @Organization() organization: OrganizationEntity,
+    @Param('id') id: string
+  ): Promise<Practice> {
+    return await this.practicesService.findOne({
+      options: {
+        where: {
+          id,
+          organizationId: organization.id
+        },
+        relations: ['integrations']
+      }
+    })
+  }
+
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async createPractice (
