@@ -22,6 +22,7 @@ import { Organization as OrganizationEntity } from '../organizations/entities/or
 import { AddTestsToOrderDTO } from './dtos/add-tests-to-order.dto'
 import { CreateOrderDto } from './dtos/create-order.dto'
 import { OrderSearchQueryParams } from './dtos/order-search-queryparams.dto'
+import { OrderTestCancelPathParams } from './dtos/order-test-cancel-path-params.dto'
 import { Order } from './entities/order.entity'
 import { OrdersService } from './orders.service'
 
@@ -60,15 +61,14 @@ export class OrdersController {
     })
   }
 
-  @Delete(':id/tests')
+  @Delete(':id/tests/:testCode')
   async cancelOrderTests (
     @Organization() organization: OrganizationEntity,
-    @Param('id') id: string,
-    @Body() { tests }: AddTestsToOrderDTO
+    @Param() { id, testCode }: OrderTestCancelPathParams
   ): Promise<void> {
     await this.ordersService.cancelOrderTests({
       orderId: id,
-      tests,
+      tests: [{ code: testCode }],
       organizationId: organization.id
     })
   }
