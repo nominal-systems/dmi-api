@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -59,6 +60,17 @@ export class ProvidersController {
     )
   }
 
+  @Get('configurations')
+  async getAllConfigurations (
+    @Organization() organization: OrganizationEntity
+  ): Promise<ProviderConfiguration[]> {
+    return await this.providerConfigurationsService.findAll({
+      where: {
+        organizationId: organization.id
+      }
+    })
+  }
+
   @Get(':id/configurations')
   async getConfigurationsForProvider (
     @Organization() organization: OrganizationEntity,
@@ -84,6 +96,40 @@ export class ProvidersController {
       providerId,
       providerConfiguration
     )
+  }
+
+  @Get(':providerId/configurations/:configId')
+  async getProviderConfiguration (
+    @Organization() organization: OrganizationEntity,
+    @Param('providerId') providerId: string,
+    @Param('configId') configId: string
+  ): Promise<ProviderConfiguration> {
+    return await this.providerConfigurationsService.findOne({
+      options: {
+        where: {
+          id: configId,
+          organizationId: organization.id,
+          diagnosticProviderId: providerId
+        }
+      }
+    })
+  }
+
+  @Delete(':providerId/configurations/:configId')
+  async deleteProviderConfiguration (
+    @Organization() organization: OrganizationEntity,
+    @Param('providerId') providerId: string,
+    @Param('configId') configId: string
+  ): Promise<void> {
+    return await this.providerConfigurationsService.delete({
+      options: {
+        where: {
+          id: configId,
+          organizationId: organization.id,
+          diagnosticProviderId: providerId
+        }
+      }
+    })
   }
 
   @Get(':id/refs')

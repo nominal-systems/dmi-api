@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { FindManyOptions, Repository } from 'typeorm'
+import { FindOneOfTypeOptions } from '../common/typings/find-one-of-type-options.interface'
 import { Organization } from '../organizations/entities/organization.entity'
 import { CreatePracticeDto } from './dto/create-practice.dto'
 import { Practice } from './entities/practice.entity'
@@ -18,6 +19,19 @@ export class PracticesService {
 
   async findAll (options?: FindManyOptions<Practice>): Promise<Practice[]> {
     return await this.practicesRepository.find(options)
+  }
+
+  async findOne (args: FindOneOfTypeOptions<Practice>): Promise<Practice> {
+    const practice = await this.practicesRepository.findOne(
+      args.id,
+      args.options
+    )
+
+    if (practice == null) {
+      throw new NotFoundException('The practice was not found')
+    }
+
+    return practice
   }
 
   async create (
