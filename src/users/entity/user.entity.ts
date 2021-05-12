@@ -4,9 +4,11 @@ import {
   CreateDateColumn,
   Entity,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn
 } from 'typeorm'
+import { Invitation } from '../../organizations/entities/invitation.entity'
 import { Organization } from '../../organizations/entities/organization.entity'
 
 @Entity()
@@ -27,6 +29,12 @@ export class User {
     { onDelete: 'SET NULL' }
   )
   organization: Organization
+
+  @OneToMany(
+    () => Invitation,
+    invitation => invitation.invitee
+  )
+  invitations: Invitation[]
 
   @CreateDateColumn()
   createdAt: Date

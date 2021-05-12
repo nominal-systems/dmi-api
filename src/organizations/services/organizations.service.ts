@@ -5,14 +5,14 @@ import {
 } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { FindOneOfTypeOptions } from '../common/typings/find-one-of-type-options.interface'
-import keyGenerator from '../common/utils/keyGenerator'
-import { Integration } from '../integrations/entities/integration.entity'
-import { User } from '../users/entity/user.entity'
-import { UsersService } from '../users/users.service'
-import { CreateOrganizationDto } from './dtos/create-organization.dto'
-import { OrganizationKeys } from './dtos/organization-keys.dto'
-import { Organization } from './entities/organization.entity'
+import { FindOneOfTypeOptions } from '../../common/typings/find-one-of-type-options.interface'
+import keyGenerator from '../../common/utils/keyGenerator'
+import { Integration } from '../../integrations/entities/integration.entity'
+import { User } from '../../users/entity/user.entity'
+import { UsersService } from '../../users/users.service'
+import { CreateOrganizationDto } from '../dtos/create-organization.dto'
+import { OrganizationKeys } from '../dtos/organization-keys.dto'
+import { Organization } from '../entities/organization.entity'
 
 @Injectable()
 export class OrganizationsService {
