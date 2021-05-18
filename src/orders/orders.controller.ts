@@ -7,6 +7,7 @@ import {
   HttpStatus,
   Param,
   Post,
+  Query,
   Res,
   UseGuards,
   UseInterceptors
@@ -18,7 +19,10 @@ import { ApiGuard } from '../common/guards/api.guard'
 import { RpcExceptionInterceptor } from '../common/interceptors/rpc-exception.interceptor'
 import { ExternalOrdersEventData } from '../common/typings/external-order-event-data.interface'
 import { Organization as OrganizationEntity } from '../organizations/entities/organization.entity'
+import { AddTestsToOrderDTO } from './dtos/add-tests-to-order.dto'
 import { CreateOrderDto } from './dtos/create-order.dto'
+import { OrderSearchQueryParams } from './dtos/order-search-queryparams.dto'
+import { OrderTestCancelPathParams } from './dtos/order-test-cancel-path-params.dto'
 import { Order } from './entities/order.entity'
 import { OrdersService } from './orders.service'
 
@@ -28,12 +32,45 @@ import { OrdersService } from './orders.service'
 export class OrdersController {
   constructor (private readonly ordersService: OrdersService) {}
 
+  @Get()
+  async searchOrders (
+    @Organization() organization: OrganizationEntity,
+    @Query() searchQuery: OrderSearchQueryParams
+  ): Promise<Order[]> {
+    return await this.ordersService.searchOrders(organization.id, searchQuery)
+  }
+
   @Get(':id')
   async getOrder (
     @Organization() organization: OrganizationEntity,
     @Param('id') id: string
   ): Promise<Order> {
     return await this.ordersService.getOrder(id, organization)
+  }
+
+  @Post(':id/tests')
+  async addTestsToOrder (
+    @Organization() organization: OrganizationEntity,
+    @Param('id') id: string,
+    @Body() { tests }: AddTestsToOrderDTO
+  ): Promise<Order> {
+    return await this.ordersService.addTestsToOrder({
+      orderId: id,
+      tests,
+      organizationId: organization.id
+    })
+  }
+
+  @Delete(':id/tests/:testCode')
+  async cancelOrderTests (
+    @Organization() organization: OrganizationEntity,
+    @Param() { id, testCode }: OrderTestCancelPathParams
+  ): Promise<void> {
+    await this.ordersService.cancelOrderTests({
+      orderId: id,
+      tests: [{ code: testCode }],
+      organizationId: organization.id
+    })
   }
 
   @Get(':id/result.json')

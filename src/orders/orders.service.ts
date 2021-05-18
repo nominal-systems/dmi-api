@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common'
 import { ClientProxy } from '@nestjs/microservices'
 import { InjectRepository } from '@nestjs/typeorm'
-import { FindManyOptions, In, Repository } from 'typeorm'
+import { FindManyOptions, In, Repository, SelectQueryBuilder } from 'typeorm'
 import { IntegrationsService } from '../integrations/integrations.service'
 import { CreateOrderDto } from './dtos/create-order.dto'
 import { Order } from './entities/order.entity'
@@ -19,6 +19,14 @@ import { ConfigService } from '@nestjs/config'
 import ieMessageBuilder from '../common/utils/ieMessageBuilder'
 import { ExternalOrdersEventData } from '../common/typings/external-order-event-data.interface'
 import { EventsService } from '../events/events.service'
+import { OrderSearchQueryParams } from './dtos/order-search-queryparams.dto'
+import { Test } from './entities/test.entity'
+
+interface OrderTestCancelOrAddParams {
+  orderId: string
+  tests: Test[]
+  organizationId: string
+}
 
 @Injectable()
 export class OrdersService {
@@ -39,6 +47,61 @@ export class OrdersService {
 
   async findAll (options?: FindManyOptions<Order>): Promise<Order[]> {
     return await this.ordersRepository.find(options)
+  }
+
+  async searchOrders (
+    organizationId: string,
+    {
+      status,
+      provider_id: providerId,
+      date_start: dateStart,
+      date_end: dateEnd
+    }: OrderSearchQueryParams
+  ): Promise<Order[]> {
+    return await this.findAll({
+      where: (qb: SelectQueryBuilder<Order>) => {
+        qb.where('providerConfiguration.organizationId = :organizationId', {
+          organizationId: organizationId
+        })
+
+        if (status != null) {
+          qb.andWhere('order.status LIKE :status', {
+            status: `%${status}%`
+          })
+        }
+
+        if (providerId != null) {
+          qb.andWhere(
+            'providerConfiguration.diagnosticProviderId LIKE :providerId',
+            { providerId: `%${providerId}%` }
+          )
+        }
+
+        if (dateStart != null && dateEnd != null) {
+          qb.andWhere('order.createdAt BETWEEN :dateStart AND :dateEnd', {
+            dateStart,
+            dateEnd
+          })
+        } else {
+          if (dateStart != null && dateEnd == null) {
+            qb.andWhere('order.createdAt > :dateStart', {
+              dateStart
+            })
+          } else if (dateEnd != null) {
+            qb.andWhere('order.createdAt < :dateEnd', {
+              dateEnd
+            })
+          }
+        }
+      },
+      join: {
+        alias: 'order',
+        leftJoin: {
+          integration: 'order.integration',
+          providerConfiguration: 'integration.providerConfiguration'
+        }
+      }
+    })
   }
 
   async findOne (args: FindOneOfTypeOptions<Order>): Promise<Order> {
@@ -233,6 +296,116 @@ export class OrdersService {
     await this.ordersRepository.delete(orderId)
 
     return response
+  }
+
+  async addTestsToOrder ({
+    orderId,
+    tests: newTests,
+    organizationId
+  }: OrderTestCancelOrAddParams): Promise<Order> {
+    const order = await this.findOne({
+      options: {
+        where: (qb: SelectQueryBuilder<Order>) => {
+          qb.where('order.id = :orderId', { orderId }).andWhere(
+            'providerConfiguration.organizationId = :organizationId',
+            {
+              organizationId
+            }
+          )
+        },
+        join: {
+          alias: 'order',
+          leftJoin: {
+            integration: 'order.integration',
+            providerConfiguration: 'integration.providerConfiguration'
+          }
+        }
+      }
+    })
+
+    const {
+      externalId,
+      integration: { providerConfiguration, integrationOptions }
+    } = order
+
+    const { message, messagePattern } = ieMessageBuilder(
+      providerConfiguration.diagnosticProviderId,
+      {
+        resource: 'orders',
+        operation: 'tests.add',
+        data: {
+          providerConfiguration:
+            providerConfiguration.providerConfigurationOptions,
+          integrationOptions,
+          payload: {
+            id: externalId,
+            tests: newTests
+          }
+        }
+      }
+    )
+
+    await this.client.send(messagePattern, message).toPromise()
+
+    return await this.ordersRepository.save({
+      ...order,
+      tests: [...order.tests, ...newTests]
+    })
+  }
+
+  async cancelOrderTests ({
+    orderId,
+    tests,
+    organizationId
+  }: OrderTestCancelOrAddParams): Promise<void> {
+    const order = await this.findOne({
+      options: {
+        where: (qb: SelectQueryBuilder<Order>) => {
+          qb.where('order.id = :orderId', { orderId }).andWhere(
+            'providerConfiguration.organizationId = :organizationId',
+            {
+              organizationId
+            }
+          )
+        },
+        join: {
+          alias: 'order',
+          leftJoin: {
+            integration: 'order.integration',
+            providerConfiguration: 'integration.providerConfiguration'
+          }
+        }
+      }
+    })
+
+    const {
+      externalId,
+      integration: { providerConfiguration, integrationOptions }
+    } = order
+
+    const { message, messagePattern } = ieMessageBuilder(
+      providerConfiguration.diagnosticProviderId,
+      {
+        resource: 'orders',
+        operation: 'tests.cancel',
+        data: {
+          providerConfiguration:
+            providerConfiguration.providerConfigurationOptions,
+          integrationOptions,
+          payload: {
+            id: externalId,
+            tests
+          }
+        }
+      }
+    )
+
+    await this.client.send(messagePattern, message).toPromise()
+
+    await this.ordersRepository.save({
+      ...order,
+      tests: [...order.tests, ...tests]
+    })
   }
 
   async handleExternalOrders ({
