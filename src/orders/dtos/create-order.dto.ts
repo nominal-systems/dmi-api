@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer'
 import { IsNotEmpty } from 'class-validator'
+import { Device } from '../entities/device.entity'
 
 export class CreateOrderDtoClient {
   id: string
@@ -48,4 +49,7 @@ export class CreateOrderDto {
 
   @Type(() => CreateOrderDtoClient)
   veterinarian: CreateOrderDtoClient
+
+  @Type(() => Device)
+  devices?: Device[]
 }
