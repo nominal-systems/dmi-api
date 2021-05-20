@@ -11,7 +11,6 @@ import {
 } from 'typeorm'
 import { Integration } from '../../integrations/entities/integration.entity'
 import { Client } from './client.entity'
-import { Device } from './device.entity'
 import { Patient } from './patient.entity'
 import { Test } from './test.entity'
 import { Veterinarian } from './veterinarian.entity'
@@ -63,10 +62,9 @@ export class Order {
   @JoinTable()
   tests: Test[]
 
-  @Type(() => Device)
-  @ManyToMany(() => Device, { cascade: true })
-  @JoinTable()
-  devices: Device[]
+  @Column('json')
+  @Type(() => String)
+  devices?: string[]
 
   @Type(() => Veterinarian)
   @ManyToOne(() => Veterinarian, { cascade: true })
