@@ -48,4 +48,7 @@ export class CreateOrderDto {
 
   @Type(() => CreateOrderDtoClient)
   veterinarian: CreateOrderDtoClient
+
+  @Type(() => String)
+  devices?: string[]
 }

@@ -62,6 +62,10 @@ export class Order {
   @JoinTable()
   tests: Test[]
 
+  @Column('json')
+  @Type(() => String)
+  devices?: string[]
+
   @Type(() => Veterinarian)
   @ManyToOne(() => Veterinarian, { cascade: true })
   veterinarian: Veterinarian
