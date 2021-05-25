@@ -2,6 +2,39 @@ import { Provider } from '../../common/typings/provider.interface'
 
 const providers: Provider[] = [
   {
+    id: 'antech',
+    description: 'Antech',
+    providerConfigurationUri: '/providers/antech/configurations',
+    providerConfigurationOptions: [
+      {
+        type: 'string',
+        name: 'baseUrl',
+        description: 'Base URL',
+        required: true
+      },
+      {
+        type: 'string',
+        name: 'UserName',
+        description: 'Antech API Username',
+        required: true
+      },
+      {
+        type: 'string',
+        name: 'Password',
+        description: 'Antech API Password',
+        required: true
+      }
+    ],
+    integrationOptions: [
+      {
+        type: 'string',
+        name: 'ClinicID',
+        description: "Clinic ID used to login to Antech's API",
+        required: true
+      }
+    ]
+  },
+  {
     id: 'idexx',
     description: 'IDEXX VetConnect Plus',
     providerConfigurationUri: '/providers/idexx/configurations',
