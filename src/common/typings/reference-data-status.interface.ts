@@ -1,5 +1,5 @@
 export interface ReferenceDataStatus {
-  genders: string
+  sexes: string
   species: string
   breeds: string
 }

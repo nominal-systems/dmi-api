@@ -16,7 +16,7 @@ export class CreateOrderDtoPatient {
   lastName: string
   firstName: string
   species: string
-  gender: string
+  sex: string
   birthdate: string
   breed: string
   weight: number

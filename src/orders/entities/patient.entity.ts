@@ -15,7 +15,7 @@ export class Patient {
   species: string
 
   @Column()
-  gender: string
+  sex: string
 
   @Column()
   birthdate: string
