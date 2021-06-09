@@ -14,7 +14,7 @@ import {
 import { Organization } from '../common/decorators/organization.decorator'
 import { ApiGuard } from '../common/guards/api.guard'
 import { Breeds } from '../common/typings/breeds.interface'
-import { Genders } from '../common/typings/gender.interface'
+import { Sexes } from '../common/typings/sexes.interface'
 import { ProviderService } from '../common/typings/provider-services.interface'
 import { Provider } from '../common/typings/provider.interface'
 import { ReferenceDataStatus } from '../common/typings/reference-data-status.interface'
@@ -148,12 +148,12 @@ export class ProvidersController {
     return await this.providersService.getBreeds(providerId, integrationId)
   }
 
-  @Get(':id/refs/genders')
-  async getGenders (
+  @Get(':id/refs/sexes')
+  async getSexes (
     @Param('id') providerId: string,
     @Query() { integrationId }: ReferenceDataQueryParams
-  ): Promise<Genders> {
-    return await this.providersService.getGenders(providerId, integrationId)
+  ): Promise<Sexes> {
+    return await this.providersService.getSexes(providerId, integrationId)
   }
 
   @Get(':id/refs/species')

@@ -3,7 +3,7 @@ import providersList from '../constants/provider-list.constant'
 import { ProviderService } from '../../common/typings/provider-services.interface'
 import { Provider } from '../../common/typings/provider.interface'
 import { Breeds } from '../../common/typings/breeds.interface'
-import { Genders } from '../../common/typings/gender.interface'
+import { Sexes } from '../../common/typings/sexes.interface'
 import { Species } from '../../common/typings/species.interface'
 import { ClientProxy } from '@nestjs/microservices'
 import { IntegrationsService } from '../../integrations/integrations.service'
@@ -109,10 +109,10 @@ export class ProvidersService {
     return await this.client.send(messagePattern, message).toPromise()
   }
 
-  async getGenders (
+  async getSexes (
     providerId: string,
     integrationId: string
-  ): Promise<Genders> {
+  ): Promise<Sexes> {
     const {
       providerConfiguration: { providerConfigurationOptions },
       integrationOptions
@@ -124,7 +124,7 @@ export class ProvidersService {
     })
 
     const { message, messagePattern } = ieMessageBuilder(providerId, {
-      resource: 'genders',
+      resource: 'sexes',
       operation: 'list',
       data: {
         integrationOptions,

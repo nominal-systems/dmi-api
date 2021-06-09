@@ -114,7 +114,7 @@ For example, the event object generated to create an Order for Zoetis could look
         "lastName": "Snow",
         "firstname": "John",
         "species": "CANINE",
-        "gender": "FEMALE_INTACT",
+        "sex": "FEMALE_INTACT",
         "birthdate": "2020-10-10",
         "breed": "BOXER",
         "weight": 10.0,

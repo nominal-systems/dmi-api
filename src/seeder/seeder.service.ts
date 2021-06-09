@@ -190,7 +190,7 @@ export class SeederService {
           patient: {
             ...this.generateIdAndFirstLastName(),
             species: 'CANINE',
-            gender: 'FEMALE_INTACT',
+            sex: 'FEMALE_INTACT',
             birthdate: faker.date.past().toISOString(),
             breed: 'BOXER',
             weight: faker.random.number({ min: 6, max: 120 }),
