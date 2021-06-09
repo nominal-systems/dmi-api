@@ -218,6 +218,7 @@ export class OrdersService {
     })
 
     const order = this.ordersRepository.create(createOrderDto)
+    await this.ordersRepository.save(order)
 
     const { providerConfiguration, integrationOptions } = integration
     const {
@@ -239,11 +240,16 @@ export class OrdersService {
         }
       )
 
-      const response = await this.client
-        .send(messagePattern, message)
-        .toPromise()
+      try {
+        const response = await this.client
+          .send(messagePattern, message)
+          .toPromise()
 
-      Object.assign(order, response)
+        Object.assign(order, response)
+      } catch (error) {
+        await this.ordersRepository.remove(order)
+        throw error
+      }
     }
 
     await this.ordersRepository.save(order)

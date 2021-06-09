@@ -20,7 +20,7 @@ export class Order {
   @PrimaryGeneratedColumn('uuid')
   id: string
 
-  @Column()
+  @Column({ nullable: true })
   externalId: string
 
   @Column()
@@ -41,7 +41,7 @@ export class Order {
   @Column({ nullable: true })
   submissionUri: string
 
-  @Column()
+  @Column({ nullable: true })
   status: string
 
   @Type(() => Integration)
