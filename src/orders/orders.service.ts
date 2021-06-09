@@ -376,9 +376,10 @@ export class OrdersService {
         },
         join: {
           alias: 'order',
-          leftJoin: {
+          leftJoinAndSelect: {
             integration: 'order.integration',
-            providerConfiguration: 'integration.providerConfiguration'
+            providerConfiguration: 'integration.providerConfiguration',
+            tests: 'order.tests'
           }
         }
       }
