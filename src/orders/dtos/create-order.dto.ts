@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer'
-import { IsNotEmpty } from 'class-validator'
+import { IsNotEmpty, IsOptional } from 'class-validator'
 
 export class CreateOrderDtoClient {
   id: string
@@ -50,5 +50,6 @@ export class CreateOrderDto {
   veterinarian: CreateOrderDtoClient
 
   @Type(() => String)
+  @IsOptional()
   devices?: string[]
 }

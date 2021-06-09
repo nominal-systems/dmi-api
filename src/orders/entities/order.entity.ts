@@ -62,7 +62,7 @@ export class Order {
   @JoinTable()
   tests: Test[]
 
-  @Column('json')
+  @Column('json', { nullable: true })
   @Type(() => String)
   devices?: string[]
 
