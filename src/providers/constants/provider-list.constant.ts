@@ -92,25 +92,18 @@ const providers: Provider[] = [
       },
       {
         type: 'string',
-        name: 'partnerId',
-        description: 'Partner ID',
+        name: 'clientId',
+        description: 'FUSE Client ID',
         required: true
       },
       {
         type: 'string',
-        name: 'partnerToken',
-        description: 'Partner Token',
+        name: 'clientPassword',
+        description: 'FUSE Client Password',
         required: true
       }
     ],
-    integrationOptions: [
-      {
-        type: 'string',
-        name: 'clientId',
-        description: 'FUSE Client ID',
-        required: true
-      }
-    ]
+    integrationOptions: []
   },
   {
     id: 'demo',

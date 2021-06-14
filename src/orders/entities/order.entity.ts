@@ -26,13 +26,13 @@ export class Order {
   @Column()
   integrationId: string
 
-  @Column()
+  @Column({ nullable: true })
   notes: string
 
-  @Column()
+  @Column({ nullable: true })
   technician: string
 
-  @Column()
+  @Column({ default: false })
   editable: boolean
 
   @Column({ nullable: true })
