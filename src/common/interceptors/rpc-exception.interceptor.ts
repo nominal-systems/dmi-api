@@ -3,7 +3,8 @@ import {
   NestInterceptor,
   ExecutionContext,
   CallHandler,
-  HttpException
+  HttpException,
+  HttpStatus
 } from '@nestjs/common'
 import { RpcException } from '@nestjs/microservices'
 import { Observable, throwError } from 'rxjs'
@@ -15,11 +16,15 @@ export class RpcExceptionInterceptor implements NestInterceptor {
     return next.handle().pipe(
       catchError(err => {
         if (err.type != null && err.type === RpcException.name) {
+          if (
+            err.response?.statusCode != null &&
+            err.response?.message != null
+          ) {
+            return throwError(new HttpException(err.response, err.status))
+          }
+
           return throwError(
-            new HttpException(
-              { type: RpcException.name, errors: err.errors },
-              err.statusCode
-            )
+            new HttpException(err, HttpStatus.INTERNAL_SERVER_ERROR)
           )
         }
 

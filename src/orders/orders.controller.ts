@@ -9,14 +9,12 @@ import {
   Post,
   Query,
   Res,
-  UseGuards,
-  UseInterceptors
+  UseGuards
 } from '@nestjs/common'
 import { EventPattern } from '@nestjs/microservices'
 import { DisableGuards } from '../common/decorators/disable-guards.decorator'
 import { Organization } from '../common/decorators/organization.decorator'
 import { ApiGuard } from '../common/guards/api.guard'
-import { RpcExceptionInterceptor } from '../common/interceptors/rpc-exception.interceptor'
 import { ExternalOrdersEventData } from '../common/typings/external-order-event-data.interface'
 import { Organization as OrganizationEntity } from '../organizations/entities/organization.entity'
 import { AddTestsToOrderDTO } from './dtos/add-tests-to-order.dto'
@@ -28,7 +26,6 @@ import { OrdersService } from './orders.service'
 
 @Controller('orders')
 @UseGuards(ApiGuard)
-@UseInterceptors(RpcExceptionInterceptor)
 export class OrdersController {
   constructor (private readonly ordersService: OrdersService) {}
 
