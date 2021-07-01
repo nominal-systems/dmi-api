@@ -8,7 +8,6 @@ import {
   Param,
   Post,
   Query,
-  Res,
   UseGuards
 } from '@nestjs/common'
 import { EventPattern } from '@nestjs/microservices'
@@ -81,19 +80,9 @@ export class OrdersController {
   @Get(':id/result.pdf')
   async getOrderResultInPDF (
     @Organization() organization: OrganizationEntity,
-    @Param('id') id: string,
-    @Res({ passthrough: true }) res
+    @Param('id') id: string
   ): Promise<any> {
-    const pdfStream = await this.ordersService.getOrderResults(
-      organization,
-      id,
-      'pdf'
-    )
-
-    return res
-      .type('application/pdf')
-      .header('Content-Disposition', 'attachment; filename=result.pdf')
-      .send(pdfStream)
+    return await this.ordersService.getOrderResults(organization, id, 'pdf')
   }
 
   @Post()

@@ -13,8 +13,6 @@ import { CreateOrderDto } from './dtos/create-order.dto'
 import { Order } from './entities/order.entity'
 import { FindOneOfTypeOptions } from '../common/typings/find-one-of-type-options.interface'
 import { Organization } from '../organizations/entities/organization.entity'
-import * as fs from 'fs'
-import * as path from 'path'
 import { ConfigService } from '@nestjs/config'
 import ieMessageBuilder from '../common/utils/ieMessageBuilder'
 import { ExternalOrdersEventData } from '../common/typings/external-order-event-data.interface'
@@ -188,26 +186,21 @@ export class OrdersService {
       throw new ForbiddenException("You don't have permissions to do that")
     }
 
-    if (format === 'json') {
-      const { message, messagePattern } = ieMessageBuilder(
-        providerConfiguration.diagnosticProviderId,
-        {
-          resource: 'orders',
-          operation: 'results',
-          data: {
-            payload: { id: externalId },
-            integrationOptions,
-            providerConfiguration:
-              providerConfiguration.providerConfigurationOptions
-          }
+    const { message, messagePattern } = ieMessageBuilder(
+      providerConfiguration.diagnosticProviderId,
+      {
+        resource: 'orders',
+        operation: format === 'json' ? 'results' : 'results.pdf',
+        data: {
+          payload: { id: externalId },
+          integrationOptions,
+          providerConfiguration:
+            providerConfiguration.providerConfigurationOptions
         }
-      )
+      }
+    )
 
-      return await this.client.send(messagePattern, message).toPromise()
-    } else if (format === 'pdf') {
-      const filePath = path.join(__dirname, '../../assets', 'Random PDF.pdf')
-      return fs.createReadStream(filePath)
-    }
+    return await this.client.send(messagePattern, message).toPromise()
   }
 
   async createOrder (createOrderDto: CreateOrderDto): Promise<Order> {
