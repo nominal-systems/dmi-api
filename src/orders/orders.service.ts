@@ -21,6 +21,7 @@ import { ExternalOrdersEventData } from '../common/typings/external-order-event-
 import { EventsService } from '../events/events.service'
 import { OrderSearchQueryParams } from './dtos/order-search-queryparams.dto'
 import { Test } from './entities/test.entity'
+import { externalOrderStatusMapper } from '../common/utils/order-status-map.helper'
 
 interface OrderTestCancelOrAddParams {
   orderId: string
@@ -245,7 +246,9 @@ export class OrdersService {
           .send(messagePattern, message)
           .toPromise()
 
-        Object.assign(order, response)
+        Object.assign(order, response, {
+          status: externalOrderStatusMapper(response.status)
+        })
       } catch (error) {
         await this.ordersRepository.remove(order)
         throw error
@@ -442,7 +445,7 @@ export class OrdersService {
 
       updatedOrders.push({
         ...existingOrder,
-        status: externalOrder.status
+        status: externalOrderStatusMapper(externalOrder.status)
       })
     }
 
@@ -454,7 +457,8 @@ export class OrdersService {
       .map(order => {
         return {
           ...order,
-          integrationId
+          integrationId,
+          status: externalOrderStatusMapper(order.status)
         }
       })
     const newOrders = this.ordersRepository.create(nonExistingOrders)
