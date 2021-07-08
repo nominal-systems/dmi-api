@@ -13,6 +13,8 @@ import * as path from 'path'
 import { MongooseModule } from '@nestjs/mongoose'
 import { SeederModule } from './seeder/seeder.module'
 import { AppController } from './app.controller'
+import { APP_INTERCEPTOR } from '@nestjs/core'
+import { RpcExceptionInterceptor } from './common/interceptors/rpc-exception.interceptor'
 
 @Module({
   imports: [
@@ -48,6 +50,12 @@ import { AppController } from './app.controller'
     EventsModule,
     SeederModule
   ],
-  controllers: [AppController]
+  controllers: [AppController],
+  providers: [
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: RpcExceptionInterceptor
+    }
+  ]
 })
 export class AppModule {}

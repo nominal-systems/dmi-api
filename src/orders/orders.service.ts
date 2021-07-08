@@ -13,14 +13,13 @@ import { CreateOrderDto } from './dtos/create-order.dto'
 import { Order } from './entities/order.entity'
 import { FindOneOfTypeOptions } from '../common/typings/find-one-of-type-options.interface'
 import { Organization } from '../organizations/entities/organization.entity'
-import * as fs from 'fs'
-import * as path from 'path'
 import { ConfigService } from '@nestjs/config'
 import ieMessageBuilder from '../common/utils/ieMessageBuilder'
 import { ExternalOrdersEventData } from '../common/typings/external-order-event-data.interface'
 import { EventsService } from '../events/events.service'
 import { OrderSearchQueryParams } from './dtos/order-search-queryparams.dto'
 import { Test } from './entities/test.entity'
+import { externalOrderStatusMapper } from '../common/utils/order-status-map.helper'
 
 interface OrderTestCancelOrAddParams {
   orderId: string
@@ -187,26 +186,21 @@ export class OrdersService {
       throw new ForbiddenException("You don't have permissions to do that")
     }
 
-    if (format === 'json') {
-      const { message, messagePattern } = ieMessageBuilder(
-        providerConfiguration.diagnosticProviderId,
-        {
-          resource: 'orders',
-          operation: 'results',
-          data: {
-            payload: { id: externalId },
-            integrationOptions,
-            providerConfiguration:
-              providerConfiguration.providerConfigurationOptions
-          }
+    const { message, messagePattern } = ieMessageBuilder(
+      providerConfiguration.diagnosticProviderId,
+      {
+        resource: 'orders',
+        operation: format === 'json' ? 'results' : 'results.pdf',
+        data: {
+          payload: { id: externalId },
+          integrationOptions,
+          providerConfiguration:
+            providerConfiguration.providerConfigurationOptions
         }
-      )
+      }
+    )
 
-      return await this.client.send(messagePattern, message).toPromise()
-    } else if (format === 'pdf') {
-      const filePath = path.join(__dirname, '../../assets', 'Random PDF.pdf')
-      return fs.createReadStream(filePath)
-    }
+    return await this.client.send(messagePattern, message).toPromise()
   }
 
   async createOrder (createOrderDto: CreateOrderDto): Promise<Order> {
@@ -245,7 +239,9 @@ export class OrdersService {
           .send(messagePattern, message)
           .toPromise()
 
-        Object.assign(order, response)
+        Object.assign(order, response, {
+          status: externalOrderStatusMapper(response.status)
+        })
       } catch (error) {
         await this.ordersRepository.remove(order)
         throw error
@@ -442,7 +438,7 @@ export class OrdersService {
 
       updatedOrders.push({
         ...existingOrder,
-        status: externalOrder.status
+        status: externalOrderStatusMapper(externalOrder.status)
       })
     }
 
@@ -454,7 +450,8 @@ export class OrdersService {
       .map(order => {
         return {
           ...order,
-          integrationId
+          integrationId,
+          status: externalOrderStatusMapper(order.status)
         }
       })
     const newOrders = this.ordersRepository.create(nonExistingOrders)
