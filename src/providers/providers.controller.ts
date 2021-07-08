@@ -116,6 +116,7 @@ export class ProvidersController {
   }
 
   @Delete(':providerId/configurations/:configId')
+  @HttpCode(HttpStatus.NO_CONTENT)
   async deleteProviderConfiguration (
     @Organization() organization: OrganizationEntity,
     @Param('providerId') providerId: string,
