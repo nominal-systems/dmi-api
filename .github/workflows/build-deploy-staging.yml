@@ -37,7 +37,7 @@ jobs:
           registry: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-2.amazonaws.com
           repo: ${{ env.DOCKER_IMAGE_NAME }}
           tags: latest,${{ github.sha }}
-      - name: Dispatch API update event
+      - name: Dispatch api-updated event to nominal-systems/dmi
         uses: peter-evans/repository-dispatch@v1
         with:
           token: ${{ secrets.REPO_ACCESS_TOKEN }}
