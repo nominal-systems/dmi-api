@@ -429,16 +429,15 @@ export class OrdersService {
         order => order.externalId === existingOrder.externalId
       )
 
-      if (
-        externalOrder == null ||
-        existingOrder.status === externalOrder.status
-      ) {
-        continue
-      }
+      if (externalOrder == null) continue
+
+      const mappedStatus = externalOrderStatusMapper(externalOrder.status)
+
+      if (existingOrder.status === mappedStatus) continue
 
       updatedOrders.push({
         ...existingOrder,
-        status: externalOrderStatusMapper(externalOrder.status)
+        status: mappedStatus
       })
     }
 
