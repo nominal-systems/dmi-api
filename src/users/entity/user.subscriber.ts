@@ -26,7 +26,11 @@ export class UserSubscriber implements EntitySubscriberInterface<User> {
     await this.hashPassword(event)
   }
 
-  private async hashPassword (event: InsertEvent<User>): Promise<void> {
+  private async hashPassword (
+    event: InsertEvent<User> | UpdateEvent<User>
+  ): Promise<void> {
+    if (event.entity == null || !(event.entity instanceof User)) return
+
     const { password } = event.entity
 
     if (password != null && !password.startsWith('$argon2id$v=')) {
