@@ -22,7 +22,7 @@ export class EventsService implements OnModuleInit {
     this.ordersService = this.moduleRef.get(OrdersService, { strict: false })
   }
 
-  async findAll (options: FilterQuery<Event> = {}): Promise<Event[]> {
+  async findAll (options: FilterQuery<EventDocument> = {}): Promise<Event[]> {
     return await this.eventModel.find(options, { __v: 0, _id: 0 }).lean()
   }
 
@@ -35,7 +35,7 @@ export class EventsService implements OnModuleInit {
     query: EventsQueryDto
   ): Promise<Event[]> {
     const { seq, practiceId } = query
-    const options: FilterQuery<Event> = { seq: { $gt: seq } }
+    const options: FilterQuery<EventDocument> = { seq: { $gt: seq } }
 
     if (practiceId != null) {
       const ordersForPractice = await this.ordersService.findAll({
