@@ -13,7 +13,7 @@ module.exports = {
     project: './tsconfig.json'
   },
   plugins: ['@typescript-eslint/eslint-plugin', '@typescript-eslint'],
-  ignorePatterns: ['.eslintrc.js'],
+  ignorePatterns: ['.eslintrc.js', 'migrations'],
   rules: {
     '@typescript-eslint/interface-name-prefix': 'off',
     '@typescript-eslint/explicit-module-boundary-types': 'off',

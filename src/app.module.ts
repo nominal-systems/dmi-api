@@ -9,7 +9,6 @@ import { IntegrationsModule } from './integrations/integrations.module'
 import { OrdersModule } from './orders/orders.module'
 import { EventsModule } from './events/events.module'
 import configuration from './config/configuration'
-import * as path from 'path'
 import { MongooseModule } from '@nestjs/mongoose'
 import { SeederModule } from './seeder/seeder.module'
 import { AppController } from './app.controller'
@@ -25,9 +24,7 @@ import { RpcExceptionInterceptor } from './common/interceptors/rpc-exception.int
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
-        ...configService.get('typeorm'),
-        entities: [path.join(__dirname, '/**/*.entity{.ts,.js}')],
-        dropSchema: false
+        ...configService.get('typeorm')
       }),
       inject: [ConfigService]
     }),
