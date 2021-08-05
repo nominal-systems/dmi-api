@@ -15,6 +15,7 @@ const typeormConfig: TypeOrmModuleOptions = {
   cli: {
       migrationsDir: 'migrations'
   },
+  logging: Boolean(process.env.DATABASE_LOGGING ?? false),
   dropSchema: false
 }
 

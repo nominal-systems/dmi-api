@@ -15,7 +15,6 @@ export class ProvidersService {
   private readonly logger = new Logger(ProvidersService.name)
 
   constructor (
-    @Inject(IntegrationsService)
     private readonly integrationsService: IntegrationsService,
     @Inject('ACTIVEMQ') private readonly client: ClientProxy
   ) {}
