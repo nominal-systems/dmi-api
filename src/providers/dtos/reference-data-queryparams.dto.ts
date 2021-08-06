@@ -1,6 +1,10 @@
-import { IsNotEmpty } from 'class-validator'
+import { IsNotEmpty, IsString, IsUUID } from 'class-validator'
+
+const baseMessage = 'The "integrationId" query parameter'
 
 export class ReferenceDataQueryParams {
-  @IsNotEmpty({ message: 'The "integrationId" query parameter is required' })
+  @IsNotEmpty({ message: `${baseMessage} is required` })
+  @IsString({ message: `${baseMessage} must be a string` })
+  @IsUUID()
   integrationId: string
 }

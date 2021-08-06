@@ -9,6 +9,7 @@ import { ClientProxy } from '@nestjs/microservices'
 import { IntegrationsService } from '../../integrations/integrations.service'
 import ieMessageBuilder from '../../common/utils/ieMessageBuilder'
 import { ReferenceDataStatus } from '../../common/typings/reference-data-status.interface'
+import { Device, Operation, Resource } from '@nominal-systems/dmi-engine-common'
 
 @Injectable()
 export class ProvidersService {
@@ -50,6 +51,32 @@ export class ProvidersService {
     const { message, messagePattern } = ieMessageBuilder(providerId, {
       resource: 'services',
       operation: 'list',
+      data: {
+        integrationOptions,
+        providerConfiguration: providerConfigurationOptions
+      }
+    })
+
+    return await this.client.send(messagePattern, message).toPromise()
+  }
+
+  async getDevices (
+    providerId: string,
+    integrationId: string
+  ): Promise<Device[]> {
+    const {
+      providerConfiguration: { providerConfigurationOptions },
+      integrationOptions
+    } = await this.integrationsService.findOne({
+      id: integrationId,
+      options: {
+        relations: ['providerConfiguration']
+      }
+    })
+
+    const { message, messagePattern } = ieMessageBuilder(providerId, {
+      resource: Resource.Devices,
+      operation: Operation.List,
       data: {
         integrationOptions,
         providerConfiguration: providerConfigurationOptions
@@ -108,10 +135,7 @@ export class ProvidersService {
     return await this.client.send(messagePattern, message).toPromise()
   }
 
-  async getSexes (
-    providerId: string,
-    integrationId: string
-  ): Promise<Sexes> {
+  async getSexes (providerId: string, integrationId: string): Promise<Sexes> {
     const {
       providerConfiguration: { providerConfigurationOptions },
       integrationOptions
