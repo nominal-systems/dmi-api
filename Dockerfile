@@ -2,7 +2,7 @@ FROM node:14-alpine as base
 WORKDIR /app
 ARG GHP_TOKEN
 
-COPY package*.json .
+COPY package*.json ./
 COPY .npmrc .
 RUN apk add --no-cache --virtual build-base
 
