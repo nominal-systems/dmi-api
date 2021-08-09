@@ -24,6 +24,7 @@ jobs:
           docker build . \
           --file Dockerfile \
           --target production \
+          --build-arg GHP_TOKEN=${{ secrets.GHP_TOKEN }} \
           --tag ${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -37,6 +38,7 @@ jobs:
           registry: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-2.amazonaws.com
           repo: ${{ env.DOCKER_IMAGE_NAME }}
           tags: latest,${{ github.sha }}
+          build_args: GHP_TOKEN=${{ secrets.GHP_TOKEN }}
       - name: Dispatch api-updated event to nominal-systems/dmi
         uses: peter-evans/repository-dispatch@v1
         with:
