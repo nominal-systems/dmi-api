@@ -24,6 +24,7 @@ import { ReferenceDataQueryParams } from './dtos/reference-data-queryparams.dto'
 import { ProviderConfiguration } from './entities/provider-configuration.entity'
 import { ProviderConfigurationsService } from './services/provider-configurations.service'
 import { ProvidersService } from './services/providers.service'
+import { Device } from '@nominal-systems/dmi-engine-common'
 
 @Controller('providers')
 @UseGuards(ApiGuard)
@@ -131,6 +132,14 @@ export class ProvidersController {
         }
       }
     })
+  }
+
+  @Get(':id/devices')
+  async getDevices (
+    @Param('id') providerId: string,
+    @Query() { integrationId }: ReferenceDataQueryParams
+  ): Promise<Device[]> {
+    return await this.providersService.getDevices(providerId, integrationId)
   }
 
   @Get(':id/refs')

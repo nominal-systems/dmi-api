@@ -1,13 +1,20 @@
 FROM node:14-alpine as base
 WORKDIR /app
-COPY package.json .
+ARG GHP_TOKEN
+
+COPY package*.json .
+COPY .npmrc .
 RUN apk add --no-cache --virtual build-base
+
 RUN npm install -g npm node-gyp && npm install
 RUN apk del build-base
 RUN wget https://github.com/eficode/wait-for/releases/latest/download/wait-for -O /wait-for
 RUN chmod +x /wait-for
+
 COPY . .
 RUN chmod +x ./scripts/wait-for-all.sh
+RUN rm .npmrc
+
 
 FROM base as seed
 ENV NODE_ENV=seed

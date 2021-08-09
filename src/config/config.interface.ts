@@ -1,9 +1,11 @@
+import { TypeOrmModuleOptions } from '@nestjs/typeorm'
+
 export interface AppConfig {
   nodeEnv: string
   port: number
   secretKey: string
   activeMQ: ActiveMQConfig
-  typeorm: TypeormConfig
+  typeorm: TypeOrmModuleOptions
   mongoose: MongooseConfig
 }
 
@@ -17,14 +19,4 @@ export interface ActiveMQConfig {
 
 export interface MongooseConfig {
   uri: string
-}
-
-export interface TypeormConfig {
-  type: string
-  host: string
-  port: number
-  username: string | undefined
-  password: string | undefined
-  database: string
-  synchronize: boolean
 }
