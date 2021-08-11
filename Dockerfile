@@ -1,40 +1,57 @@
+## STAGE: Base ##
 FROM node:14-alpine as base
 WORKDIR /app
 ARG GHP_TOKEN
 
-COPY package*.json ./
-COPY .npmrc .
-RUN apk add --no-cache --virtual build-base
+COPY package*.json .npmrc ./
 
-RUN npm install -g npm node-gyp && npm install
-RUN apk del build-base
-RUN wget https://github.com/eficode/wait-for/releases/latest/download/wait-for -O /wait-for
-RUN chmod +x /wait-for
+RUN apk add --no-cache --virtual build-base &&\
+    npm install -g npm node-gyp &&\ 
+    npm install &&\
+    apk del build-base &&\
+    npm un -g node-gyp &&\
+    rm -rf /var/cache/apk/*
+
+RUN wget https://github.com/eficode/wait-for/releases/latest/download/wait-for -O /wait-for &&\
+    chmod +x /wait-for
 
 COPY . .
-RUN chmod +x ./scripts/wait-for-all.sh
-RUN rm .npmrc
+
+RUN chmod +x ./scripts/wait-for-all.sh &&\
+    rm .npmrc
 
 
+## STAGE: Seed ##
 FROM base as seed
 ENV NODE_ENV=seed
 CMD ["npm", "run", "seed"]
 
-FROM base as development
+## STAGE: Development ##
+FROM node:14-alpine as development
 ENV NODE_ENV=development
+WORKDIR /app
+
+COPY --from=base /app /app
+
 VOLUME [ "/app" ]
 EXPOSE 3000
 CMD ["npm", "run", "start:dev"]
 
+## STAGE: Build ##
 FROM base as build
 ENV NODE_ENV=production
-RUN npm run build
 
-FROM build as production
+RUN npm run build &&\
+    npm prune --production
+
+## STAGE: Production ##
+FROM node:14-alpine as production
+WORKDIR /app
 ENV NODE_ENV=production
-COPY --from=build /app/dist .
-COPY --from=build /app/node_modules .
+
+COPY --from=build /app/dist dist
+COPY --from=build /app/node_modules node_modules
 COPY --from=build /app/package.json .
-RUN npm prune --production
+
 EXPOSE 3000
 CMD ["npm", "run", "start:prod"]
