@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards, UseInterceptors } from '@nestjs/common'
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, UseGuards, UseInterceptors } from '@nestjs/common'
 import { User } from '../common/decorators/user.decorator'
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard'
 import { CreateUserDto } from './dtos/create-user.dto'
@@ -21,6 +21,7 @@ export class UsersController {
   }
 
   @Post('authenticate')
+  @HttpCode(HttpStatus.OK)
   @UseInterceptors(new TransformInterceptor(TokenResponseDto))
   async authenticate (
     @Body() credentials: UserCredentialsDto
