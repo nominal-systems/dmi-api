@@ -20,6 +20,9 @@ export class Order {
   @PrimaryGeneratedColumn('uuid')
   id: string
 
+  @Column({ unique: true, length: 20, nullable: true })
+  antechShortId?: string
+
   @Column({ nullable: true })
   externalId: string
 

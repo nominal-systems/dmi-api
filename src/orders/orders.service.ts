@@ -20,6 +20,8 @@ import { EventsService } from '../events/events.service'
 import { OrderSearchQueryParams } from './dtos/order-search-queryparams.dto'
 import { Test } from './entities/test.entity'
 import { externalOrderStatusMapper } from '../common/utils/order-status-map.helper'
+import { ProviderId } from '@nominal-systems/dmi-engine-common'
+import generateAntechShortId from '../common/utils/generate-antech-short-id.util'
 
 interface OrderTestCancelOrAddParams {
   orderId: string
@@ -212,6 +214,14 @@ export class OrdersService {
     })
 
     const order = this.ordersRepository.create(createOrderDto)
+
+    if (
+      integration.providerConfiguration.diagnosticProviderId ===
+      ProviderId.AntechV3
+    ) {
+      order.antechShortId = generateAntechShortId(integration)
+    }
+
     await this.ordersRepository.save(order)
 
     const { providerConfiguration, integrationOptions } = integration
