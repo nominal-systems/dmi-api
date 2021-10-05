@@ -20,6 +20,7 @@ import { EventsService } from '../events/events.service'
 import { OrderSearchQueryParams } from './dtos/order-search-queryparams.dto'
 import { Test } from './entities/test.entity'
 import { externalOrderStatusMapper } from '../common/utils/order-status-map.helper'
+import { OrderStatus } from './constants/order-status.enum'
 
 interface OrderTestCancelOrAddParams {
   orderId: string
@@ -249,6 +250,12 @@ export class OrdersService {
     }
 
     await this.ordersRepository.save(order)
+
+    await this.eventsService.addEvent({
+      namespace: 'orders',
+      type: 'order:status',
+      value: { orderId: order.id, status: OrderStatus.ACCEPTED }
+    })
 
     await this.eventsService.addEvent({
       namespace: 'orders',
