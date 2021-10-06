@@ -227,7 +227,8 @@ export class SeederService {
         value: {
           orderId: order.id,
           status: 'completed'
-        }
+        },
+        integrationId: order.integrationId
       })
 
       events.push(event)

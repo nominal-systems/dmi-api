@@ -254,13 +254,15 @@ export class OrdersService {
     await this.eventsService.addEvent({
       namespace: 'orders',
       type: 'order:status',
-      value: { orderId: order.id, status: OrderStatus.ACCEPTED }
+      value: { orderId: order.id, status: OrderStatus.ACCEPTED },
+      integrationId: integration.id
     })
 
     await this.eventsService.addEvent({
       namespace: 'orders',
       type: 'order:status',
-      value: { orderId: order.id, status: order.status }
+      value: { orderId: order.id, status: order.status },
+      integrationId: integration.id
     })
 
     return order
@@ -469,7 +471,8 @@ export class OrdersService {
       await this.eventsService.addEvent({
         namespace: 'orders',
         type: 'order:status',
-        value: { orderId: order.id, status: order.status }
+        value: { orderId: order.id, status: order.status },
+        integrationId: order.integrationId
       })
     }
   }

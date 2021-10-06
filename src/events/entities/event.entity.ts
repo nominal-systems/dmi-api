@@ -26,6 +26,9 @@ export class Event {
   @Prop({ type: mongoose.Schema.Types.Mixed })
   context: any
 
+  @Prop()
+  integrationId: string
+
   @Prop({ expires: '30d' })
   createdAt: Date
 }
