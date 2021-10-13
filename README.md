@@ -21,6 +21,9 @@ $ npm install
 # Development
 $ docker-compose -f docker-compose.dev.yml up -d
 
+# Development (MySQL and MongoDB only)
+$ docker-compose -f docker-compose.dev.yml up -d mongo mysql
+
 # Production
 $ docker-compose up -d
 ```
