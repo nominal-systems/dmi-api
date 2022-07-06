@@ -2,27 +2,42 @@ version: '3.9'
 
 services:
   api:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+      args:
+        GHP_TOKEN: ${GHP_TOKEN}
     ports:
       - '3000:3000'
     depends_on:
       - mysql
+      - mongo
+      - activemq
     env_file: .env
     environment:
-      DATABASE_HOST: mysql
+      DATABASE_HOST: 'mysql'
+      MONGO_URI: 'mongodb://mongo/diagnostic-modality-integration'
+      ACTIVEMQ_HOSTNAME: 'activemq'
     command: ['./scripts/wait-for-all.sh', 'npm run start:prod']
   mongo:
     image: mongo:4
-    volumes: 
+    volumes:
       - ./docker/mongo/data:/data/db
     ports:
       - '27017:27017'
   mysql:
     image: mysql:8
-    volumes: 
+    env_file: .env
+    volumes:
       - ./docker/mysql/data:/var/lib/mysql
     ports:
       - '3306:3306'
-    environment:
-      MYSQL_ROOT_PASSWORD: asdf1234
-      MYSQL_DATABASE: 'diagnostic-modality-integration'
+  activemq:
+    image: rmohr/activemq
+    env_file: .env
+    volumes:
+      - ./docker/activemq/data:/opt/activemq/data
+      - ./docker/activemq/conf:/opt/activemq/conf
+    ports:
+      - '1883:1883'

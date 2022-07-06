@@ -6,7 +6,7 @@ ARG GHP_TOKEN
 COPY package*.json .npmrc ./
 
 RUN apk add --no-cache --virtual build-base &&\
-    npm install -g npm node-gyp &&\ 
+    npm install -g npm node-gyp &&\
     npm install &&\
     apk del build-base &&\
     npm un -g node-gyp &&\
@@ -49,6 +49,7 @@ FROM node:14-alpine as production
 WORKDIR /app
 ENV NODE_ENV=production
 
+COPY --from=build /app/scripts scripts
 COPY --from=build /app/dist dist
 COPY --from=build /app/node_modules node_modules
 COPY --from=build /app/package.json .

@@ -1,10 +1,16 @@
 # Waited for services
-/wait-for mysql:3306 & 
-/wait-for mongo:27017 & 
+wget -q https://github.com/eficode/wait-for/releases/latest/download/wait-for
+chmod +x ./wait-for
+./wait-for -q mysql:3306 -- echo 'MySQL is up' &
+PID_MYSQL=$!
+./wait-for -q mongo:27017 -- echo 'Mongo is up' &
+PID_MONGO=$!
+./wait-for -q activemq:1883 -- echo 'ActiveMQ is up' &
+PID_ACTIVEMQ=$!
 
-wait
-
-# Pass the NPM script inside double quotes as argument to this script
-# e.g. ./wait-for-all "npm run start:dev"
+echo 'Waiting for all services to start...'
+wait $PID_MYSQL || { echo 'MySQL connection timed out'; exit 1; }
+wait $PID_MONGO || { echo 'Mongo connection timed out'; exit 1; }
+wait $PID_ACTIVEMQ || { echo 'ActiveMQ connection timed out'; exit 1; }
 echo 'Waited for all services successfully'
 eval $1

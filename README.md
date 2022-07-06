@@ -18,17 +18,12 @@ $ npm install
 
 ### Docker
 ```bash
-# Development
-$ docker-compose -f docker-compose.dev.yml up -d
-
-# Development (MySQL and MongoDB only)
-$ docker-compose -f docker-compose.dev.yml up -d mongo mysql
-
 # Production
 $ docker-compose up -d
-```
 
-The `development` docker compose will take less time to build than production, while also allowing file watching.
+# Development (only MySQL, Mongo, ActiveMQ)
+$ docker-compose up -d mysql mongo activemq
+```
 
 ### Local
 
