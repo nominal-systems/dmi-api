@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
 import {
   ClassSerializerInterceptor,
-  Logger,
   ValidationPipe
 } from '@nestjs/common'
+import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston'
 import { ConfigService } from '@nestjs/config'
 import { NestFactory, Reflector } from '@nestjs/core'
 import { MicroserviceOptions, Transport } from '@nestjs/microservices'
@@ -20,6 +20,7 @@ async function bootstrap (): Promise<void> {
     AppModule,
     new FastifyAdapter()
   )
+  app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER))
 
   const configService = app.get<ConfigService<AppConfig>>(ConfigService)
 
@@ -42,7 +43,5 @@ async function bootstrap (): Promise<void> {
 
   await app.startAllMicroservices()
   await app.listen(PORT, '0.0.0.0')
-
-  Logger.log(`App listening on port ${PORT}`, 'NestApplication')
 }
 bootstrap()

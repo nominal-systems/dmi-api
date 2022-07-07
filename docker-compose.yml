@@ -5,11 +5,13 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      target: development
+      target: production
       args:
         GHP_TOKEN: ${GHP_TOKEN}
     ports:
       - '3000:3000'
+    volumes:
+      - ./docker/dmi-api/logs:/app/logs
     depends_on:
       - mysql
       - mongo

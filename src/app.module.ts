@@ -14,6 +14,8 @@ import { SeederModule } from './seeder/seeder.module'
 import { AppController } from './app.controller'
 import { APP_INTERCEPTOR } from '@nestjs/core'
 import { RpcExceptionInterceptor } from './common/interceptors/rpc-exception.interceptor'
+import { WinstonModule } from 'nest-winston'
+import { consoleTransport, fileTransport } from './config/winstonconfig'
 
 @Module({
   imports: [
@@ -27,6 +29,9 @@ import { RpcExceptionInterceptor } from './common/interceptors/rpc-exception.int
         ...configService.get('typeorm')
       }),
       inject: [ConfigService]
+    }),
+    WinstonModule.forRoot({
+      transports: [consoleTransport, fileTransport]
     }),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
