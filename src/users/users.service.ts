@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common'
 import { CreateUserDto } from './dtos/create-user.dto'
 import { UserCredentialsDto } from './dtos/user-credentials.dto'
-import { User } from './entity/user.entity'
+import { User as UserEntity, User } from './entity/user.entity'
 import * as argon2 from 'argon2'
 import { JwtService } from '@nestjs/jwt'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -40,7 +40,7 @@ export class UsersService {
     return await this.usersRepository.find()
   }
 
-  async create (user: CreateUserDto): Promise<TokenResponseDto> {
+  async create (user: CreateUserDto): Promise<UserEntity> {
     const newUser = this.usersRepository.create(user)
 
     try {
@@ -55,9 +55,7 @@ export class UsersService {
       throw error
     }
 
-    const token = await this.generateJwt(newUser)
-
-    return { user: newUser, token }
+    return newUser
   }
 
   async updateOrganization (
@@ -72,8 +70,7 @@ export class UsersService {
   ): Promise<TokenResponseDto> {
     const user = await this.findOne({
       options: {
-        where: { email: credentials.email },
-        relations: ['organization']
+        where: { email: credentials.email }
       }
     })
 

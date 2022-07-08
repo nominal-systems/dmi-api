@@ -62,7 +62,7 @@ export class SeederService {
     const password = 'qwer1234'
 
     for (let i = 0; i < amount; i++) {
-      const { user } = await this.usersService.create({
+      const user = await this.usersService.create({
         email: faker.internet.exampleEmail(),
         password
       })

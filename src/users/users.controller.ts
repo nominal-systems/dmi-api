@@ -15,10 +15,9 @@ export class UsersController {
 
   @Post()
   @UseGuards(BasicAuthGuard)
-  @UseInterceptors(new TransformInterceptor(TokenResponseDto))
   async create (
     @Body() createUserDto: CreateUserDto
-  ): Promise<TokenResponseDto> {
+  ): Promise<UserEntity> {
     return await this.usersService.create(createUserDto)
   }
 
@@ -36,7 +35,7 @@ export class UsersController {
     return user
   }
 
-  @Post('authenticate')
+  @Post('auth')
   @HttpCode(HttpStatus.OK)
   @UseInterceptors(new TransformInterceptor(TokenResponseDto))
   async authenticate (
