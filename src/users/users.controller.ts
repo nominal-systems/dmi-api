@@ -24,15 +24,18 @@ export class UsersController {
   @Get()
   @UseGuards(BasicAuthGuard)
   async listAll (): Promise<UserEntity[]> {
-    return await this.usersService.findAll();
+    return await this.usersService.findAll()
   }
 
   @Get(':id')
   @UseGuards(BasicAuthGuard)
   async getUser (@Param('id') userId: string): Promise<UserEntity> {
-    const user = await this.usersService.findOne({ id: userId })
-
-    return user
+    return await this.usersService.findOne({
+      id: userId,
+      options: {
+        relations: ['organization']
+      }
+    })
   }
 
   @Post('auth')

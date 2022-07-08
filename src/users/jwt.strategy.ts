@@ -21,7 +21,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   async validate (payload: any): Promise<User | undefined> {
     const user = await this.usersService.findOne({
       id: payload.sub,
-      options: { relations: ['organization', 'invitations'] }
+      options: { relations: ['organization'] }
     })
 
     return user
