@@ -22,6 +22,12 @@ export class UsersController {
     return await this.usersService.create(createUserDto)
   }
 
+  @Get()
+  @UseGuards(BasicAuthGuard)
+  async listAll (): Promise<UserEntity[]> {
+    return await this.usersService.findAll();
+  }
+
   @Post('authenticate')
   @HttpCode(HttpStatus.OK)
   @UseInterceptors(new TransformInterceptor(TokenResponseDto))

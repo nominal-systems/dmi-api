@@ -36,6 +36,10 @@ export class UsersService {
     return user
   }
 
+  async findAll (): Promise<User[]> {
+    return await this.usersRepository.find()
+  }
+
   async create (user: CreateUserDto): Promise<TokenResponseDto> {
     const newUser = this.usersRepository.create(user)
 
