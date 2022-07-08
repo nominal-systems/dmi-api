@@ -1,10 +1,4 @@
-import {
-  ConflictException,
-  Injectable,
-  Logger,
-  NotFoundException,
-  UnauthorizedException
-} from '@nestjs/common'
+import { ConflictException, Injectable, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common'
 import { CreateUserDto } from './dtos/create-user.dto'
 import { UserCredentialsDto } from './dtos/user-credentials.dto'
 import { User as UserEntity, User } from './entity/user.entity'
@@ -16,6 +10,7 @@ import { Organization } from '../organizations/entities/organization.entity'
 import { TokenResponseDto } from './dtos/token-response.dto'
 import { FindOneOfTypeOptions } from '../common/typings/find-one-of-type-options.interface'
 import { DBErrorCodes } from '../common/constants/db-error-codes.enum'
+import { UserPasswordDto } from './dtos/user-password.dto'
 
 @Injectable()
 export class UsersService {
@@ -58,6 +53,11 @@ export class UsersService {
     return newUser
   }
 
+  async updatePassword (user: User, userPasswordDto: UserPasswordDto): Promise<void> {
+    user.password = userPasswordDto.password
+    await this.usersRepository.save(user)
+  }
+
   async updateOrganization (
     user: User,
     organization: Organization
@@ -82,7 +82,10 @@ export class UsersService {
     if (isPasswordCorrect) {
       const token = await this.generateJwt(user)
 
-      return { user, token }
+      return {
+        user,
+        token
+      }
     }
 
     throw new UnauthorizedException('Username or password is incorrect')

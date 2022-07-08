@@ -1,11 +1,8 @@
-import { IsEmail, IsNotEmpty, MinLength } from 'class-validator'
+import { IsEmail, IsNotEmpty } from 'class-validator'
+import { UserPasswordDto } from './user-password.dto'
 
-export class UserCredentialsDto {
+export class UserCredentialsDto extends UserPasswordDto {
   @IsEmail()
   @IsNotEmpty()
   email: string
-
-  @IsNotEmpty()
-  @MinLength(4)
-  password: string
 }

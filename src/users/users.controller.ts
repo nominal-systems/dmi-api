@@ -1,4 +1,15 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, UseGuards, UseInterceptors } from '@nestjs/common'
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+  Put,
+  UseGuards,
+  UseInterceptors
+} from '@nestjs/common'
 import { User } from '../common/decorators/user.decorator'
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard'
 import { CreateUserDto } from './dtos/create-user.dto'
@@ -8,6 +19,7 @@ import { User as UserEntity } from './entity/user.entity'
 import { UsersService } from './users.service'
 import { TransformInterceptor } from '../common/interceptors/transform.interceptor'
 import { BasicAuthGuard } from '../common/guards/basic-auth.guard'
+import { UserPasswordDto } from './dtos/user-password.dto'
 
 @Controller('users')
 export class UsersController {
@@ -51,5 +63,11 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   async profile (@User() user: UserEntity): Promise<UserEntity> {
     return user
+  }
+
+  @Put('me/password')
+  @UseGuards(JwtAuthGuard)
+  async changePassword (@User() user: UserEntity, @Body() userPasswordDto: UserPasswordDto): Promise<void> {
+    return await this.usersService.updatePassword(user, userPasswordDto)
   }
 }
