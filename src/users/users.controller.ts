@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, UseGuards, UseInterceptors } from '@nestjs/common'
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, UseGuards, UseInterceptors } from '@nestjs/common'
 import { User } from '../common/decorators/user.decorator'
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard'
 import { CreateUserDto } from './dtos/create-user.dto'
@@ -26,6 +26,14 @@ export class UsersController {
   @UseGuards(BasicAuthGuard)
   async listAll (): Promise<UserEntity[]> {
     return await this.usersService.findAll();
+  }
+
+  @Get(':id')
+  @UseGuards(BasicAuthGuard)
+  async getUser (@Param('id') userId: string): Promise<UserEntity> {
+    const user = await this.usersService.findOne({ id: userId })
+
+    return user
   }
 
   @Post('authenticate')
