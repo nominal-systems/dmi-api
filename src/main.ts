@@ -12,7 +12,6 @@ import {
   NestFastifyApplication
 } from '@nestjs/platform-fastify'
 import { AppModule } from './app.module'
-import { API_VERSION } from './common/constants/api.constant'
 import { AppConfig } from './config/config.interface'
 
 async function bootstrap (): Promise<void> {
@@ -30,7 +29,6 @@ async function bootstrap (): Promise<void> {
       ...configService.get('activeMQ')
     }
   })
-  app.setGlobalPrefix(`/api/${API_VERSION}`)
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,

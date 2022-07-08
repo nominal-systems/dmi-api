@@ -7,14 +7,16 @@ import { TokenResponseDto } from './dtos/token-response.dto'
 import { User as UserEntity } from './entity/user.entity'
 import { UsersService } from './users.service'
 import { TransformInterceptor } from '../common/interceptors/transform.interceptor'
+import { BasicAuthGuard } from '../common/guards/basic-auth.guard'
 
 @Controller('users')
 export class UsersController {
   constructor (private readonly usersService: UsersService) {}
 
-  @Post('sign_up')
+  @Post()
+  @UseGuards(BasicAuthGuard)
   @UseInterceptors(new TransformInterceptor(TokenResponseDto))
-  async signUp (
+  async create (
     @Body() createUserDto: CreateUserDto
   ): Promise<TokenResponseDto> {
     return await this.usersService.create(createUserDto)

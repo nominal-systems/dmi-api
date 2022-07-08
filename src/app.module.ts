@@ -16,6 +16,7 @@ import { APP_INTERCEPTOR } from '@nestjs/core'
 import { RpcExceptionInterceptor } from './common/interceptors/rpc-exception.interceptor'
 import { WinstonModule } from 'nest-winston'
 import { consoleTransport, fileTransport } from './config/winstonconfig'
+import { AuthModule } from './common/auth/auth.module'
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { consoleTransport, fileTransport } from './config/winstonconfig'
       }),
       inject: [ConfigService]
     }),
+    AuthModule,
     UsersModule,
     OrganizationsModule,
     ProvidersModule,
