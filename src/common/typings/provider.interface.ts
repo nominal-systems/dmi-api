@@ -1,4 +1,4 @@
-export interface ProviderOption {
+export interface ConfigurationOption {
   type: string
   name: string
   description: string
@@ -8,7 +8,7 @@ export interface ProviderOption {
 export interface Provider {
   id: string
   description: string
-  providerConfigurationUri: string
-  providerConfigurationOptions: ProviderOption[]
-  integrationOptions: ProviderOption[]
+  configurationUri: string
+  configurationOptions: ConfigurationOption[]
+  integrationOptions: ConfigurationOption[]
 }

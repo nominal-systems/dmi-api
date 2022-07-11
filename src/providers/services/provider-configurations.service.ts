@@ -66,7 +66,7 @@ export class ProviderConfigurationsService {
       properties: {}
     }
 
-    for (const option of provider.providerConfigurationOptions) {
+    for (const option of provider.configurationOptions) {
       validatorOptions.properties[option.name] = {
         type: option.type,
         required: option.required
@@ -75,14 +75,14 @@ export class ProviderConfigurationsService {
 
     const providerValidator = createValidator(validatorOptions as any)
 
-    if (!providerValidator(providerConfigurationOptions)) {
+    if (!providerValidator(providerConfigurationOptions.configuration)) {
       throw new BadRequestException('There is an issue with the request body')
     }
 
     const newProviderConfiguration = this.providerConfigurationRepository.create(
       {
-        diagnosticProviderId: providerId,
-        providerConfigurationOptions: encrypt(
+        providerId: providerId,
+        configurationOptions: encrypt(
           providerConfigurationOptions,
           this.secretKey
         ),

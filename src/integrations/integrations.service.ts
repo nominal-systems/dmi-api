@@ -69,14 +69,14 @@ export class IntegrationsService {
       })
 
       const { message, messagePattern } = ieMessageBuilder(
-        providerConfiguration.diagnosticProviderId,
+        providerConfiguration.providerId,
         {
           resource: 'integration',
           operation: 'create',
           data: {
             integrationOptions: integrationOptions,
             providerConfiguration:
-              providerConfiguration.providerConfigurationOptions,
+              providerConfiguration.configurationOptions,
             payload: {
               integrationId
             }
@@ -126,7 +126,7 @@ export class IntegrationsService {
     })
 
     const { message, messagePattern } = ieMessageBuilder(
-      integration.providerConfiguration.diagnosticProviderId,
+      integration.providerConfiguration.providerId,
       {
         resource: 'integration',
         operation: 'remove',

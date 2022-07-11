@@ -4,8 +4,8 @@ const providers: Provider[] = [
   {
     id: 'antech',
     description: 'Antech',
-    providerConfigurationUri: '/providers/antech/configurations',
-    providerConfigurationOptions: [
+    configurationUri: '/providers/antech/configurations',
+    configurationOptions: [
       {
         type: 'string',
         name: 'baseUrl',
@@ -37,8 +37,8 @@ const providers: Provider[] = [
   {
     id: 'idexx',
     description: 'IDEXX VetConnect Plus',
-    providerConfigurationUri: '/providers/idexx/configurations',
-    providerConfigurationOptions: [
+    configurationUri: '/providers/idexx/configurations',
+    configurationOptions: [
       {
         type: 'string',
         name: 'orderingBaseUrl',
@@ -82,8 +82,8 @@ const providers: Provider[] = [
   {
     id: 'zoetis-v1',
     description: 'Zoetis Vetsync v1',
-    providerConfigurationUri: '/providers/zoetis-v1/configurations',
-    providerConfigurationOptions: [
+    configurationUri: '/providers/zoetis-v1/configurations',
+    configurationOptions: [
       {
         type: 'string',
         name: 'url',
@@ -108,8 +108,8 @@ const providers: Provider[] = [
   {
     id: 'demo',
     description: 'Demo Provider',
-    providerConfigurationUri: '/providers/demo/configurations',
-    providerConfigurationOptions: [
+    configurationUri: '/providers/demo/configurations',
+    configurationOptions: [
       {
         type: 'string',
         name: 'url',

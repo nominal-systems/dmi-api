@@ -72,7 +72,7 @@ export class OrdersService {
 
         if (providerId != null) {
           qb.andWhere(
-            'providerConfiguration.diagnosticProviderId LIKE :providerId',
+            'providerConfiguration.providerId LIKE :providerId',
             { providerId: `%${providerId}%` }
           )
         }
@@ -141,7 +141,7 @@ export class OrdersService {
 
     if (manifestUri == null) {
       const { message, messagePattern } = ieMessageBuilder(
-        providerConfiguration.diagnosticProviderId,
+        providerConfiguration.providerId,
         {
           resource: 'orders',
           operation: 'get',
@@ -149,7 +149,7 @@ export class OrdersService {
             payload: { id: externalId },
             integrationOptions,
             providerConfiguration:
-              providerConfiguration.providerConfigurationOptions
+              providerConfiguration.configurationOptions
           }
         }
       )
@@ -188,7 +188,7 @@ export class OrdersService {
     }
 
     const { message, messagePattern } = ieMessageBuilder(
-      providerConfiguration.diagnosticProviderId,
+      providerConfiguration.providerId,
       {
         resource: 'orders',
         operation: format === 'json' ? 'results' : 'results.pdf',
@@ -196,7 +196,7 @@ export class OrdersService {
           payload: { id: externalId },
           integrationOptions,
           providerConfiguration:
-            providerConfiguration.providerConfigurationOptions
+            providerConfiguration.configurationOptions
         }
       }
     )
@@ -217,20 +217,20 @@ export class OrdersService {
 
     const { providerConfiguration, integrationOptions } = integration
     const {
-      providerConfigurationOptions,
-      diagnosticProviderId
+      configurationOptions,
+      providerId
     } = providerConfiguration
 
     if (this.nodeEnv !== 'seed') {
       const { message, messagePattern } = ieMessageBuilder(
-        diagnosticProviderId,
+        providerId,
         {
           resource: 'orders',
           operation: 'create',
           data: {
             payload: order,
             integrationOptions,
-            providerConfiguration: providerConfigurationOptions
+            providerConfiguration: configurationOptions
           }
         }
       )
@@ -287,13 +287,13 @@ export class OrdersService {
     }
 
     const { message, messagePattern } = ieMessageBuilder(
-      providerConfiguration.diagnosticProviderId,
+      providerConfiguration.providerId,
       {
         resource: 'orders',
         operation: 'cancel',
         data: {
           providerConfiguration:
-            providerConfiguration.providerConfigurationOptions,
+            providerConfiguration.configurationOptions,
           integrationOptions,
           payload: {
             id: externalId
@@ -340,13 +340,13 @@ export class OrdersService {
     } = order
 
     const { message, messagePattern } = ieMessageBuilder(
-      providerConfiguration.diagnosticProviderId,
+      providerConfiguration.providerId,
       {
         resource: 'orders',
         operation: 'tests.add',
         data: {
           providerConfiguration:
-            providerConfiguration.providerConfigurationOptions,
+            providerConfiguration.configurationOptions,
           integrationOptions,
           payload: {
             id: externalId,
@@ -396,13 +396,13 @@ export class OrdersService {
     } = order
 
     const { message, messagePattern } = ieMessageBuilder(
-      providerConfiguration.diagnosticProviderId,
+      providerConfiguration.providerId,
       {
         resource: 'orders',
         operation: 'tests.cancel',
         data: {
           providerConfiguration:
-            providerConfiguration.providerConfigurationOptions,
+            providerConfiguration.configurationOptions,
           integrationOptions,
           payload: {
             id: externalId,

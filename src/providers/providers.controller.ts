@@ -79,7 +79,7 @@ export class ProvidersController {
   ): Promise<ProviderConfiguration[]> {
     return await this.providerConfigurationsService.findAll({
       where: {
-        diagnosticProviderId: providerId,
+        providerId: providerId,
         organizationId: organization.id
       }
     })
@@ -110,7 +110,7 @@ export class ProvidersController {
         where: {
           id: configId,
           organizationId: organization.id,
-          diagnosticProviderId: providerId
+          providerId: providerId
         }
       }
     })
@@ -128,7 +128,7 @@ export class ProvidersController {
         where: {
           id: configId,
           organizationId: organization.id,
-          diagnosticProviderId: providerId
+          providerId: providerId
         }
       }
     })

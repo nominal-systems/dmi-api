@@ -1,5 +1,6 @@
 import { Exclude, Type } from 'class-transformer'
 import {
+  AfterInsert,
   AfterLoad,
   Column,
   CreateDateColumn,
@@ -20,10 +21,10 @@ export class ProviderConfiguration {
   id: string
 
   @Column({ nullable: false })
-  diagnosticProviderId: string
+  providerId: string
 
   @Column('json')
-  providerConfigurationOptions: any
+  configurationOptions: any
 
   @Column()
   @Exclude()
@@ -49,10 +50,11 @@ export class ProviderConfiguration {
   @UpdateDateColumn()
   updatedAt: Date
 
+  @AfterInsert()
   @AfterLoad()
   decryptOptions (): void {
-    this.providerConfigurationOptions = decrypt(
-      this.providerConfigurationOptions,
+    this.configurationOptions = decrypt(
+      this.configurationOptions,
       configuration().secretKey
     )
   }

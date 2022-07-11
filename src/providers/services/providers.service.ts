@@ -39,7 +39,7 @@ export class ProvidersService {
     integrationId: string
   ): Promise<ProviderService[]> {
     const {
-      providerConfiguration: { providerConfigurationOptions },
+      providerConfiguration: { configurationOptions },
       integrationOptions
     } = await this.integrationsService.findOne({
       id: integrationId,
@@ -53,7 +53,7 @@ export class ProvidersService {
       operation: 'list',
       data: {
         integrationOptions,
-        providerConfiguration: providerConfigurationOptions
+        providerConfiguration: configurationOptions
       }
     })
 
@@ -65,7 +65,7 @@ export class ProvidersService {
     integrationId: string
   ): Promise<Device[]> {
     const {
-      providerConfiguration: { providerConfigurationOptions },
+      providerConfiguration: { configurationOptions },
       integrationOptions
     } = await this.integrationsService.findOne({
       id: integrationId,
@@ -79,7 +79,7 @@ export class ProvidersService {
       operation: Operation.List,
       data: {
         integrationOptions,
-        providerConfiguration: providerConfigurationOptions
+        providerConfiguration: configurationOptions
       }
     })
 
@@ -91,7 +91,7 @@ export class ProvidersService {
     integrationId: string
   ): Promise<ReferenceDataStatus> {
     const {
-      providerConfiguration: { providerConfigurationOptions },
+      providerConfiguration: { configurationOptions },
       integrationOptions
     } = await this.integrationsService.findOne({
       id: integrationId,
@@ -105,7 +105,7 @@ export class ProvidersService {
       operation: 'version',
       data: {
         integrationOptions,
-        providerConfiguration: providerConfigurationOptions
+        providerConfiguration: configurationOptions
       }
     })
 
@@ -114,7 +114,7 @@ export class ProvidersService {
 
   async getBreeds (providerId: string, integrationId: string): Promise<Breeds> {
     const {
-      providerConfiguration: { providerConfigurationOptions },
+      providerConfiguration: { configurationOptions },
       integrationOptions
     } = await this.integrationsService.findOne({
       id: integrationId,
@@ -128,7 +128,7 @@ export class ProvidersService {
       operation: 'list',
       data: {
         integrationOptions,
-        providerConfiguration: providerConfigurationOptions
+        providerConfiguration: configurationOptions
       }
     })
 
@@ -137,7 +137,7 @@ export class ProvidersService {
 
   async getSexes (providerId: string, integrationId: string): Promise<Sexes> {
     const {
-      providerConfiguration: { providerConfigurationOptions },
+      providerConfiguration: { configurationOptions },
       integrationOptions
     } = await this.integrationsService.findOne({
       id: integrationId,
@@ -151,7 +151,7 @@ export class ProvidersService {
       operation: 'list',
       data: {
         integrationOptions,
-        providerConfiguration: providerConfigurationOptions
+        providerConfiguration: configurationOptions
       }
     })
 
@@ -163,7 +163,7 @@ export class ProvidersService {
     integrationId: string
   ): Promise<Species> {
     const {
-      providerConfiguration: { providerConfigurationOptions },
+      providerConfiguration: { configurationOptions },
       integrationOptions
     } = await this.integrationsService.findOne({
       id: integrationId,
@@ -177,7 +177,7 @@ export class ProvidersService {
       operation: 'list',
       data: {
         integrationOptions,
-        providerConfiguration: providerConfigurationOptions
+        providerConfiguration: configurationOptions
       }
     })
 
