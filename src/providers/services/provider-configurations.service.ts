@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException
 } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -16,6 +17,7 @@ import { FindOneOfTypeOptions } from '../../common/typings/find-one-of-type-opti
 @Injectable()
 export class ProviderConfigurationsService {
   private readonly secretKey: string
+  private readonly logger = new Logger('ProviderConfigurationsService')
 
   constructor (
     @InjectRepository(ProviderConfiguration)
@@ -83,12 +85,13 @@ export class ProviderConfigurationsService {
       {
         providerId: providerId,
         configurationOptions: encrypt(
-          providerConfigurationOptions,
+          providerConfigurationOptions.configuration,
           this.secretKey
         ),
         organization
       }
     )
+    this.logger.log(`Created new provider configuration for ${providerId} provider`)
 
     return await this.providerConfigurationRepository.save(
       newProviderConfiguration

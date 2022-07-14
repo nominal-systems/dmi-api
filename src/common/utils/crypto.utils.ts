@@ -1,7 +1,8 @@
 import { InternalServerErrorException } from '@nestjs/common'
-import { createCipheriv, randomBytes, createDecipheriv } from 'crypto'
+import { createCipheriv, randomBytes, createDecipheriv, createHash } from 'crypto'
 import { Hash } from '../typings/hash.interface'
 import { isJson, isObject, isString } from './shared.utils'
+import { isArray } from 'class-validator'
 
 export interface EncryptedProviderConfigAndIntegrationOptsArgs {
   providerConfigurationOptions?: any
@@ -60,4 +61,11 @@ export function decrypt (hash: Hash, secretKey: string): string {
   }
 
   return decryptedText
+}
+
+export function hash (input: any): string {
+  if (isArray(input) || isObject(input)) {
+    input = JSON.stringify(input)
+  }
+  return createHash('md5').update(input).digest('hex')
 }

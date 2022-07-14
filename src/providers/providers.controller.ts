@@ -149,28 +149,4 @@ export class ProvidersController {
   ): Promise<ReferenceDataStatus> {
     return await this.providersService.getDataStatus(providerId, integrationId)
   }
-
-  @Get(':id/refs/breeds')
-  async getBreeds (
-    @Param('id') providerId: string,
-    @Query() { integrationId }: ReferenceDataQueryParams
-  ): Promise<Breeds> {
-    return await this.providersService.getBreeds(providerId, integrationId)
-  }
-
-  @Get(':id/refs/sexes')
-  async getSexes (
-    @Param('id') providerId: string,
-    @Query() { integrationId }: ReferenceDataQueryParams
-  ): Promise<Sexes> {
-    return await this.providersService.getSexes(providerId, integrationId)
-  }
-
-  @Get(':id/refs/species')
-  async getSpecies (
-    @Param('id') providerId: string,
-    @Query() { integrationId }: ReferenceDataQueryParams
-  ): Promise<Species> {
-    return await this.providersService.getSpecies(providerId, integrationId)
-  }
 }
