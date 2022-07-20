@@ -16,6 +16,8 @@ import { Order } from '../orders/entities/order.entity'
 import { Event } from '../events/entities/event.entity'
 import { SeedIntegrationsParams } from './typings/seed-integrations-params.interface'
 import { IdFirstAndLastName } from './typings/id-first-and-last-name.interface'
+import { IdAndName } from './typings/id-and-name.interface'
+import { WeightUnits } from '../common/typings/patient-weight.interface'
 
 @Injectable()
 export class SeederService {
@@ -185,24 +187,21 @@ export class SeederService {
       for (let i = 0; i < ordersPerIntegration; i++) {
         const order = await this.ordersService.createOrder({
           integrationId: integration.id,
-          status: 'completed',
-          externalId: 'fake-id',
+          requisitionId: 'some-pims-id',
           patient: {
-            ...this.generateIdAndFirstLastName(),
+            ...this.generateIdAndName(),
             species: 'CANINE',
             sex: 'FEMALE_INTACT',
             birthdate: faker.date.past().toISOString(),
             breed: 'BOXER',
-            weight: faker.random.number({ min: 6, max: 120 }),
-            weightUnits: 'KG'
+            weight: {
+              measurement: faker.random.number({ min: 6, max: 120 }),
+              units: WeightUnits.KG
+            }
           },
           client: this.generateIdAndFirstLastName(),
           notes: faker.random.words(8),
-          tests: [
-            {
-              code: 'HEM'
-            }
-          ],
+          testCodes: ['HEM'],
           veterinarian: this.generateIdAndFirstLastName(),
           technician: faker.name.findName(),
           editable: false
@@ -244,6 +243,13 @@ export class SeederService {
       id: faker.random.uuid(),
       lastName: faker.name.firstName(),
       firstName: faker.name.lastName()
+    }
+  }
+
+  private generateIdAndName (): IdAndName {
+    return {
+      id: faker.random.uuid(),
+      name: faker.name.firstName(),
     }
   }
 }

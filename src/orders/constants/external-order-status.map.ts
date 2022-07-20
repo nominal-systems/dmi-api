@@ -1,4 +1,4 @@
-import { OrderStatus } from './order-status.enum'
+import { OrderStatus } from '@nominal-systems/dmi-engine-common'
 
 // Keys are external order statuses (lowercase). They will match the provider's status when lowercased.
 // e.g. IDEXX's "COMPLETED" will be "completed" here. Values are the keys' mapping to DMI order status.
@@ -10,6 +10,6 @@ export const ExternalOrderStatusMap = {
   cancelled: OrderStatus.CANCELLED,
   'waiting-for-sample': OrderStatus.SUBMITTED,
   'waiting-for-input': OrderStatus.WAITING_FOR_INPUT,
-  'partial-results': OrderStatus.PARTIALLY_COMPLETED,
-  'partially-completed': OrderStatus.PARTIALLY_COMPLETED
+  'partial-results': OrderStatus.PARTIAL,
+  'partially-completed': OrderStatus.PARTIAL
 }

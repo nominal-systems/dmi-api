@@ -6,26 +6,23 @@ export class Patient {
   id: string
 
   @Column()
-  firstName: string
-
-  @Column()
-  lastName: string
-
-  @Column()
-  species: string
+  name: string
 
   @Column()
   sex: string
 
   @Column()
-  birthdate: string
+  species: string
 
   @Column()
   breed: string
 
-  @Column()
-  weight: number
+  @Column({ nullable: true })
+  birthdate: string
 
-  @Column()
+  @Column({ nullable: true })
+  weightMeasurement: number
+
+  @Column({ nullable: true })
   weightUnits: string
 }

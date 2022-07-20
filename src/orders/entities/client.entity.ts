@@ -10,4 +10,9 @@ export class Client {
 
   @Column()
   firstName: string
+
+  // TODO(gb): Add contact
+  // TODO(gb): Add address
+  // TODO(gb): Add isDoctor
+  // TODO(gb): Add isStaff
 }

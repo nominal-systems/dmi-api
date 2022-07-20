@@ -1,5 +1,5 @@
 import { ExternalOrderStatusMap } from '../../orders/constants/external-order-status.map'
-import { OrderStatus } from '../../orders/constants/order-status.enum'
+import { OrderStatus } from '@nominal-systems/dmi-engine-common'
 
 export function externalOrderStatusMapper (
   externalOrderStatus: string

@@ -21,33 +21,25 @@ export class Order {
   id: string
 
   @Column({ nullable: true })
+  requisitionId: string
+
+  // TODO(gb): rename to accessionId?
+  @Column({ nullable: true })
   externalId: string
 
   @Column()
   integrationId: string
 
-  @Column({ nullable: true })
-  notes: string
-
-  @Column({ nullable: true })
-  technician: string
-
-  @Column({ default: false })
-  editable: boolean
-
+  // TODO(gb): use manifest object instead
   @Column({ nullable: true })
   manifestUri: string
 
   @Column({ nullable: true })
   submissionUri: string
 
+  // TODO(gb): validate status
   @Column({ nullable: true })
   status: string
-
-  @Type(() => Integration)
-  @ManyToOne(() => Integration)
-  @Exclude()
-  integration: Integration
 
   @Type(() => Patient)
   @ManyToOne(() => Patient, { cascade: true })
@@ -56,6 +48,10 @@ export class Order {
   @Type(() => Client)
   @ManyToOne(() => Client, { cascade: true })
   client: Client
+
+  @Type(() => Veterinarian)
+  @ManyToOne(() => Veterinarian, { cascade: true })
+  veterinarian: Veterinarian
 
   @Type(() => Test)
   @ManyToMany(() => Test, { cascade: true })
@@ -66,9 +62,21 @@ export class Order {
   @Type(() => String)
   devices?: string[]
 
-  @Type(() => Veterinarian)
-  @ManyToOne(() => Veterinarian, { cascade: true })
-  veterinarian: Veterinarian
+  @Column({ nullable: true })
+  technician: string
+
+  @Column({ nullable: true })
+  notes: string
+
+  @Column({ default: false })
+  editable: boolean
+
+  // TODO(gb): add lab requisition info column
+
+  @Type(() => Integration)
+  @ManyToOne(() => Integration)
+  @Exclude()
+  integration: Integration
 
   @CreateDateColumn()
   createdAt: Date

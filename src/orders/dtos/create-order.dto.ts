@@ -1,10 +1,11 @@
 import { Type } from 'class-transformer'
 import {
   ArrayNotEmpty,
-  IsNotEmpty,
+  IsNotEmpty, IsObject,
   IsOptional,
   ValidateNested
 } from 'class-validator'
+import { PatientWeight } from '../../common/typings/patient-weight.interface'
 
 export class CreateOrderDtoClient {
   id: string
@@ -14,6 +15,11 @@ export class CreateOrderDtoClient {
 
   @IsNotEmpty()
   firstName: string
+
+  // TODO(gb): Add contact
+  // TODO(gb): Add address
+  // TODO(gb): Add isDoctor
+  // TODO(gb): Add isStaff
 }
 
 export class CreateOrderDtoTest {
@@ -25,36 +31,33 @@ export class CreateOrderDtoPatient {
   id: string
 
   @IsNotEmpty()
-  lastName: string
-
-  @IsNotEmpty()
-  firstName: string
-
-  @IsNotEmpty()
-  species: string
+  name: string
 
   @IsNotEmpty()
   sex: string
 
   @IsNotEmpty()
-  birthdate: string
+  species: string
 
   @IsNotEmpty()
   breed: string
 
   @IsNotEmpty()
-  weight: number
+  @IsOptional()
+  birthdate?: string
 
   @IsNotEmpty()
-  weightUnits: string
+  @IsOptional()
+  @IsObject()
+  weight?: PatientWeight
 }
 
 export class CreateOrderDto {
-  @IsNotEmpty()
-  integrationId: string
+  @IsOptional()
+  requisitionId?: string
 
   @IsNotEmpty()
-  editable: boolean
+  integrationId: string
 
   @Type(() => CreateOrderDtoPatient)
   @ValidateNested()
@@ -66,22 +69,21 @@ export class CreateOrderDto {
   @IsNotEmpty()
   client: CreateOrderDtoClient
 
-  @Type(() => CreateOrderDtoTest)
-  @ValidateNested()
-  @ArrayNotEmpty()
-  tests: CreateOrderDtoTest[]
-
   @Type(() => CreateOrderDtoClient)
   @ValidateNested()
   @IsNotEmpty()
   veterinarian: CreateOrderDtoClient
 
+  @ArrayNotEmpty()
+  testCodes: string[]
+
   @Type(() => String)
   @IsOptional()
   devices?: string[]
 
-  notes: string
-  technician: string
-  externalId?: string
-  status?: string
+  technician?: string
+  editable?: boolean
+  notes?: string
+
+  // TODO(gb): Add lab requisition info
 }
