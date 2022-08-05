@@ -74,8 +74,10 @@ export class CreateOrderDto {
   @IsNotEmpty()
   veterinarian: CreateOrderDtoClient
 
+  @Type(() => CreateOrderDtoTest)
+  @ValidateNested()
   @ArrayNotEmpty()
-  testCodes: string[]
+  testCodes: CreateOrderDtoTest[]
 
   @Type(() => String)
   @IsOptional()

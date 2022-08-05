@@ -201,7 +201,7 @@ export class SeederService {
           },
           client: this.generateIdAndFirstLastName(),
           notes: faker.random.words(8),
-          testCodes: ['HEM'],
+          testCodes: [{ code: 'HEM' }],
           veterinarian: this.generateIdAndFirstLastName(),
           technician: faker.name.findName(),
           editable: false
@@ -249,7 +249,7 @@ export class SeederService {
   private generateIdAndName (): IdAndName {
     return {
       id: faker.random.uuid(),
-      name: faker.name.firstName(),
+      name: faker.name.firstName()
     }
   }
 }

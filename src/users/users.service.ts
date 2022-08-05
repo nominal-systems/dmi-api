@@ -50,6 +50,8 @@ export class UsersService {
       throw error
     }
 
+    this.logger.log(`Created User: '${newUser.email}' [${newUser.id}]`)
+
     return newUser
   }
 
@@ -92,8 +94,6 @@ export class UsersService {
   }
 
   async generateJwt (user: User): Promise<string> {
-    const token = await this.jwtService.signAsync({}, { subject: user.id })
-
-    return token
+    return await this.jwtService.signAsync({}, { subject: user.id })
   }
 }

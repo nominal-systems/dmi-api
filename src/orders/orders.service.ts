@@ -37,6 +37,8 @@ export class OrdersService {
     private readonly configService: ConfigService,
     @InjectRepository(Order)
     private readonly ordersRepository: Repository<Order>,
+    @InjectRepository(Test)
+    private readonly testsRepository: Repository<Test>,
     @Inject(IntegrationsService)
     private readonly integrationsService: IntegrationsService,
     @Inject(EventsService) private readonly eventsService: EventsService,
@@ -212,10 +214,19 @@ export class OrdersService {
       }
     })
 
-    // TODO(gb): save tests for order
+    // Accept order
     const order = this.ordersRepository.create(createOrderDto)
     order.status = OrderStatus.ACCEPTED
+
+    // Create tests
+    order.tests = []
+    for (const test of createOrderDto.testCodes) {
+      order.tests.push(await this.testsRepository.create(test))
+    }
+
+    // Save order
     await this.ordersRepository.save(order)
+    this.logger.log(`Created Order (status: ${order.status})`)
 
     const { providerConfiguration, integrationOptions } = integration
     const {
@@ -236,20 +247,21 @@ export class OrdersService {
           }
         }
       )
-      console.log('message= ', message) // TODO(gb): Remove trace!!!
-      console.log('messagePattern= ', messagePattern) // TODO(gb): Remove trace!!!
 
+      this.logger.log(`Sending ${messagePattern} to provider`)
       try {
         const response = await this.client
           .send(messagePattern, message)
           .toPromise()
 
+        this.logger.log(`Got response from provider: ${JSON.stringify(response, null, 2)}`)
+        const updatedStatus = externalOrderStatusMapper(response.status)
         Object.assign(order, response, {
-          status: externalOrderStatusMapper(response.status)
+          status: updatedStatus
         })
+        this.logger.log(`Updated Order (status: ${updatedStatus})`)
       } catch (error: any) {
         // TODO(gb): change response status?
-        this.logger.log(`Error creating order: ${error.response.message} - ${error.response.error}`)
         order.status = OrderStatus.ERROR
         await this.ordersRepository.save(order)
       }

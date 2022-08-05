@@ -1,6 +1,6 @@
 import {
   ConflictException,
-  Injectable,
+  Injectable, Logger,
   NotFoundException
 } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -16,6 +16,8 @@ import { Organization } from '../entities/organization.entity'
 
 @Injectable()
 export class OrganizationsService {
+  private readonly logger = new Logger(OrganizationsService.name)
+
   constructor (
     @InjectRepository(Organization)
     private readonly organizationsRepository: Repository<Organization>,
@@ -71,6 +73,7 @@ export class OrganizationsService {
     })
 
     await this.organizationsRepository.save(newOrganization)
+    this.logger.log(`Created Organization: '${newOrganization.name}' [${newOrganization.id}] -> Owner: '${owner.email}'`)
 
     await this.usersService.updateOrganization(owner, newOrganization)
 

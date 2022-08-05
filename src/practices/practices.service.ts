@@ -1,6 +1,6 @@
 import {
   ConflictException,
-  Injectable,
+  Injectable, Logger,
   NotFoundException
 } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -12,6 +12,8 @@ import { Practice } from './entities/practice.entity'
 
 @Injectable()
 export class PracticesService {
+  private readonly logger = new Logger(PracticesService.name)
+
   constructor (
     @InjectRepository(Practice)
     private readonly practicesRepository: Repository<Practice>
@@ -54,6 +56,7 @@ export class PracticesService {
     })
 
     await this.practicesRepository.save(newPractice)
+    this.logger.log(`Created Practice: '${newPractice.name}' [${newPractice.id}] -> Organization: '${organization.name}'`)
 
     return newPractice
   }

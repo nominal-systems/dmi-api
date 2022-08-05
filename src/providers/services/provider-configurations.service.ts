@@ -91,7 +91,7 @@ export class ProviderConfigurationsService {
         organization
       }
     )
-    this.logger.log(`Created new provider configuration for ${providerId} provider`)
+    this.logger.log(`Created Provider Configuration: [${newProviderConfiguration.id}] ->  Provider: '${providerId}'`)
 
     return await this.providerConfigurationRepository.save(
       newProviderConfiguration

@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common'
+import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { ClientProxy } from '@nestjs/microservices'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -12,6 +12,7 @@ import { Integration } from './entities/integration.entity'
 
 @Injectable()
 export class IntegrationsService {
+  private readonly logger = new Logger(IntegrationsService.name)
   private readonly secretKey: string
 
   constructor (
@@ -57,7 +58,8 @@ export class IntegrationsService {
         ...createIntegrationDto
       })
 
-      await this.integrationsRepository.save(newIntegration)
+      const integration = await this.integrationsRepository.save(newIntegration)
+      this.logger.log(`Created Integration: [${integration.id}]`)
 
       const {
         id: integrationId,
@@ -65,7 +67,7 @@ export class IntegrationsService {
         integrationOptions
       } = await this.findOne({
         id: newIntegration.id,
-        options: { relations: ['providerConfiguration'] }
+        options: { relations: ['providerConfiguration', 'practice'] }
       })
 
       const { message, messagePattern } = ieMessageBuilder(
