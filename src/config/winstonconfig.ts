@@ -2,7 +2,7 @@ import * as winston from 'winston'
 import { utilities as nestWinstonModuleUtilities } from 'nest-winston/dist/winston.utilities'
 
 export const consoleTransport = new winston.transports.Console({
-  level: 'info',
+  level: 'debug',
   format: winston.format.combine(
     winston.format.timestamp(),
     winston.format.ms(),

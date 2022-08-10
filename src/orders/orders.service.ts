@@ -1,10 +1,4 @@
-import {
-  ForbiddenException,
-  Inject,
-  Injectable,
-  Logger,
-  NotFoundException
-} from '@nestjs/common'
+import { ForbiddenException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { ClientProxy } from '@nestjs/microservices'
 import { InjectRepository } from '@nestjs/typeorm'
 import { FindManyOptions, In, Repository, SelectQueryBuilder } from 'typeorm'
@@ -19,8 +13,11 @@ import { ExternalOrdersEventData } from '../common/typings/external-order-event-
 import { EventsService } from '../events/events.service'
 import { OrderSearchQueryParams } from './dtos/order-search-queryparams.dto'
 import { Test } from './entities/test.entity'
+import { OrderCreatedResponse, OrderStatus } from '@nominal-systems/dmi-engine-common'
+import { ExternalResultEventData } from '../common/typings/external-result-event-data.interface'
 import { externalOrderStatusMapper } from '../common/utils/order-status-map.helper'
-import { OrderStatus } from '@nominal-systems/dmi-engine-common'
+import { EventNamespace } from '../events/constants/event-namespace.enum'
+import { EventType } from '../events/constants/event-type.enum'
 
 interface OrderTestCancelOrAddParams {
   orderId: string
@@ -151,7 +148,7 @@ export class OrdersService {
             payload: { id: externalId },
             integrationOptions,
             providerConfiguration:
-              providerConfiguration.configurationOptions
+            providerConfiguration.configurationOptions
           }
         }
       )
@@ -198,7 +195,7 @@ export class OrdersService {
           payload: { id: externalId },
           integrationOptions,
           providerConfiguration:
-            providerConfiguration.configurationOptions
+          providerConfiguration.configurationOptions
         }
       }
     )
@@ -207,6 +204,7 @@ export class OrdersService {
   }
 
   async createOrder (createOrderDto: CreateOrderDto): Promise<Order> {
+    // Find integration
     const integration = await this.integrationsService.findOne({
       id: createOrderDto.integrationId,
       options: {
@@ -226,61 +224,68 @@ export class OrdersService {
 
     // Save order
     await this.ordersRepository.save(order)
-    this.logger.log(`Created Order (status: ${order.status})`)
-
-    const { providerConfiguration, integrationOptions } = integration
-    const {
-      configurationOptions,
-      providerId
-    } = providerConfiguration
-
-    if (this.nodeEnv !== 'seed') {
-      const { message, messagePattern } = ieMessageBuilder(
-        providerId,
-        {
-          resource: 'orders',
-          operation: 'create',
-          data: {
-            payload: order,
-            integrationOptions,
-            providerConfiguration: configurationOptions
-          }
-        }
-      )
-
-      this.logger.log(`Sending ${messagePattern} to provider`)
-      try {
-        const response = await this.client
-          .send(messagePattern, message)
-          .toPromise()
-
-        this.logger.log(`Got response from provider: ${JSON.stringify(response, null, 2)}`)
-        const updatedStatus = externalOrderStatusMapper(response.status)
-        Object.assign(order, response, {
-          status: updatedStatus
-        })
-        this.logger.log(`Updated Order (status: ${updatedStatus})`)
-      } catch (error: any) {
-        // TODO(gb): change response status?
-        order.status = OrderStatus.ERROR
-        await this.ordersRepository.save(order)
-      }
-    }
-
-    await this.ordersRepository.save(order)
-
     await this.eventsService.addEvent({
-      namespace: 'orders',
-      type: 'order:status',
-      value: { orderId: order.id, status: OrderStatus.ACCEPTED },
-      integrationId: integration.id
+      namespace: EventNamespace.ORDERS,
+      type: EventType.ORDER_CREATED,
+      integrationId: integration.id,
+      data: {
+        orderId: order.id,
+        order: order
+      }
     })
 
+    const { providerConfiguration, integrationOptions } = integration
+    const { configurationOptions, providerId } = providerConfiguration
+
+    if (this.nodeEnv === 'seed') return order
+
+    // Send order to Engine
+    const { message, messagePattern } = ieMessageBuilder(
+      providerId,
+      {
+        resource: 'orders',
+        operation: 'create',
+        data: {
+          payload: order,
+          integrationOptions,
+          providerConfiguration: configurationOptions
+        }
+      }
+    )
+
+    try {
+      this.logger.log(`Sending '${messagePattern}' to '${providerId}' provider`)
+      const response: OrderCreatedResponse = await this.client
+        .send(messagePattern, message)
+        .toPromise()
+      Object.assign(order, response)
+    } catch (error: any) {
+      // TODO(gb): change response status?
+      order.status = OrderStatus.ERROR
+      await this.ordersRepository.save(order)
+      await this.eventsService.addEvent({
+        namespace: EventNamespace.ORDERS,
+        type: EventType.ORDER_UPDATED,
+        integrationId: integration.id,
+        data: {
+          orderId: order.id,
+          status: order.status,
+          order: order
+        }
+      })
+    }
+
+    // Update order
+    await this.ordersRepository.save(order)
     await this.eventsService.addEvent({
-      namespace: 'orders',
-      type: 'order:status',
-      value: { orderId: order.id, status: order.status },
-      integrationId: integration.id
+      namespace: EventNamespace.ORDERS,
+      type: EventType.ORDER_UPDATED,
+      integrationId: integration.id,
+      data: {
+        orderId: order.id,
+        status: order.status,
+        order: order
+      }
     })
 
     return order
@@ -311,7 +316,7 @@ export class OrdersService {
         operation: 'cancel',
         data: {
           providerConfiguration:
-            providerConfiguration.configurationOptions,
+          providerConfiguration.configurationOptions,
           integrationOptions,
           payload: {
             id: externalId
@@ -364,7 +369,7 @@ export class OrdersService {
         operation: 'tests.add',
         data: {
           providerConfiguration:
-            providerConfiguration.configurationOptions,
+          providerConfiguration.configurationOptions,
           integrationOptions,
           payload: {
             id: externalId,
@@ -420,7 +425,7 @@ export class OrdersService {
         operation: 'tests.cancel',
         data: {
           providerConfiguration:
-            providerConfiguration.configurationOptions,
+          providerConfiguration.configurationOptions,
           integrationOptions,
           payload: {
             id: externalId,
@@ -442,6 +447,8 @@ export class OrdersService {
     integrationId,
     orders
   }: ExternalOrdersEventData): Promise<void> {
+    this.logger.log(`Got ${orders.length} orders from provider`)
+
     const externalOrdersExternalIds = orders.map(order => order.externalId)
     const existingOrders = await this.findAll({
       where: {
@@ -459,12 +466,11 @@ export class OrdersService {
       if (externalOrder == null) continue
 
       const mappedStatus = externalOrderStatusMapper(externalOrder.status)
-
       if (existingOrder.status === mappedStatus) continue
 
       updatedOrders.push({
         ...existingOrder,
-        status: mappedStatus
+        status: OrderStatus[mappedStatus]
       })
     }
 
@@ -483,15 +489,41 @@ export class OrdersService {
     const newOrders = this.ordersRepository.create(nonExistingOrders)
     const allOrders = [...newOrders, ...updatedOrders]
 
-    await this.ordersRepository.save(allOrders)
-
-    for (const order of allOrders) {
+    // Notify about new orders
+    for (const order of newOrders) {
       await this.eventsService.addEvent({
-        namespace: 'orders',
-        type: 'order:status',
-        value: { orderId: order.id, status: order.status },
-        integrationId: order.integrationId
+        namespace: EventNamespace.ORDERS,
+        type: EventType.ORDER_CREATED,
+        integrationId: integrationId,
+        data: {
+          orderId: order.id,
+          order: order
+        }
       })
     }
+
+    // Notify about updated orders
+    for (const order of updatedOrders) {
+      await this.eventsService.addEvent({
+        namespace: EventNamespace.ORDERS,
+        type: EventType.ORDER_UPDATED,
+        integrationId: integrationId,
+        data: {
+          orderId: order.id,
+          status: order.status,
+          order: order
+        }
+      })
+    }
+
+    await this.ordersRepository.save(allOrders)
+  }
+
+  async handleExternalResults ({
+    integrationId,
+    results
+  }: ExternalResultEventData): Promise<void> {
+    this.logger.log(`Got ${results.length} results from provider`)
+    // TODO(gb): implement report handling logic
   }
 }

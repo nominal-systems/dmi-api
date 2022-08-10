@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Logger,
   Param,
   Post,
   Query,
@@ -22,10 +23,13 @@ import { OrderSearchQueryParams } from './dtos/order-search-queryparams.dto'
 import { OrderTestCancelPathParams } from './dtos/order-test-cancel-path-params.dto'
 import { Order } from './entities/order.entity'
 import { OrdersService } from './orders.service'
+import { ExternalResultEventData } from '../common/typings/external-result-event-data.interface'
 
 @Controller('orders')
 @UseGuards(ApiGuard)
 export class OrdersController {
+  private readonly logger = new Logger(OrdersController.name)
+
   constructor (private readonly ordersService: OrdersService) {}
 
   @Get()
@@ -103,5 +107,11 @@ export class OrdersController {
   @DisableGuards(ApiGuard)
   async handleExternalOrders (data: ExternalOrdersEventData): Promise<void> {
     await this.ordersService.handleExternalOrders(data)
+  }
+
+  @EventPattern('external_results')
+  @DisableGuards(ApiGuard)
+  async handleExternalResults (data: ExternalResultEventData): Promise<void> {
+    await this.ordersService.handleExternalResults(data)
   }
 }

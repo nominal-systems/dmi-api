@@ -1,10 +1,9 @@
-import { EventValue } from '../entities/event.entity'
+import { EventData } from '../entities/event-type.interface'
 
 export class AddEventDto {
   namespace: string
   type: string
-  value: EventValue
   integrationId: string
-  practiceId?: string
+  data: EventData
   context?: any
 }

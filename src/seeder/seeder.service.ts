@@ -18,6 +18,8 @@ import { SeedIntegrationsParams } from './typings/seed-integrations-params.inter
 import { IdFirstAndLastName } from './typings/id-first-and-last-name.interface'
 import { IdAndName } from './typings/id-and-name.interface'
 import { WeightUnits } from '../common/typings/patient-weight.interface'
+import { EventNamespace } from '../events/constants/event-namespace.enum'
+import { EventType } from '../events/constants/event-type.enum'
 
 @Injectable()
 export class SeederService {
@@ -221,13 +223,13 @@ export class SeederService {
 
     for (const order of orders) {
       const event = await this.eventsService.addEvent({
-        namespace: 'orders',
-        type: 'order:status',
-        value: {
+        namespace: EventNamespace.ORDERS,
+        type: EventType.ORDER_CREATED,
+        integrationId: order.integrationId,
+        data: {
           orderId: order.id,
-          status: 'completed'
-        },
-        integrationId: order.integrationId
+          order: order
+        }
       })
 
       events.push(event)

@@ -17,7 +17,7 @@ import { RpcExceptionInterceptor } from './common/interceptors/rpc-exception.int
 import { WinstonModule } from 'nest-winston'
 import { consoleTransport, fileTransport } from './config/winstonconfig'
 import { AuthModule } from './common/auth/auth.module'
-import { RefsModule } from './refs/refs.module';
+import { RefsModule } from './refs/refs.module'
 
 @Module({
   imports: [
