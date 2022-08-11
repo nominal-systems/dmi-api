@@ -18,6 +18,7 @@ import { WinstonModule } from 'nest-winston'
 import { consoleTransport, fileTransport } from './config/winstonconfig'
 import { AuthModule } from './common/auth/auth.module'
 import { RefsModule } from './refs/refs.module'
+import { ReportsModule } from './reports/reports.module';
 
 @Module({
   imports: [
@@ -54,7 +55,8 @@ import { RefsModule } from './refs/refs.module'
     OrdersModule,
     EventsModule,
     SeederModule,
-    RefsModule
+    RefsModule,
+    ReportsModule
   ],
   controllers: [AppController],
   providers: [

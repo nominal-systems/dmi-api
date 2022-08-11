@@ -7,6 +7,7 @@ import { ProvidersModule } from '../providers/providers.module'
 import { OrganizationsModule } from '../organizations/organizations.module'
 import { OrdersModule } from '../orders/orders.module'
 import { EventsModule } from '../events/events.module'
+import { ReportsModule } from '../reports/reports.module'
 
 @Module({
   imports: [

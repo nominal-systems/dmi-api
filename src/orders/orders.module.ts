@@ -12,12 +12,14 @@ import { Veterinarian } from './entities/veterinarian.entity'
 import { EventsModule } from '../events/events.module'
 import activeMQClientProvider from '../common/providers/activemq-client.provider'
 import { Test } from './entities/test.entity'
+import { ReportsModule } from '../reports/reports.module'
 
 @Module({
   imports: [
     OrganizationsModule,
     IntegrationsModule,
     EventsModule,
+    ReportsModule,
     TypeOrmModule.forFeature([Order, Patient, Client, Veterinarian, Test]),
     ClientsModule.registerAsync([activeMQClientProvider])
   ],

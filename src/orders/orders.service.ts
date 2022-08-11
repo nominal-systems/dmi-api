@@ -18,6 +18,7 @@ import { ExternalResultEventData } from '../common/typings/external-result-event
 import { externalOrderStatusMapper } from '../common/utils/order-status-map.helper'
 import { EventNamespace } from '../events/constants/event-namespace.enum'
 import { EventType } from '../events/constants/event-type.enum'
+import { ReportsService } from '../reports/reports.service'
 
 interface OrderTestCancelOrAddParams {
   orderId: string
@@ -38,8 +39,12 @@ export class OrdersService {
     private readonly testsRepository: Repository<Test>,
     @Inject(IntegrationsService)
     private readonly integrationsService: IntegrationsService,
-    @Inject(EventsService) private readonly eventsService: EventsService,
-    @Inject('ACTIVEMQ') private readonly client: ClientProxy
+    @Inject(EventsService)
+    private readonly eventsService: EventsService,
+    @Inject(ReportsService)
+    private readonly reportsService: ReportsService,
+    @Inject('ACTIVEMQ')
+    private readonly client: ClientProxy
   ) {
     this.nodeEnv = this.configService.get('nodeEnv')
   }
@@ -449,12 +454,8 @@ export class OrdersService {
   }: ExternalOrdersEventData): Promise<void> {
     this.logger.log(`Got ${orders.length} orders from provider`)
 
-    const externalOrdersExternalIds = orders.map(order => order.externalId)
-    const existingOrders = await this.findAll({
-      where: {
-        externalId: In(externalOrdersExternalIds)
-      }
-    })
+    const externalOrdersIds = orders.map(order => order.externalId)
+    const existingOrders = await this.findOrdersByExternalIds(externalOrdersIds)
 
     const updatedOrders: Order[] = []
 
@@ -524,6 +525,21 @@ export class OrdersService {
     results
   }: ExternalResultEventData): Promise<void> {
     this.logger.log(`Got ${results.length} results from provider`)
-    // TODO(gb): implement report handling logic
+    console.log('integrationId= ' + integrationId) // TODO(gb): remove trace
+    const externalOrdersIds = results.map(order => order.externalOrderId)
+    const existingOrders = await this.findOrdersByExternalIds(externalOrdersIds)
+
+    // Process results existing orders
+    for (const existingOrder of existingOrders) {
+      console.log('existingOrder= ' + JSON.stringify(existingOrder, null, 2)) // TODO(gb): remove trace
+    }
+  }
+
+  private async findOrdersByExternalIds (externalIds: string[]): Promise<Order[]> {
+    return await this.findAll({
+      where: {
+        externalId: In(externalIds)
+      }
+    })
   }
 }
