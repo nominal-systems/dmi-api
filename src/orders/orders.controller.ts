@@ -108,10 +108,4 @@ export class OrdersController {
   async handleExternalOrders (data: ExternalOrdersEventData): Promise<void> {
     await this.ordersService.handleExternalOrders(data)
   }
-
-  @EventPattern('external_results')
-  @DisableGuards(ApiGuard)
-  async handleExternalResults (data: ExternalResultEventData): Promise<void> {
-    await this.ordersService.handleExternalResults(data)
-  }
 }

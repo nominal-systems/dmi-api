@@ -14,11 +14,9 @@ import { EventsService } from '../events/events.service'
 import { OrderSearchQueryParams } from './dtos/order-search-queryparams.dto'
 import { Test } from './entities/test.entity'
 import { OrderCreatedResponse, OrderStatus } from '@nominal-systems/dmi-engine-common'
-import { ExternalResultEventData } from '../common/typings/external-result-event-data.interface'
 import { externalOrderStatusMapper } from '../common/utils/order-status-map.helper'
 import { EventNamespace } from '../events/constants/event-namespace.enum'
 import { EventType } from '../events/constants/event-type.enum'
-import { ReportsService } from '../reports/reports.service'
 
 interface OrderTestCancelOrAddParams {
   orderId: string
@@ -41,8 +39,6 @@ export class OrdersService {
     private readonly integrationsService: IntegrationsService,
     @Inject(EventsService)
     private readonly eventsService: EventsService,
-    @Inject(ReportsService)
-    private readonly reportsService: ReportsService,
     @Inject('ACTIVEMQ')
     private readonly client: ClientProxy
   ) {
@@ -518,21 +514,6 @@ export class OrdersService {
     }
 
     await this.ordersRepository.save(allOrders)
-  }
-
-  async handleExternalResults ({
-    integrationId,
-    results
-  }: ExternalResultEventData): Promise<void> {
-    this.logger.log(`Got ${results.length} results from provider`)
-    console.log('integrationId= ' + integrationId) // TODO(gb): remove trace
-    const externalOrdersIds = results.map(order => order.externalOrderId)
-    const existingOrders = await this.findOrdersByExternalIds(externalOrdersIds)
-
-    // Process results existing orders
-    for (const existingOrder of existingOrders) {
-      console.log('existingOrder= ' + JSON.stringify(existingOrder, null, 2)) // TODO(gb): remove trace
-    }
   }
 
   private async findOrdersByExternalIds (externalIds: string[]): Promise<Order[]> {
