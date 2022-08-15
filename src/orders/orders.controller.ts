@@ -23,7 +23,7 @@ import { OrderSearchQueryParams } from './dtos/order-search-queryparams.dto'
 import { OrderTestCancelPathParams } from './dtos/order-test-cancel-path-params.dto'
 import { Order } from './entities/order.entity'
 import { OrdersService } from './orders.service'
-import { ExternalResultEventData } from '../common/typings/external-result-event-data.interface'
+import { Report } from '../reports/entities/report.entity'
 
 @Controller('orders')
 @UseGuards(ApiGuard)
@@ -87,6 +87,14 @@ export class OrdersController {
     @Param('id') id: string
   ): Promise<any> {
     return await this.ordersService.getOrderResults(organization, id, 'pdf')
+  }
+
+  @Get(':id/report')
+  async getOrderReport (
+    @Organization() organization: OrganizationEntity,
+    @Param('id') id: string
+  ): Promise<Report> {
+    return await this.ordersService.getOrderReport(organization, id)
   }
 
   @Post()

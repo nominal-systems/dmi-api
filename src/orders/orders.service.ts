@@ -17,6 +17,8 @@ import { OrderCreatedResponse, OrderStatus } from '@nominal-systems/dmi-engine-c
 import { externalOrderStatusMapper } from '../common/utils/order-status-map.helper'
 import { EventNamespace } from '../events/constants/event-namespace.enum'
 import { EventType } from '../events/constants/event-type.enum'
+import { ReportsService } from '../reports/reports.service'
+import { Report } from '../reports/entities/report.entity'
 
 interface OrderTestCancelOrAddParams {
   orderId: string
@@ -35,6 +37,8 @@ export class OrdersService {
     private readonly ordersRepository: Repository<Order>,
     @InjectRepository(Test)
     private readonly testsRepository: Repository<Test>,
+    @Inject(ReportsService)
+    private readonly reportsService: ReportsService,
     @Inject(IntegrationsService)
     private readonly integrationsService: IntegrationsService,
     @Inject(EventsService)
@@ -289,6 +293,19 @@ export class OrdersService {
       }
     })
 
+    // Register report
+    const report = await this.reportsService.registerForOrder(order)
+    await this.eventsService.addEvent({
+      namespace: EventNamespace.REPORTS,
+      type: EventType.REPORT_CREATED,
+      integrationId: integration.id,
+      data: {
+        orderId: order.id,
+        reportId: report.id,
+        report: report
+      }
+    })
+
     return order
   }
 
@@ -514,6 +531,13 @@ export class OrdersService {
     }
 
     await this.ordersRepository.save(allOrders)
+  }
+
+  async getOrderReport (
+    organization: Organization,
+    orderId: string
+  ): Promise<Report> {
+    return await this.reportsService.findForOrder(orderId)
   }
 
   private async findOrdersByExternalIds (externalIds: string[]): Promise<Order[]> {

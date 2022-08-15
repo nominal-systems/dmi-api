@@ -1,5 +1,6 @@
 import { TestResult } from '@nominal-systems/dmi-engine-common'
 import { Order } from '../../orders/entities/order.entity'
+import { Report } from '../../reports/entities/report.entity'
 
 export interface OrderCreatedEventPayload {
   orderId: string
@@ -21,7 +22,7 @@ export interface OrderResultsEventPayload {
 export interface ReporterCreatedEventPayload {
   orderId: string
   reportId: string
-  // TODO(gb): add report: Report
+  report: Report
 }
 
 export interface ReporterUpdatedEventPayload {
