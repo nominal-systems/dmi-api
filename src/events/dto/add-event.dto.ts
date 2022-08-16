@@ -1,4 +1,4 @@
-import { EventData } from '../entities/event-type.interface'
+import { EventData } from '../interfaces/event-data.interface'
 
 export class AddEventDto {
   namespace: string

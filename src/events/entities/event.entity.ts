@@ -2,7 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import * as mongoose from 'mongoose'
 import { EventType } from '../constants/event-type.enum'
 import { EventNamespace } from '../constants/event-namespace.enum'
-import { EventData } from './event-type.interface'
+import { EventData } from '../interfaces/event-data.interface'
 
 @Schema({ timestamps: { updatedAt: false } })
 export class Event {
