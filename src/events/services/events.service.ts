@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common'
+import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { FilterQuery, Model } from 'mongoose'
 import { SelectQueryBuilder } from 'typeorm'
@@ -9,6 +9,7 @@ import { Event, EventDocument } from '../entities/event.entity'
 import { AddEventDto } from '../dto/add-event.dto'
 import { EventsQueryDto } from '../dto/events-query.dto'
 import { ModuleRef } from '@nestjs/core'
+import { EventSubscriptionService } from './event-subscription.service'
 
 @Injectable()
 export class EventsService implements OnModuleInit {
@@ -17,7 +18,8 @@ export class EventsService implements OnModuleInit {
 
   constructor (
     private readonly moduleRef: ModuleRef,
-    @InjectModel(Event.name) private readonly eventModel: Model<EventDocument>
+    @InjectModel(Event.name) private readonly eventModel: Model<EventDocument>,
+    @Inject(EventSubscriptionService) private readonly eventSubscriptionService: EventSubscriptionService
   ) {}
 
   onModuleInit (): void {
@@ -30,7 +32,9 @@ export class EventsService implements OnModuleInit {
 
   async addEvent (eventDto: AddEventDto): Promise<Event> {
     this.logger.debug(`Event: '${eventDto.type}'`)
-    return await this.eventModel.create(eventDto)
+    const event = await this.eventModel.create(eventDto)
+    await this.eventSubscriptionService.notifySubscriptions(event)
+    return event
   }
 
   async getEventsForOrganization (

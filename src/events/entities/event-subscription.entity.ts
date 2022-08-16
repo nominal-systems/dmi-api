@@ -1,9 +1,10 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
+import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, Unique, UpdateDateColumn } from 'typeorm'
 import { EventType } from '../constants/event-type.enum'
 import { EventSubscriptionTypes } from '../constants/event-subscription-types.enum'
 import { Exclude } from 'class-transformer'
 
 @Entity()
+@Unique(['event_type', 'subscription_type', 'organizationId'])
 export class EventSubscription {
   @PrimaryGeneratedColumn('uuid')
   id: string
