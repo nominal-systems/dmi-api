@@ -1,4 +1,5 @@
 import {
+  AfterInsert,
   AfterLoad,
   BeforeInsert,
   Column,
@@ -55,6 +56,7 @@ export class EventSubscription {
   }
 
   @AfterLoad()
+  @AfterInsert()
   decryptOptions (): void {
     this.subscription_options = decrypt(
       this.subscription_options,

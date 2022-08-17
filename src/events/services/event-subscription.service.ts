@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, Logger } from '@nestjs/common'
+import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { EventSubscription } from '../entities/event-subscription.entity'
 import { Repository } from 'typeorm'
@@ -6,6 +6,7 @@ import { CreateEventSubscriptionDto } from '../dto/create-event-subscription.dto
 import { Event } from '../entities/event.entity'
 import { EventHubProducerClient } from '@azure/event-hubs'
 import { AzureNamedKeyCredential } from '@azure/core-auth'
+import { FindOneOfTypeOptions } from '../../common/typings/find-one-of-type-options.interface'
 
 @Injectable()
 export class EventSubscriptionService {
@@ -16,7 +17,20 @@ export class EventSubscriptionService {
     private readonly eventSubscriptionRepository: Repository<EventSubscription>
   ) {}
 
-  async createEventSubscription (
+  async findOne (args: FindOneOfTypeOptions<EventSubscription>): Promise<EventSubscription> {
+    const eventSubscription = await this.eventSubscriptionRepository.findOne(
+      args.id,
+      args.options
+    )
+
+    if (eventSubscription == null) {
+      throw new NotFoundException('The event subscription was not found')
+    }
+
+    return eventSubscription
+  }
+
+  async create (
     organizationId: string,
     createEventSubscriptionDto: CreateEventSubscriptionDto
   ): Promise<EventSubscription> {
@@ -25,10 +39,26 @@ export class EventSubscriptionService {
     try {
       return await this.eventSubscriptionRepository.save(eventSubscription)
     } catch (error) {
+      // TODO(gb): catch more specific errors
       throw new ConflictException(
         `Event subscription '${createEventSubscriptionDto.event_subscription_type}' already exists for event type '${createEventSubscriptionDto.event_type}' and this organization`
       )
     }
+  }
+
+  async delete (organizationId: string, subscriptionId: string): Promise<void> {
+    const eventSubscription = await this.eventSubscriptionRepository.findOne({
+      where: {
+        id: subscriptionId,
+        organizationId: organizationId
+      }
+    })
+
+    if (eventSubscription == null) {
+      throw new NotFoundException('The event subscription was not found')
+    }
+
+    await this.eventSubscriptionRepository.delete(eventSubscription.id)
   }
 
   async notifySubscriptions (event: Event): Promise<void> {

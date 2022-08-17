@@ -1,4 +1,4 @@
-import { Body, Controller, Logger, Post, UseGuards } from '@nestjs/common'
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Logger, Param, Post, UseGuards } from '@nestjs/common'
 import { ApiGuard } from '../../common/guards/api.guard'
 import { CreateEventSubscriptionDto } from '../dto/create-event-subscription.dto'
 import { EventSubscription } from '../entities/event-subscription.entity'
@@ -15,11 +15,35 @@ export class EventSubscriptionsController {
     private readonly eventSubscriptionService: EventSubscriptionService
   ) {}
 
+  @Get(':id')
+  async getEventSubscription (
+    @Organization() organization: OrganizationEntity,
+    @Param('id') subscriptionId: string
+  ): Promise<EventSubscription> {
+    return await this.eventSubscriptionService.findOne({
+      options: {
+        where: {
+          id: subscriptionId,
+          organizationId: organization.id
+        }
+      }
+    })
+  }
+
   @Post()
   async createEventSubscription (
     @Organization() organization: OrganizationEntity,
     @Body() createEventSubscriptionDto: CreateEventSubscriptionDto
   ): Promise<EventSubscription> {
-    return await this.eventSubscriptionService.createEventSubscription(organization.id, createEventSubscriptionDto)
+    return await this.eventSubscriptionService.create(organization.id, createEventSubscriptionDto)
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteEventSubscription (
+    @Organization() organization: OrganizationEntity,
+    @Param('id') subscriptionId: string
+  ): Promise<void> {
+    await this.eventSubscriptionService.delete(organization.id, subscriptionId)
   }
 }
