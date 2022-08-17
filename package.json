@@ -26,6 +26,8 @@
     "seed": "NODE_ENV=seed ts-node -r tsconfig-paths/register src/seeder.ts"
   },
   "dependencies": {
+    "@azure/core-auth": "^1.4.0",
+    "@azure/event-hubs": "^5.8.0",
     "@nestjs/common": "^7.6.18",
     "@nestjs/config": "^0.6.3",
     "@nestjs/core": "^7.6.18",
