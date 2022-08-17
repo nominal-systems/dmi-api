@@ -1,7 +1,18 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, Unique, UpdateDateColumn } from 'typeorm'
+import {
+  AfterLoad,
+  BeforeInsert,
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+  Unique,
+  UpdateDateColumn
+} from 'typeorm'
 import { EventType } from '../constants/event-type.enum'
 import { EventSubscriptionTypes } from '../constants/event-subscription-types.enum'
 import { Exclude } from 'class-transformer'
+import { decrypt, encrypt } from '../../common/utils/crypto.utils'
+import configuration from '../../config/configuration'
 
 @Entity()
 @Unique(['event_type', 'subscription_type', 'organizationId'])
@@ -22,6 +33,9 @@ export class EventSubscription {
   })
   subscription_type: EventSubscriptionTypes
 
+  @Column('json')
+  subscription_options: any
+
   @Column()
   @Exclude()
   organizationId: string
@@ -31,4 +45,20 @@ export class EventSubscription {
 
   @UpdateDateColumn()
   updatedAt: Date
+
+  @BeforeInsert()
+  encryptOptions (): void {
+    this.subscription_options = encrypt(
+      this.subscription_options,
+      configuration().secretKey
+    )
+  }
+
+  @AfterLoad()
+  decryptOptions (): void {
+    this.subscription_options = decrypt(
+      this.subscription_options,
+      configuration().secretKey
+    )
+  }
 }
