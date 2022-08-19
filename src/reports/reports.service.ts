@@ -5,7 +5,7 @@ import { Report } from './entities/report.entity'
 import { FindOneOfTypeOptions } from '../common/typings/find-one-of-type-options.interface'
 import { ExternalResultEventData } from '../common/typings/external-result-event-data.interface'
 import { Order } from '../orders/entities/order.entity'
-import { ReportStatus } from '../../../dmi-engine-common'
+import { ReportStatus } from '@nominal-systems/dmi-engine-common'
 
 @Injectable()
 export class ReportsService {
