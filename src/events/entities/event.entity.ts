@@ -6,7 +6,8 @@ import { EventData } from '../interfaces/event-data.interface'
 
 @Schema({ timestamps: { updatedAt: false } })
 export class Event {
-  @Prop({ unique: true })
+  // TODO(gb): this field should be auto-incremented and unique
+  @Prop()
   seq: number
 
   @Prop({ enum: EventNamespace })
@@ -26,6 +27,9 @@ export class Event {
 
   @Prop({ expires: '30d' })
   createdAt: Date
+
+  @Prop({ expires: '30d' })
+  currentTime: number
 }
 
 export type EventDocument = Event & mongoose.Document
