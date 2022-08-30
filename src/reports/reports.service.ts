@@ -9,6 +9,7 @@ import { ProviderResult, ReportStatus } from '@nominal-systems/dmi-engine-common
 import { EventsService } from '../events/services/events.service'
 import { EventNamespace } from '../events/constants/event-namespace.enum'
 import { EventType } from '../events/constants/event-type.enum'
+import { TestResult } from './entities/test-result.entity'
 
 @Injectable()
 export class ReportsService {
@@ -17,6 +18,8 @@ export class ReportsService {
   constructor (
     @InjectRepository(Report)
     private readonly reportsRepository: Repository<Report>,
+    @InjectRepository(TestResult)
+    private readonly testResultRepository: Repository<TestResult>,
     @Inject(EventsService)
     private readonly eventsService: EventsService
   ) {}
@@ -39,13 +42,15 @@ export class ReportsService {
     const report = new Report()
     report.orderId = order.id
     report.order = order
+    report.patient = order.patient
     report.status = ReportStatus.REGISTERED
     return await this.reportsRepository.save(report)
   }
 
   async findForOrder (orderId: string): Promise<Report> {
     const report = await this.reportsRepository.findOne({
-     where: { orderId }
+      where: { orderId },
+      relations: ['patient', 'testResultsSet']
     })
 
     if (report == null) {
@@ -68,7 +73,7 @@ export class ReportsService {
     const updatedReports: Report[] = []
     for (const report of existingReports) {
       const resultsForReport = results.filter(result => result.orderId === report.order.externalId)
-      this.updateReportResults(report, resultsForReport)
+      await this.updateReportResults(report, resultsForReport)
       updatedReports.push(report)
     }
 
@@ -114,11 +119,36 @@ export class ReportsService {
           externalId: In(externalOrderIds)
         }
       },
-      relations: ['order']
+      relations: ['order', 'patient', 'testResultsSet']
     })
   }
 
-  private updateReportResults (report: Report, results: ProviderResult[]): void {
-    console.log(`update results for report ${report.id} =>\n` + JSON.stringify(results, null, 2)) // TODO(gb): remove trace
+  private async updateReportResults (report: Report, results: ProviderResult[]): Promise<void> {
+    const providerTestResults = results
+      .map(result => result.testResults)
+      .reduce((a, v) => a.concat(v), [])
+
+    // Build test results set
+    const testResultsSet: TestResult[] = []
+    for (const providerTestResult of providerTestResults) {
+      const existingTest = report.testResultsSet.find(testResult => testResult.code === providerTestResult.code)
+      if (existingTest != null) {
+        // TODO(gb): merge?
+      } else {
+        const testResult = new TestResult()
+        testResult.code = providerTestResult.code
+        testResult.name = providerTestResult.name
+        testResult.deviceId = providerTestResult.deviceId
+        testResult.notes = providerTestResult.notes
+        testResultsSet.push(testResult)
+      }
+    }
+    report.testResultsSet = report.testResultsSet.concat(testResultsSet)
+
+    // Update Report state
+    const resultsStates = results.map(result => result.status)
+    // TODO(gb): obtain overall state for Report
+
+    await this.reportsRepository.save(report)
   }
 }

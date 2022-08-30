@@ -19,7 +19,7 @@ export interface OrderResultsEventPayload {
   results: TestResult[]
 }
 
-export interface ReporterCreatedEventPayload {
+export interface ReportCreatedEventPayload {
   orderId: string
   reportId: string
   report: Report
@@ -35,5 +35,5 @@ export type EventData =
   | OrderCreatedEventPayload
   | OrderUpdatedEventPayload
   | OrderResultsEventPayload
-  | ReporterCreatedEventPayload
+  | ReportCreatedEventPayload
   | ReportUpdatedEventPayload
