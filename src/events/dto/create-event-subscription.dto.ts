@@ -9,7 +9,7 @@ export class CreateEventSubscriptionDto {
 
   @IsNotEmpty()
   @IsString()
-  event_subscription_type: EventSubscriptionTypes
+  subscription_type: EventSubscriptionTypes
 
   @IsNotEmpty()
   subscription_options: any

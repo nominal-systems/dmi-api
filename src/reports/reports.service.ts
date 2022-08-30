@@ -1,11 +1,14 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { FindManyOptions, Repository } from 'typeorm'
+import { FindManyOptions, In, Repository } from 'typeorm'
 import { Report } from './entities/report.entity'
 import { FindOneOfTypeOptions } from '../common/typings/find-one-of-type-options.interface'
 import { ExternalResultEventData } from '../common/typings/external-result-event-data.interface'
 import { Order } from '../orders/entities/order.entity'
-import { ReportStatus } from '@nominal-systems/dmi-engine-common'
+import { ProviderResult, ReportStatus } from '@nominal-systems/dmi-engine-common'
+import { EventsService } from '../events/services/events.service'
+import { EventNamespace } from '../events/constants/event-namespace.enum'
+import { EventType } from '../events/constants/event-type.enum'
 
 @Injectable()
 export class ReportsService {
@@ -13,7 +16,9 @@ export class ReportsService {
 
   constructor (
     @InjectRepository(Report)
-    private readonly reportsRepository: Repository<Report>
+    private readonly reportsRepository: Repository<Report>,
+    @Inject(EventsService)
+    private readonly eventsService: EventsService
   ) {}
 
   async findAll (options?: FindManyOptions<Report>): Promise<Report[]> {
@@ -56,10 +61,64 @@ export class ReportsService {
   }: ExternalResultEventData): Promise<void> {
     this.logger.log(`Got ${results.length} results from provider`)
 
-    for (const result of results) {
-      // Find report by external order id
-      // Create report if it doesn't exist, merge otherwise
-      // Notify accordingly
+    const externalOrderIds = results.map(result => result.orderId)
+    const existingReports = await this.findReportsByExternalOrderIds(externalOrderIds)
+
+    // Update existing reports with new results
+    const updatedReports: Report[] = []
+    for (const report of existingReports) {
+      const resultsForReport = results.filter(result => result.orderId === report.order.externalId)
+      this.updateReportResults(report, resultsForReport)
+      updatedReports.push(report)
     }
+
+    // Create new reports with unmatched results
+    const createdReports: Report[] = []
+    // TODO(gb): handle non-existing reports
+
+    // Notify about new reports
+    for (const report of createdReports) {
+      await this.eventsService.addEvent({
+        namespace: EventNamespace.REPORTS,
+        type: EventType.REPORT_CREATED,
+        integrationId: integrationId,
+        data: {
+          orderId: report.orderId,
+          reportId: report.id,
+          report: report
+        }
+      })
+    }
+
+    // Notify about updated reports
+    for (const report of updatedReports) {
+      await this.eventsService.addEvent({
+        namespace: EventNamespace.REPORTS,
+        type: EventType.REPORT_UPDATED,
+        integrationId: integrationId,
+        data: {
+          orderId: report.orderId,
+          reportId: report.id,
+          report: report
+        }
+      })
+    }
+
+    // TODO(gb): Notify about results in existing orders
+  }
+
+  private async findReportsByExternalOrderIds (externalOrderIds: string[]): Promise<Report[]> {
+    return await this.findAll({
+      where: {
+        order: {
+          externalId: In(externalOrderIds)
+        }
+      },
+      relations: ['order']
+    })
+  }
+
+  private updateReportResults (report: Report, results: ProviderResult[]): void {
+    console.log(`update results for report ${report.id} =>\n` + JSON.stringify(results, null, 2)) // TODO(gb): remove trace
   }
 }

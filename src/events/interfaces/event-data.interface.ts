@@ -25,10 +25,10 @@ export interface ReporterCreatedEventPayload {
   report: Report
 }
 
-export interface ReporterUpdatedEventPayload {
+export interface ReportUpdatedEventPayload {
   orderId: string
   reportId: string
-  // TODO(gb): add report: Report
+  report: Report
 }
 
 export type EventData =
@@ -36,3 +36,4 @@ export type EventData =
   | OrderUpdatedEventPayload
   | OrderResultsEventPayload
   | ReporterCreatedEventPayload
+  | ReportUpdatedEventPayload

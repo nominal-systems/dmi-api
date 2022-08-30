@@ -1,7 +1,7 @@
 import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { EventSubscription } from '../entities/event-subscription.entity'
-import { Repository } from 'typeorm'
+import { FindManyOptions, Repository } from 'typeorm'
 import { CreateEventSubscriptionDto } from '../dto/create-event-subscription.dto'
 import { Event } from '../entities/event.entity'
 import { EventHubProducerClient } from '@azure/event-hubs'
@@ -16,6 +16,12 @@ export class EventSubscriptionService {
     @InjectRepository(EventSubscription)
     private readonly eventSubscriptionRepository: Repository<EventSubscription>
   ) {}
+
+  async find (
+    options?: FindManyOptions<EventSubscription>
+  ): Promise<EventSubscription[]> {
+    return await this.eventSubscriptionRepository.find(options)
+  }
 
   async findOne (args: FindOneOfTypeOptions<EventSubscription>): Promise<EventSubscription> {
     const eventSubscription = await this.eventSubscriptionRepository.findOne(
@@ -41,7 +47,7 @@ export class EventSubscriptionService {
     } catch (error) {
       // TODO(gb): catch more specific errors
       throw new ConflictException(
-        `Event subscription '${createEventSubscriptionDto.event_subscription_type}' already exists for event type '${createEventSubscriptionDto.event_type}' and this organization`
+        `Event subscription '${createEventSubscriptionDto.subscription_type}' already exists for event type '${createEventSubscriptionDto.event_type}' and this organization`
       )
     }
   }

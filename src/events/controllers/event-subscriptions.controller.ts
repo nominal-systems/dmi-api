@@ -15,6 +15,17 @@ export class EventSubscriptionsController {
     private readonly eventSubscriptionService: EventSubscriptionService
   ) {}
 
+  @Get()
+  async listEventSubscriptions (
+    @Organization() organization: OrganizationEntity
+  ): Promise<EventSubscription[]> {
+    return await this.eventSubscriptionService.find({
+      where: {
+        organizationId: organization.id
+      }
+    })
+  }
+
   @Get(':id')
   async getEventSubscription (
     @Organization() organization: OrganizationEntity,
