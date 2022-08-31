@@ -7,4 +7,4 @@ const sexes: Sex[] = [
   }
 ]
 
-export default sexes;
+export default sexes

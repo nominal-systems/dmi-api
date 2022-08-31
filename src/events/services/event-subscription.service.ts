@@ -78,9 +78,10 @@ export class EventSubscriptionService {
     for (const subscription of subscriptions) {
       const opts = subscription.subscription_options
       const credential = new AzureNamedKeyCredential(opts.sa_key_name, opts.sa_key_value)
-      const producer = new EventHubProducerClient(`${opts.hub_namespace}.servicebus.windows.net`, opts.hub_name, credential)
+      const namespace = [opts.hub_namespace, '.servicebus.windows.net'].join('')
+      const producer = new EventHubProducerClient(namespace, opts.hub_name, credential)
       const eventDataBatch = await producer.createBatch()
-      eventDataBatch.tryAdd({ body: event.data })
+      eventDataBatch.tryAdd({ body: event })
       await producer.sendBatch(eventDataBatch)
       await producer.close()
       this.logger.debug(`Notifying subscription: ${subscription.id} of event '${event.type}'`)
