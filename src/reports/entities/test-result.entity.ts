@@ -1,6 +1,7 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm'
+import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm'
 import { Report } from './report.entity'
 import { TestResultStatus } from '@nominal-systems/dmi-engine-common'
+import { Observation } from './observation.entity'
 
 @Entity()
 export class TestResult {
@@ -25,6 +26,11 @@ export class TestResult {
 
   @Column({ nullable: true })
   notes?: string
+
+  @OneToMany(() => Observation, observation => observation.testResult, {
+    cascade: true
+  })
+  observations: Observation[]
 
   @ManyToOne(() => Report, (report) => report.testResultsSet, {
     onDelete: 'CASCADE'

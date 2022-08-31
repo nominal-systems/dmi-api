@@ -5,11 +5,12 @@ import { TypeOrmModule } from '@nestjs/typeorm'
 import { Report } from './entities/report.entity'
 import { EventsModule } from '../events/events.module'
 import { TestResult } from './entities/test-result.entity'
+import { Observation } from './entities/observation.entity'
 
 @Module({
   imports: [
     EventsModule,
-    TypeOrmModule.forFeature([Report, TestResult])
+    TypeOrmModule.forFeature([Report, TestResult, Observation])
   ],
   controllers: [ReportsController],
   providers: [ReportsService],

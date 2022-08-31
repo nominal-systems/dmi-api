@@ -5,11 +5,12 @@ import { Report } from './entities/report.entity'
 import { FindOneOfTypeOptions } from '../common/typings/find-one-of-type-options.interface'
 import { ExternalResultEventData } from '../common/typings/external-result-event-data.interface'
 import { Order } from '../orders/entities/order.entity'
-import { ProviderResult, ReportStatus } from '@nominal-systems/dmi-engine-common'
+import { ProviderResult, ReportStatus, ProviderTestResultItem } from '@nominal-systems/dmi-engine-common'
 import { EventsService } from '../events/services/events.service'
 import { EventNamespace } from '../events/constants/event-namespace.enum'
 import { EventType } from '../events/constants/event-type.enum'
 import { TestResult } from './entities/test-result.entity'
+import { Observation } from './entities/observation.entity'
 
 @Injectable()
 export class ReportsService {
@@ -50,7 +51,7 @@ export class ReportsService {
   async findForOrder (orderId: string): Promise<Report> {
     const report = await this.reportsRepository.findOne({
       where: { orderId },
-      relations: ['patient', 'testResultsSet']
+      relations: ['patient', 'testResultsSet', 'testResultsSet.observations']
     })
 
     if (report == null) {
@@ -73,8 +74,10 @@ export class ReportsService {
     const updatedReports: Report[] = []
     for (const report of existingReports) {
       const resultsForReport = results.filter(result => result.orderId === report.order.externalId)
-      await this.updateReportResults(report, resultsForReport)
-      updatedReports.push(report)
+      const updated = await this.updateReportResults(report, resultsForReport)
+      if (updated) {
+        updatedReports.push(report)
+      }
     }
 
     // Create new reports with unmatched results
@@ -123,7 +126,7 @@ export class ReportsService {
     })
   }
 
-  private async updateReportResults (report: Report, results: ProviderResult[]): Promise<void> {
+  private async updateReportResults (report: Report, results: ProviderResult[]): Promise<boolean> {
     const providerTestResults = results
       .map(result => result.testResults)
       .reduce((a, v) => a.concat(v), [])
@@ -140,15 +143,36 @@ export class ReportsService {
         testResult.name = providerTestResult.name
         testResult.deviceId = providerTestResult.deviceId
         testResult.notes = providerTestResult.notes
+        await this.updateTestResultObservations(testResult, providerTestResult.items)
         testResultsSet.push(testResult)
       }
     }
-    report.testResultsSet = report.testResultsSet.concat(testResultsSet)
 
-    // Update Report state
-    const resultsStates = results.map(result => result.status)
-    // TODO(gb): obtain overall state for Report
+    const updatePerformed = testResultsSet.length > 0
+    if (updatePerformed) {
+      report.testResultsSet = report.testResultsSet.concat(testResultsSet)
+      // const resultsStates = results.map(result => result.status)
+      // TODO(gb): update Report state
+      await this.reportsRepository.save(report)
+    }
 
-    await this.reportsRepository.save(report)
+    return updatePerformed
+  }
+
+  private async updateTestResultObservations (testResult: TestResult, items: ProviderTestResultItem[]): Promise<void> {
+    const observations: Observation[] = []
+    for (const item of items) {
+      const observation = new Observation()
+      observation.code = item.code
+      observation.name = item.name
+      observation.valueString = item.valueString
+      observation.valueQuantity = item.valueQuantity
+      observation.referenceRange = item.referenceRange
+      observation.interpretation = item.interpretation
+      observation.notes = item.notes
+      observations.push(observation)
+    }
+
+    testResult.observations = observations
   }
 }
