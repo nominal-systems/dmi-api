@@ -7,6 +7,7 @@
   "license": "UNLICENSED",
   "scripts": {
     "prebuild": "rimraf dist",
+    "clean": "rm -rf dist",
     "build": "nest build",
     "preversion": "npm run lint",
     "version": "git add -A src",
@@ -21,6 +22,7 @@
     "migration:run": "npm run typeorm migration:run",
     "migration:create": "npm run typeorm -- migration:create -n",
     "migration:generate": "npm run typeorm -- migration:generate -n",
+    "migration:revert": "npm run typeorm -- migration:revert",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
