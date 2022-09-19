@@ -14,5 +14,7 @@ export class Client {
   // TODO(gb): Add contact
   // TODO(gb): Add address
   // TODO(gb): Add isDoctor
-  // TODO(gb): Add isStaff
+
+  @Column({ default: false })
+  isStaff: boolean
 }
