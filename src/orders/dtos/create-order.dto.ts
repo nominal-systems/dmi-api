@@ -1,10 +1,5 @@
 import { Type } from 'class-transformer'
-import {
-  ArrayNotEmpty,
-  IsNotEmpty, IsObject,
-  IsOptional,
-  ValidateNested
-} from 'class-validator'
+import { ArrayNotEmpty, IsNotEmpty, IsObject, IsOptional, ValidateNested } from 'class-validator'
 import { PatientWeight } from '../../common/typings/patient-weight.interface'
 
 export class CreateOrderDtoClient {
@@ -27,11 +22,22 @@ export class CreateOrderDtoTest {
   code: string
 }
 
+export class CreateIdentifierDto {
+  @IsNotEmpty()
+  system: string
+
+  @IsNotEmpty()
+  value: string
+}
+
 export class CreateOrderDtoPatient {
   id: string
 
   @IsNotEmpty()
   name: string
+
+  @IsOptional()
+  identifier?: CreateIdentifierDto[]
 
   @IsNotEmpty()
   sex: string

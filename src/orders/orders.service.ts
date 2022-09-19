@@ -104,7 +104,8 @@ export class OrdersService {
           integration: 'order.integration',
           providerConfiguration: 'integration.providerConfiguration'
         }
-      }
+      },
+      relations: ['patient', 'patient.identifier']
     })
   }
 
@@ -124,6 +125,7 @@ export class OrdersService {
       options: {
         relations: [
           'patient',
+          'patient.identifier',
           'client',
           'tests',
           'veterinarian',
