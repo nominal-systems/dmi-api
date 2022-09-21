@@ -122,7 +122,7 @@ export class ReportsService {
           externalId: In(externalOrderIds)
         }
       },
-      relations: ['order', 'patient', 'testResultsSet']
+      relations: ['order', 'patient', 'patient.identifier', 'testResultsSet']
     })
   }
 
