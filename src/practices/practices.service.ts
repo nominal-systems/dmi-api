@@ -1,6 +1,6 @@
 import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { FindManyOptions, Repository } from 'typeorm'
+import { FindManyOptions, Repository, SelectQueryBuilder } from 'typeorm'
 import { FindOneOfTypeOptions } from '../common/typings/find-one-of-type-options.interface'
 import { Organization } from '../organizations/entities/organization.entity'
 import { CreatePracticeDto } from './dto/create-practice.dto'
@@ -22,19 +22,26 @@ export class PracticesService {
       integration_id: integrationId
     }: PracticeSearchQueryParams
   ): Promise<Practice[]> {
-    const qb = this.practicesRepository.createQueryBuilder('practice')
-      .leftJoinAndSelect('practice.integrations', 'integration')
-      .where('organizationId = :organizationId', {
-        organizationId: organizationId
-      })
+    return await this.findAll({
+      where: (qb: SelectQueryBuilder<Practice>) => {
+        qb.where('organizationId = :organizationId', {
+          organizationId: organizationId
+        })
 
-    if (integrationId != null) {
-      qb.andWhere('integration.id = :integrationId', {
-        integrationId: integrationId
-      })
-    }
-
-    return await qb.getMany()
+        if (integrationId != null) {
+          qb.andWhere('integration.id = :integrationId', {
+            integrationId: integrationId
+          })
+        }
+      },
+      join: {
+        alias: 'practice',
+        leftJoin: {
+          integration: 'practice.integrations'
+        }
+      },
+      relations: ['identifier', 'integrations']
+    })
   }
 
   async findAll (options?: FindManyOptions<Practice>): Promise<Practice[]> {

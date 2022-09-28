@@ -10,8 +10,7 @@ import { PracticeSearchQueryParams } from './dto/practice-search-query-params.dt
 @Controller('practices')
 @UseGuards(ApiGuard)
 export class PracticesController {
-  constructor (private readonly practicesService: PracticesService) {
-  }
+  constructor (private readonly practicesService: PracticesService) {}
 
   @Get()
   async searchPractices (
@@ -26,13 +25,14 @@ export class PracticesController {
     @Organization() organization: OrganizationEntity,
     @Param('id') id: string
   ): Promise<Practice> {
+    // TODO(gb): move this to the service
     return await this.practicesService.findOne({
       options: {
         where: {
           id,
           organizationId: organization.id
         },
-        relations: ['integrations']
+        relations: ['identifier', 'integrations']
       }
     })
   }

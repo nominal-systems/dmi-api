@@ -22,6 +22,7 @@ export class CreateOrderDtoTest {
   code: string
 }
 
+// TODO(gb): move this to its own class
 export class CreateIdentifierDto {
   @IsNotEmpty()
   system: string
