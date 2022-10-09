@@ -215,7 +215,7 @@ export class OrdersService {
     const integration = await this.integrationsService.findOne({
       id: createOrderDto.integrationId,
       options: {
-        relations: ['providerConfiguration']
+        relations: ['providerConfiguration', 'practice']
       }
     })
 
@@ -236,6 +236,7 @@ export class OrdersService {
       type: EventType.ORDER_CREATED,
       integrationId: integration.id,
       data: {
+        practice: integration.practice,
         orderId: order.id,
         order: order
       }
@@ -275,6 +276,7 @@ export class OrdersService {
         type: EventType.ORDER_UPDATED,
         integrationId: integration.id,
         data: {
+          practice: integration.practice,
           orderId: order.id,
           status: order.status,
           order: order
@@ -289,6 +291,7 @@ export class OrdersService {
       type: EventType.ORDER_UPDATED,
       integrationId: integration.id,
       data: {
+        practice: integration.practice,
         orderId: order.id,
         status: order.status,
         order: order
@@ -302,6 +305,7 @@ export class OrdersService {
       type: EventType.REPORT_CREATED,
       integrationId: integration.id,
       data: {
+        practice: integration.practice,
         orderId: order.id,
         reportId: report.id,
         report: report
@@ -471,6 +475,12 @@ export class OrdersService {
 
     const externalOrdersIds = orders.map(order => order.externalId)
     const existingOrders = await this.findOrdersByExternalIds(externalOrdersIds)
+    const integration = await this.integrationsService.findOne({
+      id: integrationId,
+      options: {
+        relations: ['practice']
+      }
+    })
 
     const updatedOrders: Order[] = []
 
@@ -512,6 +522,7 @@ export class OrdersService {
         type: EventType.ORDER_CREATED,
         integrationId: integrationId,
         data: {
+          practice: integration.practice,
           orderId: order.id,
           order: order
         }
@@ -525,6 +536,7 @@ export class OrdersService {
         type: EventType.ORDER_UPDATED,
         integrationId: integrationId,
         data: {
+          practice: integration.practice,
           orderId: order.id,
           status: order.status,
           order: order

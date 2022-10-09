@@ -11,6 +11,7 @@ import { EventNamespace } from '../events/constants/event-namespace.enum'
 import { EventType } from '../events/constants/event-type.enum'
 import { TestResult } from './entities/test-result.entity'
 import { Observation } from './entities/observation.entity'
+import { IntegrationsService } from '../integrations/integrations.service'
 
 @Injectable()
 export class ReportsService {
@@ -21,6 +22,8 @@ export class ReportsService {
     private readonly reportsRepository: Repository<Report>,
     @InjectRepository(TestResult)
     private readonly testResultRepository: Repository<TestResult>,
+    @Inject(IntegrationsService)
+    private readonly integrationsService: IntegrationsService,
     @Inject(EventsService)
     private readonly eventsService: EventsService
   ) {}
@@ -69,6 +72,12 @@ export class ReportsService {
 
     const externalOrderIds = results.map(result => result.orderId)
     const existingReports = await this.findReportsByExternalOrderIds(externalOrderIds)
+    const integration = await this.integrationsService.findOne({
+      id: integrationId,
+      options: {
+        relations: ['practice']
+      }
+    })
 
     // Update existing reports with new results
     const updatedReports: Report[] = []
@@ -91,6 +100,7 @@ export class ReportsService {
         type: EventType.REPORT_CREATED,
         integrationId: integrationId,
         data: {
+          practice: integration.practice,
           orderId: report.orderId,
           reportId: report.id,
           report: report
@@ -105,6 +115,7 @@ export class ReportsService {
         type: EventType.REPORT_UPDATED,
         integrationId: integrationId,
         data: {
+          practice: integration.practice,
           orderId: report.orderId,
           reportId: report.id,
           report: report

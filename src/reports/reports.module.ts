@@ -6,10 +6,12 @@ import { Report } from './entities/report.entity'
 import { EventsModule } from '../events/events.module'
 import { TestResult } from './entities/test-result.entity'
 import { Observation } from './entities/observation.entity'
+import { IntegrationsModule } from '../integrations/integrations.module'
 
 @Module({
   imports: [
     EventsModule,
+    IntegrationsModule,
     TypeOrmModule.forFeature([Report, TestResult, Observation])
   ],
   controllers: [ReportsController],
