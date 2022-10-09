@@ -215,7 +215,7 @@ export class OrdersService {
     const integration = await this.integrationsService.findOne({
       id: createOrderDto.integrationId,
       options: {
-        relations: ['providerConfiguration', 'practice']
+        relations: ['providerConfiguration', 'practice', 'practice.identifier']
       }
     })
 

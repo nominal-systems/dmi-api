@@ -75,7 +75,7 @@ export class ReportsService {
     const integration = await this.integrationsService.findOne({
       id: integrationId,
       options: {
-        relations: ['practice']
+        relations: ['practice', 'practice.identifier']
       }
     })
 
