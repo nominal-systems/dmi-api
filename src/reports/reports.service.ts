@@ -179,7 +179,9 @@ export class ReportsService {
       observation.valueString = item.valueString
       observation.valueQuantity = item.valueQuantity
       observation.referenceRange = item.referenceRange
-      observation.interpretation = item.interpretation
+      observation.interpretation = {
+        text: item.interpretation
+      }
       observation.notes = item.notes
       observations.push(observation)
     }

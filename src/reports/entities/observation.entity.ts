@@ -3,6 +3,7 @@ import { TestResult } from './test-result.entity'
 import { ObservationStatus } from '@nominal-systems/dmi-engine-common'
 import { ValueQuantity } from '../interfaces/value-quantity.interface'
 import { ReferenceRange } from '../interfaces/reference-range.interface'
+import { Interpretation } from '../interfaces/interpretation.interface'
 
 @Entity()
 export class Observation {
@@ -33,8 +34,11 @@ export class Observation {
 
   // TODO(gb): add media
 
-  @Column({ nullable: true })
-  interpretation?: string
+  @Column({
+    type: 'simple-json',
+    nullable: true
+  })
+  interpretation?: Interpretation
 
   @Column({
     type: 'simple-json',
