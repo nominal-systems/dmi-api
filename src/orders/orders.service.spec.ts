@@ -13,16 +13,15 @@ const repositoryMockFactory: () => MockUtils<Repository<any>> = jest.fn(() => ({
 
 describe('OrdersService', () => {
   let ordersService: OrdersService
-  let configServiceMock = {
+  const configServiceMock = {
     get: jest.fn()
   }
-  let ordersRepositoryMock: MockUtils<Repository<Order>>
-  let testsRepositoryMock: MockUtils<Repository<Test>>
-  let reportsServiceMock = {}
-  let integrationsServiceMock = {}
-  let eventsServiceMock = {}
-  let clientMock = {}
-
+  // let ordersRepositoryMock: MockUtils<Repository<Order>>
+  // let testsRepositoryMock: MockUtils<Repository<Test>>
+  const reportsServiceMock = {}
+  const integrationsServiceMock = {}
+  const eventsServiceMock = {}
+  const clientMock = {}
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({

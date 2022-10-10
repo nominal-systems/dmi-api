@@ -4,7 +4,7 @@ import { ReportsService } from './reports.service'
 
 describe('ReportsController', () => {
   let controller: ReportsController
-  let reportsService = {}
+  const reportsService = {}
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({

@@ -13,9 +13,9 @@ const repositoryMockFactory: () => MockUtils<Repository<any>> = jest.fn(() => ({
 
 describe('ReportsService', () => {
   let service: ReportsService
-  let reportsRepositoryMock: MockUtils<Repository<Report>>
-  let integrationsServiceMock = {}
-  let eventsServiceMock = {}
+  // let reportsRepositoryMock: MockUtils<Repository<Report>>
+  const integrationsServiceMock = {}
+  const eventsServiceMock = {}
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({

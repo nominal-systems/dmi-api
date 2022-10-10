@@ -10,7 +10,7 @@ const repositoryMockFactory: () => MockUtils<Repository<any>> = jest.fn(() => ({
 
 describe('PracticesService', () => {
   let service: PracticesService
-  let repositoryMock: MockUtils<Repository<Practice>>
+  // let repositoryMock: MockUtils<Repository<Practice>>
 
   beforeAll(async () => {
     const mockModule = await Test.createTestingModule({
@@ -24,7 +24,7 @@ describe('PracticesService', () => {
     }).compile()
 
     service = mockModule.get(PracticesService)
-    repositoryMock = mockModule.get(getRepositoryToken(Practice))
+    // repositoryMock = mockModule.get(getRepositoryToken(Practice))
   })
 
   it('should be defined', () => {
