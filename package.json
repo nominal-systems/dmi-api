@@ -8,6 +8,8 @@
   "scripts": {
     "prebuild": "rimraf dist",
     "clean": "rm -rf dist",
+    "docker:build": "docker build -t nominal-systems/dmi-api . --build-arg GHP_TOKEN=$GHP_TOKEN",
+    "postdocker:build": "docker tag nominal-systems/dmi-api:latest nominal-systems/dmi-api:$npm_package_version",
     "build": "nest build",
     "preversion": "npm run lint",
     "version": "git add -A src",
