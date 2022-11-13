@@ -1,13 +1,6 @@
-export enum InterpretationCode {
-  NORMAL = 'N',
-  ABNORMAL = 'A',
-  CRITICAL_LOW = 'LL',
-  LOW = 'L',
-  HIGH = 'H',
-  CRITICAL_HIGH = 'HH'
-}
+import { TestResultItemInterpretationCode } from '@nominal-systems/dmi-engine-common'
 
 export interface Interpretation {
-  code?: InterpretationCode
+  code?: TestResultItemInterpretationCode
   text?: string
 }
