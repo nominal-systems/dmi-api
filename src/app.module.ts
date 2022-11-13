@@ -19,7 +19,7 @@ import { consoleTransport, fileTransport } from './config/winstonconfig'
 import { AuthModule } from './common/auth/auth.module'
 import { RefsModule } from './refs/refs.module'
 import { ReportsModule } from './reports/reports.module'
-import { AdminModule } from './admin/admin.module';
+import { AdminModule } from './admin/admin.module'
 
 @Module({
   imports: [
