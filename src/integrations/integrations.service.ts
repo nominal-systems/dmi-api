@@ -45,6 +45,15 @@ export class IntegrationsService {
     return integration
   }
 
+  async findById (integrationId: string): Promise<Integration> {
+    return await this.findOne({
+      id: integrationId,
+      options: {
+        relations: ['practice', 'practice.identifier']
+      }
+    })
+  }
+
   async create (
     createIntegrationDto: CreateIntegrationDto
   ): Promise<Integration> {

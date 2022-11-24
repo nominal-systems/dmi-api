@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common'
+import { forwardRef, Module } from '@nestjs/common'
 import { OrdersService } from './orders.service'
 import { OrdersController } from './orders.controller'
 import { OrganizationsModule } from '../organizations/organizations.module'
@@ -19,7 +19,7 @@ import { ReportsModule } from '../reports/reports.module'
     OrganizationsModule,
     IntegrationsModule,
     EventsModule,
-    ReportsModule,
+    forwardRef(() => ReportsModule),
     TypeOrmModule.forFeature([Order, Patient, Client, Veterinarian, Test]),
     ClientsModule.registerAsync([activeMQClientProvider])
   ],

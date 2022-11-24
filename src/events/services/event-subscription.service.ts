@@ -15,7 +15,8 @@ export class EventSubscriptionService {
   constructor (
     @InjectRepository(EventSubscription)
     private readonly eventSubscriptionRepository: Repository<EventSubscription>
-  ) {}
+  ) {
+  }
 
   async find (
     options?: FindManyOptions<EventSubscription>
@@ -84,7 +85,7 @@ export class EventSubscriptionService {
       eventDataBatch.tryAdd({ body: event })
       await producer.sendBatch(eventDataBatch)
       await producer.close()
-      this.logger.debug(`Notifying subscription: ${subscription.id} of event '${event.type}'`)
+      this.logger.log(`Notifying subscription: ${subscription.id} of event '${event.type}'`)
     }
   }
 }

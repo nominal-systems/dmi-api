@@ -13,12 +13,14 @@ import { ExternalOrdersEventData } from '../common/typings/external-order-event-
 import { EventsService } from '../events/services/events.service'
 import { OrderSearchQueryParams } from './dtos/order-search-queryparams.dto'
 import { Test } from './entities/test.entity'
-import { OrderCreatedResponse, OrderStatus } from '@nominal-systems/dmi-engine-common'
+import { OrderCreatedResponse, OrderStatus, ResultStatus } from '@nominal-systems/dmi-engine-common'
 import { externalOrderStatusMapper } from '../common/utils/order-status-map.helper'
 import { EventNamespace } from '../events/constants/event-namespace.enum'
 import { EventType } from '../events/constants/event-type.enum'
 import { ReportsService } from '../reports/reports.service'
 import { Report } from '../reports/entities/report.entity'
+import { ExternalOrderMapper } from './mappers/external-order.mapper'
+import { ExternalResultEventData } from '../common/typings/external-result-event-data.interface'
 
 interface OrderTestCancelOrAddParams {
   orderId: string
@@ -33,18 +35,12 @@ export class OrdersService {
 
   constructor (
     private readonly configService: ConfigService,
-    @InjectRepository(Order)
-    private readonly ordersRepository: Repository<Order>,
-    @InjectRepository(Test)
-    private readonly testsRepository: Repository<Test>,
-    @Inject(ReportsService)
-    private readonly reportsService: ReportsService,
-    @Inject(IntegrationsService)
-    private readonly integrationsService: IntegrationsService,
-    @Inject(EventsService)
-    private readonly eventsService: EventsService,
-    @Inject('ACTIVEMQ')
-    private readonly client: ClientProxy
+    @InjectRepository(Order) private readonly ordersRepository: Repository<Order>,
+    @InjectRepository(Test) private readonly testsRepository: Repository<Test>,
+    @Inject(ReportsService) private readonly reportsService: ReportsService,
+    @Inject(IntegrationsService) private readonly integrationsService: IntegrationsService,
+    @Inject(EventsService) private readonly eventsService: EventsService,
+    @Inject('ACTIVEMQ') private readonly client: ClientProxy
   ) {
     this.nodeEnv = this.configService.get('nodeEnv')
   }
@@ -210,7 +206,9 @@ export class OrdersService {
     return await this.client.send(messagePattern, message).toPromise()
   }
 
-  async createOrder (createOrderDto: CreateOrderDto): Promise<Order> {
+  async createOrder (
+    createOrderDto: CreateOrderDto
+  ): Promise<Order> {
     // Find integration
     const integration = await this.integrationsService.findOne({
       id: createOrderDto.integrationId,
@@ -230,7 +228,7 @@ export class OrdersService {
     }
 
     // Save order
-    await this.ordersRepository.save(order)
+    const newOrder = await this.ordersRepository.save(order)
     await this.eventsService.addEvent({
       namespace: EventNamespace.ORDERS,
       type: EventType.ORDER_CREATED,
@@ -238,7 +236,7 @@ export class OrdersService {
       data: {
         practice: integration.practice,
         orderId: order.id,
-        order: order
+        order: newOrder
       }
     })
 
@@ -333,27 +331,28 @@ export class OrdersService {
       throw new ForbiddenException("You don't have permissions to do that")
     }
 
-    const { message, messagePattern } = ieMessageBuilder(
-      providerConfiguration.providerId,
-      {
-        resource: 'orders',
-        operation: 'cancel',
-        data: {
-          providerConfiguration:
-          providerConfiguration.configurationOptions,
-          integrationOptions,
-          payload: {
-            id: externalId
-          }
-        }
-      }
-    )
+    // TODO(gb): Actually send cancel request to provider
+    // const { message, messagePattern } = ieMessageBuilder(
+    //   providerConfiguration.providerId,
+    //   {
+    //     resource: 'orders',
+    //     operation: 'cancel',
+    //     data: {
+    //       providerConfiguration:
+    //       providerConfiguration.configurationOptions,
+    //       integrationOptions,
+    //       payload: {
+    //         id: externalId
+    //       }
+    //     }
+    //   }
+    // )
+    //
+    // const response = await this.client.send(messagePattern, message).toPromise()
 
-    const response = await this.client.send(messagePattern, message).toPromise()
+    const deleteResult = await this.ordersRepository.delete(orderId)
 
-    await this.ordersRepository.delete(orderId)
-
-    return response
+    // return response
   }
 
   async addTestsToOrder ({
@@ -471,19 +470,12 @@ export class OrdersService {
     integrationId,
     orders
   }: ExternalOrdersEventData): Promise<void> {
-    this.logger.log(`Got ${orders.length} orders from provider`)
-
+    this.logger.debug(`Got ${orders.length} orders from provider`)
     const externalOrdersIds = orders.map(order => order.externalId)
+
+    // Handle existing orders
     const existingOrders = await this.findOrdersByExternalIds(externalOrdersIds)
-    const integration = await this.integrationsService.findOne({
-      id: integrationId,
-      options: {
-        relations: ['practice']
-      }
-    })
-
     const updatedOrders: Order[] = []
-
     for (const existingOrder of existingOrders) {
       const externalOrder = orders.find(
         order => order.externalId === existingOrder.externalId
@@ -491,6 +483,7 @@ export class OrdersService {
 
       if (externalOrder == null) continue
 
+      // Will only update existing order if status has changed
       const mappedStatus = externalOrderStatusMapper(externalOrder.status)
       if (existingOrder.status === mappedStatus) continue
 
@@ -500,51 +493,86 @@ export class OrdersService {
       })
     }
 
-    const existingOrdersExternalIds = existingOrders.map(
-      order => order.externalId
-    )
+    // Handle non-existing orders
+    const mapper = new ExternalOrderMapper()
+    const existingOrdersExternalIds = existingOrders.map(order => order.externalId)
     const nonExistingOrders = orders
       .filter(order => !existingOrdersExternalIds.includes(order.externalId))
-      .map(order => {
-        return {
-          ...order,
-          integrationId,
-          status: externalOrderStatusMapper(order.status)
-        }
-      })
+      .map(order => mapper.mapOrder(order, integrationId))
     const newOrders = this.ordersRepository.create(nonExistingOrders)
     const allOrders = [...newOrders, ...updatedOrders]
 
+    // Nothing to do, return
+    if (allOrders.length === 0) {
+      this.logger.debug('No orders to create/update')
+      return
+    }
+
     // Notify about new orders
+    const integration = await this.integrationsService.findById(integrationId)
     for (const order of newOrders) {
+      // TODO(gb): make this more efficient by saving in batch
+      const newOrder = await this.ordersRepository.save(order)
       await this.eventsService.addEvent({
         namespace: EventNamespace.ORDERS,
         type: EventType.ORDER_CREATED,
         integrationId: integrationId,
         data: {
           practice: integration.practice,
-          orderId: order.id,
-          order: order
+          orderId: newOrder.id,
+          order: newOrder
         }
       })
     }
 
     // Notify about updated orders
     for (const order of updatedOrders) {
+      // TODO(gb): make this more efficient by saving in batch
+      const updatedOrder = await this.ordersRepository.save(order)
       await this.eventsService.addEvent({
         namespace: EventNamespace.ORDERS,
         type: EventType.ORDER_UPDATED,
         integrationId: integrationId,
         data: {
           practice: integration.practice,
-          orderId: order.id,
-          status: order.status,
-          order: order
+          orderId: updatedOrder.id,
+          status: updatedOrder.status,
+          order: updatedOrder
         }
       })
     }
+  }
 
-    await this.ordersRepository.save(allOrders)
+  async handleExternalOrderResults ({
+    integrationId,
+    results
+  }: ExternalResultEventData): Promise<void> {
+    const integration = await this.integrationsService.findById(integrationId)
+
+    for (const result of results) {
+      const order = await this.findOneByExternalId(result.orderId)
+      const orderStatus = order.status
+      if (result.status === ResultStatus.COMPLETED) {
+        order.status = OrderStatus.COMPLETED
+      } else if (result.status === ResultStatus.PARTIAL) {
+        order.status = OrderStatus.PARTIAL
+      }
+
+      if (orderStatus !== order.status) {
+        await this.ordersRepository.save(order)
+        await this.eventsService.addEvent({
+          namespace: EventNamespace.ORDERS,
+          type: EventType.ORDER_UPDATED,
+          integrationId: integrationId,
+          data: {
+            practice: integration.practice,
+            orderId: order.id,
+            status: order.status,
+            order: order
+          }
+        })
+      }
+    }
   }
 
   async getOrderReport (
@@ -554,7 +582,13 @@ export class OrdersService {
     return await this.reportsService.findForOrder(orderId)
   }
 
-  private async findOrdersByExternalIds (externalIds: string[]): Promise<Order[]> {
+  async findOneByExternalId (externalId: string): Promise<Order> {
+    return await this.findOne({
+      externalId
+    })
+  }
+
+  async findOrdersByExternalIds (externalIds: string[]): Promise<Order[]> {
     return await this.findAll({
       where: {
         externalId: In(externalIds)

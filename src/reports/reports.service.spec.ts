@@ -7,13 +7,14 @@ import { Repository } from 'typeorm'
 import { TestResult } from './entities/test-result.entity'
 import { IntegrationsService } from '../integrations/integrations.service'
 import { EventsService } from '../events/services/events.service'
+import { OrdersService } from '../orders/orders.service'
 
-const repositoryMockFactory: () => MockUtils<Repository<any>> = jest.fn(() => ({
-}))
+const repositoryMockFactory: () => MockUtils<Repository<any>> = jest.fn(() => ({}))
 
 describe('ReportsService', () => {
   let service: ReportsService
   // let reportsRepositoryMock: MockUtils<Repository<Report>>
+  const ordersServiceMock = {}
   const integrationsServiceMock = {}
   const eventsServiceMock = {}
 
@@ -28,6 +29,10 @@ describe('ReportsService', () => {
         {
           provide: getRepositoryToken(TestResult),
           useFactory: repositoryMockFactory
+        },
+        {
+          provide: OrdersService,
+          useValue: ordersServiceMock
         },
         {
           provide: IntegrationsService,

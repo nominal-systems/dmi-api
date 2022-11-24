@@ -5,10 +5,10 @@ export class Veterinarian {
   @PrimaryGeneratedColumn('uuid')
   id: string
 
-  @Column()
+  @Column({ nullable: true })
   lastName: string
 
-  @Column()
+  @Column({ nullable: true })
   firstName: string
 
   // TODO(gb): Add contact

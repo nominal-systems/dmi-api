@@ -1,4 +1,4 @@
-import { ExternalOrder } from '../../orders/dtos/external-order.dto'
+import { Order as ExternalOrder } from '@nominal-systems/dmi-engine-common'
 
 export interface ExternalOrdersEventData {
   integrationId: string

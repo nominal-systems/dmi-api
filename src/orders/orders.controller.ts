@@ -24,13 +24,15 @@ import { OrderTestCancelPathParams } from './dtos/order-test-cancel-path-params.
 import { Order } from './entities/order.entity'
 import { OrdersService } from './orders.service'
 import { Report } from '../reports/entities/report.entity'
+import { ExternalResultEventData } from '../common/typings/external-result-event-data.interface'
 
 @Controller('orders')
 @UseGuards(ApiGuard)
 export class OrdersController {
   private readonly logger = new Logger(OrdersController.name)
 
-  constructor (private readonly ordersService: OrdersService) {}
+  constructor (private readonly ordersService: OrdersService) {
+  }
 
   @Get()
   async searchOrders (
@@ -115,5 +117,11 @@ export class OrdersController {
   @DisableGuards(ApiGuard)
   async handleExternalOrders (data: ExternalOrdersEventData): Promise<void> {
     await this.ordersService.handleExternalOrders(data)
+  }
+
+  @EventPattern('external_order_results')
+  @DisableGuards(ApiGuard)
+  async handleExternalOrderResults (data: ExternalResultEventData): Promise<void> {
+    await this.ordersService.handleExternalOrderResults(data)
   }
 }
