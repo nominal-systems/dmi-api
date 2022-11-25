@@ -9,3 +9,19 @@ export function externalOrderStatusMapper (
     OrderStatus[externalOrderStatus.toUpperCase()]
   )
 }
+
+// TODO(gb): test this
+export function isValidStatusChange (
+  externalStatus: OrderStatus,
+  existingStatus: OrderStatus
+): boolean {
+  switch (externalStatus) {
+    case OrderStatus.PARTIAL:
+    case OrderStatus.COMPLETED:
+      return externalStatus !== existingStatus
+    case OrderStatus.CANCELLED:
+      return true
+    default:
+      return false
+  }
+}

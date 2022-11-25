@@ -14,7 +14,7 @@ import { EventsService } from '../events/services/events.service'
 import { OrderSearchQueryParams } from './dtos/order-search-queryparams.dto'
 import { Test } from './entities/test.entity'
 import { OrderCreatedResponse, OrderStatus, ResultStatus } from '@nominal-systems/dmi-engine-common'
-import { externalOrderStatusMapper } from '../common/utils/order-status-map.helper'
+import { externalOrderStatusMapper, isValidStatusChange } from '../common/utils/order-status-map.helper'
 import { EventNamespace } from '../events/constants/event-namespace.enum'
 import { EventType } from '../events/constants/event-type.enum'
 import { ReportsService } from '../reports/reports.service'
@@ -483,13 +483,12 @@ export class OrdersService {
 
       if (externalOrder == null) continue
 
-      // Will only update existing order if status has changed
-      const mappedStatus = externalOrderStatusMapper(externalOrder.status)
-      if (existingOrder.status === mappedStatus) continue
+      // Will only update existing order if a valid status change occurred
+      if (!isValidStatusChange(externalOrder.status, OrderStatus[existingOrder.status])) continue
 
       updatedOrders.push({
         ...existingOrder,
-        status: OrderStatus[mappedStatus]
+        status: externalOrder.status
       })
     }
 
@@ -541,6 +540,8 @@ export class OrdersService {
         }
       })
     }
+
+    this.logger.log(`Created ${newOrders.length} orders and updated ${updatedOrders.length} orders`)
   }
 
   async handleExternalOrderResults ({
@@ -548,9 +549,16 @@ export class OrdersService {
     results
   }: ExternalResultEventData): Promise<void> {
     const integration = await this.integrationsService.findById(integrationId)
+    const externalOrderIds = new Set<string>(results.map(result => result.orderId))
 
-    for (const result of results) {
-      const order = await this.findOneByExternalId(result.orderId)
+    const updatedOrders: Order[] = []
+    // for (const result of results) {
+    for (const externalOrderId of externalOrderIds) {
+      const result = results.find(result => result.orderId === externalOrderId)
+
+      if (result == null) continue
+
+      const order = await this.findOneByExternalId(externalOrderId)
       const orderStatus = order.status
       if (result.status === ResultStatus.COMPLETED) {
         order.status = OrderStatus.COMPLETED
@@ -559,19 +567,26 @@ export class OrdersService {
       }
 
       if (orderStatus !== order.status) {
-        await this.ordersRepository.save(order)
-        await this.eventsService.addEvent({
-          namespace: EventNamespace.ORDERS,
-          type: EventType.ORDER_UPDATED,
-          integrationId: integrationId,
-          data: {
-            practice: integration.practice,
-            orderId: order.id,
-            status: order.status,
-            order: order
-          }
-        })
+        // const updateResult = await this.ordersRepository.update({ id: order.id }, { status: order.status })
+        const updatedOrder = await this.ordersRepository.save(order)
+        updatedOrders.push(updatedOrder)
+        this.logger.debug(`Updated Order ${updatedOrder.id} status to ${updatedOrder.status}`)
       }
+    }
+
+    // Notify about updated orders
+    for (const updatedOrder of updatedOrders) {
+      await this.eventsService.addEvent({
+        namespace: EventNamespace.ORDERS,
+        type: EventType.ORDER_UPDATED,
+        integrationId: integrationId,
+        data: {
+          practice: integration.practice,
+          orderId: updatedOrder.id,
+          status: updatedOrder.status,
+          order: updatedOrder
+        }
+      })
     }
   }
 
@@ -584,7 +599,11 @@ export class OrdersService {
 
   async findOneByExternalId (externalId: string): Promise<Order> {
     return await this.findOne({
-      externalId
+      options: {
+        where: {
+          externalId: externalId
+        }
+      }
     })
   }
 
