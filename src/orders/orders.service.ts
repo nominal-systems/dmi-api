@@ -14,7 +14,7 @@ import { EventsService } from '../events/services/events.service'
 import { OrderSearchQueryParams } from './dtos/order-search-queryparams.dto'
 import { Test } from './entities/test.entity'
 import { OrderCreatedResponse, OrderStatus, ResultStatus } from '@nominal-systems/dmi-engine-common'
-import { externalOrderStatusMapper, isValidStatusChange } from '../common/utils/order-status-map.helper'
+import { isValidStatusChange } from '../common/utils/order-status.helper'
 import { EventNamespace } from '../events/constants/event-namespace.enum'
 import { EventType } from '../events/constants/event-type.enum'
 import { ReportsService } from '../reports/reports.service'
@@ -570,7 +570,7 @@ export class OrdersService {
         // const updateResult = await this.ordersRepository.update({ id: order.id }, { status: order.status })
         const updatedOrder = await this.ordersRepository.save(order)
         updatedOrders.push(updatedOrder)
-        this.logger.debug(`Updated Order ${updatedOrder.id} status to ${updatedOrder.status}`)
+        this.logger.log(`Updated Order/${updatedOrder.id} status to ${updatedOrder.status}`)
       }
     }
 

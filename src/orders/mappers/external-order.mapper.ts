@@ -1,6 +1,6 @@
 import { Order as ExternalOrder } from '@nominal-systems/dmi-engine-common'
 import { Order } from '../entities/order.entity'
-import { externalOrderStatusMapper } from '../../common/utils/order-status-map.helper'
+import { externalOrderStatusMapper } from '../../common/utils/order-status.helper'
 import { DeepPartial } from 'typeorm'
 
 export class ExternalOrderMapper {

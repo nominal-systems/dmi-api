@@ -150,7 +150,7 @@ export class ReportsService {
           externalId: In(externalOrderIds)
         }
       },
-      relations: ['order', 'order.veterinarian', 'patient', 'patient.identifier', 'testResultsSet']
+      relations: ['order', 'order.veterinarian', 'patient', 'patient.identifier', 'testResultsSet', 'testResultsSet.observations']
     })
   }
 
@@ -160,53 +160,99 @@ export class ReportsService {
       .reduce((a, v) => a.concat(v), [])
 
     // Build test results set
-    const testResultsSet: TestResult[] = []
+    const createdTestResults: TestResult[] = []
+    const updatedTestResults: TestResult[] = []
     for (const providerTestResult of providerTestResults) {
-      const existingTest = report.testResultsSet.find(testResult => testResult.code === providerTestResult.code)
-      if (existingTest != null) {
-        // TODO(gb): merge?
+      const existingTestResult = report.testResultsSet.find(testResult => testResult.code === providerTestResult.code)
+      if (existingTestResult != null) {
+        // TODO(gb): update status
+        existingTestResult.deviceId = providerTestResult.deviceId
+        existingTestResult.notes = providerTestResult.notes
+        this.updateTestResultObservations(existingTestResult, providerTestResult.items)
+        updatedTestResults.push(existingTestResult)
       } else {
         const testResult = new TestResult()
         testResult.code = providerTestResult.code
         testResult.name = providerTestResult.name
+        testResult.observations = []
+        // TODO(gb): add status
         testResult.deviceId = providerTestResult.deviceId
         testResult.notes = providerTestResult.notes
-        await this.updateTestResultObservations(testResult, providerTestResult.items)
-        testResultsSet.push(testResult)
+        this.updateTestResultObservations(testResult, providerTestResult.items)
+        createdTestResults.push(testResult)
       }
     }
 
-    const updatePerformed = testResultsSet.length > 0
+    const updatePerformed = createdTestResults.concat(updatedTestResults).length > 0
     if (updatePerformed) {
-      report.testResultsSet = report.testResultsSet.concat(testResultsSet)
+      report.testResultsSet = report.testResultsSet.concat(createdTestResults)
       // const resultsStates = results.map(result => result.status)
-      // TODO(gb): update Report state
+      // TODO(gb): update Report status
       await this.reportsRepository.save(report)
     }
 
     return updatePerformed
   }
 
-  private async updateTestResultObservations (testResult: TestResult, items: ProviderTestResultItem[]): Promise<void> {
-    const observations: Observation[] = []
-    for (const item of items) {
+  public updateTestResultObservations (testResult: TestResult, items: ProviderTestResultItem[]): void {
+    const testResultObservationCodes = testResult.observations.map(observation => observation.code)
+    const providerTestResultItemCodes = items.map(item => item.code)
+    const newObservationCodes = arrayDiff(providerTestResultItemCodes, testResultObservationCodes)
+    const existingObservationCodes = arrayDiff(providerTestResultItemCodes, newObservationCodes)
+
+    // Update existing observations
+    for (const existingObservationCode of existingObservationCodes) {
+      const existingObservation = testResult.observations.find(observation => observation.code === existingObservationCode)
+      const providerItem = items.find(item => item.code === existingObservationCode)
+      if (existingObservation === undefined || providerItem === undefined) continue
+      this.updateObservationValue(existingObservation, providerItem)
+    }
+
+    // Create new observations
+    const newObservations: Observation[] = []
+    for (const newObservationCode of newObservationCodes) {
+      const item = items.find(item => item.code === newObservationCode)
+      if (item === undefined) continue
+
       const observation = new Observation()
       observation.code = item.code
       observation.name = item.name
-      observation.valueString = item.valueString
-      observation.valueQuantity = item.valueQuantity
-      observation.referenceRange = item.referenceRange
-      if (item.interpretation != null) {
-        observation.interpretation = {
-          code: item.interpretation?.code,
-          text: item.interpretation?.text
-        }
-      }
-      observation.notes = item.notes
-      observations.push(observation)
+      this.updateObservationValue(observation, item)
+
+      newObservations.push(observation)
     }
 
-    testResult.observations = observations
+    testResult.observations = testResult.observations.concat(newObservations)
+  }
+
+  private updateObservationValue (observation: Observation, item: ProviderTestResultItem): void {
+    // Status
+    observation.status = item.status
+
+    // ValueX
+    if (item.valueQuantity != null) {
+      observation.valueQuantity = item.valueQuantity
+    } else if (item.valueString != null) {
+      observation.valueString = item.valueString
+    }
+
+    // Reference Range
+    if (item.referenceRange != null) {
+      observation.referenceRange = item.referenceRange
+    }
+
+    // Interpretation
+    if (item.interpretation != null) {
+      observation.interpretation = {
+        code: item.interpretation?.code,
+        text: item.interpretation?.text
+      }
+    }
+
+    // Notes
+    if (item.notes != null) {
+      observation.notes = item.notes
+    }
   }
 
   private buildRegisteredReport (order: Order): Report {

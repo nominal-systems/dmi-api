@@ -10,7 +10,6 @@ export function externalOrderStatusMapper (
   )
 }
 
-// TODO(gb): test this
 export function isValidStatusChange (
   externalStatus: OrderStatus,
   existingStatus: OrderStatus
@@ -18,7 +17,7 @@ export function isValidStatusChange (
   switch (externalStatus) {
     case OrderStatus.PARTIAL:
     case OrderStatus.COMPLETED:
-      return externalStatus !== existingStatus
+      return externalStatus !== existingStatus && [OrderStatus.SUBMITTED, OrderStatus.PARTIAL].includes(existingStatus)
     case OrderStatus.CANCELLED:
       return true
     default:

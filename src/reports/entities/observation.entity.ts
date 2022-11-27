@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm'
+import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
 import { TestResult } from './test-result.entity'
 import { ObservationStatus } from '@nominal-systems/dmi-engine-common'
 import { ValueQuantity } from '../interfaces/value-quantity.interface'
@@ -46,11 +46,17 @@ export class Observation {
   })
   referenceRange?: ReferenceRange[]
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   notes?: string
 
   @ManyToOne(() => TestResult, (testResult) => testResult.observations, {
     onDelete: 'CASCADE'
   })
   testResult: TestResult
+
+  @CreateDateColumn()
+  createdAt: Date
+
+  @UpdateDateColumn()
+  updatedAt: Date
 }
