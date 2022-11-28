@@ -15,6 +15,7 @@ import { IntegrationsService } from '../integrations/integrations.service'
 import { arrayDiff } from '../common/utils/array-diff'
 import { OrdersService } from '../orders/orders.service'
 import { Organization } from '../organizations/entities/organization.entity'
+import { resultStatusMapper, testResultStatusMapper } from '../common/utils/result-status.helper'
 
 @Injectable()
 export class ReportsService {
@@ -159,13 +160,21 @@ export class ReportsService {
       .map(result => result.testResults)
       .reduce((a, v) => a.concat(v), [])
 
+    const resultsStatus = Array.from(new Set<string>(results.map(result => result.status)))
+    const reportStatus = resultStatusMapper(resultsStatus[0])
+
     // Build test results set
     const createdTestResults: TestResult[] = []
     const updatedTestResults: TestResult[] = []
     for (const providerTestResult of providerTestResults) {
+      const providerTestResultItemStatus = Array.from(new Set<string>(providerTestResult.items.map(testResult => testResult.status)))
+      const testResultStatus = testResultStatusMapper(providerTestResultItemStatus[0])
+      if (providerTestResultItemStatus.length > 1) {
+        this.logger.warn(`Multiple test result item status for test result '${providerTestResult.code}'`)
+      }
       const existingTestResult = report.testResultsSet.find(testResult => testResult.code === providerTestResult.code)
       if (existingTestResult != null) {
-        // TODO(gb): update status
+        existingTestResult.status = testResultStatus
         existingTestResult.deviceId = providerTestResult.deviceId
         existingTestResult.notes = providerTestResult.notes
         this.updateTestResultObservations(existingTestResult, providerTestResult.items)
@@ -175,7 +184,7 @@ export class ReportsService {
         testResult.code = providerTestResult.code
         testResult.name = providerTestResult.name
         testResult.observations = []
-        // TODO(gb): add status
+        testResult.status = testResultStatus
         testResult.deviceId = providerTestResult.deviceId
         testResult.notes = providerTestResult.notes
         this.updateTestResultObservations(testResult, providerTestResult.items)
@@ -183,11 +192,10 @@ export class ReportsService {
       }
     }
 
-    const updatePerformed = createdTestResults.concat(updatedTestResults).length > 0
+    const updatePerformed = createdTestResults.concat(updatedTestResults).length > 0 || report.status !== reportStatus
     if (updatePerformed) {
       report.testResultsSet = report.testResultsSet.concat(createdTestResults)
-      // const resultsStates = results.map(result => result.status)
-      // TODO(gb): update Report status
+      report.status = resultStatusMapper(reportStatus)
       await this.reportsRepository.save(report)
     }
 

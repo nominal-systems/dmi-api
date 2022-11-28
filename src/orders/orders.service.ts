@@ -541,7 +541,7 @@ export class OrdersService {
       })
     }
 
-    this.logger.log(`Created ${newOrders.length} orders and updated ${updatedOrders.length} orders`)
+    this.logger.log(`Orders ${newOrders.length} created, ${updatedOrders.length} updated`)
   }
 
   async handleExternalOrderResults ({
