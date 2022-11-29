@@ -2,14 +2,19 @@ import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import providersList from '../constants/provider-list.constant'
 import { ProviderService } from '../../common/typings/provider-services.interface'
 import { Provider } from '../../common/typings/provider.interface'
-import { Breeds } from '../../common/typings/breeds.interface'
-import { Sexes } from '../../common/typings/sexes.interface'
-import { Species } from '../../common/typings/species.interface'
 import { ClientProxy } from '@nestjs/microservices'
 import { IntegrationsService } from '../../integrations/integrations.service'
 import ieMessageBuilder from '../../common/utils/ieMessageBuilder'
 import { ReferenceDataStatus } from '../../common/typings/reference-data-status.interface'
-import { Device, Operation, Resource } from '@nominal-systems/dmi-engine-common'
+import {
+  Breed,
+  Device,
+  Operation,
+  ReferenceDataResponse,
+  Resource,
+  Sex,
+  Species
+} from '@nominal-systems/dmi-engine-common'
 
 @Injectable()
 export class ProvidersService {
@@ -18,7 +23,8 @@ export class ProvidersService {
   constructor (
     private readonly integrationsService: IntegrationsService,
     @Inject('ACTIVEMQ') private readonly client: ClientProxy
-  ) {}
+  ) {
+  }
 
   async findAll (): Promise<Provider[]> {
     return providersList
@@ -112,7 +118,10 @@ export class ProvidersService {
     return await this.client.send(messagePattern, message).toPromise()
   }
 
-  async getBreeds (providerId: string, integrationId: string): Promise<Breeds> {
+  async getBreeds (
+    providerId: string,
+    integrationId: string
+  ): Promise<ReferenceDataResponse<Breed>> {
     const {
       providerConfiguration: { configurationOptions },
       integrationOptions
@@ -135,7 +144,10 @@ export class ProvidersService {
     return await this.client.send(messagePattern, message).toPromise()
   }
 
-  async getSexes (providerId: string, integrationId: string): Promise<Sexes> {
+  async getSexes (
+    providerId: string,
+    integrationId: string
+  ): Promise<ReferenceDataResponse<Sex>> {
     const {
       providerConfiguration: { configurationOptions },
       integrationOptions
@@ -161,7 +173,7 @@ export class ProvidersService {
   async getSpecies (
     providerId: string,
     integrationId: string
-  ): Promise<Species> {
+  ): Promise<ReferenceDataResponse<Species>> {
     const {
       providerConfiguration: { configurationOptions },
       integrationOptions
