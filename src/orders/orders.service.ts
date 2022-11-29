@@ -268,7 +268,7 @@ export class OrdersService {
       order.status = response.status
     } catch (error: any) {
       // TODO(gb): change response status?
-      this.logger.error(`Error creating order: ${ error.response.errors.map((e: any) => e.errorCode).join(', ') }`)
+      this.logger.error(`Error creating order: ${error.response.errors.map((e: any) => e.errorCode).join(', ')}`)
       order.status = OrderStatus.ERROR
       await this.ordersRepository.save(order)
       await this.eventsService.addEvent({
@@ -319,42 +319,53 @@ export class OrdersService {
     organization: Organization,
     orderId: string
   ): Promise<void> {
+    const order = await this.findOne({
+      id: orderId,
+      options: {
+        relations: ['integration', 'integration.practice', 'integration.providerConfiguration']
+      }
+    })
     const {
       externalId,
       integration: { providerConfiguration, integrationOptions }
-    } = await this.findOne({
-      id: orderId,
-      options: {
-        relations: ['integration', 'integration.providerConfiguration']
-      }
-    })
+    } = order
 
     if (organization.id !== providerConfiguration.organizationId) {
       throw new ForbiddenException("You don't have permissions to do that")
     }
 
-    // TODO(gb): Actually send cancel request to provider
-    // const { message, messagePattern } = ieMessageBuilder(
-    //   providerConfiguration.providerId,
-    //   {
-    //     resource: 'orders',
-    //     operation: 'cancel',
-    //     data: {
-    //       providerConfiguration:
-    //       providerConfiguration.configurationOptions,
-    //       integrationOptions,
-    //       payload: {
-    //         id: externalId
-    //       }
-    //     }
-    //   }
-    // )
-    //
-    // const response = await this.client.send(messagePattern, message).toPromise()
+    const { configurationOptions, providerId } = providerConfiguration
+    const { message, messagePattern } = ieMessageBuilder(
+      providerId,
+      {
+        resource: 'orders',
+        operation: 'cancel',
+        data: {
+          providerConfiguration: configurationOptions,
+          integrationOptions,
+          payload: {
+            id: externalId
+          }
+        }
+      }
+    )
+    this.logger.log(`Sending '${messagePattern}' to '${providerId}' provider`)
+    await this.client.send(messagePattern, message).toPromise()
 
-    const deleteResult = await this.ordersRepository.delete(orderId)
-
-    // return response
+    // TODO(gb): also mark as deleted in the DB?
+    order.status = OrderStatus.CANCELLED
+    const updatedOrder = await this.ordersRepository.save(order)
+    await this.eventsService.addEvent({
+      namespace: EventNamespace.ORDERS,
+      type: EventType.ORDER_UPDATED,
+      integrationId: order.integration.id,
+      data: {
+        practice: order.integration.practice,
+        orderId: updatedOrder.id,
+        status: updatedOrder.status,
+        order: updatedOrder
+      }
+    })
   }
 
   async addTestsToOrder ({
