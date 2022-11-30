@@ -268,7 +268,8 @@ export class OrdersService {
       order.status = response.status
     } catch (error: any) {
       // TODO(gb): change response status?
-      this.logger.error(`Error creating order: ${error.response.errors.map((e: any) => e.errorCode).join(', ')}`)
+      // TODO(gb): log error messages
+      // const messages = error.response.errors.map((e: any) => e.errorCode).join(', ')
       order.status = OrderStatus.ERROR
       await this.ordersRepository.save(order)
       await this.eventsService.addEvent({
