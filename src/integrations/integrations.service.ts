@@ -87,7 +87,7 @@ export class IntegrationsService {
           data: {
             integrationOptions: integrationOptions,
             providerConfiguration:
-              providerConfiguration.configurationOptions,
+            providerConfiguration.configurationOptions,
             payload: {
               integrationId
             }
@@ -152,5 +152,46 @@ export class IntegrationsService {
     this.client.emit(messagePattern, message)
 
     await this.integrationsRepository.delete(integrationId)
+  }
+
+  async stopJobs (
+    organization: Organization,
+    integrationId: string
+  ): Promise<void> {
+    const integration = await this.findOne({
+      options: {
+        where: (qb: SelectQueryBuilder<Integration>) => {
+          qb.where('integration.id = :integrationId', {
+            integrationId
+          }).andWhere(
+            'providerConfiguration.organizationId = :organizationId',
+            {
+              organizationId: organization.id
+            }
+          )
+        },
+        join: {
+          alias: 'integration',
+          leftJoinAndSelect: {
+            providerConfiguration: 'integration.providerConfiguration'
+          }
+        }
+      }
+    })
+
+    const { message, messagePattern } = ieMessageBuilder(
+      integration.providerConfiguration.providerId,
+      {
+        resource: 'integration',
+        operation: 'pause',
+        data: {
+          payload: {
+            integrationId
+          }
+        }
+      }
+    )
+
+    this.client.emit(messagePattern, message)
   }
 }
