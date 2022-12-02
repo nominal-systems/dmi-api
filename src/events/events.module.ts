@@ -12,6 +12,7 @@ import { EventSubscriptionsController } from './controllers/event-subscriptions.
 import { EventSubscriptionService } from './services/event-subscription.service'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { EventSubscription } from './entities/event-subscription.entity'
+import { IntegrationsModule } from '../integrations/integrations.module'
 
 @Module({
   imports: [
@@ -32,10 +33,14 @@ import { EventSubscription } from './entities/event-subscription.entity'
     TypeOrmModule.forFeature([EventSubscription]),
     ConfigModule,
     OrganizationsModule,
-    forwardRef(() => OrdersModule)
+    forwardRef(() => OrdersModule),
+    IntegrationsModule
   ],
   controllers: [EventsController, EventSubscriptionsController],
-  providers: [EventsService, EventSubscriptionService],
+  providers: [
+    EventsService,
+    EventSubscriptionService
+  ],
   exports: [EventsService]
 })
 export class EventsModule {}
