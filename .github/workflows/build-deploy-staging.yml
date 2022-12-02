@@ -26,7 +26,7 @@ jobs:
     name: Notify deploy workflow
     needs: build
     steps:
-      - name: Dispatch demo-provider-api-updated event to nominal-systems/dmi
+      - name: Dispatch dmi-api-updated event to nominal-systems/dmi
         uses: peter-evans/repository-dispatch@v1
         with:
           token: ${{ secrets.REPO_ACCESS_TOKEN }}

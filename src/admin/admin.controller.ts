@@ -1,4 +1,4 @@
-import { Controller, Delete, Get, Param, Post, UseGuards } from '@nestjs/common'
+import { Controller, Get, Param, Post, UseGuards } from '@nestjs/common'
 import { ProviderConfiguration } from '../providers/entities/provider-configuration.entity'
 import { ProviderConfigurationsService } from '../providers/services/provider-configurations.service'
 import { BasicAuthGuard } from '../common/guards/basic-auth.guard'
