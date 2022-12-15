@@ -87,9 +87,14 @@ export class ReportsService {
     this.logger.debug(`Got ${results.length} results from provider`)
 
     const integration = await this.integrationsService.findById(integrationId)
+    this.logger.debug(`Integration: ${integration.id}`)
     const externalOrderIds = results.map(result => result.orderId)
+    this.logger.debug('externalOrderIds= ' + externalOrderIds) // TODO(gb): remove trace
     const existingReports = await this.findReportsByExternalOrderIds(externalOrderIds)
+    const existingReportsIds = existingReports.map(report => report.id)
+    this.logger.debug('existingReportsIds= ' + existingReportsIds) // TODO(gb): remove trace
     const nonExistingOrderIds = arrayDiff(externalOrderIds, existingReports.map(report => report.order.externalId))
+    this.logger.debug('nonExistingOrderIds= ' + nonExistingOrderIds) // TODO(gb): remove trace
     const nonExistingOrders = await this.ordersService.findOrdersByExternalIds(nonExistingOrderIds)
 
     // Update existing reports with new results
