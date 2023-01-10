@@ -4,12 +4,15 @@ import { ProviderConfigurationsService } from '../providers/services/provider-co
 import { BasicAuthGuard } from '../common/guards/basic-auth.guard'
 import { Integration } from '../integrations/entities/integration.entity'
 import { IntegrationsService } from '../integrations/integrations.service'
+import { EventSubscriptionService } from '../events/services/event-subscription.service'
+import { EventSubscription } from '../events/entities/event-subscription.entity'
 
 @Controller('admin')
 @UseGuards(BasicAuthGuard)
 export class AdminController {
   constructor (
     private readonly providerConfigurationsService: ProviderConfigurationsService,
+    private readonly eventSubscriptionsService: EventSubscriptionService,
     private readonly integrationsService: IntegrationsService
   ) {
   }
@@ -17,6 +20,11 @@ export class AdminController {
   @Get('providerConfigurations')
   async getProviderConfigurations (): Promise<ProviderConfiguration[]> {
     return await this.providerConfigurationsService.findAll()
+  }
+
+  @Get('event-subscriptions')
+  async getEventSubscriptions (): Promise<EventSubscription[]> {
+    return await this.eventSubscriptionsService.findAll()
   }
 
   @Get('integrations')

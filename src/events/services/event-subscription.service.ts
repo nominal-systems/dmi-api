@@ -40,6 +40,12 @@ export class EventSubscriptionService {
     return eventSubscription
   }
 
+  async findAll (
+    options?: FindManyOptions<EventSubscription>
+  ): Promise<EventSubscription[]> {
+    return await this.eventSubscriptionRepository.find(options)
+  }
+
   async create (
     organizationId: string,
     createEventSubscriptionDto: CreateEventSubscriptionDto

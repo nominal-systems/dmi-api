@@ -106,6 +106,13 @@ const providers: Provider[] = [
     integrationOptions: []
   },
   {
+    id: 'heska',
+    description: 'Heska',
+    configurationUri: '/providers/heska/configurations',
+    configurationOptions: [],
+    integrationOptions: []
+  },
+  {
     id: 'demo',
     description: 'Demo Provider',
     configurationUri: '/providers/demo/configurations',

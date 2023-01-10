@@ -41,6 +41,9 @@ import { IntegrationsModule } from '../integrations/integrations.module'
     EventsService,
     EventSubscriptionService
   ],
-  exports: [EventsService]
+  exports: [
+    EventsService,
+    EventSubscriptionService
+  ]
 })
 export class EventsModule {}
