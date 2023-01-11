@@ -109,8 +109,28 @@ const providers: Provider[] = [
     id: 'heska',
     description: 'Heska',
     configurationUri: '/providers/heska/configurations',
-    configurationOptions: [],
-    integrationOptions: []
+    configurationOptions: [
+      {
+        type: 'string',
+        name: 'subscriptionKey',
+        description: 'Heska Subscription Key',
+        required: true
+      }
+    ],
+    integrationOptions: [
+      {
+        type: 'string',
+        name: 'clientId',
+        description: 'Heska Client ID',
+        required: true
+      },
+      {
+        type: 'string',
+        name: 'clientSecret',
+        description: 'Heska Client Secret',
+        required: true
+      }
+    ]
   },
   {
     id: 'demo',
