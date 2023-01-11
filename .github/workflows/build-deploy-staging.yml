@@ -2,6 +2,8 @@ name: Deploy to Azure
 
 on:
   workflow_dispatch:
+  tags:
+    - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
 
 env:
   REGISTRY_NAME: nominaldevacr
