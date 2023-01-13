@@ -146,6 +146,12 @@ export class IntegrationsService {
       return
     }
 
+    await this.doDelete(integration)
+  }
+
+  async doDelete (
+    integration: Integration
+  ): Promise<void> {
     // Soft-delete the integration
     await this.integrationsRepository.softDelete(integration.id)
     this.logger.log(`Deleted Integration: ${integration.id}`)
@@ -158,52 +164,11 @@ export class IntegrationsService {
         operation: 'remove',
         data: {
           payload: {
-            integrationId
+            integrationId: integration.id
           }
         }
       }
     )
-    this.client.emit(messagePattern, message)
-  }
-
-  async stopJobs (
-    organization: Organization,
-    integrationId: string
-  ): Promise<void> {
-    const integration = await this.findOne({
-      options: {
-        where: (qb: SelectQueryBuilder<Integration>) => {
-          qb.where('integration.id = :integrationId', {
-            integrationId
-          }).andWhere(
-            'providerConfiguration.organizationId = :organizationId',
-            {
-              organizationId: organization.id
-            }
-          )
-        },
-        join: {
-          alias: 'integration',
-          leftJoinAndSelect: {
-            providerConfiguration: 'integration.providerConfiguration'
-          }
-        }
-      }
-    })
-
-    const { message, messagePattern } = ieMessageBuilder(
-      integration.providerConfiguration.providerId,
-      {
-        resource: 'integration',
-        operation: 'pause',
-        data: {
-          payload: {
-            integrationId
-          }
-        }
-      }
-    )
-
     this.client.emit(messagePattern, message)
   }
 }
