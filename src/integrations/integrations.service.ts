@@ -115,6 +115,7 @@ export class IntegrationsService {
     organization: Organization,
     integrationId: string
   ): Promise<void> {
+    // Find the integration
     const integration = await this.findOne({
       options: {
         where: (qb: SelectQueryBuilder<Integration>) => {
@@ -136,6 +137,20 @@ export class IntegrationsService {
       }
     })
 
+    if (integration == null) {
+      throw new NotFoundException('The integration was not found')
+    }
+
+    if (integration.deletedAt != null) {
+      this.logger.log(`Integration ${integration.id} is already disabled`)
+      return
+    }
+
+    // Soft-delete the integration
+    await this.integrationsRepository.softDelete(integration.id)
+    this.logger.log(`Deleted Integration: ${integration.id}`)
+
+    // Notify the integration engine
     const { message, messagePattern } = ieMessageBuilder(
       integration.providerConfiguration.providerId,
       {
@@ -148,10 +163,7 @@ export class IntegrationsService {
         }
       }
     )
-
     this.client.emit(messagePattern, message)
-
-    await this.integrationsRepository.delete(integrationId)
   }
 
   async stopJobs (

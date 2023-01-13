@@ -1,11 +1,5 @@
 import { Type } from 'class-transformer'
-import {
-  AfterLoad,
-  Column,
-  Entity,
-  ManyToOne,
-  PrimaryGeneratedColumn
-} from 'typeorm'
+import { AfterLoad, Column, DeleteDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm'
 import { decrypt } from '../../common/utils/crypto.utils'
 import configuration from '../../config/configuration'
 import { Practice } from '../../practices/entities/practice.entity'
@@ -39,6 +33,9 @@ export class Integration {
   )
   @Type(() => ProviderConfiguration)
   providerConfiguration: ProviderConfiguration
+
+  @DeleteDateColumn()
+  deletedAt: Date
 
   @AfterLoad()
   decryptOptions (): void {
