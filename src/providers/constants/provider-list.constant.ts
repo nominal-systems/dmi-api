@@ -112,6 +112,12 @@ const providers: Provider[] = [
     configurationOptions: [
       {
         type: 'string',
+        name: 'baseUrl',
+        description: 'Base URL',
+        required: true
+      },
+      {
+        type: 'string',
         name: 'subscriptionKey',
         description: 'Heska Subscription Key',
         required: true
