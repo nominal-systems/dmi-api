@@ -87,7 +87,6 @@ export class ReportsService {
     this.logger.debug(`Got ${results.length} results from provider`)
 
     const integration = await this.integrationsService.findById(integrationId)
-    this.logger.debug(`Integration: ${integration.id}`)
     const externalOrderIds = results.map(result => result.orderId)
     const existingReports = await this.findReportsByExternalOrderIds(externalOrderIds)
     const nonExistingOrderIds = arrayDiff(externalOrderIds, existingReports.map(report => report.order.externalId))
@@ -114,6 +113,7 @@ export class ReportsService {
 
     // Notify about new reports
     for (const report of createdReports) {
+      console.log('report.patient= ' + JSON.stringify(report.patient, null, 2)) // TODO(gb): remove trace
       await this.eventsService.addEvent({
         namespace: EventNamespace.REPORTS,
         type: EventType.REPORT_CREATED,
@@ -129,6 +129,7 @@ export class ReportsService {
 
     // Notify about updated reports
     for (const report of updatedReports) {
+      console.log('report.patient= ' + JSON.stringify(report.patient, null, 2)) // TODO(gb): remove trace
       await this.eventsService.addEvent({
         namespace: EventNamespace.REPORTS,
         type: EventType.REPORT_UPDATED,

@@ -623,6 +623,7 @@ export class OrdersService {
 
   async findOrdersByExternalIds (externalIds: string[]): Promise<Order[]> {
     return await this.findAll({
+      relations: ['patient'],
       where: {
         externalId: In(externalIds)
       }

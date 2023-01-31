@@ -24,7 +24,7 @@ export class Patient {
   @Column()
   species: string
 
-  @Column()
+  @Column({ nullable: true })
   breed: string
 
   @Column({ nullable: true })
