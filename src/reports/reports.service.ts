@@ -113,7 +113,6 @@ export class ReportsService {
 
     // Notify about new reports
     for (const report of createdReports) {
-      console.log('report.patient= ' + JSON.stringify(report.patient, null, 2)) // TODO(gb): remove trace
       await this.eventsService.addEvent({
         namespace: EventNamespace.REPORTS,
         type: EventType.REPORT_CREATED,
@@ -129,7 +128,6 @@ export class ReportsService {
 
     // Notify about updated reports
     for (const report of updatedReports) {
-      console.log('report.patient= ' + JSON.stringify(report.patient, null, 2)) // TODO(gb): remove trace
       await this.eventsService.addEvent({
         namespace: EventNamespace.REPORTS,
         type: EventType.REPORT_UPDATED,
