@@ -96,3 +96,27 @@ npm run docker:build
 Note that this script expects an environment variable `GHP_TOKEN` to be set with a valid GitHub Personal Access Token with [permissions to download packages](https://docs.github.com/en/packages/learn-github-packages/about-permissions-for-github-packages#about-scopes-and-permissions-for-package-registries) from GitHub Package Registry.
 
 This will build a docker image `nominal-systems/dmi-api`.
+
+## Configuration
+
+Configuration is done though environment variables that can be set explicitly or read from a `.env` file in the root of this repository. See [.env.example](.env.example).
+
+The following environment variables are accepted to configure the application:
+
+| Name                | Description                                                |
+|---------------------|------------------------------------------------------------|
+| `PORT`              | The port were the application will listen for connections. |
+| `JWT_SECRET_KEY`    | Secret for the JWT authentication.                         |
+| `SECRET_KEY`        | The secret key used for encryption.                        |
+| `ADMIN_USERNAME`    | The admin user name.                                       |
+| `ADMIN_PASSWORD`    | The admin user password.                                   |
+| `DATABASE_TYPE`     | RDBMS database engine type, e.g. "mysql".                  |
+| `DATABASE_HOST`     | Database host.                                             |
+| `DATABASE_PORT`     | Database host port.                                        |
+| `DATABASE_DATABASE` | Database name.                                             |
+| `MONGO_URI`         | MongoDB connection URI.                                    |
+| `ACTIVEMQ_PROTOCOL` | ActiveMQ protocol, e.g. "mqtt".                            |
+| `ACTIVEMQ_HOSTNAME` | ActiveMQ host.                                             |                       
+| `ACTIVEMQ_PORT`     | ActiveMQ port.                                             |
+| `ACTIVEMQ_USERNAME` | ActiveMQ username.                                         |
+| `ACTIVEMQ_PASSWORD` | ActiveMQ password.                                         |
