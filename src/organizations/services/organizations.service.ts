@@ -1,8 +1,4 @@
-import {
-  ConflictException,
-  Injectable, Logger,
-  NotFoundException
-} from '@nestjs/common'
+import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { FindOneOfTypeOptions } from '../../common/typings/find-one-of-type-options.interface'
@@ -22,7 +18,8 @@ export class OrganizationsService {
     @InjectRepository(Organization)
     private readonly organizationsRepository: Repository<Organization>,
     private readonly usersService: UsersService
-  ) {}
+  ) {
+  }
 
   async findOne (
     args: FindOneOfTypeOptions<Organization>
@@ -37,6 +34,10 @@ export class OrganizationsService {
     }
 
     return organization
+  }
+
+  async findAll (): Promise<Organization[]> {
+    return await this.organizationsRepository.find()
   }
 
   async getOrganizationsKeys (
