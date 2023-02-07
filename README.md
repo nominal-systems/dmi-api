@@ -121,3 +121,62 @@ The following environment variables are accepted to configure the application:
 | `ACTIVEMQ_PORT`           | ActiveMQ broker port.                                                                                                                                           |
 | `ACTIVEMQ_USERNAME`       | ActiveMQ username required by the broker, if any.                                                                                                               |
 | `ACTIVEMQ_PASSWORD`       | ActiveMQ password required by the broker, if any.                                                                                                               |
+
+
+## Application
+
+### Mapped routes
+
+The following routes are mapped by the application
+
+| Method | Path                                              | Security Scheme |
+|--------|---------------------------------------------------|-----------------|
+| POST   | `/users`                                          | Basic Auth      |
+| GET    | `/users`                                          | Basic Auth      |
+| GET    | `/users/:id`                                      | Basic Auth      |
+| POST   | `/users/auth`                                     | Unsecured       |
+| GET    | `/users/me`                                       | Bearer Auth     |
+| PUT    | `/users/me/password`                              | Bearer Auth     |
+| GET    | `/organizations/:id`                              | Bearer Auth     |
+| POST   | `/organizations`                                  | Bearer Auth     |
+| GET    | `/organizations/:id/keys`                         | Bearer Auth     |
+| PUT    | `/organizations/:id/keys`                         | Bearer Auth     |
+| GET    | `/providers`                                      | API Key         |
+| GET    | `/providers/:id`                                  | API Key         |
+| GET    | `/providers/:id/services`                         | API Key         |
+| GET    | `/providers/configurations`                       | API Key         |
+| GET    | `/providers/:id/configurations`                   | API Key         |
+| POST   | `/providers/:id/configurations`                   | API Key         |
+| GET    | `/providers/:providerId/configurations/:configId` | API Key         |
+| DELETE | `/providers/:providerId/configurations/:configId` | API Key         |
+| GET    | `/providers/:id/devices`                          | API Key         |
+| GET    | `/providers/:id/refs`                             | API Key         |
+| GET    | `/integrations`                                   | API Key         |
+| GET    | `/integrations/:id`                               | API Key         |
+| POST   | `/integrations`                                   | API Key         |
+| DELETE | `/integrations/:id`                               | API Key         |
+| GET    | `/practices`                                      | API Key         |
+| GET    | `/practices/:id`                                  | API Key         |
+| POST   | `/practices`                                      | API Key         |
+| DELETE | `/practices/:id`                                  | API Key         |
+| GET    | `/orders`                                         | API Key         |
+| GET    | `/orders/:id`                                     | API Key         |
+| POST   | `/orders/:id/tests`                               | API Key         |
+| DELETE | `/orders/:id/tests/:testCode`                     | API Key         |
+| GET    | `/orders/:id/result.json`                         | API Key         |
+| GET    | `/orders/:id/result.pdf`                          | API Key         |
+| GET    | `/orders/:id/report`                              | API Key         |
+| POST   | `/orders`                                         | API Key         |
+| DELETE | `/orders/:id`                                     | API Key         |
+| GET    | `/events`                                         | API Key         |
+| GET    | `/event-subscriptions`                            | API Key         |
+| GET    | `/event-subscriptions/:id`                        | API Key         |
+| POST   | `/event-subscriptions`                            | API Key         |
+| DELETE | `/event-subscriptions/:id`                        | API Key         |
+| GET    | `/reports/:id`                                    | API Key         |
+| GET    | `/refs/sexes`                                     | API Key         |
+| GET    | `/refs/sexes/:providerId`                         | API Key         |
+| GET    | `/refs/species`                                   | API Key         |
+| GET    | `/refs/species/:providerId`                       | API Key         |
+| GET    | `/refs/breeds`                                    | API Key         |
+| GET    | `/refs/breeds/:providerId`                        | API Key         |
