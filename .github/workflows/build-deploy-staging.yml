@@ -16,15 +16,19 @@ jobs:
     name: Build and push to ACR
     steps:
       - uses: actions/checkout@main
-      - uses: azure/docker-login@v1
+      - uses: tenhaus/get-release-or-tag@v2
+        id: tag
+      - name: Build Docker images
+        uses: azure/docker-login@v1
         with:
           login-server: ${{ env.REGISTRY_NAME }}.azurecr.io
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
       - run: |
-          docker build . -t ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }} --target production --build-arg GHP_TOKEN=${{ secrets.GHP_TOKEN }}
-          docker push ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }}
-  dipatch-event:
+          docker build . -t ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ steps.tag.outputs.tag }} --target production --build-arg GHP_TOKEN=${{ secrets.GHP_TOKEN }}
+          docker push ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ steps.tag.outputs.tag }}
+
+  dispatch-event:
     runs-on: ubuntu-latest
     name: Notify deploy workflow
     needs: build
@@ -35,4 +39,4 @@ jobs:
           token: ${{ secrets.REPO_ACCESS_TOKEN }}
           repository: nominal-systems/dmi
           event-type: ${{ env.APP_NAME }}-updated
-          client-payload: '{ "image": "${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }}" }'
+          client-payload: '{ "image": "${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ steps.tag.outputs.tag }}" }'

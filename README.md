@@ -125,7 +125,7 @@ The following environment variables are accepted to configure the application:
 
 ## Application
 
-### Mapped routes
+### Mapped Routes
 
 The following routes are mapped by the application
 
