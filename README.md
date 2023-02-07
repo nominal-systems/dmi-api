@@ -103,20 +103,21 @@ Configuration is done though environment variables that can be set explicitly or
 
 The following environment variables are accepted to configure the application:
 
-| Name                | Description                                               |
-|---------------------|-----------------------------------------------------------|
-| `PORT`              | The port were the application will listen for connections |
-| `JWT_SECRET_KEY`    | Secret for the JWT authentication                         |
-| `SECRET_KEY`        | The secret key used for encryption                        |
-| `ADMIN_USERNAME`    | The admin user name                                       |
-| `ADMIN_PASSWORD`    | The admin user password                                   |
-| `DATABASE_TYPE`     | RDBMS database engine type, e.g. "mysql"                  |
-| `DATABASE_HOST`     | Database host                                             |
-| `DATABASE_PORT`     | Database host port                                        |
-| `DATABASE_DATABASE` | Database name                                             |
-| `MONGO_URI`         | MongoDB connection URI                                    |
-| `ACTIVEMQ_PROTOCOL` | ActiveMQ protocol, e.g. "mqtt"                            |
-| `ACTIVEMQ_HOSTNAME` | ActiveMQ host                                             |                       
-| `ACTIVEMQ_PORT`     | ActiveMQ port                                             |
-| `ACTIVEMQ_USERNAME` | ActiveMQ username                                         |
-| `ACTIVEMQ_PASSWORD` | ActiveMQ password                                         |
+| Name                      | Description                                                                                                                                                     |
+|---------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `PORT`                    | The port were the application will listen for HTTP connections.                                                                                                 |
+| `JWT_SECRET_KEY`          | Symmetric key for signing/verifying the [JWT](https://jwt.io/) token for authentication.                                                                        |
+| `SECRET_KEY`              | The raw key used for AES-256 CTR database encryption.                                                                                                           |
+| `ADMIN_USERNAME`          | The admin user name. See [Admin User](https://nominal.stoplight.io/docs/dmi/users#admin-user) in the API documentation.                                         |
+| `ADMIN_PASSWORD`          | The admin user password.                                                                                                                                        |
+| `DATABASE_TYPE`           | RDBMS database engine type. Supported values: `mysql`.                                                                                                          |
+| `DATABASE_HOST`           | Database host.                                                                                                                                                  |
+| `DATABASE_PORT`           | Database host port. Default mysql port is 3306.                                                                                                                 |
+| `DATABASE_DATABASE`       | Database name.                                                                                                                                                  |
+ | `DATABASE_RUN_MIGRATIONS` | Whether to run database migrations of application startup. Should be set to `true` in productive environments.                                                  |
+| `MONGO_URI`               | MongoDB connection URI string. See [Connection String URI Format](https://www.mongodb.com/docs/manual/reference/connection-string/) in MongoDB's documentation. |
+| `ACTIVEMQ_PROTOCOL`       | ActiveMQ protocol. Supported values: `mqtt`.                                                                                                                    |
+| `ACTIVEMQ_HOSTNAME`       | ActiveMQ broker host.                                                                                                                                           |                       
+| `ACTIVEMQ_PORT`           | ActiveMQ broker port.                                                                                                                                           |
+| `ACTIVEMQ_USERNAME`       | ActiveMQ username required by the broker, if any.                                                                                                               |
+| `ACTIVEMQ_PASSWORD`       | ActiveMQ password required by the broker, if any.                                                                                                               |
