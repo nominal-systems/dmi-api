@@ -39,4 +39,4 @@ jobs:
           token: ${{ secrets.REPO_ACCESS_TOKEN }}
           repository: nominal-systems/dmi
           event-type: ${{ env.APP_NAME }}-updated
-          client-payload: '{ "image": "${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ steps.tag.outputs.tag }}" }'
+          client-payload: '{ "image": "${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ needs.build.steps.tag.outputs.tag }}" }'
