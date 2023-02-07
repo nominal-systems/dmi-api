@@ -53,20 +53,6 @@ const providers: Provider[] = [
       },
       {
         type: 'string',
-        name: 'username',
-        description: 'IDEXX API Username',
-        required: true
-      },
-      {
-        type: 'string',
-        name: 'password',
-        description: 'IDEXX API Password',
-        required: true
-      }
-    ],
-    integrationOptions: [
-      {
-        type: 'string',
         name: 'X-Pims-Id',
         description: "PIMS ID set in request's header",
         required: true
@@ -75,6 +61,20 @@ const providers: Provider[] = [
         type: 'string',
         name: 'X-Pims-Version',
         description: "PIMS Version set in request's header",
+        required: true
+      }
+    ],
+    integrationOptions: [
+      {
+        type: 'string',
+        name: 'username',
+        description: 'IDEXX API Username',
+        required: true
+      },
+      {
+        type: 'string',
+        name: 'password',
+        description: 'IDEXX API Password',
         required: true
       }
     ]
