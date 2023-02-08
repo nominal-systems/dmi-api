@@ -24,17 +24,12 @@ jobs:
         run: |
           # Default GITHUB_SHA
           tag="${GITHUB_SHA}"
-          echo "tag=$tag"
 
-          # If release parse the tag name from GITHUB_REF
-          ref="${GITHUB_REF}"
-          echo "ref=$ref"
-          if [[ "${ref}" == refs/tags* ]]; then
-            echo "The variable starts with 'hello'"
+          # If ref is a tag, parse that
+          if [[ "${GITHUB_REF}" == refs/tags* ]]; then
             tag=$(echo $GITHUB_REF | sed 's/refs\/tags\///g')
           fi
           
-          echo "tag=$tag"
           echo "::set-output name=tag::$tag"
       - name: Build Docker images
         uses: azure/docker-login@v1
