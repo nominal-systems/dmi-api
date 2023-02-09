@@ -8,7 +8,6 @@ import { Repository } from 'typeorm'
 import { ReportsService } from '../reports/reports.service'
 import { IntegrationsService } from '../integrations/integrations.service'
 import { EventsService } from '../events/services/events.service'
-import { Order as ExternalOrder, OrderStatus } from '@nominal-systems/dmi-engine-common'
 
 export const repositoryMockFactory: () => MockUtils<Repository<any>> = jest.fn(() => ({
   find: jest.fn(entity => entity)
@@ -19,7 +18,7 @@ describe('OrdersService', () => {
   const configServiceMock = {
     get: jest.fn()
   }
-  let ordersRepositoryMock: MockUtils<Repository<Order>>
+
   const reportsServiceMock = {}
   const integrationsServiceMock = {
     findOne: jest.fn().mockReturnValue({
