@@ -8,7 +8,7 @@ export class Client {
   @Column()
   lastName: string
 
-  @Column()
+  @Column({ nullable: true })
   firstName: string
 
   // TODO(gb): Add contact
