@@ -72,7 +72,68 @@ export class IdexxConfig1675972200732 implements MigrationInterface {
   }
 
   public async down (queryRunner: QueryRunner): Promise<void> {
-    
+    // Read ProviderConfigurations
+    const providerConfigs = await queryRunner.query(`SELECT \`id\`, \`configurationOptions\`
+                                                     FROM \`dmi\`.\`provider_configuration\`
+                                                     WHERE \`providerId\` = 'idexx'`)
+    const providerConfigurationUpdates = <any>[]
+    const integrationUpdates = <any>[]
+    for (const providerConfig of providerConfigs) {
+      const providerConfigurationId = providerConfig['id']
+      const configurationOptions = decrypt(providerConfig['configurationOptions'], this.secretKey)
+      const providerConfigUpdate = {
+        id: providerConfigurationId,
+        configurationOptions: {
+          orderingBaseUrl: configurationOptions['orderingBaseUrl'],
+          resultBaseUrl: configurationOptions['resultBaseUrl']
+        }
+      }
+
+      // Read Integrations
+      const integrations = await queryRunner.query(`SELECT \`id\`, \`integrationOptions\`
+                                                    FROM \`dmi\`.\`integration\`
+                                                    WHERE \`providerConfigurationId\` = '${providerConfigurationId}'`)
+      if (integrations.length == 0) {
+        break
+      } else {
+        const integrationOptions = decrypt(integrations[0]['integrationOptions'], this.secretKey)
+        providerConfigUpdate.configurationOptions['username'] = integrationOptions['username']
+        providerConfigUpdate.configurationOptions['password'] = integrationOptions['password']
+        providerConfigurationUpdates.push(providerConfigUpdate)
+      }
+
+      for (const integration of integrations) {
+        const integrationUpdate = {
+          id: integration['id'],
+          integrationOptions: {}
+        }
+        integrationUpdate.integrationOptions['X-Pims-Id'] = configurationOptions['X-Pims-Id']
+        integrationUpdate.integrationOptions['X-Pims-Version'] = configurationOptions['X-Pims-Version']
+        integrationUpdates.push(integrationUpdate)
+      }
+    }
+
+    // Perform ProviderConfiguration updates
+    for (const pcUpdate of providerConfigurationUpdates) {
+      const id = pcUpdate['id']
+      const configurationOptions = JSON.stringify(encrypt(pcUpdate['configurationOptions'], this.secretKey))
+      await queryRunner.query(`UPDATE \`dmi\`.\`provider_configuration\`
+                               SET \`configurationOptions\` = '${configurationOptions}'
+                               WHERE \`id\` = '${id}'`)
+    }
+
+    // Perform Integration updates
+    for (const iUpdate of integrationUpdates) {
+      const id = iUpdate['id']
+      const integrationOptions = JSON.stringify(encrypt(iUpdate['integrationOptions'], this.secretKey))
+      await queryRunner.query(`UPDATE \`dmi\`.\`integration\`
+                               SET \`integrationOptions\` = '${integrationOptions}'
+                               WHERE \`id\` = '${id}'`)
+    }
+  }
+
+  private dbUp() {
+
   }
 
 }
