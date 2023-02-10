@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { ClientProxy } from '@nestjs/microservices'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -9,6 +9,9 @@ import ieMessageBuilder from '../common/utils/ieMessageBuilder'
 import { Organization } from '../organizations/entities/organization.entity'
 import { CreateIntegrationDto } from './dtos/create-integration.dto'
 import { Integration } from './entities/integration.entity'
+import { ProviderConfiguration } from '../providers/entities/provider-configuration.entity'
+import providersList from '../providers/constants/provider-list.constant'
+import * as createValidator from 'is-my-json-valid'
 
 @Injectable()
 export class IntegrationsService {
@@ -19,6 +22,8 @@ export class IntegrationsService {
     private readonly configService: ConfigService,
     @InjectRepository(Integration)
     private readonly integrationsRepository: Repository<Integration>,
+    @InjectRepository(ProviderConfiguration)
+    private readonly providerConfigurationRepository: Repository<ProviderConfiguration>,
     @Inject('ACTIVEMQ') private readonly client: ClientProxy
   ) {
     this.secretKey = this.configService.get('secretKey') ?? ''
@@ -58,6 +63,8 @@ export class IntegrationsService {
     createIntegrationDto: CreateIntegrationDto
   ): Promise<Integration> {
     try {
+      await this.validateIntegrationOptions(createIntegrationDto)
+
       createIntegrationDto.integrationOptions = encrypt(
         createIntegrationDto.integrationOptions,
         this.secretKey
@@ -79,6 +86,7 @@ export class IntegrationsService {
         options: { relations: ['providerConfiguration', 'practice'] }
       })
 
+      // Notify engine
       const { message, messagePattern } = ieMessageBuilder(
         providerConfiguration.providerId,
         {
@@ -94,7 +102,6 @@ export class IntegrationsService {
           }
         }
       )
-
       this.client.emit(messagePattern, message)
 
       newIntegration.integrationOptions = integrationOptions
@@ -170,5 +177,36 @@ export class IntegrationsService {
       }
     )
     this.client.emit(messagePattern, message)
+  }
+
+  private async validateIntegrationOptions (
+    createIntegrationDto: CreateIntegrationDto
+  ): Promise<void> {
+    const providerConfiguration = await this.providerConfigurationRepository.findOne({ id: createIntegrationDto.providerConfigurationId })
+    // TODO(gb): actually use the ProviderService to do this
+    const provider = providersList.find(provider => provider.id === providerConfiguration?.providerId)
+
+    if (provider == null) {
+      throw new BadRequestException("The provider doesn't exist")
+    }
+
+    const validatorOptions = {
+      required: true,
+      type: 'object',
+      properties: {}
+    }
+
+    for (const option of provider.integrationOptions) {
+      validatorOptions.properties[option.name] = {
+        type: option.type,
+        required: option.required
+      }
+    }
+
+    const providerValidator = createValidator(validatorOptions as any)
+
+    if (!providerValidator(createIntegrationDto.integrationOptions)) {
+      throw new BadRequestException('Invalid integration options')
+    }
   }
 }

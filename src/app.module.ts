@@ -10,7 +10,6 @@ import { OrdersModule } from './orders/orders.module'
 import { EventsModule } from './events/events.module'
 import configuration from './config/configuration'
 import { MongooseModule } from '@nestjs/mongoose'
-import { SeederModule } from './seeder/seeder.module'
 import { AppController } from './app.controller'
 import { APP_INTERCEPTOR } from '@nestjs/core'
 import { RpcExceptionInterceptor } from './common/interceptors/rpc-exception.interceptor'
@@ -55,7 +54,6 @@ import { AdminModule } from './admin/admin.module'
     IntegrationsModule,
     OrdersModule,
     EventsModule,
-    SeederModule,
     RefsModule,
     ReportsModule,
     AdminModule

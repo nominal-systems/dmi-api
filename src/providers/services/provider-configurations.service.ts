@@ -1,11 +1,6 @@
-import {
-  BadRequestException,
-  Injectable,
-  Logger,
-  NotFoundException
-} from '@nestjs/common'
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository, FindManyOptions } from 'typeorm'
+import { FindManyOptions, Repository } from 'typeorm'
 import { Organization } from '../../organizations/entities/organization.entity'
 import { ProvidersService } from './providers.service'
 import { ProviderConfiguration } from '../entities/provider-configuration.entity'

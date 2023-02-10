@@ -132,8 +132,4 @@ export class IdexxConfig1675972200732 implements MigrationInterface {
     }
   }
 
-  private dbUp() {
-
-  }
-
 }
