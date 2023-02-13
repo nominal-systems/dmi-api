@@ -29,7 +29,8 @@ export class ProvidersController {
   constructor (
     private readonly providersService: ProvidersService,
     private readonly providerConfigurationsService: ProviderConfigurationsService
-  ) {}
+  ) {
+  }
 
   @Get()
   async listProviders (): Promise<Provider[]> {
@@ -126,7 +127,8 @@ export class ProvidersController {
           id: configId,
           organizationId: organization.id,
           providerId: providerId
-        }
+        },
+        relations: ['integrations']
       }
     })
   }

@@ -8,6 +8,7 @@ import * as createValidator from 'is-my-json-valid'
 import { ConfigService } from '@nestjs/config'
 import { encrypt } from '../../common/utils/crypto.utils'
 import { FindOneOfTypeOptions } from '../../common/typings/find-one-of-type-options.interface'
+import { Integration } from '../../integrations/entities/integration.entity'
 
 @Injectable()
 export class ProviderConfigurationsService {
@@ -16,9 +17,9 @@ export class ProviderConfigurationsService {
 
   constructor (
     @InjectRepository(ProviderConfiguration)
-    private readonly providerConfigurationRepository: Repository<
-      ProviderConfiguration
-    >,
+    private readonly providerConfigurationRepository: Repository<ProviderConfiguration>,
+    @InjectRepository(Integration)
+    private readonly integrationsRepository: Repository<Integration>,
     private readonly providersService: ProvidersService,
     private readonly configService: ConfigService
   ) {
@@ -79,7 +80,13 @@ export class ProviderConfigurationsService {
       throw new NotFoundException("The provider configuration doesn't exist")
     }
 
-    await this.providerConfigurationRepository.delete(providerConfig.id)
+    await this.providerConfigurationRepository.softDelete(providerConfig.id)
+    this.logger.log(`Delete ProviderConfiguration: ${providerConfig.id}`)
+
+    // Delete linked integrations
+    const integrationIds = providerConfig.integrations.map((i) => i.id)
+    await this.integrationsRepository.softDelete(integrationIds)
+    this.logger.log(`Deleted Integrations: ${integrationIds.join(',')}`)
   }
 
   private async validateProviderConfiguration (

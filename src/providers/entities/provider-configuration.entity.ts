@@ -4,6 +4,7 @@ import {
   AfterLoad,
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   Entity,
   ManyToOne,
   OneToMany,
@@ -49,6 +50,9 @@ export class ProviderConfiguration {
 
   @UpdateDateColumn()
   updatedAt: Date
+
+  @DeleteDateColumn()
+  deletedAt: Date
 
   @AfterInsert()
   @AfterLoad()

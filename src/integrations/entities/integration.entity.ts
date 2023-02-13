@@ -6,7 +6,8 @@ import {
   DeleteDateColumn,
   Entity,
   ManyToOne,
-  PrimaryGeneratedColumn, UpdateDateColumn
+  PrimaryGeneratedColumn,
+  UpdateDateColumn
 } from 'typeorm'
 import { decrypt } from '../../common/utils/crypto.utils'
 import configuration from '../../config/configuration'
@@ -37,7 +38,8 @@ export class Integration {
 
   @ManyToOne(
     () => ProviderConfiguration,
-    providerConfiguration => providerConfiguration.integrations
+    providerConfiguration => providerConfiguration.integrations,
+    { onDelete: 'CASCADE', orphanedRowAction: 'delete' }
   )
   @Type(() => ProviderConfiguration)
   providerConfiguration: ProviderConfiguration
