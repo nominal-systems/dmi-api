@@ -84,9 +84,11 @@ export class ProviderConfigurationsService {
     this.logger.log(`Delete ProviderConfiguration: ${providerConfig.id}`)
 
     // Delete linked integrations
-    const integrationIds = providerConfig.integrations.map((i) => i.id)
-    await this.integrationsRepository.softDelete(integrationIds)
-    this.logger.log(`Deleted Integrations: ${integrationIds.join(',')}`)
+    if (providerConfig.integrations.length > 0) {
+      const integrationIds = providerConfig.integrations.map((i) => i.id)
+      await this.integrationsRepository.softDelete(integrationIds)
+      this.logger.log(`Deleted Integrations: ${integrationIds.join(',')}`)
+    }
   }
 
   private async validateProviderConfiguration (
