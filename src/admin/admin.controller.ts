@@ -1,4 +1,4 @@
-import { Controller, Delete, Get, Param, UseGuards } from '@nestjs/common'
+import { Controller, Delete, Get, Param, Post, UseGuards } from '@nestjs/common'
 import { ProviderConfiguration } from '../providers/entities/provider-configuration.entity'
 import { ProviderConfigurationsService } from '../providers/services/provider-configurations.service'
 import { BasicAuthGuard } from '../common/guards/basic-auth.guard'
@@ -70,5 +70,33 @@ export class AdminController {
     }
 
     await this.integrationsService.doDelete(integration)
+  }
+
+  @Post('integrations/:id/stop')
+  async stopIntegration (
+    @Param('id') integrationId: string
+  ): Promise<void> {
+    const integration = await this.integrationsService.findOne({
+      id: integrationId,
+      options: {
+        relations: ['practice', 'providerConfiguration']
+      }
+    })
+
+    await this.integrationsService.doStop(integration)
+  }
+
+  @Post('integrations/:id/start')
+  async startIntegration (
+    @Param('id') integrationId: string
+  ): Promise<void> {
+    const integration = await this.integrationsService.findOne({
+      id: integrationId,
+      options: {
+        relations: ['practice', 'providerConfiguration']
+      }
+    })
+
+    await this.integrationsService.doStart(integrationId, integration.providerConfiguration, integration.integrationOptions)
   }
 }

@@ -12,6 +12,7 @@ import { Integration } from './entities/integration.entity'
 import { ProviderConfiguration } from '../providers/entities/provider-configuration.entity'
 import providersList from '../providers/constants/provider-list.constant'
 import * as createValidator from 'is-my-json-valid'
+import { Operation, Resource } from '@nominal-systems/dmi-engine-common'
 
 @Injectable()
 export class IntegrationsService {
@@ -86,23 +87,7 @@ export class IntegrationsService {
         options: { relations: ['providerConfiguration', 'practice'] }
       })
 
-      // Notify engine
-      const { message, messagePattern } = ieMessageBuilder(
-        providerConfiguration.providerId,
-        {
-          resource: 'integration',
-          operation: 'create',
-          data: {
-            integrationOptions: integrationOptions,
-            providerConfiguration:
-            providerConfiguration.configurationOptions,
-            payload: {
-              integrationId
-            }
-          }
-        }
-      )
-      this.client.emit(messagePattern, message)
+      await this.doStart(integrationId, providerConfiguration, integrationOptions)
 
       newIntegration.integrationOptions = integrationOptions
 
@@ -144,12 +129,8 @@ export class IntegrationsService {
       }
     })
 
-    if (integration == null) {
-      throw new NotFoundException('The integration was not found')
-    }
-
     if (integration.deletedAt != null) {
-      this.logger.log(`Integration ${integration.id} is already disabled`)
+      this.logger.log(`Integration ${integration.id} is already deleted`)
       return
     }
 
@@ -163,15 +144,46 @@ export class IntegrationsService {
     await this.integrationsRepository.softDelete(integration.id)
     this.logger.log(`Deleted Integration: ${integration.id}`)
 
-    // Notify the integration engine
+    await this.doStop(integration)
+  }
+
+  async doStop (
+    integration: Integration
+  ): Promise<void> {
+    // Notify engine to remove jobs
     const { message, messagePattern } = ieMessageBuilder(
       integration.providerConfiguration.providerId,
       {
-        resource: 'integration',
-        operation: 'remove',
+        resource: Resource.Integration,
+        operation: Operation.Remove,
         data: {
           payload: {
             integrationId: integration.id
+          }
+        }
+      }
+    )
+    this.client.emit(messagePattern, message)
+    this.logger.log(`Stopped integration ${integration.id}`)
+  }
+
+  async doStart (
+    integrationId,
+    providerConfiguration,
+    integrationOptions
+  ): Promise<void> {
+    // Notify engine to add jobs
+    const { message, messagePattern } = ieMessageBuilder(
+      providerConfiguration.providerId,
+      {
+        resource: Resource.Integration,
+        operation: Operation.Create,
+        data: {
+          integrationOptions: integrationOptions,
+          providerConfiguration:
+          providerConfiguration.configurationOptions,
+          payload: {
+            integrationId
           }
         }
       }

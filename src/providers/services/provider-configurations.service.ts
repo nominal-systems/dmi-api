@@ -51,30 +51,7 @@ export class ProviderConfigurationsService {
     providerId: string,
     providerConfigurationOptions: any
   ): Promise<any> {
-    const provider = await this.providersService.findOneById(providerId)
-
-    if (provider == null) {
-      throw new BadRequestException("The provider doesn't exist")
-    }
-
-    const validatorOptions = {
-      required: true,
-      type: 'object',
-      properties: {}
-    }
-
-    for (const option of provider.configurationOptions) {
-      validatorOptions.properties[option.name] = {
-        type: option.type,
-        required: option.required
-      }
-    }
-
-    const providerValidator = createValidator(validatorOptions as any)
-
-    if (!providerValidator(providerConfigurationOptions.configuration)) {
-      throw new BadRequestException('There is an issue with the request body')
-    }
+    await this.validateProviderConfiguration(providerId, providerConfigurationOptions)
 
     const newProviderConfiguration = this.providerConfigurationRepository.create(
       {
@@ -103,5 +80,35 @@ export class ProviderConfigurationsService {
     }
 
     await this.providerConfigurationRepository.delete(providerConfig.id)
+  }
+
+  private async validateProviderConfiguration (
+    providerId: string,
+    providerConfigurationOptions: any
+  ): Promise<void> {
+    const provider = await this.providersService.findOneById(providerId)
+
+    if (provider == null) {
+      throw new BadRequestException("The provider doesn't exist")
+    }
+
+    const validatorOptions = {
+      required: true,
+      type: 'object',
+      properties: {}
+    }
+
+    for (const option of provider.configurationOptions) {
+      validatorOptions.properties[option.name] = {
+        type: option.type,
+        required: option.required
+      }
+    }
+
+    const providerValidator = createValidator(validatorOptions as any)
+
+    if (!providerValidator(providerConfigurationOptions.configuration)) {
+      throw new BadRequestException('The provider configuration is invalid')
+    }
   }
 }
