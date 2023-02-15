@@ -5,7 +5,12 @@ import { Report } from './entities/report.entity'
 import { FindOneOfTypeOptions } from '../common/typings/find-one-of-type-options.interface'
 import { ExternalResultEventData } from '../common/typings/external-result-event-data.interface'
 import { Order } from '../orders/entities/order.entity'
-import { ProviderResult, ProviderTestResultItem, ReportStatus } from '@nominal-systems/dmi-engine-common'
+import {
+  Order as ExternalOrder,
+  ProviderResult,
+  ProviderTestResultItem,
+  ReportStatus
+} from '@nominal-systems/dmi-engine-common'
 import { EventsService } from '../events/services/events.service'
 import { EventNamespace } from '../events/constants/event-namespace.enum'
 import { EventType } from '../events/constants/event-type.enum'
@@ -84,15 +89,11 @@ export class ReportsService {
     integrationId,
     results
   }: ExternalResultEventData): Promise<void> {
-    this.logger.debug(`Got ${results.length} results from provider`)
-
     const integration = await this.integrationsService.findById(integrationId)
     const externalOrderIds = results.map(result => result.orderId)
-    const existingReports = await this.findReportsByExternalOrderIds(externalOrderIds)
-    const nonExistingOrderIds = arrayDiff(externalOrderIds, existingReports.map(report => report.order.externalId))
-    const nonExistingOrders = await this.ordersService.findOrdersByExternalIds(nonExistingOrderIds)
 
     // Update existing reports with new results
+    const existingReports = await this.findReportsByExternalOrderIds(externalOrderIds)
     const updatedReports: Report[] = []
     for (const report of existingReports) {
       const resultsForReport = results.filter(result => result.orderId === report.order.externalId)
@@ -102,9 +103,35 @@ export class ReportsService {
       }
     }
 
+    // Create non-existing orders
+    const externalOrders: ExternalOrder[] = []
+    const nonExistingReportExternalOrderIds = arrayDiff(externalOrderIds, existingReports.map(report => report.order.externalId))
+    const nonExistingReportOrders = await this.ordersService.findOrdersByExternalIds(nonExistingReportExternalOrderIds)
+    const nonExistingOrderExternalIds = arrayDiff(nonExistingReportExternalOrderIds, nonExistingReportOrders.map(order => order.externalId))
+    for (const externalOrderId of nonExistingOrderExternalIds) {
+      const externalOrder = await this.ordersService.getOrderFromProvider(externalOrderId, integration.providerConfiguration, integration.integrationOptions)
+      externalOrders.push(externalOrder)
+    }
+    const createdOrders = await this.ordersService.createExternalOrders(integrationId, externalOrders)
+    // TODO(gb): update order status?
+
+    // Notify about new orders
+    for (const order of createdOrders) {
+      await this.eventsService.addEvent({
+        namespace: EventNamespace.ORDERS,
+        type: EventType.ORDER_CREATED,
+        integrationId: integrationId,
+        data: {
+          practice: integration.practice,
+          orderId: order.id,
+          order: order
+        }
+      })
+    }
+
     // Create new reports with unmatched results
     const createdReports: Report[] = []
-    for (const order of nonExistingOrders) {
+    for (const order of [...nonExistingReportOrders, ...createdOrders]) {
       const report = this.buildRegisteredReport(order)
       const resultsForReport = results.filter(result => result.orderId === order.externalId)
       await this.updateReportResults(report, resultsForReport)
@@ -141,7 +168,7 @@ export class ReportsService {
       })
     }
 
-    this.logger.debug(`Reports: ${createdReports.length} created, ${updatedReports.length} updated`)
+    this.logger.log(`Got ${results.length} results from provider. Reports: ${createdReports.length} created, ${updatedReports.length} updated. Orders: ${createdOrders.length} created`)
   }
 
   private async findReportsByExternalOrderIds (externalOrderIds: string[]): Promise<Report[]> {

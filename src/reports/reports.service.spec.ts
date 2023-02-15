@@ -1,5 +1,5 @@
-import { Test, TestingModule } from '@nestjs/testing'
 import { ReportsService } from './reports.service'
+import { Test, TestingModule } from '@nestjs/testing'
 import { getRepositoryToken } from '@nestjs/typeorm'
 import { Report } from './entities/report.entity'
 import { MockUtils } from '../common/test/mock-utils'
@@ -10,14 +10,23 @@ import { EventsService } from '../events/services/events.service'
 import { OrdersService } from '../orders/orders.service'
 import { TestResultItemStatus } from '@nominal-systems/dmi-engine-common'
 
-const repositoryMockFactory: () => MockUtils<Repository<any>> = jest.fn(() => ({}))
+const repositoryMockFactory: () => MockUtils<Repository<any>> = jest.fn(() => ({
+  findOne: jest.fn(entity => entity),
+  find: jest.fn(entity => entity)
+}))
 
 describe('ReportsService', () => {
   let service: ReportsService
-  // let reportsRepositoryMock: MockUtils<Repository<Report>>
-  const ordersServiceMock = {}
-  const integrationsServiceMock = {}
-  const eventsServiceMock = {}
+  let reportsRepositoryMock
+  const ordersServiceMock = {
+    findOrdersByExternalIds: jest.fn().mockImplementation((orders) => orders)
+  }
+  const integrationsServiceMock = {
+    findById: jest.fn().mockImplementation((integration) => integration)
+  }
+  const eventsServiceMock = {
+    addEvent: jest.fn()
+  }
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -47,13 +56,14 @@ describe('ReportsService', () => {
     }).compile()
 
     service = module.get<ReportsService>(ReportsService)
+    reportsRepositoryMock = module.get(getRepositoryToken(Report))
   })
 
   it('should be defined', () => {
     expect(service).toBeDefined()
   })
 
-  describe('updateTestResultObservations', () => {
+  describe('updateTestResultObservations()', () => {
     it('should update the test result observations', () => {
       const testResult = new TestResult()
       testResult.observations = []

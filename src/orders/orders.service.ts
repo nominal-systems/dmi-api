@@ -13,7 +13,14 @@ import { ExternalOrdersEventData } from '../common/typings/external-order-event-
 import { EventsService } from '../events/services/events.service'
 import { OrderSearchQueryParams } from './dtos/order-search-queryparams.dto'
 import { Test } from './entities/test.entity'
-import { OrderCreatedResponse, OrderStatus, ResultStatus } from '@nominal-systems/dmi-engine-common'
+import {
+  Operation,
+  Order as ExternalOrder,
+  OrderCreatedResponse,
+  OrderStatus,
+  Resource,
+  ResultStatus
+} from '@nominal-systems/dmi-engine-common'
 import { isValidStatusChange } from '../common/utils/order-status.helper'
 import { EventNamespace } from '../events/constants/event-namespace.enum'
 import { EventType } from '../events/constants/event-type.enum'
@@ -142,23 +149,7 @@ export class OrdersService {
     }
 
     if (manifestUri == null) {
-      const { message, messagePattern } = ieMessageBuilder(
-        providerConfiguration.providerId,
-        {
-          resource: 'orders',
-          operation: 'get',
-          data: {
-            payload: { id: externalId },
-            integrationOptions,
-            providerConfiguration:
-            providerConfiguration.configurationOptions
-          }
-        }
-      )
-
-      const response = await this.client
-        .send(messagePattern, message)
-        .toPromise()
+      const response = await this.getOrderFromProvider(externalId, providerConfiguration, integrationOptions)
 
       if (response.manifestUri != null || response.status !== order.status) {
         Object.assign(order, response)
@@ -484,7 +475,6 @@ export class OrdersService {
     integrationId,
     orders
   }: ExternalOrdersEventData): Promise<void> {
-    this.logger.debug(`Got ${orders.length} orders from provider`)
     const externalOrdersIds = orders.map(order => order.externalId)
 
     // Handle existing orders
@@ -517,7 +507,7 @@ export class OrdersService {
 
     // Nothing to do, return
     if (allOrders.length === 0) {
-      this.logger.debug('No orders to create/update')
+      this.logger.debug(`Got ${orders.length} external orders: 0 created, 0 updated`)
       return
     }
 
@@ -555,7 +545,7 @@ export class OrdersService {
       })
     }
 
-    this.logger.log(`Orders ${newOrders.length} created, ${updatedOrders.length} updated`)
+    this.logger.log(`Got ${orders.length} external orders: ${newOrders.length} created, ${updatedOrders.length} updated`)
   }
 
   async handleExternalOrderResults ({
@@ -566,25 +556,30 @@ export class OrdersService {
     const externalOrderIds = new Set<string>(results.map(result => result.orderId))
 
     const updatedOrders: Order[] = []
-    // for (const result of results) {
     for (const externalOrderId of externalOrderIds) {
       const result = results.find(result => result.orderId === externalOrderId)
 
       if (result == null) continue
 
-      const order = await this.findOneByExternalId(externalOrderId)
-      const orderStatus = order.status
-      if (result.status === ResultStatus.COMPLETED) {
-        order.status = OrderStatus.COMPLETED
-      } else if (result.status === ResultStatus.PARTIAL) {
-        order.status = OrderStatus.PARTIAL
-      }
+      try {
+        const order = await this.findOneByExternalId(externalOrderId)
+        const orderStatus = order.status
+        if (result.status === ResultStatus.COMPLETED) {
+          order.status = OrderStatus.COMPLETED
+        } else if (result.status === ResultStatus.PARTIAL) {
+          order.status = OrderStatus.PARTIAL
+        }
 
-      if (orderStatus !== order.status) {
-        // const updateResult = await this.ordersRepository.update({ id: order.id }, { status: order.status })
-        const updatedOrder = await this.ordersRepository.save(order)
-        updatedOrders.push(updatedOrder)
-        this.logger.log(`Updated Order/${updatedOrder.id} status to ${updatedOrder.status}`)
+        if (orderStatus !== order.status) {
+          // const updateResult = await this.ordersRepository.update({ id: order.id }, { status: order.status })
+          const updatedOrder = await this.ordersRepository.save(order)
+          updatedOrders.push(updatedOrder)
+          this.logger.debug(`Updated Order/${updatedOrder.id} status to ${updatedOrder.status}`)
+        }
+      } catch (error) {
+        if (error.status === 404) {
+          this.logger.debug(`Order ${externalOrderId} doesn't exist in the system`)
+        }
       }
     }
 
@@ -602,6 +597,8 @@ export class OrdersService {
         }
       })
     }
+
+    this.logger.log(`Got ${results.length} order results from provider. ${updatedOrders.length} updated`)
   }
 
   async getOrderReport (
@@ -628,5 +625,38 @@ export class OrdersService {
         externalId: In(externalIds)
       }
     })
+  }
+
+  async getOrderFromProvider (
+    externalId: string,
+    providerConfiguration,
+    integrationOptions
+  ): Promise<ExternalOrder> {
+    const { message, messagePattern } = ieMessageBuilder(
+      providerConfiguration.providerId,
+      {
+        resource: Resource.Orders,
+        operation: Operation.Get,
+        data: {
+          payload: { id: externalId },
+          integrationOptions,
+          providerConfiguration: providerConfiguration.configurationOptions
+        }
+      }
+    )
+
+    return await this.client
+      .send(messagePattern, message)
+      .toPromise()
+  }
+
+  async createExternalOrders (
+    integrationId,
+    externalOrders: ExternalOrder[]
+  ): Promise<Order[]> {
+    const mapper = new ExternalOrderMapper()
+    const mappedOrders = externalOrders.map(externalOrder => mapper.mapOrder(externalOrder, integrationId))
+    const createdOrders = this.ordersRepository.create(mappedOrders)
+    return await this.ordersRepository.save(createdOrders)
   }
 }

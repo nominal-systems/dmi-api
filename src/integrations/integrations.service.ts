@@ -55,7 +55,7 @@ export class IntegrationsService {
     return await this.findOne({
       id: integrationId,
       options: {
-        relations: ['practice', 'practice.identifier']
+        relations: ['practice', 'practice.identifier', 'providerConfiguration']
       }
     })
   }
@@ -168,7 +168,7 @@ export class IntegrationsService {
   }
 
   async doStart (
-    integrationId,
+    integrationId: string,
     providerConfiguration,
     integrationOptions
   ): Promise<void> {
@@ -180,8 +180,7 @@ export class IntegrationsService {
         operation: Operation.Create,
         data: {
           integrationOptions: integrationOptions,
-          providerConfiguration:
-          providerConfiguration.configurationOptions,
+          providerConfiguration: providerConfiguration.configurationOptions,
           payload: {
             integrationId
           }
@@ -189,6 +188,7 @@ export class IntegrationsService {
       }
     )
     this.client.emit(messagePattern, message)
+    this.logger.log(`Started integration ${integrationId}`)
   }
 
   private async validateIntegrationOptions (
