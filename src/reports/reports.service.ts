@@ -105,15 +105,18 @@ export class ReportsService {
 
     // Create non-existing orders
     const externalOrders: ExternalOrder[] = []
+    const createdOrders: Order[] = []
     const nonExistingReportExternalOrderIds = arrayDiff(externalOrderIds, existingReports.map(report => report.order.externalId))
     const nonExistingReportOrders = await this.ordersService.findOrdersByExternalIds(nonExistingReportExternalOrderIds)
     const nonExistingOrderExternalIds = arrayDiff(nonExistingReportExternalOrderIds, nonExistingReportOrders.map(order => order.externalId))
     for (const externalOrderId of nonExistingOrderExternalIds) {
       const externalOrder = await this.ordersService.getOrderFromProvider(externalOrderId, integration.providerConfiguration, integration.integrationOptions)
+      const order = await this.ordersService.createExternalOrder(integrationId, externalOrder)
+      createdOrders.push(order)
+      const resultForOrder = results.filter(result => result.orderId === order.externalId)
+      await this.ordersService.updateOrderStatusFromResults(order, resultForOrder[0])
       externalOrders.push(externalOrder)
     }
-    const createdOrders = await this.ordersService.createExternalOrders(integrationId, externalOrders)
-    // TODO(gb): update order status?
 
     // Notify about new orders
     for (const order of createdOrders) {

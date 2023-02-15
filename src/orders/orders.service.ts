@@ -17,7 +17,7 @@ import {
   Operation,
   Order as ExternalOrder,
   OrderCreatedResponse,
-  OrderStatus,
+  OrderStatus, ProviderResult,
   Resource,
   ResultStatus
 } from '@nominal-systems/dmi-engine-common'
@@ -563,18 +563,10 @@ export class OrdersService {
 
       try {
         const order = await this.findOneByExternalId(externalOrderId)
-        const orderStatus = order.status
-        if (result.status === ResultStatus.COMPLETED) {
-          order.status = OrderStatus.COMPLETED
-        } else if (result.status === ResultStatus.PARTIAL) {
-          order.status = OrderStatus.PARTIAL
-        }
-
-        if (orderStatus !== order.status) {
-          // const updateResult = await this.ordersRepository.update({ id: order.id }, { status: order.status })
-          const updatedOrder = await this.ordersRepository.save(order)
-          updatedOrders.push(updatedOrder)
-          this.logger.debug(`Updated Order/${updatedOrder.id} status to ${updatedOrder.status}`)
+        const updated = await this.updateOrderStatusFromResults(order, result)
+        if (updated) {
+          updatedOrders.push(order)
+          this.logger.debug(`Updated Order/${order.id} status to ${order.status}`)
         }
       } catch (error) {
         if (error.status === 404) {
@@ -608,7 +600,9 @@ export class OrdersService {
     return await this.reportsService.findForOrder(orderId)
   }
 
-  async findOneByExternalId (externalId: string): Promise<Order> {
+  async findOneByExternalId (
+    externalId: string
+  ): Promise<Order> {
     return await this.findOne({
       options: {
         where: {
@@ -618,7 +612,9 @@ export class OrdersService {
     })
   }
 
-  async findOrdersByExternalIds (externalIds: string[]): Promise<Order[]> {
+  async findOrdersByExternalIds (
+    externalIds: string[]
+  ): Promise<Order[]> {
     return await this.findAll({
       relations: ['patient', 'patient.identifier', 'client', 'veterinarian'],
       where: {
@@ -650,13 +646,32 @@ export class OrdersService {
       .toPromise()
   }
 
-  async createExternalOrders (
+  async createExternalOrder (
     integrationId,
-    externalOrders: ExternalOrder[]
-  ): Promise<Order[]> {
+    externalOrder: ExternalOrder
+  ): Promise<Order> {
     const mapper = new ExternalOrderMapper()
-    const mappedOrders = externalOrders.map(externalOrder => mapper.mapOrder(externalOrder, integrationId))
-    const createdOrders = this.ordersRepository.create(mappedOrders)
+    const createdOrders = this.ordersRepository.create(mapper.mapOrder(externalOrder, integrationId))
     return await this.ordersRepository.save(createdOrders)
+  }
+
+  async updateOrderStatusFromResults (
+    order: Order,
+    result: ProviderResult
+  ): Promise<boolean> {
+    const orderStatus = order.status
+    if (result.status === ResultStatus.COMPLETED) {
+      order.status = OrderStatus.COMPLETED
+    } else if (result.status === ResultStatus.PARTIAL) {
+      order.status = OrderStatus.PARTIAL
+    }
+
+    let updated = false
+    if (orderStatus !== order.status) {
+      order = await this.ordersRepository.save(order)
+      updated = true
+    }
+
+    return updated
   }
 }
