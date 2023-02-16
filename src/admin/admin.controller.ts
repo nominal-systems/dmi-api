@@ -1,4 +1,5 @@
-import { Controller, Delete, Get, Param, Post, UseGuards } from '@nestjs/common'
+import { Controller, Delete, Get, Param, Post, Res, UseGuards } from '@nestjs/common'
+import { Response } from 'express'
 import { ProviderConfiguration } from '../providers/entities/provider-configuration.entity'
 import { ProviderConfigurationsService } from '../providers/services/provider-configurations.service'
 import { BasicAuthGuard } from '../common/guards/basic-auth.guard'
@@ -8,6 +9,7 @@ import { EventSubscriptionService } from '../events/services/event-subscription.
 import { EventSubscription } from '../events/entities/event-subscription.entity'
 import { OrganizationsService } from '../organizations/services/organizations.service'
 import { Organization } from '../organizations/entities/organization.entity'
+import { IntegrationStatus } from '../integrations/constants/integration-status.enum'
 
 @Controller('admin')
 @UseGuards(BasicAuthGuard)
@@ -74,6 +76,7 @@ export class AdminController {
 
   @Post('integrations/:id/stop')
   async stopIntegration (
+    @Res() res: Response,
     @Param('id') integrationId: string
   ): Promise<void> {
     const integration = await this.integrationsService.findOne({
@@ -83,11 +86,17 @@ export class AdminController {
       }
     })
 
-    await this.integrationsService.doStop(integration)
+    if (integration.status === IntegrationStatus.STOPPED) {
+      res.status(201).send('Integration is already stopped')
+    } else {
+      await this.integrationsService.doStop(integration)
+      res.status(201).send('Integration stopped')
+    }
   }
 
   @Post('integrations/:id/start')
   async startIntegration (
+    @Res() res: Response,
     @Param('id') integrationId: string
   ): Promise<void> {
     const integration = await this.integrationsService.findOne({
@@ -97,6 +106,11 @@ export class AdminController {
       }
     })
 
-    await this.integrationsService.doStart(integrationId, integration.providerConfiguration, integration.integrationOptions)
+    if (integration.status === IntegrationStatus.RUNNING) {
+      res.status(201).send('Integration is already running')
+    } else {
+      await this.integrationsService.doStart(integrationId, integration.providerConfiguration, integration.integrationOptions)
+      res.status(201).send('Integration started')
+    }
   }
 }

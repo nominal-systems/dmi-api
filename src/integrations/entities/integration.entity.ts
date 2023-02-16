@@ -1,4 +1,4 @@
-import { Type } from 'class-transformer'
+import { Exclude, Type } from 'class-transformer'
 import {
   AfterLoad,
   Column,
@@ -13,6 +13,7 @@ import { decrypt } from '../../common/utils/crypto.utils'
 import configuration from '../../config/configuration'
 import { Practice } from '../../practices/entities/practice.entity'
 import { ProviderConfiguration } from '../../providers/entities/provider-configuration.entity'
+import { IntegrationStatus } from '../constants/integration-status.enum'
 
 @Entity()
 export class Integration {
@@ -20,13 +21,19 @@ export class Integration {
   id: string
 
   @Column()
+  @Exclude()
   practiceId: string
 
   @Column()
+  @Exclude()
   providerConfigurationId: string
 
-  @Column('json')
-  integrationOptions: any
+  @Column({
+    type: 'enum',
+    enum: IntegrationStatus,
+    default: IntegrationStatus.RUNNING
+  })
+  status: string
 
   @ManyToOne(
     () => Practice,
@@ -35,6 +42,9 @@ export class Integration {
   )
   @Type(() => Practice)
   practice: Practice
+
+  @Column('json')
+  integrationOptions: any
 
   @ManyToOne(
     () => ProviderConfiguration,
@@ -51,6 +61,7 @@ export class Integration {
   updatedAt: Date
 
   @DeleteDateColumn()
+  @Exclude()
   deletedAt: Date
 
   @AfterLoad()

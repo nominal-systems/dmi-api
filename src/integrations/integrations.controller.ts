@@ -1,14 +1,4 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Param,
-  Post,
-  UseGuards
-} from '@nestjs/common'
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, UseGuards } from '@nestjs/common'
 import { SelectQueryBuilder } from 'typeorm'
 import { Organization } from '../common/decorators/organization.decorator'
 import { ApiGuard } from '../common/guards/api.guard'
@@ -20,7 +10,8 @@ import { IntegrationsService } from './integrations.service'
 @Controller('integrations')
 @UseGuards(ApiGuard)
 export class IntegrationsController {
-  constructor (private readonly integrationsService: IntegrationsService) {}
+  constructor (private readonly integrationsService: IntegrationsService) {
+  }
 
   @Get()
   async getAllIntegrations (
@@ -42,7 +33,7 @@ export class IntegrationsController {
   }
 
   @Get(':id')
-  async getIntergation (
+  async getIntegration (
     @Organization() organization: OrganizationEntity,
     @Param('id') id: string
   ): Promise<Integration> {
