@@ -16,7 +16,8 @@ describe('IntegrationsService', () => {
   }
   const integrationRepositoryMock = {
     findOne: jest.fn((obj) => obj),
-    softDelete: jest.fn()
+    softDelete: jest.fn(),
+    update: jest.fn()
   }
   const providerConfigurationRepositoryMock = {}
   const clientProxyMock = {

@@ -52,6 +52,7 @@ export class ProviderConfiguration {
   updatedAt: Date
 
   @DeleteDateColumn()
+  @Exclude()
   deletedAt: Date
 
   @AfterInsert()

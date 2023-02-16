@@ -13,6 +13,7 @@ import { ProviderConfiguration } from '../providers/entities/provider-configurat
 import providersList from '../providers/constants/provider-list.constant'
 import * as createValidator from 'is-my-json-valid'
 import { Operation, Resource } from '@nominal-systems/dmi-engine-common'
+import { IntegrationStatus } from './constants/integration-status.enum'
 
 @Injectable()
 export class IntegrationsService {
@@ -164,6 +165,7 @@ export class IntegrationsService {
       }
     )
     this.client.emit(messagePattern, message)
+    await this.integrationsRepository.update(integration.id, { status: IntegrationStatus.STOPPED })
     this.logger.log(`Stopped integration ${integration.id}`)
   }
 
@@ -187,6 +189,8 @@ export class IntegrationsService {
         }
       }
     )
+    await this.integrationsRepository.update(integrationId, { status: IntegrationStatus.RUNNING })
+    this.logger.log(`Started integration ${integrationId}`)
     this.client.emit(messagePattern, message)
     this.logger.log(`Started integration ${integrationId}`)
   }
