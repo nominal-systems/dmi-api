@@ -17,7 +17,7 @@ const repositoryMockFactory: () => MockUtils<Repository<any>> = jest.fn(() => ({
 
 describe('ReportsService', () => {
   let service: ReportsService
-  let reportsRepositoryMock
+  // let reportsRepositoryMock
   const ordersServiceMock = {
     findOrdersByExternalIds: jest.fn().mockImplementation((orders) => orders)
   }
@@ -56,7 +56,7 @@ describe('ReportsService', () => {
     }).compile()
 
     service = module.get<ReportsService>(ReportsService)
-    reportsRepositoryMock = module.get(getRepositoryToken(Report))
+    // reportsRepositoryMock = module.get(getRepositoryToken(Report))
   })
 
   it('should be defined', () => {
