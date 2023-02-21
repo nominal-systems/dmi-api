@@ -14,7 +14,8 @@ export class PracticesService {
   constructor (
     @InjectRepository(Practice)
     private readonly practicesRepository: Repository<Practice>
-  ) {}
+  ) {
+  }
 
   async search (
     organizationId: string,
@@ -86,7 +87,10 @@ export class PracticesService {
     return newPractice
   }
 
-  async delete (organization: Organization, practiceId: string): Promise<void> {
+  async delete (
+    organization: Organization,
+    practiceId: string
+  ): Promise<void> {
     const practice = await this.practicesRepository.findOne({
       where: {
         id: practiceId,
@@ -98,6 +102,7 @@ export class PracticesService {
       throw new NotFoundException("The practice doesn't exist")
     }
 
-    await this.practicesRepository.delete(practice.id)
+    await this.practicesRepository.softDelete(practice.id)
+    this.logger.log(`Deleted Practice: '${practice.name}' [${practice.id}] -> Organization: '${organization.name}'`)
   }
 }

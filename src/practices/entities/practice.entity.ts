@@ -2,6 +2,7 @@ import { Exclude, Type } from 'class-transformer'
 import {
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   Entity,
   ManyToOne,
   OneToMany,
@@ -51,4 +52,8 @@ export class Practice {
 
   @UpdateDateColumn()
   updatedAt: Date
+
+  @DeleteDateColumn()
+  @Exclude()
+  deletedAt: Date
 }
