@@ -54,17 +54,19 @@ export class ReportsService {
     organization: Organization
   ): Promise<Report> {
     // TODO(gb): actually check the user can access this report (i.e. belongs to the organization)
-    return await this.findOne({
-      id,
-      options: {
-        relations: [
-          'patient',
-          'testResultsSet',
-          'testResultsSet.observations',
-          'order'
-        ]
-      }
-    })
+    const report = await this.reportsRepository.createQueryBuilder('report')
+      .leftJoinAndSelect('report.patient', 'patient')
+      .leftJoinAndSelect('report.testResultsSet', 'testResultsSet')
+      .leftJoinAndSelect('testResultsSet.observations', 'observation')
+      .where('report.id = :id', { id })
+      .orderBy('observation.createdAt', 'ASC')
+      .getOne()
+
+    if (report == null) {
+      throw new NotFoundException(`Report '${id}' not found`)
+    }
+
+    return report
   }
 
   async registerForOrder (order: Order): Promise<Report> {
@@ -72,11 +74,17 @@ export class ReportsService {
     return await this.reportsRepository.save(report)
   }
 
-  async findForOrder (orderId: string): Promise<Report> {
-    const report = await this.reportsRepository.findOne({
-      where: { orderId },
-      relations: ['patient', 'testResultsSet', 'testResultsSet.observations']
-    })
+  async findForOrder (
+    orderId: string
+  ): Promise<Report> {
+    const report = await this.reportsRepository.createQueryBuilder('report')
+      .innerJoinAndSelect(Order, 'order', 'report.order = order.id')
+      .leftJoinAndSelect('report.patient', 'patient')
+      .leftJoinAndSelect('report.testResultsSet', 'testResultsSet')
+      .leftJoinAndSelect('testResultsSet.observations', 'observation')
+      .where('order.id = :orderId', { orderId })
+      .orderBy('observation.createdAt', 'ASC')
+      .getOne()
 
     if (report == null) {
       throw new NotFoundException(`Report for order '${orderId}' not found`)
