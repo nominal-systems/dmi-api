@@ -512,6 +512,7 @@ export class OrdersService {
     }
 
     // Notify about new orders
+    this.logger.debug(`handleExternalOrderResults: integrationId = ${integrationId}`) // TODO(gb): remove trace
     const integration = await this.integrationsService.findById(integrationId)
     for (const order of newOrders) {
       // TODO(gb): make this more efficient by saving in batch
@@ -552,6 +553,7 @@ export class OrdersService {
     integrationId,
     results
   }: ExternalResultEventData): Promise<void> {
+    this.logger.debug(`handleExternalOrderResults: integrationId = ${integrationId}`) // TODO(gb): remove trace
     const integration = await this.integrationsService.findById(integrationId)
     const externalOrderIds = new Set<string>(results.map(result => result.orderId))
 
