@@ -4,13 +4,13 @@ export class ObservationInterpretation1665410051149 implements MigrationInterfac
     name = 'ObservationInterpretation1665410051149'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`ALTER TABLE \`dmi\`.\`observation\` DROP COLUMN \`interpretation\``);
-        await queryRunner.query(`ALTER TABLE \`dmi\`.\`observation\` ADD \`interpretation\` text NULL`);
+        await queryRunner.query(`ALTER TABLE \`observation\` DROP COLUMN \`interpretation\``);
+        await queryRunner.query(`ALTER TABLE \`observation\` ADD \`interpretation\` text NULL`);
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`ALTER TABLE \`dmi\`.\`observation\` DROP COLUMN \`interpretation\``);
-        await queryRunner.query(`ALTER TABLE \`dmi\`.\`observation\` ADD \`interpretation\` varchar(255) NULL`);
+        await queryRunner.query(`ALTER TABLE \`observation\` DROP COLUMN \`interpretation\``);
+        await queryRunner.query(`ALTER TABLE \`observation\` ADD \`interpretation\` varchar(255) NULL`);
     }
 
 }
