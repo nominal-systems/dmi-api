@@ -142,10 +142,9 @@ export class IntegrationsService {
     integration: Integration
   ): Promise<void> {
     // Soft-delete the integration
+    await this.doStop(integration)
     await this.integrationsRepository.softDelete(integration.id)
     this.logger.log(`Deleted Integration: ${integration.id}`)
-
-    await this.doStop(integration)
   }
 
   async doStop (
@@ -164,6 +163,7 @@ export class IntegrationsService {
         }
       }
     )
+
     this.client.emit(messagePattern, message)
     await this.integrationsRepository.update(integration.id, { status: IntegrationStatus.STOPPED })
     this.logger.log(`Stopped integration ${integration.id}`)
@@ -190,7 +190,6 @@ export class IntegrationsService {
       }
     )
     await this.integrationsRepository.update(integrationId, { status: IntegrationStatus.RUNNING })
-    this.logger.log(`Started integration ${integrationId}`)
     this.client.emit(messagePattern, message)
     this.logger.log(`Started integration ${integrationId}`)
   }
