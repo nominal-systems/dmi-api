@@ -4,15 +4,15 @@ export class ObservationCreatedUpdatedTimestamps1669481033903 implements Migrati
   name = 'ObservationCreatedUpdatedTimestamps1669481033903'
 
   public async up (queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`ALTER TABLE \`dmi\`.\`observation\`
+    await queryRunner.query(`ALTER TABLE \`observation\`
         ADD \`createdAt\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)`)
-    await queryRunner.query(`ALTER TABLE \`dmi\`.\`observation\`
+    await queryRunner.query(`ALTER TABLE \`observation\`
         ADD \`updatedAt\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)`)
   }
 
   public async down (queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`ALTER TABLE \`dmi\`.\`observation\` DROP COLUMN \`updatedAt\``)
-    await queryRunner.query(`ALTER TABLE \`dmi\`.\`observation\` DROP COLUMN \`createdAt\``)
+    await queryRunner.query(`ALTER TABLE \`observation\` DROP COLUMN \`updatedAt\``)
+    await queryRunner.query(`ALTER TABLE \`observation\` DROP COLUMN \`createdAt\``)
   }
 
 }

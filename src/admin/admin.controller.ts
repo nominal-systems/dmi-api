@@ -1,4 +1,16 @@
-import { Controller, Delete, Get, Param, Post, Res, UseGuards } from '@nestjs/common'
+import {
+  Controller,
+  DefaultValuePipe,
+  Delete,
+  Get,
+  NotFoundException,
+  Param,
+  ParseBoolPipe,
+  Post,
+  Query,
+  Res,
+  UseGuards
+} from '@nestjs/common'
 import { Response } from 'express'
 import { ProviderConfiguration } from '../providers/entities/provider-configuration.entity'
 import { ProviderConfigurationsService } from '../providers/services/provider-configurations.service'
@@ -10,6 +22,8 @@ import { EventSubscription } from '../events/entities/event-subscription.entity'
 import { OrganizationsService } from '../organizations/services/organizations.service'
 import { Organization } from '../organizations/entities/organization.entity'
 import { IntegrationStatus } from '../integrations/constants/integration-status.enum'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
 
 @Controller('admin')
 @UseGuards(BasicAuthGuard)
@@ -18,7 +32,9 @@ export class AdminController {
     private readonly organizationsService: OrganizationsService,
     private readonly providerConfigurationsService: ProviderConfigurationsService,
     private readonly eventSubscriptionsService: EventSubscriptionService,
-    private readonly integrationsService: IntegrationsService
+    private readonly integrationsService: IntegrationsService,
+    @InjectRepository(Integration)
+    private readonly integrationsRepository: Repository<Integration>
   ) {
   }
 
@@ -77,14 +93,23 @@ export class AdminController {
   @Post('integrations/:id/stop')
   async stopIntegration (
     @Res() res: Response,
-    @Param('id') integrationId: string
+    @Param('id') integrationId: string,
+    @Query('force', new DefaultValuePipe(false), ParseBoolPipe) force: boolean
   ): Promise<void> {
-    const integration = await this.integrationsService.findOne({
-      id: integrationId,
-      options: {
-        relations: ['practice', 'providerConfiguration']
-      }
-    })
+    const queryBuilder = this.integrationsRepository.createQueryBuilder('integration')
+      .leftJoinAndSelect('integration.practice', 'practice')
+      .leftJoinAndSelect('integration.providerConfiguration', 'providerConfiguration')
+      .where('integration.id = :id', { id: integrationId })
+
+    if (force) {
+      queryBuilder.withDeleted()
+    }
+
+    const integration = await queryBuilder.getOne()
+
+    if (integration === undefined) {
+      throw new NotFoundException('Integration not found')
+    }
 
     if (integration.status === IntegrationStatus.STOPPED) {
       res.status(201).send('Integration is already stopped')

@@ -12,7 +12,7 @@ export class IdexxConfig1675972200732 implements MigrationInterface {
 
     // Read ProviderConfigurations
     const providerConfigs = await queryRunner.query(`SELECT \`id\`, \`configurationOptions\`
-                                                     FROM \`dmi\`.\`provider_configuration\`
+                                                     FROM \`provider_configuration\`
                                                      WHERE \`providerId\` = 'idexx'`)
     const providerConfigurationUpdates = <any>[]
     const integrationUpdates = <any>[]
@@ -29,7 +29,7 @@ export class IdexxConfig1675972200732 implements MigrationInterface {
 
       // Read Integrations
       const integrations = await queryRunner.query(`SELECT \`id\`, \`integrationOptions\`
-                                                    FROM \`dmi\`.\`integration\`
+                                                    FROM \`integration\`
                                                     WHERE \`providerConfigurationId\` = '${providerConfigurationId}'`)
       if (integrations.length == 0) {
         break
@@ -56,7 +56,7 @@ export class IdexxConfig1675972200732 implements MigrationInterface {
     for (const pcUpdate of providerConfigurationUpdates) {
       const id = pcUpdate['id']
       const configurationOptions = JSON.stringify(encrypt(pcUpdate['configurationOptions'], this.secretKey))
-      await queryRunner.query(`UPDATE \`dmi\`.\`provider_configuration\`
+      await queryRunner.query(`UPDATE \`provider_configuration\`
                                SET \`configurationOptions\` = '${configurationOptions}'
                                WHERE \`id\` = '${id}'`)
     }
@@ -65,7 +65,7 @@ export class IdexxConfig1675972200732 implements MigrationInterface {
     for (const iUpdate of integrationUpdates) {
       const id = iUpdate['id']
       const integrationOptions = JSON.stringify(encrypt(iUpdate['integrationOptions'], this.secretKey))
-      await queryRunner.query(`UPDATE \`dmi\`.\`integration\`
+      await queryRunner.query(`UPDATE \`integration\`
                                SET \`integrationOptions\` = '${integrationOptions}'
                                WHERE \`id\` = '${id}'`)
     }
@@ -74,7 +74,7 @@ export class IdexxConfig1675972200732 implements MigrationInterface {
   public async down (queryRunner: QueryRunner): Promise<void> {
     // Read ProviderConfigurations
     const providerConfigs = await queryRunner.query(`SELECT \`id\`, \`configurationOptions\`
-                                                     FROM \`dmi\`.\`provider_configuration\`
+                                                     FROM \`provider_configuration\`
                                                      WHERE \`providerId\` = 'idexx'`)
     const providerConfigurationUpdates = <any>[]
     const integrationUpdates = <any>[]
@@ -91,7 +91,7 @@ export class IdexxConfig1675972200732 implements MigrationInterface {
 
       // Read Integrations
       const integrations = await queryRunner.query(`SELECT \`id\`, \`integrationOptions\`
-                                                    FROM \`dmi\`.\`integration\`
+                                                    FROM \`integration\`
                                                     WHERE \`providerConfigurationId\` = '${providerConfigurationId}'`)
       if (integrations.length == 0) {
         break
@@ -117,7 +117,7 @@ export class IdexxConfig1675972200732 implements MigrationInterface {
     for (const pcUpdate of providerConfigurationUpdates) {
       const id = pcUpdate['id']
       const configurationOptions = JSON.stringify(encrypt(pcUpdate['configurationOptions'], this.secretKey))
-      await queryRunner.query(`UPDATE \`dmi\`.\`provider_configuration\`
+      await queryRunner.query(`UPDATE \`provider_configuration\`
                                SET \`configurationOptions\` = '${configurationOptions}'
                                WHERE \`id\` = '${id}'`)
     }
@@ -126,7 +126,7 @@ export class IdexxConfig1675972200732 implements MigrationInterface {
     for (const iUpdate of integrationUpdates) {
       const id = iUpdate['id']
       const integrationOptions = JSON.stringify(encrypt(iUpdate['integrationOptions'], this.secretKey))
-      await queryRunner.query(`UPDATE \`dmi\`.\`integration\`
+      await queryRunner.query(`UPDATE \`integration\`
                                SET \`integrationOptions\` = '${integrationOptions}'
                                WHERE \`id\` = '${id}'`)
     }
