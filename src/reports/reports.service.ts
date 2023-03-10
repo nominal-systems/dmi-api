@@ -193,7 +193,10 @@ export class ReportsService {
     })
   }
 
-  private async updateReportResults (report: Report, results: ProviderResult[]): Promise<boolean> {
+  async updateReportResults (
+    report: Report,
+    results: ProviderResult[]
+  ): Promise<boolean> {
     const providerTestResults = results
       .map(result => result.testResults)
       .reduce((a, v) => a.concat(v), [])

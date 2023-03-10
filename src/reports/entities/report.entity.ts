@@ -30,12 +30,6 @@ export class Report {
   })
   status: string
 
-  @CreateDateColumn()
-  createdAt: Date
-
-  @UpdateDateColumn()
-  updatedAt: Date
-
   @Type(() => Patient)
   @ManyToOne(() => Patient, { cascade: true })
   patient: Patient
@@ -50,4 +44,10 @@ export class Report {
   @OneToOne(() => Order)
   @JoinColumn()
   order: Order
+
+  @CreateDateColumn()
+  createdAt: Date
+
+  @UpdateDateColumn()
+  updatedAt: Date
 }
