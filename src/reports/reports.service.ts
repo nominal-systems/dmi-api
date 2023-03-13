@@ -56,10 +56,11 @@ export class ReportsService {
     // TODO(gb): actually check the user can access this report (i.e. belongs to the organization)
     const report = await this.reportsRepository.createQueryBuilder('report')
       .leftJoinAndSelect('report.patient', 'patient')
-      .leftJoinAndSelect('report.testResultsSet', 'testResultsSet')
-      .leftJoinAndSelect('testResultsSet.observations', 'observation')
+      .leftJoinAndSelect('report.testResultsSet', 'testResult')
+      .leftJoinAndSelect('testResult.observations', 'observation')
       .where('report.id = :id', { id })
-      .orderBy('observation.createdAt', 'ASC')
+      .orderBy('testResult.seq', 'ASC')
+      .addOrderBy('observation.seq', 'ASC')
       .getOne()
 
     if (report == null) {
@@ -80,10 +81,11 @@ export class ReportsService {
     const report = await this.reportsRepository.createQueryBuilder('report')
       .innerJoinAndSelect(Order, 'order', 'report.order = order.id')
       .leftJoinAndSelect('report.patient', 'patient')
-      .leftJoinAndSelect('report.testResultsSet', 'testResultsSet')
-      .leftJoinAndSelect('testResultsSet.observations', 'observation')
+      .leftJoinAndSelect('report.testResultsSet', 'testResult')
+      .leftJoinAndSelect('testResult.observations', 'observation')
       .where('order.id = :orderId', { orderId })
-      .orderBy('observation.createdAt', 'ASC')
+      .orderBy('testResult.seq', 'ASC')
+      .addOrderBy('observation.seq', 'ASC')
       .getOne()
 
     if (report == null) {
@@ -183,14 +185,17 @@ export class ReportsService {
   }
 
   private async findReportsByExternalOrderIds (externalOrderIds: string[]): Promise<Report[]> {
-    return await this.findAll({
-      where: {
-        order: {
-          externalId: In(externalOrderIds)
-        }
-      },
-      relations: ['order', 'order.veterinarian', 'patient', 'patient.identifier', 'testResultsSet', 'testResultsSet.observations']
-    })
+    return await this.reportsRepository.createQueryBuilder('report')
+      .leftJoinAndSelect('report.order', 'order')
+      .leftJoinAndSelect('order.veterinarian', 'veterinarian')
+      .leftJoinAndSelect('report.patient', 'patient')
+      .leftJoinAndSelect('patient.identifier', 'identifier')
+      .leftJoinAndSelect('report.testResultsSet', 'testResult')
+      .leftJoinAndSelect('testResult.observations', 'observation')
+      .where('order.externalId IN (:...externalOrderIds)', { externalOrderIds })
+      .orderBy('testResult.seq', 'ASC')
+      .addOrderBy('observation.seq', 'ASC')
+      .getMany()
   }
 
   async updateReportResults (
@@ -215,6 +220,7 @@ export class ReportsService {
       }
       const existingTestResult = report.testResultsSet.find(testResult => testResult.code === providerTestResult.code)
       if (existingTestResult != null) {
+        existingTestResult.seq = providerTestResult.seq
         existingTestResult.status = testResultStatus
         existingTestResult.deviceId = providerTestResult.deviceId
         existingTestResult.notes = providerTestResult.notes
@@ -222,6 +228,7 @@ export class ReportsService {
         updatedTestResults.push(existingTestResult)
       } else {
         const testResult = new TestResult()
+        testResult.seq = providerTestResult.seq
         testResult.code = providerTestResult.code
         testResult.name = providerTestResult.name
         testResult.observations = []
@@ -275,6 +282,9 @@ export class ReportsService {
   }
 
   private updateObservationValue (observation: Observation, item: ProviderTestResultItem): void {
+    // Seq
+    observation.seq = item.seq
+
     // Status
     observation.status = item.status
 
@@ -312,5 +322,20 @@ export class ReportsService {
     report.status = ReportStatus.REGISTERED
     report.testResultsSet = []
     return report
+  }
+
+  private printReport (
+    report: Report,
+    eventType: EventType
+  ): void {
+    console.log(`Order #${report.order.externalId} [${eventType}]`)
+    for (const testResult of report.testResultsSet) {
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+      console.log(`  ${testResult.seq}. ${testResult.name}`)
+      for (const observation of testResult.observations) {
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+        console.log(`    ${observation.seq}. ${observation.name}`)
+      }
+    }
   }
 }

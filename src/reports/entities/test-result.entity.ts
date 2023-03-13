@@ -2,11 +2,16 @@ import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'ty
 import { Report } from './report.entity'
 import { TestResultStatus } from '@nominal-systems/dmi-engine-common'
 import { Observation } from './observation.entity'
+import { Exclude } from 'class-transformer'
 
 @Entity()
 export class TestResult {
   @PrimaryGeneratedColumn('uuid')
   id: string
+
+  @Exclude()
+  @Column({ nullable: true })
+  seq?: number
 
   @Column()
   code: string

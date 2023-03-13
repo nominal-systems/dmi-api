@@ -4,11 +4,16 @@ import { ObservationStatus } from '@nominal-systems/dmi-engine-common'
 import { ValueQuantity } from '../interfaces/value-quantity.interface'
 import { ReferenceRange } from '../interfaces/reference-range.interface'
 import { Interpretation } from '../interfaces/interpretation.interface'
+import { Exclude } from 'class-transformer'
 
 @Entity()
 export class Observation {
   @PrimaryGeneratedColumn('uuid')
   id: string
+
+  @Exclude()
+  @Column({ nullable: true })
+  seq?: number
 
   @Column()
   code: string
