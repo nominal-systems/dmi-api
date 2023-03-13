@@ -1,6 +1,6 @@
 import { forwardRef, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { FindManyOptions, In, Repository } from 'typeorm'
+import { FindManyOptions, Repository } from 'typeorm'
 import { Report } from './entities/report.entity'
 import { FindOneOfTypeOptions } from '../common/typings/find-one-of-type-options.interface'
 import { ExternalResultEventData } from '../common/typings/external-result-event-data.interface'
