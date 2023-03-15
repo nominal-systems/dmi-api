@@ -23,7 +23,7 @@ export class HealthController {
   @HealthCheck()
   async check (): Promise<HealthCheckResult> {
     return await this.health.check([
-      async () => await this.db.pingCheck('mysql'),
+      async () => await this.db.pingCheck('database'),
       async () => await this.mongoose.pingCheck('mongo'),
       async () => await this.microservice.pingCheck('activemq', { transport: Transport.MQTT })
     ])
