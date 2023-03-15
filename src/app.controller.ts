@@ -1,10 +1,4 @@
-import { Controller, Get } from '@nestjs/common'
-import { API_VERSION } from './common/constants/api.constant'
+import { Controller } from '@nestjs/common'
 
 @Controller()
-export class AppController {
-  @Get('/status')
-  getStatus (): any {
-    return { status: 'ok', version: API_VERSION, time: new Date() }
-  }
-}
+export class AppController {}

@@ -13,12 +13,11 @@ import { MongooseModule } from '@nestjs/mongoose'
 import { AppController } from './app.controller'
 import { APP_INTERCEPTOR } from '@nestjs/core'
 import { RpcExceptionInterceptor } from './common/interceptors/rpc-exception.interceptor'
-import { WinstonModule } from 'nest-winston'
-import { consoleTransport, fileTransport } from './config/winstonconfig'
 import { AuthModule } from './common/auth/auth.module'
 import { RefsModule } from './refs/refs.module'
 import { ReportsModule } from './reports/reports.module'
 import { AdminModule } from './admin/admin.module'
+import { HealthModule } from './health/health.module'
 
 @Module({
   imports: [
@@ -32,9 +31,6 @@ import { AdminModule } from './admin/admin.module'
         ...configService.get('typeorm')
       }),
       inject: [ConfigService]
-    }),
-    WinstonModule.forRoot({
-      transports: [consoleTransport, fileTransport]
     }),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
@@ -56,7 +52,8 @@ import { AdminModule } from './admin/admin.module'
     EventsModule,
     RefsModule,
     ReportsModule,
-    AdminModule
+    AdminModule,
+    HealthModule
   ],
   controllers: [AppController],
   providers: [
