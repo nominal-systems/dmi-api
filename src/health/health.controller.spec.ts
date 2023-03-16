@@ -6,6 +6,7 @@ import {
   MongooseHealthIndicator,
   TypeOrmHealthIndicator
 } from '@nestjs/terminus'
+import { ConfigService } from '@nestjs/config'
 
 describe('HealthController', () => {
   let controller: HealthController
@@ -14,6 +15,7 @@ describe('HealthController', () => {
   const typeOrmHealthIndicatorMock = {}
   const mongooseHealthIndicatorMock = {}
   const microserviceHealthIndicatorMock = {}
+  const configServiceMock = {}
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -34,6 +36,10 @@ describe('HealthController', () => {
         {
           provide: MicroserviceHealthIndicator,
           useValue: microserviceHealthIndicatorMock
+        },
+        {
+          provide: ConfigService,
+          useValue: configServiceMock
         }
       ]
     }).compile()
