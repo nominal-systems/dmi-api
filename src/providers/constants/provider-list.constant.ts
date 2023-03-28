@@ -14,6 +14,12 @@ const providers: Provider[] = [
       },
       {
         type: 'string',
+        name: 'uiBaseUrl',
+        description: 'UI Base URL',
+        required: true
+      },
+      {
+        type: 'string',
         name: 'UserName',
         description: 'Antech API Username',
         required: true

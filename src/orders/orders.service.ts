@@ -552,7 +552,6 @@ export class OrdersService {
     integrationId,
     results
   }: ExternalResultEventData): Promise<void> {
-    this.logger.debug(`handleExternalOrderResults: integrationId = ${integrationId}`) // TODO(gb): remove trace
     const integration = await this.integrationsService.findById(integrationId)
     const externalOrderIds = new Set<string>(results.map(result => result.orderId))
 
