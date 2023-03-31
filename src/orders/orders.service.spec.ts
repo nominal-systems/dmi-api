@@ -13,6 +13,11 @@ import {
   TestResultItemInterpretationCode,
   TestResultItemStatus
 } from '@nominal-systems/dmi-engine-common'
+import * as fs from 'fs'
+import * as path from 'path'
+import { orderRepositoryMockFactory } from './test/order.repository.mock'
+import { EventNamespace } from '../events/constants/event-namespace.enum'
+import { EventType } from '../events/constants/event-type.enum'
 
 export const repositoryMockFactory: () => MockUtils<Repository<any>> = jest.fn(() => ({
   find: jest.fn(entity => entity),
@@ -32,7 +37,10 @@ describe('OrdersService', () => {
       practice: {}
     })
   }
-  const eventsServiceMock = {}
+  let ordersRepositoryMock: Partial<Repository<Order>>
+  const eventsServiceMock = {
+    addEvent: jest.fn()
+  }
   const clientMock = {}
 
   beforeEach(async () => {
@@ -45,7 +53,7 @@ describe('OrdersService', () => {
         },
         {
           provide: getRepositoryToken(Order),
-          useFactory: repositoryMockFactory
+          useFactory: orderRepositoryMockFactory
         },
         {
           provide: getRepositoryToken(Test),
@@ -71,10 +79,66 @@ describe('OrdersService', () => {
     }).compile()
 
     ordersService = module.get<OrdersService>(OrdersService)
+    ordersRepositoryMock = module.get(getRepositoryToken(Order))
   })
 
   it('should be defined', () => {
     expect(ordersService).toBeDefined()
+  })
+
+  describe('handleExternalOrders()', () => {
+    const initialOrders = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'test', 'antech', 'orders-01.json'), 'utf8'))
+    const updatedOrders = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'test', 'antech', 'orders-02.json'), 'utf8'))
+    it('should create/update Antech orders', async () => {
+      // 1. Create new orders
+      // Setup: do not find existing orders, create new ones
+      jest.spyOn(ordersRepositoryMock, 'find').mockResolvedValueOnce([])
+      // @ts-expect-error: compiler type error
+      ordersRepositoryMock.create.mockImplementationOnce((data) =>
+        data.map((item, index) => Object.assign(new Order(), { ...item, id: index + 1 }))
+      )
+      // @ts-expect-error: compiler type error
+      ordersRepositoryMock.save.mockImplementation(async (entities) => entities)
+
+      await ordersService.handleExternalOrders({
+        integrationId: '1',
+        orders: JSON.parse(JSON.stringify(initialOrders))
+      })
+
+      expect(eventsServiceMock.addEvent).toHaveBeenCalledTimes(initialOrders.length)
+      expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
+        namespace: EventNamespace.ORDERS,
+        type: EventType.ORDER_CREATED
+      }))
+      eventsServiceMock.addEvent.mockClear()
+
+      // 2. Update existing orders
+      // Setup: find existing orders, update them
+      jest.spyOn(ordersRepositoryMock, 'find').mockResolvedValueOnce(initialOrders)
+
+      await ordersService.handleExternalOrders({
+        integrationId: '1',
+        orders: JSON.parse(JSON.stringify(updatedOrders))
+      })
+
+      expect(eventsServiceMock.addEvent).toHaveBeenCalledTimes(updatedOrders.length)
+      expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
+        namespace: EventNamespace.ORDERS,
+        type: EventType.ORDER_UPDATED
+      }))
+      eventsServiceMock.addEvent.mockClear()
+
+      // 3. Should not update orders if with no new data
+      // Setup: find existing orders, skip update
+      jest.spyOn(ordersRepositoryMock, 'find').mockResolvedValueOnce(updatedOrders)
+
+      await ordersService.handleExternalOrders({
+        integrationId: '1',
+        orders: JSON.parse(JSON.stringify(initialOrders))
+      })
+
+      expect(eventsServiceMock.addEvent).not.toHaveBeenCalled()
+    })
   })
 
   describe('handleExternalOrderResults()', () => {

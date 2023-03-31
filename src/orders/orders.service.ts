@@ -17,11 +17,12 @@ import {
   Operation,
   Order as ExternalOrder,
   OrderCreatedResponse,
-  OrderStatus, ProviderResult,
+  OrderStatus,
+  ProviderResult,
   Resource,
   ResultStatus
 } from '@nominal-systems/dmi-engine-common'
-import { isValidStatusChange } from '../common/utils/order-status.helper'
+import { updateOrder } from '../common/utils/order-status.helper'
 import { EventNamespace } from '../events/constants/event-namespace.enum'
 import { EventType } from '../events/constants/event-type.enum'
 import { ReportsService } from '../reports/reports.service'
@@ -108,7 +109,7 @@ export class OrdersService {
           providerConfiguration: 'integration.providerConfiguration'
         }
       },
-      relations: ['patient', 'patient.identifier']
+      relations: ['patient', 'patient.identifier', 'tests']
     })
   }
 
@@ -488,12 +489,9 @@ export class OrdersService {
       if (externalOrder == null) continue
 
       // Will only update existing order if a valid status change occurred
-      if (!isValidStatusChange(externalOrder.status, OrderStatus[existingOrder.status])) continue
-
-      updatedOrders.push({
-        ...existingOrder,
-        status: externalOrder.status
-      })
+      if (updateOrder(existingOrder, externalOrder)) {
+        updatedOrders.push(existingOrder)
+      }
     }
 
     // Handle non-existing orders
@@ -616,7 +614,7 @@ export class OrdersService {
     externalIds: string[]
   ): Promise<Order[]> {
     return await this.findAll({
-      relations: ['patient', 'patient.identifier', 'client', 'veterinarian'],
+      relations: ['patient', 'patient.identifier', 'client', 'veterinarian', 'tests'],
       where: {
         externalId: In(externalIds)
       }

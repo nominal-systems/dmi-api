@@ -1,0 +1,85 @@
+[
+  {
+    "externalId": "135170-ABC1680006904",
+    "status": "COMPLETED",
+    "patient": {
+      "name": "BRENDY",
+      "sex": "M",
+      "species": "Canine",
+      "breed": "Saint Bernard"
+    },
+    "client": {
+      "lastName": "Arias",
+      "firstName": "Edwin"
+    },
+    "tests": [
+      {
+        "code": "T395"
+      }
+    ],
+    "veterinarian": {
+      "lastName": "Amin Parva"
+    }
+  },
+  {
+    "externalId": "94647819",
+    "status": "COMPLETED",
+    "patient": {
+      "name": "Berlin",
+      "sex": "M",
+      "species": "Canine",
+      "breed": "Jack Russell Terrier"
+    },
+    "client": {
+      "lastName": "Bellver",
+      "firstName": "Gonzalo"
+    },
+    "tests": [
+      {
+        "code": "AC100"
+      },
+      {
+        "code": "M160"
+      },
+      {
+        "code": "CAMP"
+      },
+      {
+        "code": "T991"
+      },
+      {
+        "code": "L86181"
+      },
+      {
+        "code": "T16007"
+      }
+    ],
+    "veterinarian": {
+      "firstName": "Amin",
+      "lastName": "Parva"
+    }
+  },
+  {
+    "externalId": "94647820",
+    "status": "COMPLETED",
+    "patient": {
+      "name": "Berlin",
+      "sex": "M",
+      "species": "Canine",
+      "breed": "Jack Russell Terrier"
+    },
+    "client": {
+      "lastName": "Bellver",
+      "firstName": "Gonzalo"
+    },
+    "tests": [
+      {
+        "code": "SA665"
+      }
+    ],
+    "veterinarian": {
+      "firstName": "Amin",
+      "lastName": "Parva"
+    }
+  }
+]

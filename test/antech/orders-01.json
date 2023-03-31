@@ -1,0 +1,38 @@
+[
+  {
+    "externalId": "135170-ABC1680006904",
+    "status": "COMPLETED",
+    "tests": [
+      {
+        "code": "T395"
+      }
+    ],
+    "submissionUri": "https://pims-onboard.antechdiagnostics.com/views/order.html?accessToken=F80CBD147AEB008EE0530A8001D4008E&ClinicAccessionID=135170-ABC1680006904",
+    "editable": false
+  },
+  {
+    "externalId": "94647819",
+    "status": "COMPLETED",
+    "tests": [
+      {
+        "code": "KAC100"
+      },
+      {
+        "code": "L496"
+      }
+    ],
+    "submissionUri": "https://pims-onboard.antechdiagnostics.com/views/order.html?accessToken=F80CBD147AEB008EE0530A8001D4008E&ClinicAccessionID=94647819",
+    "editable": false
+  },
+  {
+    "externalId": "94647820",
+    "status": "COMPLETED",
+    "tests": [
+      {
+        "code": "SA665"
+      }
+    ],
+    "submissionUri": "https://pims-onboard.antechdiagnostics.com/views/order.html?accessToken=F80CBD147AEB008EE0530A8001D4008E&ClinicAccessionID=94647820",
+    "editable": false
+  }
+]
