@@ -17,7 +17,9 @@ const providers: Provider[] = [
         name: 'uiBaseUrl',
         description: 'UI Base URL',
         required: true
-      },
+      }
+    ],
+    integrationOptions: [
       {
         type: 'string',
         name: 'UserName',
@@ -29,9 +31,7 @@ const providers: Provider[] = [
         name: 'Password',
         description: 'Antech API Password',
         required: true
-      }
-    ],
-    integrationOptions: [
+      },
       {
         type: 'string',
         name: 'ClinicID',
