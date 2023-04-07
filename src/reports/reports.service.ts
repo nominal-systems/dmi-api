@@ -121,6 +121,7 @@ export class ReportsService {
     const nonExistingOrderExternalIds = arrayDiff(nonExistingReportExternalOrderIds, nonExistingReportOrders.map(order => order.externalId))
     for (const externalOrderId of nonExistingOrderExternalIds) {
       const externalOrder = await this.ordersService.getOrderFromProvider(externalOrderId, integration.providerConfiguration, integration.integrationOptions)
+      if (externalOrder == null) break
       const order = await this.ordersService.createExternalOrder(integrationId, externalOrder)
       createdOrders.push(order)
       const resultForOrder = results.filter(result => result.orderId === order.externalId)
@@ -184,7 +185,7 @@ export class ReportsService {
     this.logger.log(`Got ${results.length} results from provider. Reports: ${createdReports.length} created, ${updatedReports.length} updated. Orders: ${createdOrders.length} created`)
   }
 
-  private async findReportsByExternalOrderIds (externalOrderIds: string[]): Promise<Report[]> {
+  async findReportsByExternalOrderIds (externalOrderIds: string[]): Promise<Report[]> {
     return await this.reportsRepository.createQueryBuilder('report')
       .leftJoinAndSelect('report.order', 'order')
       .leftJoinAndSelect('order.veterinarian', 'veterinarian')

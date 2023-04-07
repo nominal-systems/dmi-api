@@ -9,6 +9,9 @@ import { IntegrationsService } from '../integrations/integrations.service'
 import { EventsService } from '../events/services/events.service'
 import { OrdersService } from '../orders/orders.service'
 import { ProviderResult, ReportStatus, TestResultItemStatus } from '@nominal-systems/dmi-engine-common'
+import * as fs from 'fs'
+import * as path from 'path'
+import { reportRepositoryMockFactory } from './test/report.repository.mock'
 
 const repositoryMockFactory: () => MockUtils<Repository<any>> = jest.fn(() => ({
   findOne: jest.fn(entity => entity),
@@ -17,10 +20,11 @@ const repositoryMockFactory: () => MockUtils<Repository<any>> = jest.fn(() => ({
 }))
 
 describe('ReportsService', () => {
-  let service: ReportsService
-  let reportsRepositoryMock
+  let reportsService: ReportsService
+  let reportsRepositoryMock: Partial<Repository<Report>>
   const ordersServiceMock = {
-    findOrdersByExternalIds: jest.fn().mockImplementation((orders) => orders)
+    findOrdersByExternalIds: jest.fn().mockImplementation((orders) => orders),
+    getOrderFromProvider: jest.fn().mockImplementation((order) => order)
   }
   const integrationsServiceMock = {
     findById: jest.fn().mockImplementation((integration) => integration)
@@ -35,7 +39,7 @@ describe('ReportsService', () => {
         ReportsService,
         {
           provide: getRepositoryToken(Report),
-          useFactory: repositoryMockFactory
+          useFactory: reportRepositoryMockFactory
         },
         {
           provide: getRepositoryToken(TestResult),
@@ -56,12 +60,12 @@ describe('ReportsService', () => {
       ]
     }).compile()
 
-    service = module.get<ReportsService>(ReportsService)
+    reportsService = module.get<ReportsService>(ReportsService)
     reportsRepositoryMock = module.get(getRepositoryToken(Report))
   })
 
   it('should be defined', () => {
-    expect(service).toBeDefined()
+    expect(reportsService).toBeDefined()
   })
 
   describe('updateTestResultObservations()', () => {
@@ -127,7 +131,7 @@ describe('ReportsService', () => {
           ]
         }
       ]
-      service.updateTestResultObservations(testResult, items)
+      reportsService.updateTestResultObservations(testResult, items)
       expect(testResult.observations).toHaveLength(3)
       expect(testResult.observations[0]).toEqual({
         code: '281',
@@ -1193,12 +1197,12 @@ describe('ReportsService', () => {
     ]
 
     it('should not update a report with no new results', async () => {
-      const updated = await service.updateReportResults(report, [])
+      const updated = await reportsService.updateReportResults(report, [])
       expect(updated).toEqual(false)
     })
 
     it('should save report with results in sequence', async () => {
-      const updated = await service.updateReportResults(report, results)
+      const updated = await reportsService.updateReportResults(report, results)
       expect(updated).toEqual(true)
       expect(reportsRepositoryMock.save).toBeCalledWith(expect.objectContaining({
           testResultsSet: [
@@ -1415,6 +1419,22 @@ describe('ReportsService', () => {
           ]
         })
       )
+    })
+  })
+
+  describe('handleExternalResults()', () => {
+    describe('Antech', () => {
+      const results: ProviderResult[] = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'test', 'antech', 'results-01.json'), 'utf8'))
+      it('should create orders/reports', async () => {
+        jest.spyOn(reportsService, 'findReportsByExternalOrderIds').mockResolvedValueOnce([])
+        jest.spyOn(ordersServiceMock, 'getOrderFromProvider').mockResolvedValueOnce(null)
+        await reportsService.handleExternalResults({
+          integrationId: 'antech',
+          results: results
+        })
+
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledTimes(results.length)
+      })
     })
   })
 })
