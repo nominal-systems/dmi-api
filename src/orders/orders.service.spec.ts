@@ -92,7 +92,7 @@ describe('OrdersService', () => {
         jest.spyOn(ordersRepositoryMock, 'find').mockResolvedValueOnce([])
         // @ts-expect-error: compiler type error
         ordersRepositoryMock.create.mockImplementationOnce((data) =>
-          data.map((item, index) => Object.assign(new Order(), { ...item, id: index + 1 }))
+          data.map((item, index) => Object.assign(new Order(), { ...item, id: index }))
         )
         // @ts-expect-error: compiler type error
         ordersRepositoryMock.save.mockImplementation(async (entities) => entities)
