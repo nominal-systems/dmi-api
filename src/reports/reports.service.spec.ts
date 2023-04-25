@@ -1425,6 +1425,7 @@ describe('ReportsService', () => {
   describe('handleExternalResults()', () => {
     describe('Antech', () => {
       const results: ProviderResult[] = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'test', 'antech', 'results-01.json'), 'utf8'))
+      const resultsMissing01: ProviderResult[] = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'test', 'antech', 'missing-01.json'), 'utf8'))
       it('should create orders/reports', async () => {
         jest.spyOn(reportsService, 'findReportsByExternalOrderIds').mockResolvedValueOnce([])
         jest.spyOn(ordersServiceMock, 'getOrderFromProvider').mockResolvedValueOnce(null)
@@ -1434,6 +1435,17 @@ describe('ReportsService', () => {
         })
 
         expect(eventsServiceMock.addEvent).toHaveBeenCalledTimes(results.length)
+      })
+
+      it('should handle missing results', async () => {
+        jest.spyOn(reportsService, 'findReportsByExternalOrderIds').mockResolvedValueOnce([])
+        jest.spyOn(ordersServiceMock, 'getOrderFromProvider').mockResolvedValue(null)
+        await reportsService.handleExternalResults({
+          integrationId: 'antech',
+          results: resultsMissing01
+        })
+
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledTimes(resultsMissing01.length)
       })
     })
   })

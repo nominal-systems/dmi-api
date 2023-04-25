@@ -1,0 +1,3875 @@
+[
+  {
+    "id": "18075cb9-ccbc-48ab-9f8d-77967f58d14c",
+    "orderId": "117571776",
+    "status": "COMPLETED",
+    "testResults": [
+      {
+        "seq": 1,
+        "code": "SA010",
+        "name": "Superchem w/SDMA",
+        "items": [
+          {
+            "seq": 1,
+            "code": "1014",
+            "name": "TOTAL PROTEIN",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 6.6,
+              "units": "g/dL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "5.0-7.4",
+                "low": 5,
+                "high": 7.4
+              }
+            ]
+          },
+          {
+            "seq": 2,
+            "code": "1016",
+            "name": "ALBUMIN",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 3.8,
+              "units": "g/dL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "2.7-4.4",
+                "low": 2.7,
+                "high": 4.4
+              }
+            ]
+          },
+          {
+            "seq": 3,
+            "code": "1018",
+            "name": "GLOBULIN",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 2.8,
+              "units": "g/dL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "1.6-3.6",
+                "low": 1.6,
+                "high": 3.6
+              }
+            ]
+          },
+          {
+            "seq": 4,
+            "code": "1020",
+            "name": "A/G RATIO",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 1.4
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "0.8-2.0",
+                "low": 0.8,
+                "high": 2
+              }
+            ]
+          },
+          {
+            "seq": 5,
+            "code": "1000",
+            "name": "AST (SGOT)",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 35,
+              "units": "IU/L"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "15-66",
+                "low": 15,
+                "high": 66
+              }
+            ]
+          },
+          {
+            "seq": 6,
+            "code": "1002",
+            "name": "ALT (SGPT)",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 49,
+              "units": "IU/L"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "12-118",
+                "low": 12,
+                "high": 118
+              }
+            ]
+          },
+          {
+            "seq": 7,
+            "code": "1010",
+            "name": "Alk Phosphatase",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 73,
+              "units": "IU/L"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "5-131",
+                "low": 5,
+                "high": 131
+              }
+            ]
+          },
+          {
+            "seq": 8,
+            "code": "1012",
+            "name": "GGT",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 6,
+              "units": "IU/L"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "1-12",
+                "low": 1,
+                "high": 12
+              }
+            ]
+          },
+          {
+            "seq": 9,
+            "code": "1004",
+            "name": "Total Bilirubin",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 0.1,
+              "units": "MG/DL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "0.1-0.3",
+                "low": 0.1,
+                "high": 0.3
+              }
+            ]
+          },
+          {
+            "seq": 10,
+            "code": "1024",
+            "name": "BUN",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 20,
+              "units": "MG/DL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "6-31",
+                "low": 6,
+                "high": 31
+              }
+            ]
+          },
+          {
+            "seq": 11,
+            "code": "1026",
+            "name": "Creatinine",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 0.8,
+              "units": "MG/DL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "0.5-1.6",
+                "low": 0.5,
+                "high": 1.6
+              }
+            ]
+          },
+          {
+            "seq": 12,
+            "code": "3575",
+            "name": "SDMA",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 10,
+              "units": "UG/dL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "<14.0",
+                "high": 14
+              }
+            ]
+          },
+          {
+            "seq": 13,
+            "code": "1028",
+            "name": "BUN/CREAT RATIO",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 25
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "4-27",
+                "low": 4,
+                "high": 27
+              }
+            ]
+          },
+          {
+            "seq": 14,
+            "code": "1030",
+            "name": "PHOSPHORUS",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 3.7,
+              "units": "MG/DL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "2.5-6.0",
+                "low": 2.5,
+                "high": 6
+              }
+            ]
+          },
+          {
+            "seq": 15,
+            "code": "1040",
+            "name": "Glucose",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 92,
+              "units": "MG/DL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "70-138",
+                "low": 70,
+                "high": 138
+              }
+            ]
+          },
+          {
+            "seq": 16,
+            "code": "1032",
+            "name": "CALCIUM",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 10.9,
+              "units": "MG/DL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "8.9-11.4",
+                "low": 8.9,
+                "high": 11.4
+              }
+            ]
+          },
+          {
+            "seq": 17,
+            "code": "1078",
+            "name": "MAGNESIUM",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 1.8,
+              "units": "mEq/L."
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "1.5-2.5",
+                "low": 1.5,
+                "high": 2.5
+              }
+            ]
+          },
+          {
+            "seq": 18,
+            "code": "1046",
+            "name": "SODIUM",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 147,
+              "units": "MEQ/L"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "139-154",
+                "low": 139,
+                "high": 154
+              }
+            ]
+          },
+          {
+            "seq": 19,
+            "code": "1048",
+            "name": "POTASSIUM",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 3.9,
+              "units": "MEQ/L"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "3.6-5.5",
+                "low": 3.6,
+                "high": 5.5
+              }
+            ]
+          },
+          {
+            "seq": 20,
+            "code": "1050",
+            "name": "NA/K RATIO",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 38
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "27-38",
+                "low": 27,
+                "high": 38
+              }
+            ]
+          },
+          {
+            "seq": 21,
+            "code": "1052",
+            "name": "CHLORIDE",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 111,
+              "units": "MEQ/L"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "102-120",
+                "low": 102,
+                "high": 120
+              }
+            ]
+          },
+          {
+            "seq": 22,
+            "code": "1022",
+            "name": "CHOLESTEROL",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 321,
+              "units": "MG/DL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "92-324",
+                "low": 92,
+                "high": 324
+              }
+            ]
+          },
+          {
+            "seq": 23,
+            "code": "1310",
+            "name": "TRIGLYCERIDE",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 117,
+              "units": "mg/dL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "29-291",
+                "low": 29,
+                "high": 291
+              }
+            ]
+          },
+          {
+            "seq": 24,
+            "code": "1042",
+            "name": "AMYLASE",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 535,
+              "units": "IU/L"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "290-1125",
+                "low": 290,
+                "high": 1125
+              }
+            ]
+          },
+          {
+            "seq": 25,
+            "code": "1045",
+            "name": "PrecisionPSL",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 142,
+              "units": "U/L"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "24-140",
+                "low": 24,
+                "high": 140
+              }
+            ],
+            "interpretation": {
+              "code": "H",
+              "text": "High"
+            },
+            "notes": "In dogs with appropriate clinical signs, this mildly elevated PrecisionPSL result is equivocal for a diagnosis of pancreatitis. In dogs without clinical signs of pancreatitis, a mild PrescisionPSL elevation is an insignificant finding."
+          },
+          {
+            "seq": 26,
+            "code": "1056",
+            "name": "CPK",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 165,
+              "units": "IU/L"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "59-895",
+                "low": 59,
+                "high": 895
+              }
+            ]
+          },
+          {
+            "seq": 27,
+            "code": "1067",
+            "name": "Sample Conditions",
+            "status": "DONE",
+            "notes": "Hemolysis 1+ No significant interference. \n"
+          }
+        ]
+      },
+      {
+        "seq": 2,
+        "code": "T330",
+        "name": "Complete Blood Count",
+        "items": [
+          {
+            "seq": 1,
+            "code": "10",
+            "name": "WBC",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 10.4,
+              "units": "1000/UL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "4.0-15.5",
+                "low": 4,
+                "high": 15.5
+              }
+            ]
+          },
+          {
+            "seq": 2,
+            "code": "11",
+            "name": "RBC",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 6.7,
+              "units": "1000000/UL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "4.8-9.3",
+                "low": 4.8,
+                "high": 9.3
+              }
+            ]
+          },
+          {
+            "seq": 3,
+            "code": "12",
+            "name": "HGB",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 17.7,
+              "units": "G/DL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "12.1-20.3",
+                "low": 12.1,
+                "high": 20.3
+              }
+            ]
+          },
+          {
+            "seq": 4,
+            "code": "13",
+            "name": "HCT",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 50,
+              "units": "%"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "36-60",
+                "low": 36,
+                "high": 60
+              }
+            ]
+          },
+          {
+            "seq": 5,
+            "code": "14",
+            "name": "MCV",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 75,
+              "units": "FL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "58-79",
+                "low": 58,
+                "high": 79
+              }
+            ]
+          },
+          {
+            "seq": 6,
+            "code": "15",
+            "name": "MCH",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 26.5,
+              "units": "PG"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "19-28",
+                "low": 19,
+                "high": 28
+              }
+            ]
+          },
+          {
+            "seq": 7,
+            "code": "16",
+            "name": "MCHC",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 35,
+              "units": "G/DL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "30-38",
+                "low": 30,
+                "high": 38
+              }
+            ]
+          },
+          {
+            "seq": 8,
+            "code": "25",
+            "name": "Platelet Count",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 186,
+              "units": "X1000/UL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "170-400",
+                "low": 170,
+                "high": 400
+              }
+            ]
+          },
+          {
+            "seq": 9,
+            "code": "26",
+            "name": "Platelet Estimate",
+            "status": "DONE",
+            "valueString": "Adequate"
+          },
+          {
+            "seq": 10,
+            "code": "28",
+            "name": "Neutrophils",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 74,
+              "units": "%"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "60-77",
+                "low": 60,
+                "high": 77
+              }
+            ]
+          },
+          {
+            "seq": 11,
+            "code": "30",
+            "name": "Bands",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 0,
+              "units": "%"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "0-3",
+                "low": 0,
+                "high": 3
+              }
+            ]
+          },
+          {
+            "seq": 12,
+            "code": "31",
+            "name": "Lymphocytes",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 18,
+              "units": "%"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "12-30",
+                "low": 12,
+                "high": 30
+              }
+            ]
+          },
+          {
+            "seq": 13,
+            "code": "32",
+            "name": "Monocytes",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 3,
+              "units": "%"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "3-10",
+                "low": 3,
+                "high": 10
+              }
+            ]
+          },
+          {
+            "seq": 14,
+            "code": "33",
+            "name": "Eosinophils",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 5,
+              "units": "%"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "2-10",
+                "low": 2,
+                "high": 10
+              }
+            ]
+          },
+          {
+            "seq": 15,
+            "code": "34",
+            "name": "Basophils",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 0,
+              "units": "%"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "0-1",
+                "low": 0,
+                "high": 1
+              }
+            ]
+          },
+          {
+            "seq": 16,
+            "code": "41",
+            "name": "Absolute Neutrophils",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 7696,
+              "units": "/UL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "2060-10600",
+                "low": 2060,
+                "high": 10600
+              }
+            ]
+          },
+          {
+            "seq": 17,
+            "code": "44",
+            "name": "Absolute Lymphocytes",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 1872,
+              "units": "/UL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "690-4500",
+                "low": 690,
+                "high": 4500
+              }
+            ]
+          },
+          {
+            "seq": 18,
+            "code": "45",
+            "name": "Absolute Monocytes",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 312,
+              "units": "/UL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "0-840",
+                "low": 0,
+                "high": 840
+              }
+            ]
+          },
+          {
+            "seq": 19,
+            "code": "46",
+            "name": "Absolute Eosinophils",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 520,
+              "units": "/UL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "0-1200",
+                "low": 0,
+                "high": 1200
+              }
+            ]
+          },
+          {
+            "seq": 20,
+            "code": "47",
+            "name": "Absolute Basophils",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 0,
+              "units": "/UL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "0-150",
+                "low": 0,
+                "high": 150
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "seq": 3,
+        "code": "T495",
+        "name": "T4",
+        "items": [
+          {
+            "seq": 1,
+            "code": "4022",
+            "name": "T4",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 2.4,
+              "units": "UG/DL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "0.8-3.5",
+                "low": 0.8,
+                "high": 3.5
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "seq": 4,
+        "code": "T760",
+        "name": "Urinalysis-Complete",
+        "items": [
+          {
+            "seq": 1,
+            "code": "2133",
+            "name": "Collection Method",
+            "status": "DONE",
+            "valueString": "Cystocentesis"
+          },
+          {
+            "seq": 2,
+            "code": "2126",
+            "name": "Color",
+            "status": "DONE",
+            "valueString": "Dark Yellow"
+          },
+          {
+            "seq": 3,
+            "code": "2250",
+            "name": "Appearance",
+            "status": "DONE",
+            "valueString": "TURBID"
+          },
+          {
+            "seq": 4,
+            "code": "2127",
+            "name": "Specific Gravity",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 1.04
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "1.015-1.050",
+                "low": 1.015,
+                "high": 1.05
+              }
+            ]
+          },
+          {
+            "seq": 5,
+            "code": "2128",
+            "name": "pH",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 8
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "5.5-7.0",
+                "low": 5.5,
+                "high": 7
+              }
+            ],
+            "interpretation": {
+              "code": "H",
+              "text": "High"
+            }
+          },
+          {
+            "seq": 6,
+            "code": "2129",
+            "name": "Protein",
+            "status": "DONE",
+            "valueString": "1+",
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "NEGATIVE"
+              }
+            ],
+            "interpretation": {
+              "code": "H",
+              "text": "High"
+            },
+            "notes": "Microalbuminuria testing is recommended (if sediment is inactive) to help determine the clinical significance of proteinuria."
+          },
+          {
+            "seq": 7,
+            "code": "2130",
+            "name": "Glucose-Strip",
+            "status": "DONE",
+            "valueString": "NEGATIVE",
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "NEGATIVE"
+              }
+            ]
+          },
+          {
+            "seq": 8,
+            "code": "2134",
+            "name": "Ketones",
+            "status": "DONE",
+            "valueString": "NEGATIVE",
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "NEGATIVE"
+              }
+            ]
+          },
+          {
+            "seq": 9,
+            "code": "2138",
+            "name": "Bilirubin",
+            "status": "DONE",
+            "valueString": "NEGATIVE",
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "NEG TO 1+"
+              }
+            ]
+          },
+          {
+            "seq": 10,
+            "code": "2136",
+            "name": "Occult Blood",
+            "status": "DONE",
+            "valueString": "2+",
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "NEGATIVE"
+              }
+            ],
+            "interpretation": {
+              "code": "H",
+              "text": "High"
+            }
+          },
+          {
+            "seq": 11,
+            "code": "2140",
+            "name": "WBC",
+            "status": "DONE",
+            "valueString": "NONE",
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "0-3",
+                "low": 0,
+                "high": 3
+              }
+            ]
+          },
+          {
+            "seq": 12,
+            "code": "2142",
+            "name": "RBC",
+            "status": "DONE",
+            "valueString": "4-10",
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "0-3",
+                "low": 0,
+                "high": 3
+              }
+            ],
+            "interpretation": {
+              "code": "H",
+              "text": "High"
+            }
+          },
+          {
+            "seq": 13,
+            "code": "2144",
+            "name": "Casts",
+            "status": "DONE",
+            "valueString": "NONE SEEN",
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "Hyaline 0-3"
+              }
+            ]
+          },
+          {
+            "seq": 14,
+            "code": "2146",
+            "name": "Crystals",
+            "status": "DONE",
+            "valueString": "NONE SEEN"
+          },
+          {
+            "seq": 15,
+            "code": "2152",
+            "name": "Bacteria",
+            "status": "DONE",
+            "valueString": "NONE SEEN",
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "None Seen"
+              }
+            ],
+            "notes": "Verified by Wright's stain"
+          },
+          {
+            "seq": 16,
+            "code": "3214",
+            "name": "Epithelial Cells",
+            "status": "DONE",
+            "valueString": "NONE SEEN"
+          }
+        ]
+      },
+      {
+        "seq": 5,
+        "code": "T615",
+        "name": "Heartworm Antigen",
+        "items": [
+          {
+            "seq": 1,
+            "code": "2133",
+            "name": "Collection Method",
+            "status": "PENDING"
+          },
+          {
+            "seq": 2,
+            "code": "4010",
+            "name": "HEARTWORM ANTIGEN",
+            "status": "DONE",
+            "valueString": "NEGATIVE",
+            "notes": "Negative for adult heartworm antigen (mature female heartworms).  Infection occurring sooner than 5 to 7 months prior to testing may not be detected."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "a68c4e7d-8b65-4dba-89c5-092493be24f9",
+    "orderId": "117583303",
+    "status": "COMPLETED",
+    "testResults": [
+      {
+        "seq": 1,
+        "code": "SA010",
+        "name": "Superchem w/SDMA",
+        "items": [
+          {
+            "seq": 1,
+            "code": "1014",
+            "name": "TOTAL PROTEIN",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 7.7,
+              "units": "g/dL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "5.2-8.8",
+                "low": 5.2,
+                "high": 8.8
+              }
+            ]
+          },
+          {
+            "seq": 2,
+            "code": "1016",
+            "name": "ALBUMIN",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 3.9,
+              "units": "g/dL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "2.5-3.9",
+                "low": 2.5,
+                "high": 3.9
+              }
+            ]
+          },
+          {
+            "seq": 3,
+            "code": "1018",
+            "name": "GLOBULIN",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 3.8,
+              "units": "g/dL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "2.3-5.3",
+                "low": 2.3,
+                "high": 5.3
+              }
+            ]
+          },
+          {
+            "seq": 4,
+            "code": "1020",
+            "name": "A/G RATIO",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 1
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "0.35-1.5",
+                "low": 0.35,
+                "high": 1.5
+              }
+            ]
+          },
+          {
+            "seq": 5,
+            "code": "1000",
+            "name": "AST (SGOT)",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 27,
+              "units": "IU/L"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "10-100",
+                "low": 10,
+                "high": 100
+              }
+            ]
+          },
+          {
+            "seq": 6,
+            "code": "1002",
+            "name": "ALT (SGPT)",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 58,
+              "units": "IU/L"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "10-100",
+                "low": 10,
+                "high": 100
+              }
+            ]
+          },
+          {
+            "seq": 7,
+            "code": "1010",
+            "name": "Alk Phosphatase",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 20,
+              "units": "IU/L"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "6-102",
+                "low": 6,
+                "high": 102
+              }
+            ]
+          },
+          {
+            "seq": 8,
+            "code": "1012",
+            "name": "GGT",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 1,
+              "units": "IU/L"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "1-10",
+                "low": 1,
+                "high": 10
+              }
+            ]
+          },
+          {
+            "seq": 9,
+            "code": "1004",
+            "name": "Total Bilirubin",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 0.1,
+              "units": "MG/DL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "0.1-0.4",
+                "low": 0.1,
+                "high": 0.4
+              }
+            ]
+          },
+          {
+            "seq": 10,
+            "code": "1024",
+            "name": "BUN",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 31,
+              "units": "MG/DL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "14-36",
+                "low": 14,
+                "high": 36
+              }
+            ]
+          },
+          {
+            "seq": 11,
+            "code": "1026",
+            "name": "Creatinine",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 1.7,
+              "units": "MG/DL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "0.6-2.4",
+                "low": 0.6,
+                "high": 2.4
+              }
+            ]
+          },
+          {
+            "seq": 12,
+            "code": "3575",
+            "name": "SDMA",
+            "status": "DONE",
+            "valueString": "15.9 (Mild Inc.)",
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "<15.0",
+                "high": 15
+              }
+            ],
+            "notes": "A mild increase in SDMA (15.0-20.0 ug/dL in cats and 14.0-16.0 ug/dL in dogs) should be interpreted in light of the patient's history, clinical presentation and hydration status. Some non-renal conditions may cause a mild increase in SDMA. Refer to the Antech SDMA algorithm for further guidance. It is recommended to recheck SDMA and creatinine in 2-4 weeks to assess for persistence of trends in SDMA.\n \nTo access the SDMA algorithm, please visit: https://tinyurl.com/4ypuxfuw"
+          },
+          {
+            "seq": 13,
+            "code": "1028",
+            "name": "BUN/CREAT RATIO",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 18
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "4-33",
+                "low": 4,
+                "high": 33
+              }
+            ]
+          },
+          {
+            "seq": 14,
+            "code": "1030",
+            "name": "PHOSPHORUS",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 5.9,
+              "units": "MG/DL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "2.4-8.2",
+                "low": 2.4,
+                "high": 8.2
+              }
+            ]
+          },
+          {
+            "seq": 15,
+            "code": "1040",
+            "name": "Glucose",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 88,
+              "units": "MG/DL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "64-170",
+                "low": 64,
+                "high": 170
+              }
+            ]
+          },
+          {
+            "seq": 16,
+            "code": "1032",
+            "name": "CALCIUM",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 11.2,
+              "units": "MG/DL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "8.2-10.8",
+                "low": 8.2,
+                "high": 10.8
+              }
+            ],
+            "interpretation": {
+              "code": "H",
+              "text": "High"
+            }
+          },
+          {
+            "seq": 17,
+            "code": "1078",
+            "name": "MAGNESIUM",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 2,
+              "units": "mEq/L."
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "1.5-2.5",
+                "low": 1.5,
+                "high": 2.5
+              }
+            ]
+          },
+          {
+            "seq": 18,
+            "code": "1046",
+            "name": "SODIUM",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 151,
+              "units": "MEQ/L"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "145-158",
+                "low": 145,
+                "high": 158
+              }
+            ]
+          },
+          {
+            "seq": 19,
+            "code": "1048",
+            "name": "POTASSIUM",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 4.3,
+              "units": "MEQ/L"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "3.4-5.6",
+                "low": 3.4,
+                "high": 5.6
+              }
+            ]
+          },
+          {
+            "seq": 20,
+            "code": "1050",
+            "name": "NA/K RATIO",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 35
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "32-41",
+                "low": 32,
+                "high": 41
+              }
+            ]
+          },
+          {
+            "seq": 21,
+            "code": "1052",
+            "name": "CHLORIDE",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 115,
+              "units": "MEQ/L"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "104-128",
+                "low": 104,
+                "high": 128
+              }
+            ]
+          },
+          {
+            "seq": 22,
+            "code": "1022",
+            "name": "CHOLESTEROL",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 156,
+              "units": "MG/DL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "75-220",
+                "low": 75,
+                "high": 220
+              }
+            ]
+          },
+          {
+            "seq": 23,
+            "code": "1310",
+            "name": "TRIGLYCERIDE",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 30,
+              "units": "mg/dL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "25-160",
+                "low": 25,
+                "high": 160
+              }
+            ]
+          },
+          {
+            "seq": 24,
+            "code": "1042",
+            "name": "AMYLASE",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 1109,
+              "units": "IU/L"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "100-1200",
+                "low": 100,
+                "high": 1200
+              }
+            ]
+          },
+          {
+            "seq": 25,
+            "code": "1045",
+            "name": "PrecisionPSL",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 12,
+              "units": "U/L"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "8-26",
+                "low": 8,
+                "high": 26
+              }
+            ],
+            "notes": "Acute pancreatitis is unlikely. Chronic pancreatitis is not excluded by a normal PrecisionPSL."
+          },
+          {
+            "seq": 26,
+            "code": "1056",
+            "name": "CPK",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 432,
+              "units": "IU/L"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "56-529",
+                "low": 56,
+                "high": 529
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "seq": 2,
+        "code": "T330",
+        "name": "Complete Blood Count",
+        "items": [
+          {
+            "seq": 1,
+            "code": "10",
+            "name": "WBC",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 8.4,
+              "units": "1000/UL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "3.5-16.0",
+                "low": 3.5,
+                "high": 16
+              }
+            ]
+          },
+          {
+            "seq": 2,
+            "code": "11",
+            "name": "RBC",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 9,
+              "units": "1000000/UL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "5.92-9.93",
+                "low": 5.92,
+                "high": 9.93
+              }
+            ]
+          },
+          {
+            "seq": 3,
+            "code": "12",
+            "name": "HGB",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 14.1,
+              "units": "G/DL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "9.3-15.9",
+                "low": 9.3,
+                "high": 15.9
+              }
+            ]
+          },
+          {
+            "seq": 4,
+            "code": "13",
+            "name": "HCT",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 44,
+              "units": "%"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "29-48",
+                "low": 29,
+                "high": 48
+              }
+            ]
+          },
+          {
+            "seq": 5,
+            "code": "14",
+            "name": "MCV",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 49,
+              "units": "FL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "37-61",
+                "low": 37,
+                "high": 61
+              }
+            ]
+          },
+          {
+            "seq": 6,
+            "code": "15",
+            "name": "MCH",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 15.6,
+              "units": "PG"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "11-21",
+                "low": 11,
+                "high": 21
+              }
+            ]
+          },
+          {
+            "seq": 7,
+            "code": "16",
+            "name": "MCHC",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 32,
+              "units": "G/DL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "30-38",
+                "low": 30,
+                "high": 38
+              }
+            ]
+          },
+          {
+            "seq": 8,
+            "code": "23",
+            "name": "Blood Parasites",
+            "status": "DONE",
+            "valueString": "None Seen"
+          },
+          {
+            "seq": 9,
+            "code": "24",
+            "name": "RBC Comment",
+            "status": "DONE",
+            "notes": "RBC Morphology Normal"
+          },
+          {
+            "seq": 10,
+            "code": "25",
+            "name": "Platelet Count",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 281,
+              "units": "X1000/UL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "200-500",
+                "low": 200,
+                "high": 500
+              }
+            ]
+          },
+          {
+            "seq": 11,
+            "code": "26",
+            "name": "Platelet Estimate",
+            "status": "DONE",
+            "valueString": "Adequate"
+          },
+          {
+            "seq": 12,
+            "code": "28",
+            "name": "Neutrophils",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 40,
+              "units": "%"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "35-75",
+                "low": 35,
+                "high": 75
+              }
+            ]
+          },
+          {
+            "seq": 13,
+            "code": "30",
+            "name": "Bands",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 0,
+              "units": "%"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "0-3",
+                "low": 0,
+                "high": 3
+              }
+            ]
+          },
+          {
+            "seq": 14,
+            "code": "31",
+            "name": "Lymphocytes",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 52,
+              "units": "%"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "20-45",
+                "low": 20,
+                "high": 45
+              }
+            ],
+            "interpretation": {
+              "code": "H",
+              "text": "High"
+            }
+          },
+          {
+            "seq": 15,
+            "code": "32",
+            "name": "Monocytes",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 2,
+              "units": "%"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "1-4",
+                "low": 1,
+                "high": 4
+              }
+            ]
+          },
+          {
+            "seq": 16,
+            "code": "33",
+            "name": "Eosinophils",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 6,
+              "units": "%"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "2-12",
+                "low": 2,
+                "high": 12
+              }
+            ]
+          },
+          {
+            "seq": 17,
+            "code": "34",
+            "name": "Basophils",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 0,
+              "units": "%"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "0-1",
+                "low": 0,
+                "high": 1
+              }
+            ]
+          },
+          {
+            "seq": 18,
+            "code": "41",
+            "name": "Absolute Neutrophils",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 3360,
+              "units": "/UL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "2500-8500",
+                "low": 2500,
+                "high": 8500
+              }
+            ]
+          },
+          {
+            "seq": 19,
+            "code": "44",
+            "name": "Absolute Lymphocytes",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 4368,
+              "units": "/UL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "1200-8000",
+                "low": 1200,
+                "high": 8000
+              }
+            ]
+          },
+          {
+            "seq": 20,
+            "code": "45",
+            "name": "Absolute Monocytes",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 168,
+              "units": "/UL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "0-600",
+                "low": 0,
+                "high": 600
+              }
+            ]
+          },
+          {
+            "seq": 21,
+            "code": "46",
+            "name": "Absolute Eosinophils",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 504,
+              "units": "/UL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "0-1000",
+                "low": 0,
+                "high": 1000
+              }
+            ]
+          },
+          {
+            "seq": 22,
+            "code": "47",
+            "name": "Absolute Basophils",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 0,
+              "units": "/UL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "0-150",
+                "low": 0,
+                "high": 150
+              }
+            ]
+          },
+          {
+            "seq": 23,
+            "code": "38",
+            "name": "Comment",
+            "status": "DONE",
+            "notes": "Blood smear reviewed by technologist."
+          }
+        ]
+      },
+      {
+        "seq": 3,
+        "code": "T495",
+        "name": "T4",
+        "items": [
+          {
+            "seq": 1,
+            "code": "4022",
+            "name": "T4",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 2.9,
+              "units": "UG/DL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "0.8-4.0",
+                "low": 0.8,
+                "high": 4
+              }
+            ],
+            "notes": "The Total T4 result is greater than 2.5 mcg/dl and less than or equal\nto 4.0 mcg/dl. A Free-T4 by equilibrium dialysis may aid the diagnosis\nof hyperthyroidism in cats with clinical signs of\nhyperthyroidism. Please contact Customer Service for this additional\ntesting.\n "
+          }
+        ]
+      },
+      {
+        "seq": 4,
+        "code": "T760",
+        "name": "Urinalysis-Complete",
+        "items": [
+          {
+            "seq": 1,
+            "code": "2133",
+            "name": "Collection Method",
+            "status": "DONE",
+            "valueString": "Cystocentesis"
+          },
+          {
+            "seq": 2,
+            "code": "2126",
+            "name": "Color",
+            "status": "DONE",
+            "valueString": "ORANGE"
+          },
+          {
+            "seq": 3,
+            "code": "2250",
+            "name": "Appearance",
+            "status": "DONE",
+            "valueString": "CLOUDY"
+          },
+          {
+            "seq": 4,
+            "code": "2127",
+            "name": "Specific Gravity",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 1.057
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "1.015-1.060",
+                "low": 1.015,
+                "high": 1.06
+              }
+            ]
+          },
+          {
+            "seq": 5,
+            "code": "2128",
+            "name": "pH",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 7.5
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "5.5-7.0",
+                "low": 5.5,
+                "high": 7
+              }
+            ],
+            "interpretation": {
+              "code": "H",
+              "text": "High"
+            }
+          },
+          {
+            "seq": 6,
+            "code": "2129",
+            "name": "Protein",
+            "status": "DONE",
+            "valueString": "2+",
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "NEGATIVE"
+              }
+            ],
+            "interpretation": {
+              "code": "H",
+              "text": "High"
+            },
+            "notes": "Urine protein:creatinine ratio testing is recommended (if the sediment is inactive) to help determine the clinical significance of proteinuria."
+          },
+          {
+            "seq": 7,
+            "code": "2130",
+            "name": "Glucose-Strip",
+            "status": "DONE",
+            "valueString": "NEGATIVE",
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "NEGATIVE"
+              }
+            ]
+          },
+          {
+            "seq": 8,
+            "code": "2134",
+            "name": "Ketones",
+            "status": "DONE",
+            "valueString": "NEGATIVE",
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "NEGATIVE"
+              }
+            ]
+          },
+          {
+            "seq": 9,
+            "code": "2138",
+            "name": "Bilirubin",
+            "status": "DONE",
+            "valueString": "NEGATIVE",
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "NEGATIVE"
+              }
+            ]
+          },
+          {
+            "seq": 10,
+            "code": "2136",
+            "name": "Occult Blood",
+            "status": "DONE",
+            "valueString": "3+",
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "NEGATIVE"
+              }
+            ],
+            "interpretation": {
+              "code": "H",
+              "text": "High"
+            }
+          },
+          {
+            "seq": 11,
+            "code": "2140",
+            "name": "WBC",
+            "status": "DONE",
+            "valueString": "NONE",
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "0-3",
+                "low": 0,
+                "high": 3
+              }
+            ]
+          },
+          {
+            "seq": 12,
+            "code": "2142",
+            "name": "RBC",
+            "status": "DONE",
+            "valueString": "21-50",
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "0-3",
+                "low": 0,
+                "high": 3
+              }
+            ],
+            "interpretation": {
+              "code": "H",
+              "text": "High"
+            }
+          },
+          {
+            "seq": 13,
+            "code": "2144",
+            "name": "Casts",
+            "status": "DONE",
+            "valueString": "NONE SEEN",
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "Hyaline 0-3"
+              }
+            ]
+          },
+          {
+            "seq": 14,
+            "code": "3224",
+            "name": "Amorphous Phosphate Crystals",
+            "status": "DONE",
+            "valueString": "0-1"
+          },
+          {
+            "seq": 15,
+            "code": "2152",
+            "name": "Bacteria",
+            "status": "DONE",
+            "valueString": "NONE SEEN",
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "None Seen"
+              }
+            ]
+          },
+          {
+            "seq": 16,
+            "code": "3214",
+            "name": "Epithelial Cells",
+            "status": "DONE",
+            "valueString": "NONE SEEN"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "865071c3-1d63-4f04-95d0-2a5e5067b49b",
+    "orderId": "117575132",
+    "status": "COMPLETED",
+    "testResults": [
+      {
+        "seq": 1,
+        "code": "T991",
+        "name": "Keyscreen GI Parasite PCR Panel",
+        "items": [
+          {
+            "seq": 1,
+            "code": "5575",
+            "name": "Ancylostoma spp.",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 2,
+            "code": "5577",
+            "name": "A. caninum resistance marker",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 3,
+            "code": "5579",
+            "name": "Uncinaria stenocephala",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 4,
+            "code": "5581",
+            "name": "Toxocara spp.",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 5,
+            "code": "5583",
+            "name": "Toxocara canis",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 6,
+            "code": "5585",
+            "name": "Toxocara cati",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 7,
+            "code": "5587",
+            "name": "Toxascaris leonina",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 8,
+            "code": "5589",
+            "name": "Baylisascaris procyonis",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 9,
+            "code": "5591",
+            "name": "Trichuris vulpis",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 10,
+            "code": "5593",
+            "name": "Giardia duodenalis",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 11,
+            "code": "5595",
+            "name": "Giardia Zoonotic",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 12,
+            "code": "5597",
+            "name": "Cryptosporidium canis",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 13,
+            "code": "5599",
+            "name": "Cryptosporidium felis",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 14,
+            "code": "5601",
+            "name": "Cystoisospora spp.",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 15,
+            "code": "5603",
+            "name": "Eimeria spp.",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 16,
+            "code": "5605",
+            "name": "Dipylidium caninum",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 17,
+            "code": "5607",
+            "name": "Echinococcus multilocularis",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 18,
+            "code": "5609",
+            "name": "Echinococcus granulosus",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 19,
+            "code": "5611",
+            "name": "Taenia spp.",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 20,
+            "code": "5617",
+            "name": "Neospora caninum",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 21,
+            "code": "5618",
+            "name": "Comment",
+            "status": "DONE",
+            "notes": " \n \nA DETECTED KeyScreen GI Parasite PCR result in a patient with clinical\nsigns that are appropriate to the organism, suggests this is the\nlikely cause of the clinical signs. In the absence of clinical signs,\nparasite detection could suggest a subclinical infection or be related\nto coprophagia. Subclinical infection may need to be treated in cases\nwhere the parasite is zoonotic, has the potential to cause clinical\nsigns or where continued shedding contributes to environmental\ncontamination.\n \nAn UNDETECTED KeyScreen GI Parasite PCR result indicates that no\nparasitic organism was detected. An undetected PCR result most often\nindicates absence of infection but might also occur after successful\ntreatment or with spontaneous resolution of infection. Undetected\nresults due to cyclical shedding may be overcome with repeat testing\nor by testing pooled samples collected over multiple days.\n \nFor infections with an extra-intestinal phase (e.g., echinococcosis,\ntoxoplasmosis, neosporosis), an undetected KeyScreen GI Parasite PCR\nresult does not rule out systemic infection. If systemic infection is\nsuspected, additional diagnostic investigation is indicated.\n \nAs a reference, we have provided links to CAPC guidelines. CAPC is an\nindependent, non-profit organization.\n \nVeterinarians: If the KeyScreen GI Parasite PCR result does not\nexplain the clinical signs or if you require additional interpretive\nassistance, consultation with an internist is available free of charge\n(Monday to Friday 8am to 9pm EST, Saturday 9am to 6pm EST) at\n1-888-838-4636. \n "
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "02b95431-8ad5-450c-b491-32e7056a5fac",
+    "orderId": "117602795",
+    "status": "COMPLETED",
+    "testResults": [
+      {
+        "seq": 1,
+        "code": "T991",
+        "name": "Keyscreen GI Parasite PCR Panel",
+        "items": [
+          {
+            "seq": 1,
+            "code": "5575",
+            "name": "Ancylostoma spp.",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 2,
+            "code": "5577",
+            "name": "A. caninum resistance marker",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 3,
+            "code": "5579",
+            "name": "Uncinaria stenocephala",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 4,
+            "code": "5581",
+            "name": "Toxocara spp.",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 5,
+            "code": "5583",
+            "name": "Toxocara canis",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 6,
+            "code": "5585",
+            "name": "Toxocara cati",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 7,
+            "code": "5587",
+            "name": "Toxascaris leonina",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 8,
+            "code": "5589",
+            "name": "Baylisascaris procyonis",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 9,
+            "code": "5591",
+            "name": "Trichuris vulpis",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 10,
+            "code": "5593",
+            "name": "Giardia duodenalis",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 11,
+            "code": "5595",
+            "name": "Giardia Zoonotic",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 12,
+            "code": "5597",
+            "name": "Cryptosporidium canis",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 13,
+            "code": "5599",
+            "name": "Cryptosporidium felis",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 14,
+            "code": "5601",
+            "name": "Cystoisospora spp.",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 15,
+            "code": "5603",
+            "name": "Eimeria spp.",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 16,
+            "code": "5605",
+            "name": "Dipylidium caninum",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 17,
+            "code": "5607",
+            "name": "Echinococcus multilocularis",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 18,
+            "code": "5609",
+            "name": "Echinococcus granulosus",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 19,
+            "code": "5611",
+            "name": "Taenia spp.",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 20,
+            "code": "5617",
+            "name": "Neospora caninum",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 21,
+            "code": "5618",
+            "name": "Comment",
+            "status": "DONE",
+            "notes": " \n \nA DETECTED KeyScreen GI Parasite PCR result in a patient with clinical\nsigns that are appropriate to the organism, suggests this is the\nlikely cause of the clinical signs. In the absence of clinical signs,\nparasite detection could suggest a subclinical infection or be related\nto coprophagia. Subclinical infection may need to be treated in cases\nwhere the parasite is zoonotic, has the potential to cause clinical\nsigns or where continued shedding contributes to environmental\ncontamination.\n \nAn UNDETECTED KeyScreen GI Parasite PCR result indicates that no\nparasitic organism was detected. An undetected PCR result most often\nindicates absence of infection but might also occur after successful\ntreatment or with spontaneous resolution of infection. Undetected\nresults due to cyclical shedding may be overcome with repeat testing\nor by testing pooled samples collected over multiple days.\n \nFor infections with an extra-intestinal phase (e.g., echinococcosis,\ntoxoplasmosis, neosporosis), an undetected KeyScreen GI Parasite PCR\nresult does not rule out systemic infection. If systemic infection is\nsuspected, additional diagnostic investigation is indicated.\n \nAs a reference, we have provided links to CAPC guidelines. CAPC is an\nindependent, non-profit organization.\n \nVeterinarians: If the KeyScreen GI Parasite PCR result does not\nexplain the clinical signs or if you require additional interpretive\nassistance, consultation with an internist is available free of charge\n(Monday to Friday 8am to 9pm EST, Saturday 9am to 6pm EST) at\n1-888-838-4636. \n "
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "9bc3a11c-1b63-4c40-beaf-ce7b5d6d6303",
+    "orderId": "117645887",
+    "status": "COMPLETED",
+    "testResults": [
+      {
+        "seq": 1,
+        "code": "T991",
+        "name": "Keyscreen GI Parasite PCR Panel",
+        "items": [
+          {
+            "seq": 1,
+            "code": "5575",
+            "name": "Ancylostoma spp.",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 2,
+            "code": "5577",
+            "name": "A. caninum resistance marker",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 3,
+            "code": "5579",
+            "name": "Uncinaria stenocephala",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 4,
+            "code": "5581",
+            "name": "Toxocara spp.",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 5,
+            "code": "5583",
+            "name": "Toxocara canis",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 6,
+            "code": "5585",
+            "name": "Toxocara cati",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 7,
+            "code": "5587",
+            "name": "Toxascaris leonina",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 8,
+            "code": "5589",
+            "name": "Baylisascaris procyonis",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 9,
+            "code": "5591",
+            "name": "Trichuris vulpis",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 10,
+            "code": "5593",
+            "name": "Giardia duodenalis",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 11,
+            "code": "5595",
+            "name": "Giardia Zoonotic",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 12,
+            "code": "5597",
+            "name": "Cryptosporidium canis",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 13,
+            "code": "5599",
+            "name": "Cryptosporidium felis",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 14,
+            "code": "5601",
+            "name": "Cystoisospora spp.",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 15,
+            "code": "5603",
+            "name": "Eimeria spp.",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 16,
+            "code": "5605",
+            "name": "Dipylidium caninum",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 17,
+            "code": "5607",
+            "name": "Echinococcus multilocularis",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 18,
+            "code": "5609",
+            "name": "Echinococcus granulosus",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 19,
+            "code": "5611",
+            "name": "Taenia spp.",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 20,
+            "code": "5617",
+            "name": "Neospora caninum",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 21,
+            "code": "5618",
+            "name": "Comment",
+            "status": "DONE",
+            "notes": " \n \nA DETECTED KeyScreen GI Parasite PCR result in a patient with clinical\nsigns that are appropriate to the organism, suggests this is the\nlikely cause of the clinical signs. In the absence of clinical signs,\nparasite detection could suggest a subclinical infection or be related\nto coprophagia. Subclinical infection may need to be treated in cases\nwhere the parasite is zoonotic, has the potential to cause clinical\nsigns or where continued shedding contributes to environmental\ncontamination.\n \nAn UNDETECTED KeyScreen GI Parasite PCR result indicates that no\nparasitic organism was detected. An undetected PCR result most often\nindicates absence of infection but might also occur after successful\ntreatment or with spontaneous resolution of infection. Undetected\nresults due to cyclical shedding may be overcome with repeat testing\nor by testing pooled samples collected over multiple days.\n \nFor infections with an extra-intestinal phase (e.g., echinococcosis,\ntoxoplasmosis, neosporosis), an undetected KeyScreen GI Parasite PCR\nresult does not rule out systemic infection. If systemic infection is\nsuspected, additional diagnostic investigation is indicated.\n \nAs a reference, we have provided links to CAPC guidelines. CAPC is an\nindependent, non-profit organization.\n \nVeterinarians: If the KeyScreen GI Parasite PCR result does not\nexplain the clinical signs or if you require additional interpretive\nassistance, consultation with an internist is available free of charge\n(Monday to Friday 8am to 9pm EST, Saturday 9am to 6pm EST) at\n1-888-838-4636. \n "
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "1cf38b89-ef45-414c-ad5f-d4020b721343",
+    "orderId": "117656342",
+    "status": "COMPLETED",
+    "testResults": [
+      {
+        "seq": 1,
+        "code": "T991",
+        "name": "Keyscreen GI Parasite PCR Panel",
+        "items": [
+          {
+            "seq": 1,
+            "code": "5575",
+            "name": "Ancylostoma spp.",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 2,
+            "code": "5577",
+            "name": "A. caninum resistance marker",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 3,
+            "code": "5579",
+            "name": "Uncinaria stenocephala",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 4,
+            "code": "5581",
+            "name": "Toxocara spp.",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 5,
+            "code": "5583",
+            "name": "Toxocara canis",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 6,
+            "code": "5585",
+            "name": "Toxocara cati",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 7,
+            "code": "5587",
+            "name": "Toxascaris leonina",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 8,
+            "code": "5589",
+            "name": "Baylisascaris procyonis",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 9,
+            "code": "5591",
+            "name": "Trichuris vulpis",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 10,
+            "code": "5593",
+            "name": "Giardia duodenalis",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 11,
+            "code": "5595",
+            "name": "Giardia Zoonotic",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 12,
+            "code": "5597",
+            "name": "Cryptosporidium canis",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 13,
+            "code": "5599",
+            "name": "Cryptosporidium felis",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 14,
+            "code": "5601",
+            "name": "Cystoisospora spp.",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 15,
+            "code": "5603",
+            "name": "Eimeria spp.",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 16,
+            "code": "5605",
+            "name": "Dipylidium caninum",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 17,
+            "code": "5607",
+            "name": "Echinococcus multilocularis",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 18,
+            "code": "5609",
+            "name": "Echinococcus granulosus",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 19,
+            "code": "5611",
+            "name": "Taenia spp.",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 20,
+            "code": "5617",
+            "name": "Neospora caninum",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 21,
+            "code": "5618",
+            "name": "Comment",
+            "status": "DONE",
+            "notes": " \n \nA DETECTED KeyScreen GI Parasite PCR result in a patient with clinical\nsigns that are appropriate to the organism, suggests this is the\nlikely cause of the clinical signs. In the absence of clinical signs,\nparasite detection could suggest a subclinical infection or be related\nto coprophagia. Subclinical infection may need to be treated in cases\nwhere the parasite is zoonotic, has the potential to cause clinical\nsigns or where continued shedding contributes to environmental\ncontamination.\n \nAn UNDETECTED KeyScreen GI Parasite PCR result indicates that no\nparasitic organism was detected. An undetected PCR result most often\nindicates absence of infection but might also occur after successful\ntreatment or with spontaneous resolution of infection. Undetected\nresults due to cyclical shedding may be overcome with repeat testing\nor by testing pooled samples collected over multiple days.\n \nFor infections with an extra-intestinal phase (e.g., echinococcosis,\ntoxoplasmosis, neosporosis), an undetected KeyScreen GI Parasite PCR\nresult does not rule out systemic infection. If systemic infection is\nsuspected, additional diagnostic investigation is indicated.\n \nAs a reference, we have provided links to CAPC guidelines. CAPC is an\nindependent, non-profit organization.\n \nVeterinarians: If the KeyScreen GI Parasite PCR result does not\nexplain the clinical signs or if you require additional interpretive\nassistance, consultation with an internist is available free of charge\n(Monday to Friday 8am to 9pm EST, Saturday 9am to 6pm EST) at\n1-888-838-4636. \n "
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "3344007f-eb74-41da-93a2-4bf4da282580",
+    "orderId": "117656370",
+    "status": "COMPLETED",
+    "testResults": [
+      {
+        "seq": 1,
+        "code": "T991",
+        "name": "Keyscreen GI Parasite PCR Panel",
+        "items": [
+          {
+            "seq": 1,
+            "code": "5575",
+            "name": "Ancylostoma spp.",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 2,
+            "code": "5577",
+            "name": "A. caninum resistance marker",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 3,
+            "code": "5579",
+            "name": "Uncinaria stenocephala",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 4,
+            "code": "5581",
+            "name": "Toxocara spp.",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 5,
+            "code": "5583",
+            "name": "Toxocara canis",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 6,
+            "code": "5585",
+            "name": "Toxocara cati",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 7,
+            "code": "5587",
+            "name": "Toxascaris leonina",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 8,
+            "code": "5589",
+            "name": "Baylisascaris procyonis",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 9,
+            "code": "5591",
+            "name": "Trichuris vulpis",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 10,
+            "code": "5593",
+            "name": "Giardia duodenalis",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 11,
+            "code": "5595",
+            "name": "Giardia Zoonotic",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 12,
+            "code": "5597",
+            "name": "Cryptosporidium canis",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 13,
+            "code": "5599",
+            "name": "Cryptosporidium felis",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 14,
+            "code": "5601",
+            "name": "Cystoisospora spp.",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 15,
+            "code": "5603",
+            "name": "Eimeria spp.",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 16,
+            "code": "5605",
+            "name": "Dipylidium caninum",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 17,
+            "code": "5607",
+            "name": "Echinococcus multilocularis",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 18,
+            "code": "5609",
+            "name": "Echinococcus granulosus",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 19,
+            "code": "5611",
+            "name": "Taenia spp.",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 20,
+            "code": "5617",
+            "name": "Neospora caninum",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 21,
+            "code": "5618",
+            "name": "Comment",
+            "status": "DONE",
+            "notes": " \n \nA DETECTED KeyScreen GI Parasite PCR result in a patient with clinical\nsigns that are appropriate to the organism, suggests this is the\nlikely cause of the clinical signs. In the absence of clinical signs,\nparasite detection could suggest a subclinical infection or be related\nto coprophagia. Subclinical infection may need to be treated in cases\nwhere the parasite is zoonotic, has the potential to cause clinical\nsigns or where continued shedding contributes to environmental\ncontamination.\n \nAn UNDETECTED KeyScreen GI Parasite PCR result indicates that no\nparasitic organism was detected. An undetected PCR result most often\nindicates absence of infection but might also occur after successful\ntreatment or with spontaneous resolution of infection. Undetected\nresults due to cyclical shedding may be overcome with repeat testing\nor by testing pooled samples collected over multiple days.\n \nFor infections with an extra-intestinal phase (e.g., echinococcosis,\ntoxoplasmosis, neosporosis), an undetected KeyScreen GI Parasite PCR\nresult does not rule out systemic infection. If systemic infection is\nsuspected, additional diagnostic investigation is indicated.\n \nAs a reference, we have provided links to CAPC guidelines. CAPC is an\nindependent, non-profit organization.\n \nVeterinarians: If the KeyScreen GI Parasite PCR result does not\nexplain the clinical signs or if you require additional interpretive\nassistance, consultation with an internist is available free of charge\n(Monday to Friday 8am to 9pm EST, Saturday 9am to 6pm EST) at\n1-888-838-4636. \n "
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "f37c0065-9481-4a79-b3a5-4a72f833127e",
+    "orderId": "117647416",
+    "status": "COMPLETED",
+    "testResults": [
+      {
+        "seq": 1,
+        "code": "CYTO",
+        "name": "Cytology",
+        "items": [
+          {
+            "seq": 1,
+            "code": "2178",
+            "name": "Cytology",
+            "status": "DONE",
+            "notes": " \nCLINICAL INFORMATION:\nThis patient has a history of detached, subdermal lumps along all four\nlimbs and along the right and left lateral thorax.  These growths\nrange from 1-4 cm.\n \nSOURCE:\nLesions on the right and left lateral thorax.  Two slides submitted\nwhich are not labeled as to site.\n \n \n \nDESCRIPTION:\nOne slides submitted contains moderate numbers of well differentiated\nmast cells in a background of cell debris.  These have round nuclei\nand variable numbers of metachromatic cytoplasmic granules. Scattered\neosinophils and neutrophils are also present along with occasional\nreactive fibroblasts.  Granules are also seen throughout the\nbackground.  A few clusters of small basal epithelial cells are noted.\n \nMICROSCOPIC FINDINGS: BOTH SLIDES: MAST CELL NEOPLASIA,\nWELL-DIFFERENTIATED.\n \nCOMMENTS:\nThe mast cells in on both slides are well differentiated and\nconsistent with a low-grade mast cell tumor on cytologic grading.\nHowever, the presence of multiple lesions is concerning for a more\naggressive form of mast cell neoplasia.  Occasionally, high grade mast\ncell tumors can have a well-differentiated cytologic appearance.  A\nbiopsy with histopathology may be helpful for further evaluation.\nAlso, if regional lymph nodes are enlarged, a fine-needle aspirate of\nthe node may be helpful to search for evidence of metastasis to the\nnode.\n \nPATHOLOGIST:\n \nPenny K. Patten, DVM, Diplomate ACVP\n682-777-8066\npenny.patten@antechmail.com\nVeterinary Professionals: Please contact me directly at the phone\nnumber or email above if this interpretation is inconsistent with your\nclinical impression or requires further clarification.\n "
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "e033c83c-ecfa-4e4b-a031-ce9447d34bc7",
+    "orderId": "117694095",
+    "status": "COMPLETED",
+    "testResults": [
+      {
+        "seq": 1,
+        "code": "VCALYTE",
+        "name": "VCA Electrolyte Reflex",
+        "items": [
+          {
+            "seq": 1,
+            "code": "1046",
+            "name": "SODIUM",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 147,
+              "units": "MEQ/L"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "139-154",
+                "low": 139,
+                "high": 154
+              }
+            ]
+          },
+          {
+            "seq": 2,
+            "code": "1048",
+            "name": "POTASSIUM",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 4,
+              "units": "MEQ/L"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "3.6-5.5",
+                "low": 3.6,
+                "high": 5.5
+              }
+            ]
+          },
+          {
+            "seq": 3,
+            "code": "1050",
+            "name": "NA/K RATIO",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 37
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "27-38",
+                "low": 27,
+                "high": 38
+              }
+            ]
+          },
+          {
+            "seq": 4,
+            "code": "1052",
+            "name": "CHLORIDE",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 111,
+              "units": "MEQ/L"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "102-120",
+                "low": 102,
+                "high": 120
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "seq": 2,
+        "code": "SA665",
+        "name": "Adult Wellness Chemistry w/SDMA",
+        "items": [
+          {
+            "seq": 1,
+            "code": "1014",
+            "name": "TOTAL PROTEIN",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 6.4,
+              "units": "g/dL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "5.0-7.4",
+                "low": 5,
+                "high": 7.4
+              }
+            ]
+          },
+          {
+            "seq": 2,
+            "code": "1016",
+            "name": "ALBUMIN",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 3.5,
+              "units": "g/dL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "2.7-4.4",
+                "low": 2.7,
+                "high": 4.4
+              }
+            ]
+          },
+          {
+            "seq": 3,
+            "code": "1018",
+            "name": "GLOBULIN",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 2.9,
+              "units": "g/dL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "1.6-3.6",
+                "low": 1.6,
+                "high": 3.6
+              }
+            ]
+          },
+          {
+            "seq": 4,
+            "code": "1020",
+            "name": "A/G RATIO",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 1.2
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "0.8-2.0",
+                "low": 0.8,
+                "high": 2
+              }
+            ]
+          },
+          {
+            "seq": 5,
+            "code": "1002",
+            "name": "ALT (SGPT)",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 30,
+              "units": "IU/L"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "12-118",
+                "low": 12,
+                "high": 118
+              }
+            ]
+          },
+          {
+            "seq": 6,
+            "code": "1010",
+            "name": "Alk Phosphatase",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 11,
+              "units": "IU/L"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "5-131",
+                "low": 5,
+                "high": 131
+              }
+            ]
+          },
+          {
+            "seq": 7,
+            "code": "1024",
+            "name": "BUN",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 25,
+              "units": "MG/DL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "6-31",
+                "low": 6,
+                "high": 31
+              }
+            ]
+          },
+          {
+            "seq": 8,
+            "code": "1026",
+            "name": "Creatinine",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 1.2,
+              "units": "MG/DL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "0.5-1.6",
+                "low": 0.5,
+                "high": 1.6
+              }
+            ]
+          },
+          {
+            "seq": 9,
+            "code": "3575",
+            "name": "SDMA",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 11.1,
+              "units": "UG/dL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "<14.0",
+                "high": 14
+              }
+            ]
+          },
+          {
+            "seq": 10,
+            "code": "1028",
+            "name": "BUN/CREAT RATIO",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 21
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "4-27",
+                "low": 4,
+                "high": 27
+              }
+            ]
+          },
+          {
+            "seq": 11,
+            "code": "1040",
+            "name": "Glucose",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 90,
+              "units": "MG/DL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "70-138",
+                "low": 70,
+                "high": 138
+              }
+            ]
+          },
+          {
+            "seq": 12,
+            "code": "1048",
+            "name": "POTASSIUM",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 4,
+              "units": "MEQ/L"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "3.6-5.5",
+                "low": 3.6,
+                "high": 5.5
+              }
+            ]
+          },
+          {
+            "seq": 13,
+            "code": "1067",
+            "name": "Sample Conditions",
+            "status": "DONE",
+            "notes": "Hemolysis 1+. No significant analyte interference."
+          }
+        ]
+      },
+      {
+        "seq": 3,
+        "code": "T330",
+        "name": "Complete Blood Count",
+        "items": [
+          {
+            "seq": 1,
+            "code": "10",
+            "name": "WBC",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 13.3,
+              "units": "1000/UL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "4.0-15.5",
+                "low": 4,
+                "high": 15.5
+              }
+            ]
+          },
+          {
+            "seq": 2,
+            "code": "11",
+            "name": "RBC",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 7.1,
+              "units": "1000000/UL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "4.8-9.3",
+                "low": 4.8,
+                "high": 9.3
+              }
+            ]
+          },
+          {
+            "seq": 3,
+            "code": "12",
+            "name": "HGB",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 17,
+              "units": "G/DL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "12.1-20.3",
+                "low": 12.1,
+                "high": 20.3
+              }
+            ]
+          },
+          {
+            "seq": 4,
+            "code": "13",
+            "name": "HCT",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 50,
+              "units": "%"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "36-60",
+                "low": 36,
+                "high": 60
+              }
+            ]
+          },
+          {
+            "seq": 5,
+            "code": "14",
+            "name": "MCV",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 71,
+              "units": "FL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "58-79",
+                "low": 58,
+                "high": 79
+              }
+            ]
+          },
+          {
+            "seq": 6,
+            "code": "15",
+            "name": "MCH",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 24,
+              "units": "PG"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "19-28",
+                "low": 19,
+                "high": 28
+              }
+            ]
+          },
+          {
+            "seq": 7,
+            "code": "16",
+            "name": "MCHC",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 34,
+              "units": "G/DL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "30-38",
+                "low": 30,
+                "high": 38
+              }
+            ]
+          },
+          {
+            "seq": 8,
+            "code": "25",
+            "name": "Platelet Count",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 304,
+              "units": "X1000/UL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "170-400",
+                "low": 170,
+                "high": 400
+              }
+            ]
+          },
+          {
+            "seq": 9,
+            "code": "26",
+            "name": "Platelet Estimate",
+            "status": "DONE",
+            "valueString": "Adequate"
+          },
+          {
+            "seq": 10,
+            "code": "28",
+            "name": "Neutrophils",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 79,
+              "units": "%"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "60-77",
+                "low": 60,
+                "high": 77
+              }
+            ],
+            "interpretation": {
+              "code": "H",
+              "text": "High"
+            }
+          },
+          {
+            "seq": 11,
+            "code": "30",
+            "name": "Bands",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 0,
+              "units": "%"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "0-3",
+                "low": 0,
+                "high": 3
+              }
+            ]
+          },
+          {
+            "seq": 12,
+            "code": "31",
+            "name": "Lymphocytes",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 9,
+              "units": "%"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "12-30",
+                "low": 12,
+                "high": 30
+              }
+            ],
+            "interpretation": {
+              "code": "L",
+              "text": "Low"
+            }
+          },
+          {
+            "seq": 13,
+            "code": "32",
+            "name": "Monocytes",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 6,
+              "units": "%"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "3-10",
+                "low": 3,
+                "high": 10
+              }
+            ]
+          },
+          {
+            "seq": 14,
+            "code": "33",
+            "name": "Eosinophils",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 6,
+              "units": "%"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "2-10",
+                "low": 2,
+                "high": 10
+              }
+            ]
+          },
+          {
+            "seq": 15,
+            "code": "34",
+            "name": "Basophils",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 0,
+              "units": "%"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "0-1",
+                "low": 0,
+                "high": 1
+              }
+            ]
+          },
+          {
+            "seq": 16,
+            "code": "41",
+            "name": "Absolute Neutrophils",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 10507,
+              "units": "/UL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "2060-10600",
+                "low": 2060,
+                "high": 10600
+              }
+            ]
+          },
+          {
+            "seq": 17,
+            "code": "44",
+            "name": "Absolute Lymphocytes",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 1197,
+              "units": "/UL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "690-4500",
+                "low": 690,
+                "high": 4500
+              }
+            ]
+          },
+          {
+            "seq": 18,
+            "code": "45",
+            "name": "Absolute Monocytes",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 798,
+              "units": "/UL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "0-840",
+                "low": 0,
+                "high": 840
+              }
+            ]
+          },
+          {
+            "seq": 19,
+            "code": "46",
+            "name": "Absolute Eosinophils",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 798,
+              "units": "/UL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "0-1200",
+                "low": 0,
+                "high": 1200
+              }
+            ]
+          },
+          {
+            "seq": 20,
+            "code": "47",
+            "name": "Absolute Basophils",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 0,
+              "units": "/UL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "text": "0-150",
+                "low": 0,
+                "high": 150
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "f72e5363-0a7e-4141-b3b6-79be0f35a3b4",
+    "orderId": "117707340",
+    "status": "COMPLETED",
+    "testResults": [
+      {
+        "seq": 1,
+        "code": "T991",
+        "name": "Keyscreen GI Parasite PCR Panel",
+        "items": [
+          {
+            "seq": 1,
+            "code": "5575",
+            "name": "Ancylostoma spp.",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 2,
+            "code": "5577",
+            "name": "A. caninum resistance marker",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 3,
+            "code": "5579",
+            "name": "Uncinaria stenocephala",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 4,
+            "code": "5581",
+            "name": "Toxocara spp.",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 5,
+            "code": "5583",
+            "name": "Toxocara canis",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 6,
+            "code": "5585",
+            "name": "Toxocara cati",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 7,
+            "code": "5587",
+            "name": "Toxascaris leonina",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 8,
+            "code": "5589",
+            "name": "Baylisascaris procyonis",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 9,
+            "code": "5591",
+            "name": "Trichuris vulpis",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 10,
+            "code": "5593",
+            "name": "Giardia duodenalis",
+            "status": "DONE",
+            "valueString": "DETECTED",
+            "notes": "Low parasite burden\nPCR result indicates that a Giardia parasite was detected in the sample. Giardia exists in different strains, which vary in their infectivity to humans. Transmission of cat and dog strains to immunocompetent people is unlikely. Please refer to: CAPC Guidelines - Giardia"
+          },
+          {
+            "seq": 11,
+            "code": "5595",
+            "name": "Giardia Zoonotic",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 12,
+            "code": "5597",
+            "name": "Cryptosporidium canis",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 13,
+            "code": "5599",
+            "name": "Cryptosporidium felis",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 14,
+            "code": "5601",
+            "name": "Cystoisospora spp.",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 15,
+            "code": "5603",
+            "name": "Eimeria spp.",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 16,
+            "code": "5605",
+            "name": "Dipylidium caninum",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 17,
+            "code": "5607",
+            "name": "Echinococcus multilocularis",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 18,
+            "code": "5609",
+            "name": "Echinococcus granulosus",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 19,
+            "code": "5611",
+            "name": "Taenia spp.",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 20,
+            "code": "5617",
+            "name": "Neospora caninum",
+            "status": "DONE",
+            "valueString": "Undetected"
+          },
+          {
+            "seq": 21,
+            "code": "5618",
+            "name": "Comment",
+            "status": "DONE",
+            "notes": " \n \nA DETECTED KeyScreen GI Parasite PCR result in a patient with clinical\nsigns that are appropriate to the organism, suggests this is the\nlikely cause of the clinical signs. In the absence of clinical signs,\nparasite detection could suggest a subclinical infection or be related\nto coprophagia. Subclinical infection may need to be treated in cases\nwhere the parasite is zoonotic, has the potential to cause clinical\nsigns or where continued shedding contributes to environmental\ncontamination.\n \nAn UNDETECTED KeyScreen GI Parasite PCR result indicates that no\nparasitic organism was detected. An undetected PCR result most often\nindicates absence of infection but might also occur after successful\ntreatment or with spontaneous resolution of infection. Undetected\nresults due to cyclical shedding may be overcome with repeat testing\nor by testing pooled samples collected over multiple days.\n \nFor infections with an extra-intestinal phase (e.g., echinococcosis,\ntoxoplasmosis, neosporosis), an undetected KeyScreen GI Parasite PCR\nresult does not rule out systemic infection. If systemic infection is\nsuspected, additional diagnostic investigation is indicated.\n \nAs a reference, we have provided links to CAPC guidelines. CAPC is an\nindependent, non-profit organization.\n \nVeterinarians: If the KeyScreen GI Parasite PCR result does not\nexplain the clinical signs or if you require additional interpretive\nassistance, consultation with an internist is available free of charge\n(Monday to Friday 8am to 9pm EST, Saturday 9am to 6pm EST) at\n1-888-838-4636. \n "
+          }
+        ]
+      }
+    ]
+  }
+]

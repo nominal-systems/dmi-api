@@ -121,7 +121,11 @@ export class ReportsService {
     const nonExistingOrderExternalIds = arrayDiff(nonExistingReportExternalOrderIds, nonExistingReportOrders.map(order => order.externalId))
     for (const externalOrderId of nonExistingOrderExternalIds) {
       const externalOrder = await this.ordersService.getOrderFromProvider(externalOrderId, integration.providerConfiguration, integration.integrationOptions)
-      if (externalOrder == null) break
+      if (externalOrder == null) {
+        this.logger.warn(`Order from provider not found -> External ID: ${externalOrderId}`)
+        continue
+      }
+      this.logger.debug(`Getting order from provider -> External ID: ${externalOrderId}`)
       const order = await this.ordersService.createExternalOrder(integrationId, externalOrder)
       createdOrders.push(order)
       const resultForOrder = results.filter(result => result.orderId === order.externalId)
