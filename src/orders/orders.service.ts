@@ -666,8 +666,11 @@ export class OrdersService {
 
     let updated = false
     if (orderStatus !== order.status) {
-      order = await this.ordersRepository.save(order)
+      this.logger.debug(`updateOrderStatusFromResults: Order/${order.externalId} status changed from ${orderStatus} to ${order.status}`)
+      await this.ordersRepository.save(order)
       updated = true
+    } else {
+      this.logger.debug(`updateOrderStatusFromResults: Order/${order.externalId} status not changed. Current status: ${order.status}, result status: ${result.status}`)
     }
 
     return updated
