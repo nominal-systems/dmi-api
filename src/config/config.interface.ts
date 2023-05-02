@@ -8,6 +8,7 @@ export interface AppConfig {
   activeMQ: ActiveMQConfig
   typeorm: TypeOrmModuleOptions
   mongoose: MongooseConfig
+  docs: DocsConfig
 }
 
 export interface ActiveMQConfig {
@@ -25,4 +26,11 @@ export interface MongooseConfig {
 export interface AdminCredentials {
   username: string
   password: string
+}
+
+export interface DocsConfig {
+  title: string
+  description: string
+  openApiSpecUrl: string
+  version?: string
 }

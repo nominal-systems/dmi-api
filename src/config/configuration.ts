@@ -21,5 +21,10 @@ export default (): AppConfig => ({
     uri:
       process.env.MONGO_URI ??
       'mongodb://localhost/diagnostic-modality-integration'
+  },
+  docs: {
+    title: 'DMI API 2',
+    description: 'The Diagnostic Modality Integration API (DMI API) provides common workflows and standardized resource formats for interacting with multiple diagnostic providers through a single interface, by handling all the work specific to each provider and helping partners integrate in a flexible way.',
+    openApiSpecUrl: '/swagger-json'
   }
 })
