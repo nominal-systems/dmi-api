@@ -12,6 +12,8 @@ import { ProviderResult, ReportStatus, TestResultItemStatus } from '@nominal-sys
 import * as fs from 'fs'
 import * as path from 'path'
 import { reportRepositoryMockFactory } from './test/report.repository.mock'
+import { EventNamespace } from '../events/constants/event-namespace.enum'
+import { EventType } from '../events/constants/event-type.enum'
 
 const repositoryMockFactory: () => MockUtils<Repository<any>> = jest.fn(() => ({
   findOne: jest.fn(entity => entity),
@@ -24,10 +26,20 @@ describe('ReportsService', () => {
   let reportsRepositoryMock: Partial<Repository<Report>>
   const ordersServiceMock = {
     findOrdersByExternalIds: jest.fn().mockImplementation((orders) => orders),
-    getOrderFromProvider: jest.fn().mockImplementation((order) => order)
+    getOrderFromProvider: jest.fn().mockImplementation((order) => order),
+    createOrderForResult: jest.fn().mockImplementation((integrationId, result) => {
+      return {}
+    })
   }
   const integrationsServiceMock = {
-    findById: jest.fn().mockImplementation((integration) => integration)
+    findById: jest.fn().mockImplementation((integrationId) => {
+      return {
+        id: integrationId,
+        providerConfiguration: {
+          providerId: integrationId
+        }
+      }
+    })
   }
   const eventsServiceMock = {
     addEvent: jest.fn()
@@ -62,6 +74,10 @@ describe('ReportsService', () => {
 
     reportsService = module.get<ReportsService>(ReportsService)
     reportsRepositoryMock = module.get(getRepositoryToken(Report))
+  })
+
+  afterEach(() => {
+    jest.resetAllMocks()
   })
 
   it('should be defined', () => {
@@ -1423,6 +1439,25 @@ describe('ReportsService', () => {
   })
 
   describe('handleExternalResults()', () => {
+    describe('Idexx', () => {
+      const resultsDropNRun01: ProviderResult[] = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'test', 'idexx', 'results-drop-n-run-01.json'), 'utf8'))
+      it('should support drop n run tests, i.e. create orders and reports', async () => {
+        await reportsService.handleExternalResults({
+          integrationId: 'idexx',
+          results: resultsDropNRun01
+        })
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledTimes(2)
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
+          namespace: EventNamespace.ORDERS,
+          type: EventType.ORDER_CREATED
+        }))
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
+          namespace: EventNamespace.REPORTS,
+          type: EventType.REPORT_CREATED
+        }))
+      })
+    })
+
     describe('Antech', () => {
       const results: ProviderResult[] = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'test', 'antech', 'results-01.json'), 'utf8'))
       const resultsMissing01: ProviderResult[] = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'test', 'antech', 'missing-01.json'), 'utf8'))

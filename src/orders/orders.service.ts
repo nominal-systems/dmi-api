@@ -146,7 +146,7 @@ export class OrdersService {
     } = order
 
     if (providerConfiguration.organizationId !== organization.id) {
-      throw new ForbiddenException("You don't have access to this resource")
+      throw new ForbiddenException('You don\'t have access to this resource')
     }
 
     if (manifestUri == null) {
@@ -178,7 +178,7 @@ export class OrdersService {
     })
 
     if (organization.id !== providerConfiguration.organizationId) {
-      throw new ForbiddenException("You don't have permissions to do that")
+      throw new ForbiddenException('You don\'t have permissions to do that')
     }
 
     const { message, messagePattern } = ieMessageBuilder(
@@ -324,7 +324,7 @@ export class OrdersService {
     } = order
 
     if (organization.id !== providerConfiguration.organizationId) {
-      throw new ForbiddenException("You don't have permissions to do that")
+      throw new ForbiddenException('You don\'t have permissions to do that')
     }
 
     const { configurationOptions, providerId } = providerConfiguration
@@ -551,7 +551,7 @@ export class OrdersService {
     results
   }: ExternalResultEventData): Promise<void> {
     const integration = await this.integrationsService.findById(integrationId)
-    const externalOrderIds = new Set<string>(results.map(result => result.orderId))
+    const externalOrderIds = new Set<string>(results.map(result => result.orderId).filter(Boolean))
 
     const updatedOrders: Order[] = []
     for (const externalOrderId of externalOrderIds) {
@@ -588,7 +588,7 @@ export class OrdersService {
       })
     }
 
-    this.logger.log(`Got ${results.length} order results from provider. ${updatedOrders.length} updated`)
+    this.logger.log(`external_order_results -> Got ${results.length} results from ${integration.providerConfiguration.providerId}: ${updatedOrders.length} orders updated`)
   }
 
   async getOrderReport (
@@ -651,6 +651,14 @@ export class OrdersService {
     const mapper = new ExternalOrderMapper()
     const createdOrders = this.ordersRepository.create(mapper.mapOrder(externalOrder, integrationId))
     return await this.ordersRepository.save(createdOrders)
+  }
+
+  async createOrderForResult (
+    integrationId,
+    result: ProviderResult
+  ): Promise<Order> {
+    // TODO(gb): implement
+    return {} as unknown as Order
   }
 
   async updateOrderStatusFromResults (

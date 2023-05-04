@@ -28,7 +28,14 @@ describe('OrdersService', () => {
 
   const reportsServiceMock = {}
   const integrationsServiceMock = {
-    findById: jest.fn().mockImplementation((integration) => integration),
+    findById: jest.fn().mockImplementation((integrationId) => {
+      return {
+        id: integrationId,
+        providerConfiguration: {
+          providerId: integrationId
+        }
+      }
+    }),
     findOne: jest.fn().mockReturnValue({
       practice: {}
     })
@@ -141,16 +148,27 @@ describe('OrdersService', () => {
 
   describe('handleExternalOrderResults()', () => {
     describe('IDEXX', () => {
+      const results01: ProviderResult[] = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'test', 'idexx', 'results-01.json'), 'utf8'))
+      const resultsDropNRun01: ProviderResult[] = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'test', 'idexx', 'results-drop-n-run-01.json'), 'utf8'))
       it('should handle results for orphan orders', async () => {
-        const results: ProviderResult[] = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'test', 'idexx', 'results-01.json'), 'utf8'))
-        const integration = {
-          id: 'integrationId'
-        }
         await ordersService.handleExternalOrderResults({
-          integrationId: integration.id,
-          results
+          integrationId: 'idexx',
+          results: results01
         })
       })
+
+      it('should skip order results with no order ID', async () => {
+        await ordersService.handleExternalOrderResults({
+          integrationId: 'idexx',
+          results: resultsDropNRun01
+        })
+        expect(ordersRepositoryMock.findOne).not.toHaveBeenCalled()
+        expect(eventsServiceMock.addEvent).not.toHaveBeenCalled()
+      })
     })
+  })
+
+  describe('createOrderForResult()', () => {
+    // TODO(gb): test
   })
 })
