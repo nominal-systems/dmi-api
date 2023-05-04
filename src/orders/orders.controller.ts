@@ -25,6 +25,7 @@ import { Order } from './entities/order.entity'
 import { OrdersService } from './orders.service'
 import { Report } from '../reports/entities/report.entity'
 import { ExternalResultEventData } from '../common/typings/external-result-event-data.interface'
+import { ApiParam } from '@nestjs/swagger'
 
 @Controller('orders')
 @UseGuards(ApiGuard)
@@ -64,6 +65,8 @@ export class OrdersController {
   }
 
   @Delete(':id/tests/:testCode')
+  @ApiParam({ name: 'id', description: 'Order ID' })
+  @ApiParam({ name: 'testCode', description: 'Test Code' })
   async cancelOrderTests (
     @Organization() organization: OrganizationEntity,
     @Param() { id, testCode }: OrderTestCancelPathParams
