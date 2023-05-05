@@ -37,7 +37,8 @@ describe('ReportsService', () => {
         id: integrationId,
         providerConfiguration: {
           providerId: integrationId
-        }
+        },
+        practice: {}
       }
     })
   }
@@ -77,7 +78,7 @@ describe('ReportsService', () => {
   })
 
   afterEach(() => {
-    jest.resetAllMocks()
+    jest.clearAllMocks()
   })
 
   it('should be defined', () => {
@@ -1442,6 +1443,12 @@ describe('ReportsService', () => {
     describe('Idexx', () => {
       const resultsDropNRun01: ProviderResult[] = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'test', 'idexx', 'results-drop-n-run-01.json'), 'utf8'))
       it('should support drop n run tests, i.e. create orders and reports', async () => {
+        ordersServiceMock.findOrdersByExternalIds.mockResolvedValueOnce([])
+        ordersServiceMock.createOrderForResult.mockResolvedValueOnce({
+          integrationId: 'idexx',
+          status: 'COMPLETED',
+          tests: [{ code: 'fBNP' }]
+        })
         await reportsService.handleExternalResults({
           integrationId: 'idexx',
           results: resultsDropNRun01
@@ -1449,7 +1456,8 @@ describe('ReportsService', () => {
         expect(eventsServiceMock.addEvent).toHaveBeenCalledTimes(2)
         expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
           namespace: EventNamespace.ORDERS,
-          type: EventType.ORDER_CREATED
+          type: EventType.ORDER_CREATED,
+          integrationId: 'idexx'
         }))
         expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
           namespace: EventNamespace.REPORTS,

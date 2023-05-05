@@ -1,60 +1,23 @@
 [
   {
-    "resultId": "vcp.IMjAyMzAzMzBfMTU1MzE5Xzg1MDFUT0JZS0FTVE9SRkY",
-    "requisitionId": "",
-    "diagnosticSetId": "20230330_155319_8501",
-    "patient": {
-      "name": "Toby",
-      "clientLastName": "Kastorff",
-      "clientId": "723",
-      "clientFirstName": "Kathy",
-      "age": 2,
-      "speciesCode": "FELINE",
-      "speciesName": "Feline",
-      "breedName": "Maine Coon",
-      "genderName": "Male",
-      "patientId": "723 8",
-      "yearOfBirth": "2020"
-    },
-    "veterinarian": "Eric Posthumus",
-    "status": "COMPLETE",
-    "modality": "INHOUSE",
-    "categories": [
+    "id": "vcp.IMjAyMzAzMzBfMTU1MzE5Xzg1MDFUT0JZS0FTVE9SRkY",
+    "orderId": "",
+    "status": "COMPLETED",
+    "testResults": [
       {
-        "categoryId": 2,
-        "name": "Chemistry",
+        "seq": 1,
         "code": "Chemistry",
-        "tests": [
+        "name": "Chemistry",
+        "items": [
           {
-            "runSummaryId": "D40CA79F-E209-4D7D-9D77-6EA6DDBCE395",
-            "name": "SNAP Feline proBNP",
-            "result": "Normal",
-            "resultType": "TEXT",
-            "status": "COMPLETE",
+            "seq": 1,
             "code": "fBNP",
-            "analyte": "10873",
-            "qualifier": "",
-            "outOfRange": false,
-            "referenceRange": "",
-            "units": "",
-            "notes": []
+            "name": "SNAP Feline proBNP",
+            "status": "DONE",
+            "valueString": "Normal"
           }
-        ],
-        "notes": []
+        ]
       }
-    ],
-    "runSummaries": [
-      {
-        "id": "D40CA79F-E209-4D7D-9D77-6EA6DDBCE395",
-        "code": "SNAP",
-        "name": "Handheld SNAP Device",
-        "runDate": "2023-03-30T16:10:55.579Z",
-        "ivlsSerialNumber": "VS3B9YKB2"
-      }
-    ],
-    "notes": {},
-    "orderReceivedDate": "2023-03-30T16:10:55.579Z",
-    "updatedDate": "2023-03-30T16:10:55.580Z",
-    "updatedAuditDate": "2023-03-30T23:11:01.748Z"
+    ]
   }
 ]

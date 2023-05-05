@@ -8,16 +8,17 @@ import { Repository } from 'typeorm'
 import { ReportsService } from '../reports/reports.service'
 import { IntegrationsService } from '../integrations/integrations.service'
 import { EventsService } from '../events/services/events.service'
-import { ProviderResult } from '@nominal-systems/dmi-engine-common'
+import { OrderStatus, ProviderResult } from '@nominal-systems/dmi-engine-common'
 import * as fs from 'fs'
 import * as path from 'path'
-import { orderRepositoryMockFactory } from './test/order.repository.mock'
 import { EventNamespace } from '../events/constants/event-namespace.enum'
 import { EventType } from '../events/constants/event-type.enum'
 
 export const repositoryMockFactory: () => MockUtils<Repository<any>> = jest.fn(() => ({
   find: jest.fn(entity => entity),
-  findOne: jest.fn(entity => entity)
+  findOne: jest.fn(entity => entity),
+  create: jest.fn(entity => entity),
+  save: jest.fn(entity => entity)
 }))
 
 describe('OrdersService', () => {
@@ -25,7 +26,6 @@ describe('OrdersService', () => {
   const configServiceMock = {
     get: jest.fn()
   }
-
   const reportsServiceMock = {}
   const integrationsServiceMock = {
     findById: jest.fn().mockImplementation((integrationId) => {
@@ -56,7 +56,7 @@ describe('OrdersService', () => {
         },
         {
           provide: getRepositoryToken(Order),
-          useFactory: orderRepositoryMockFactory
+          useFactory: repositoryMockFactory
         },
         {
           provide: getRepositoryToken(Test),
@@ -169,6 +169,16 @@ describe('OrdersService', () => {
   })
 
   describe('createOrderForResult()', () => {
-    // TODO(gb): test
+    const result: ProviderResult = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'test', 'idexx', 'results-drop-n-run-01.json'), 'utf8'))[0]
+
+    it('should create order for result', async () => {
+      const order = await ordersService.createOrderForResult('idexx', result)
+      expect(order).toBeDefined()
+      expect(order.integrationId).toBe('idexx')
+      expect(order.status).toBe(OrderStatus.COMPLETED)
+      expect(order.tests).toEqual([
+        { code: 'fBNP' }
+      ])
+    })
   })
 })

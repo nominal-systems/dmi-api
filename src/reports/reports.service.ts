@@ -114,9 +114,12 @@ export class ReportsService {
     const externalOrderIds = results.map(result => result.orderId).filter(Boolean)
     const orphanResults = results.filter(result => !result.orderId)
 
+    const createdReports: Report[] = []
+    const updatedReports: Report[] = []
+    const createdOrders: Order[] = []
+
     // Update existing reports with new results
     const existingReports = await this.findReportsByExternalOrderIds(externalOrderIds)
-    const updatedReports: Report[] = []
     for (const report of existingReports) {
       const resultsForReport = results.filter(result => result.orderId === report.order.externalId)
       const updated = await this.updateReportResults(report, resultsForReport)
@@ -127,7 +130,6 @@ export class ReportsService {
 
     // Create external orders
     const externalOrders: ExternalOrder[] = []
-    const createdOrders: Order[] = []
     const nonExistingReportExternalOrderIds = arrayDiff(externalOrderIds, existingReports.map(report => report.order.externalId))
     const nonExistingReportOrders = await this.ordersService.findOrdersByExternalIds(nonExistingReportExternalOrderIds)
     const nonExistingOrderExternalIds = arrayDiff(nonExistingReportExternalOrderIds, nonExistingReportOrders.map(order => order.externalId))
@@ -150,6 +152,11 @@ export class ReportsService {
     for (const orphanResult of orphanResults) {
       const order = await this.ordersService.createOrderForResult(integrationId, orphanResult)
       dummyOrders.push(order)
+      const report = new Report()
+      report.order = order
+      report.testResultsSet = []
+      await this.updateReportResults(report, orphanResults)
+      createdReports.push(report)
     }
 
     // Notify about new orders
@@ -167,18 +174,10 @@ export class ReportsService {
     }
 
     // Create new reports with unmatched results
-    const createdReports: Report[] = []
     for (const order of [...nonExistingReportOrders, ...createdOrders]) {
       const report = this.buildRegisteredReport(order)
       const resultsForReport = results.filter(result => result.orderId === order.externalId)
       await this.updateReportResults(report, resultsForReport)
-      createdReports.push(report)
-    }
-
-    // Create new report for orphan results
-    for (const order of dummyOrders) {
-      const report = this.buildRegisteredReport(order)
-      // TODO(gb): update report results
       createdReports.push(report)
     }
 
@@ -212,7 +211,7 @@ export class ReportsService {
       })
     }
 
-    this.logger.log(`external_results -> Got ${results.length} results from ${integration.providerConfiguration.providerId}: ${createdReports.length} reports created, ${updatedReports.length} reports updated, orders ${createdOrders.length} orders created`)
+    this.logger.log(`external_results -> Got ${results.length} results from ${integration.providerConfiguration.providerId}: ${createdReports.length} reports created, ${updatedReports.length} reports updated, orders ${[...createdOrders, ...dummyOrders].length} orders created`)
   }
 
   async findReportsByExternalOrderIds (externalOrderIds: string[]): Promise<Report[]> {

@@ -657,8 +657,9 @@ export class OrdersService {
     integrationId,
     result: ProviderResult
   ): Promise<Order> {
-    // TODO(gb): implement
-    return {} as unknown as Order
+    const order = this.ordersRepository.create(this.extractOrderFromResult(result))
+    order.integrationId = integrationId
+    return await this.ordersRepository.save(order)
   }
 
   async updateOrderStatusFromResults (
@@ -666,11 +667,7 @@ export class OrdersService {
     result: ProviderResult
   ): Promise<boolean> {
     const orderStatus = order.status
-    if (result.status === ResultStatus.COMPLETED) {
-      order.status = OrderStatus.COMPLETED
-    } else if (result.status === ResultStatus.PARTIAL) {
-      order.status = OrderStatus.PARTIAL
-    }
+    this.setOrderStatusFromResult(result, order)
 
     let updated = false
     if (orderStatus !== order.status) {
@@ -682,5 +679,33 @@ export class OrdersService {
     }
 
     return updated
+  }
+
+  extractOrderFromResult (
+    result: ProviderResult
+  ): Order {
+    const order = new Order()
+    this.setOrderStatusFromResult(result, order)
+    order.tests = Array.from(
+      new Set(
+        result.testResults
+          .flatMap((testResult) => testResult.items)
+          .map((item) => {
+            return { code: item.code }
+          })
+      )
+    )
+    return order
+  }
+
+  private setOrderStatusFromResult (
+    result: ProviderResult,
+    order: Order
+  ): void {
+    if (result.status === ResultStatus.COMPLETED) {
+      order.status = OrderStatus.COMPLETED
+    } else if (result.status === ResultStatus.PARTIAL) {
+      order.status = OrderStatus.PARTIAL
+    }
   }
 }
