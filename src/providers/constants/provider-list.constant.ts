@@ -35,7 +35,7 @@ const providers: Provider[] = [
       {
         type: 'string',
         name: 'ClinicID',
-        description: "Clinic ID used to login to Antech's API",
+        description: 'Clinic ID used to login to Antech\'s API',
         required: true
       }
     ]
@@ -60,13 +60,13 @@ const providers: Provider[] = [
       {
         type: 'string',
         name: 'X-Pims-Id',
-        description: "PIMS ID set in request's header",
+        description: 'PIMS ID set in request\'s header',
         required: true
       },
       {
         type: 'string',
         name: 'X-Pims-Version',
-        description: "PIMS Version set in request's header",
+        description: 'PIMS Version set in request\'s header',
         required: true
       }
     ],
@@ -86,30 +86,37 @@ const providers: Provider[] = [
     ]
   },
   {
-    id: 'zoetis-v1',
+    id: 'zoetis',
     description: 'Zoetis Vetsync v1',
-    configurationUri: '/providers/zoetis-v1/configurations',
+    configurationUri: '/providers/zoetis/configurations',
     configurationOptions: [
       {
         type: 'string',
-        name: 'url',
+        name: 'baseUrl',
         description: 'Base URL',
         required: true
       },
       {
         type: 'string',
-        name: 'clientId',
-        description: 'FUSE Client ID',
+        name: 'partnerId',
+        description: 'Partner ID',
         required: true
       },
       {
         type: 'string',
-        name: 'clientPassword',
-        description: 'FUSE Client Password',
+        name: 'partnerPassword',
+        description: 'Partner Password',
         required: true
       }
     ],
-    integrationOptions: []
+    integrationOptions: [
+      {
+        type: 'string',
+        name: 'clientId',
+        description: 'FUSE Client ID',
+        required: true
+      }
+    ]
   },
   {
     id: 'heska',
