@@ -112,7 +112,7 @@ export class ReportsService {
   }: ExternalResultEventData): Promise<void> {
     const integration = await this.integrationsService.findById(integrationId)
     const externalOrderIds = results.map(result => result.orderId).filter(Boolean)
-    const orphanResults = results.filter(result => !result.orderId)
+    const orphanResults = results.filter(result => result.orderId === '' || result.orderId == null)
 
     const createdReports: Report[] = []
     const updatedReports: Report[] = []
