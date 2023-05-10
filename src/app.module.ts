@@ -11,13 +11,14 @@ import { EventsModule } from './events/events.module'
 import configuration from './config/configuration'
 import { MongooseModule } from '@nestjs/mongoose'
 import { AppController } from './app.controller'
-import { APP_INTERCEPTOR } from '@nestjs/core'
+import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core'
 import { RpcExceptionInterceptor } from './common/interceptors/rpc-exception.interceptor'
 import { AuthModule } from './common/auth/auth.module'
 import { RefsModule } from './refs/refs.module'
 import { ReportsModule } from './reports/reports.module'
 import { AdminModule } from './admin/admin.module'
 import { HealthModule } from './health/health.module'
+import { AllExceptionsFilter } from './common/interceptors/all-exceptions.filter'
 
 @Module({
   imports: [
@@ -60,6 +61,10 @@ import { HealthModule } from './health/health.module'
     {
       provide: APP_INTERCEPTOR,
       useClass: RpcExceptionInterceptor
+    },
+    {
+      provide: APP_FILTER,
+      useClass: AllExceptionsFilter
     }
   ]
 })
