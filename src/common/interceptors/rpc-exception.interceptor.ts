@@ -39,6 +39,7 @@ export class RpcExceptionInterceptor implements NestInterceptor {
           if (response.errors != null) {
             messageString = response.errors.map(err => err.message).join(', ')
           }
+          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
           const path = response.path != null ? ` ${response.path}` : ''
           const separator = path !== '' ? ' - ' : ' '
           const logFormat = `Engine failed with status ${JSON.stringify(status)}:${path}${separator}Exception: ${JSON.stringify(messageString)}`
