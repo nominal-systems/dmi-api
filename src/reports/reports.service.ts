@@ -21,6 +21,7 @@ import { arrayDiff } from '../common/utils/array-diff'
 import { OrdersService } from '../orders/orders.service'
 import { Organization } from '../organizations/entities/organization.entity'
 import { resultStatusMapper, testResultStatusMapper } from '../common/utils/result-status.helper'
+import { ProviderResultUtils } from '../common/utils/provider-result-utils'
 
 @Injectable()
 export class ReportsService {
@@ -150,12 +151,17 @@ export class ReportsService {
     // Create orders for orphan results
     const dummyOrders: Order[] = []
     for (const orphanResult of orphanResults) {
-      const order = await this.ordersService.createOrderForResult(integrationId, orphanResult)
+      const extractedOrder: Order = ProviderResultUtils.extractOrderFromOrphanResult(orphanResult, integrationId)
+      const order = await this.ordersService.saveOrder(extractedOrder)
       dummyOrders.push(order)
+
       const report = new Report()
       report.order = order
       report.testResultsSet = []
       await this.updateReportResults(report, orphanResults)
+      if (order.patient !== undefined) {
+        report.patient = order.patient
+      }
       createdReports.push(report)
     }
 

@@ -19,8 +19,7 @@ import {
   OrderCreatedResponse,
   OrderStatus,
   ProviderResult,
-  Resource,
-  ResultStatus
+  Resource
 } from '@nominal-systems/dmi-engine-common'
 import { updateOrder } from '../common/utils/order-status.helper'
 import { EventNamespace } from '../events/constants/event-namespace.enum'
@@ -29,6 +28,7 @@ import { ReportsService } from '../reports/reports.service'
 import { Report } from '../reports/entities/report.entity'
 import { ExternalOrderMapper } from './mappers/external-order.mapper'
 import { ExternalResultEventData } from '../common/typings/external-result-event-data.interface'
+import { ProviderResultUtils } from '../common/utils/provider-result-utils'
 
 interface OrderTestCancelOrAddParams {
   orderId: string
@@ -653,21 +653,12 @@ export class OrdersService {
     return await this.ordersRepository.save(createdOrders)
   }
 
-  async createOrderForResult (
-    integrationId,
-    result: ProviderResult
-  ): Promise<Order> {
-    const order = this.ordersRepository.create(this.extractOrderFromResult(result))
-    order.integrationId = integrationId
-    return await this.ordersRepository.save(order)
-  }
-
   async updateOrderStatusFromResults (
     order: Order,
     result: ProviderResult
   ): Promise<boolean> {
     const orderStatus = order.status
-    this.setOrderStatusFromResult(result, order)
+    ProviderResultUtils.setOrderStatusFromResult(result, order)
 
     let updated = false
     if (orderStatus !== order.status) {
@@ -685,27 +676,15 @@ export class OrdersService {
     result: ProviderResult
   ): Order {
     const order = new Order()
-    this.setOrderStatusFromResult(result, order)
-    order.tests = Array.from(
-      new Set(
-        result.testResults
-          .flatMap((testResult) => testResult.items)
-          .map((item) => {
-            return { code: item.code }
-          })
-      )
-    )
+    ProviderResultUtils.setOrderStatusFromResult(result, order)
+    order.tests = ProviderResultUtils.extractTestsFromProviderResult(result)
     return order
   }
 
-  private setOrderStatusFromResult (
-    result: ProviderResult,
+  async saveOrder (
     order: Order
-  ): void {
-    if (result.status === ResultStatus.COMPLETED) {
-      order.status = OrderStatus.COMPLETED
-    } else if (result.status === ResultStatus.PARTIAL) {
-      order.status = OrderStatus.PARTIAL
-    }
+  ): Promise<Order> {
+    const createdOrder = this.ordersRepository.create(order)
+    return await this.ordersRepository.save(createdOrder)
   }
 }
