@@ -12,6 +12,9 @@ export class ProviderResultUtils {
   ): Order {
     const order = new Order()
     order.integrationId = integrationId
+    if (result.order?.externalId !== undefined) {
+      order.externalId = result.order?.externalId
+    }
     this.setOrderStatusFromResult(result, order)
     order.tests = ProviderResultUtils.extractTestsFromProviderResult(result)
     if (result.order !== undefined) {

@@ -22,6 +22,7 @@ import { OrdersService } from '../orders/orders.service'
 import { Organization } from '../organizations/entities/organization.entity'
 import { resultStatusMapper, testResultStatusMapper } from '../common/utils/result-status.helper'
 import { ProviderResultUtils } from '../common/utils/provider-result-utils'
+import { isNullOrEmpty } from '../common/utils/shared.utils'
 
 @Injectable()
 export class ReportsService {
@@ -112,9 +113,11 @@ export class ReportsService {
     results
   }: ExternalResultEventData): Promise<void> {
     const integration = await this.integrationsService.findById(integrationId)
-    const externalOrderIds = results.map(result => result.orderId).filter(Boolean)
-    const orphanResults = results.filter(result => result.orderId === '' || result.orderId == null)
-
+    const externalOrderIds = results
+      .filter(result => !isNullOrEmpty(result.orderId) && isNullOrEmpty(result.order))
+      .map(result => result.orderId)
+    const orphanResults = results
+      .filter(result => isNullOrEmpty(result.orderId) || !isNullOrEmpty(result.order))
     const createdReports: Report[] = []
     const updatedReports: Report[] = []
     const createdOrders: Order[] = []
