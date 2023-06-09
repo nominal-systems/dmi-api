@@ -1,6 +1,25 @@
 [
   {
     "id": "vcp.IMjAyMzAzMzBfMTU1MzE5Xzg1MDFUT0JZS0FTVE9SRkY",
+    "order": {
+      "status": "COMPLETED",
+      "patient": {
+        "name": "Toby",
+        "sex": "Male",
+        "species": "Feline",
+        "breed": "Maine Coon"
+      },
+      "client": {
+        "firstName": "Kathy",
+        "lastName": "Kastorff"
+      },
+      "tests": [
+        {
+          "code": "Chemistry"
+        }
+      ],
+      "editable": false
+    },
     "status": "COMPLETED",
     "testResults": [
       {

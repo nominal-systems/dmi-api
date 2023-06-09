@@ -8,12 +8,11 @@ import { TestResult } from './entities/test-result.entity'
 import { IntegrationsService } from '../integrations/integrations.service'
 import { EventsService } from '../events/services/events.service'
 import { OrdersService } from '../orders/orders.service'
-import { ProviderResult, ReportStatus, TestResultItemStatus } from '@nominal-systems/dmi-engine-common'
-import * as fs from 'fs'
-import * as path from 'path'
+import { OrderStatus, ProviderResult, ReportStatus, TestResultItemStatus } from '@nominal-systems/dmi-engine-common'
 import { reportRepositoryMockFactory } from './test/report.repository.mock'
 import { EventNamespace } from '../events/constants/event-namespace.enum'
 import { EventType } from '../events/constants/event-type.enum'
+import { FileUtils } from '../common/utils/file-utils'
 
 const repositoryMockFactory: () => MockUtils<Repository<any>> = jest.fn(() => ({
   findOne: jest.fn(entity => entity),
@@ -23,13 +22,15 @@ const repositoryMockFactory: () => MockUtils<Repository<any>> = jest.fn(() => ({
 
 describe('ReportsService', () => {
   let reportsService: ReportsService
+
   let reportsRepositoryMock: Partial<Repository<Report>>
   const ordersServiceMock = {
     findOrdersByExternalIds: jest.fn().mockImplementation((orders) => orders),
     getOrderFromProvider: jest.fn().mockImplementation((order) => order),
     createOrderForResult: jest.fn().mockImplementation((integrationId, result) => {
       return {}
-    })
+    }),
+    saveOrder: jest.fn().mockImplementation((order) => order)
   }
   const integrationsServiceMock = {
     findById: jest.fn().mockImplementation((integrationId) => {
@@ -1217,7 +1218,6 @@ describe('ReportsService', () => {
       const updated = await reportsService.updateReportResults(report, [])
       expect(updated).toEqual(false)
     })
-
     it('should save report with results in sequence', async () => {
       const updated = await reportsService.updateReportResults(report, results)
       expect(updated).toEqual(true)
@@ -1441,7 +1441,19 @@ describe('ReportsService', () => {
 
   describe('handleExternalResults()', () => {
     describe('Idexx', () => {
-      const resultsDropNRun01: ProviderResult[] = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'test', 'idexx', 'results-drop-n-run-01.json'), 'utf8'))
+      const batchResults: ProviderResult[] = FileUtils.loadFile('test/idexx/results-drop-n-run-02.json')
+      const expectedOrder = {
+        orderId: undefined,
+        order: expect.objectContaining({
+          integrationId: 'idexx',
+          status: OrderStatus.COMPLETED,
+          patient: expect.anything(),
+          tests: [
+            { code: 'fBNP' }
+          ]
+        })
+      }
+
       it('should support drop n run tests, i.e. create orders and reports', async () => {
         ordersServiceMock.findOrdersByExternalIds.mockResolvedValueOnce([])
         ordersServiceMock.createOrderForResult.mockResolvedValueOnce({
@@ -1451,13 +1463,14 @@ describe('ReportsService', () => {
         })
         await reportsService.handleExternalResults({
           integrationId: 'idexx',
-          results: resultsDropNRun01
+          results: batchResults
         })
         expect(eventsServiceMock.addEvent).toHaveBeenCalledTimes(2)
         expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
           namespace: EventNamespace.ORDERS,
           type: EventType.ORDER_CREATED,
-          integrationId: 'idexx'
+          integrationId: 'idexx',
+          data: expect.objectContaining(expectedOrder)
         }))
         expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
           namespace: EventNamespace.REPORTS,
@@ -1467,8 +1480,9 @@ describe('ReportsService', () => {
     })
 
     describe('Antech', () => {
-      const results: ProviderResult[] = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'test', 'antech', 'results-01.json'), 'utf8'))
-      const resultsMissing01: ProviderResult[] = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'test', 'antech', 'missing-01.json'), 'utf8'))
+      const results: ProviderResult[] = FileUtils.loadFile('test/antech/results-01.json')
+      const resultsMissing01: ProviderResult[] = FileUtils.loadFile('test/antech/missing-01.json')
+
       it('should create orders/reports', async () => {
         jest.spyOn(reportsService, 'findReportsByExternalOrderIds').mockResolvedValueOnce([])
         jest.spyOn(ordersServiceMock, 'getOrderFromProvider').mockResolvedValue(null)
@@ -1480,7 +1494,6 @@ describe('ReportsService', () => {
         expect(eventsServiceMock.addEvent).toHaveBeenCalledTimes(results.length)
         eventsServiceMock.addEvent.mockReset()
       })
-
       it('should handle missing results', async () => {
         jest.spyOn(reportsService, 'findReportsByExternalOrderIds').mockResolvedValueOnce([])
         jest.spyOn(ordersServiceMock, 'getOrderFromProvider').mockResolvedValue(null)
