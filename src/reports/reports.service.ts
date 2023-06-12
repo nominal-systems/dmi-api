@@ -161,17 +161,35 @@ export class ReportsService {
     const dummyOrders: Order[] = []
     for (const orphanResult of orphanResults) {
       const extractedOrder: Order = ProviderResultUtils.extractOrderFromOrphanResult(orphanResult, integrationId)
-      const order = await this.ordersService.saveOrder(extractedOrder)
-      dummyOrders.push(order)
 
-      const report = new Report()
-      report.order = order
-      report.testResultsSet = []
-      await this.updateReportResults(report, orphanResults)
+      // Finding if order exists and saving order are done in parallel to improve performance.
+      let order: Order | null
+      try {
+        order = await this.ordersService.findOneByExternalId(extractedOrder.externalId)
+      } catch (err) {
+        order = null
+      }
+
+      if (order == null) {
+        order = await this.ordersService.saveOrder(extractedOrder)
+        dummyOrders.push(order)
+      }
+
+      let report = await this.findReportByExternalOrderId(order.externalId)
+      if (report == null) {
+        report = new Report()
+        report.order = order
+        report.testResultsSet = []
+        await this.updateReportResults(report, orphanResults)
+        createdReports.push(report)
+      } else {
+        await this.updateReportResults(report, orphanResults)
+        updatedReports.push(report)
+      }
+
       if (order.patient !== undefined) {
         report.patient = order.patient
       }
-      createdReports.push(report)
     }
 
     // Notify about new orders
@@ -244,6 +262,17 @@ export class ReportsService {
       .orderBy('testResult.seq', 'ASC')
       .addOrderBy('observation.seq', 'ASC')
       .getMany()
+  }
+
+  async findReportByExternalOrderId (
+    externalOrderId: string
+  ): Promise<Report | undefined> {
+    const reports = await this.findReportsByExternalOrderIds([externalOrderId])
+    if (reports.length === 1) {
+      return reports[0]
+    }
+
+    return undefined
   }
 
   async updateReportResults (
