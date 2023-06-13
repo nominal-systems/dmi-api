@@ -37,11 +37,15 @@ export class ReportsService {
   ) {
   }
 
-  async findAll (options?: FindManyOptions<Report>): Promise<Report[]> {
+  async findAll (
+    options?: FindManyOptions<Report>
+  ): Promise<Report[]> {
     return await this.reportsRepository.find(options)
   }
 
-  async findOne (args: FindOneOfTypeOptions<Report>): Promise<Report> {
+  async findOne (
+    args: FindOneOfTypeOptions<Report>
+  ): Promise<Report> {
     const report = await this.reportsRepository.findOne(args.id, args.options)
 
     if (report == null) {
@@ -72,7 +76,9 @@ export class ReportsService {
     return report
   }
 
-  async registerForOrder (order: Order): Promise<Report> {
+  async registerForOrder (
+    order: Order
+  ): Promise<Report> {
     const report = this.buildRegisteredReport(order)
     return await this.reportsRepository.save(report)
   }
@@ -155,17 +161,35 @@ export class ReportsService {
     const dummyOrders: Order[] = []
     for (const orphanResult of orphanResults) {
       const extractedOrder: Order = ProviderResultUtils.extractOrderFromOrphanResult(orphanResult, integrationId)
-      const order = await this.ordersService.saveOrder(extractedOrder)
-      dummyOrders.push(order)
 
-      const report = new Report()
-      report.order = order
-      report.testResultsSet = []
-      await this.updateReportResults(report, orphanResults)
+      // Finding if order exists and saving order are done in parallel to improve performance.
+      let order: Order | null
+      try {
+        order = await this.ordersService.findOneByExternalId(extractedOrder.externalId)
+      } catch (err) {
+        order = null
+      }
+
+      if (order == null) {
+        order = await this.ordersService.saveOrder(extractedOrder)
+        dummyOrders.push(order)
+      }
+
+      let report = await this.findReportByExternalOrderId(order.externalId)
+      if (report == null) {
+        report = new Report()
+        report.order = order
+        report.testResultsSet = []
+        await this.updateReportResults(report, orphanResults)
+        createdReports.push(report)
+      } else {
+        await this.updateReportResults(report, orphanResults)
+        updatedReports.push(report)
+      }
+
       if (order.patient !== undefined) {
         report.patient = order.patient
       }
-      createdReports.push(report)
     }
 
     // Notify about new orders
@@ -223,7 +247,9 @@ export class ReportsService {
     this.logger.log(`external_results -> Got ${results.length} results from ${integration.providerConfiguration.providerId}: ${createdReports.length} reports created, ${updatedReports.length} reports updated, orders ${[...createdOrders, ...dummyOrders].length} orders created`)
   }
 
-  async findReportsByExternalOrderIds (externalOrderIds: string[]): Promise<Report[]> {
+  async findReportsByExternalOrderIds (
+    externalOrderIds: string[]
+  ): Promise<Report[]> {
     if (externalOrderIds.length === 0) return []
     return await this.reportsRepository.createQueryBuilder('report')
       .leftJoinAndSelect('report.order', 'order')
@@ -236,6 +262,17 @@ export class ReportsService {
       .orderBy('testResult.seq', 'ASC')
       .addOrderBy('observation.seq', 'ASC')
       .getMany()
+  }
+
+  async findReportByExternalOrderId (
+    externalOrderId: string
+  ): Promise<Report | undefined> {
+    const reports = await this.findReportsByExternalOrderIds([externalOrderId])
+    if (reports.length === 1) {
+      return reports[0]
+    }
+
+    return undefined
   }
 
   async updateReportResults (
@@ -290,7 +327,10 @@ export class ReportsService {
     return updatePerformed
   }
 
-  public updateTestResultObservations (testResult: TestResult, items: ProviderTestResultItem[]): void {
+  public updateTestResultObservations (
+    testResult: TestResult,
+    items: ProviderTestResultItem[]
+  ): void {
     const testResultObservationCodes = testResult.observations.map(observation => observation.code)
     const providerTestResultItemCodes = items.map(item => item.code)
     const newObservationCodes = arrayDiff(providerTestResultItemCodes, testResultObservationCodes)
@@ -321,7 +361,10 @@ export class ReportsService {
     testResult.observations = testResult.observations.concat(newObservations)
   }
 
-  private updateObservationValue (observation: Observation, item: ProviderTestResultItem): void {
+  private updateObservationValue (
+    observation: Observation,
+    item: ProviderTestResultItem
+  ): void {
     // Seq
     observation.seq = item.seq
 
@@ -354,7 +397,9 @@ export class ReportsService {
     }
   }
 
-  private buildRegisteredReport (order: Order): Report {
+  private buildRegisteredReport (
+    order: Order
+  ): Report {
     const report = new Report()
     report.orderId = order.id
     report.order = order
