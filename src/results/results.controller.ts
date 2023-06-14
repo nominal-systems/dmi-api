@@ -30,5 +30,6 @@ export class ResultsController {
 
     await this.client.send(messagePattern, message).toPromise()
     this.logger.log(`Results from ${providerId} submitted`)
+    // is returning 201 ok?
   }
 }
