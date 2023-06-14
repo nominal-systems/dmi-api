@@ -6,7 +6,13 @@ describe('ResultsController', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [ResultsController]
+      controllers: [ResultsController],
+      providers: [
+        {
+          provide: 'ACTIVEMQ',
+          useValue: {}
+        }
+      ]
     }).compile()
 
     controller = module.get<ResultsController>(ResultsController)
