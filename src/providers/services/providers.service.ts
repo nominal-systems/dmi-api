@@ -20,17 +20,17 @@ import {
 export class ProvidersService {
   private readonly logger = new Logger(ProvidersService.name)
 
-  constructor (
+  constructor(
     private readonly integrationsService: IntegrationsService,
     @Inject('ACTIVEMQ') private readonly client: ClientProxy
   ) {
   }
 
-  async findAll (): Promise<Provider[]> {
+  async findAll(): Promise<Provider[]> {
     return providersList
   }
 
-  async findOneById (providerId: string): Promise<Provider> {
+  async findOneById(providerId: string): Promise<Provider> {
     const provider = providersList.find(provider => provider.id === providerId)
 
     if (provider == null) {
@@ -40,7 +40,7 @@ export class ProvidersService {
     return provider
   }
 
-  async getProviderServices (
+  async getProviderServices(
     providerId: string,
     integrationId: string
   ): Promise<ProviderService[]> {
@@ -53,7 +53,6 @@ export class ProvidersService {
         relations: ['providerConfiguration']
       }
     })
-
     const { message, messagePattern } = ieMessageBuilder(providerId, {
       resource: 'services',
       operation: 'list',
@@ -62,11 +61,10 @@ export class ProvidersService {
         providerConfiguration: configurationOptions
       }
     })
-
     return await this.client.send(messagePattern, message).toPromise()
   }
 
-  async getDevices (
+  async getDevices(
     providerId: string,
     integrationId: string
   ): Promise<Device[]> {
@@ -92,7 +90,7 @@ export class ProvidersService {
     return await this.client.send(messagePattern, message).toPromise()
   }
 
-  async getDataStatus (
+  async getDataStatus(
     providerId: string,
     integrationId: string
   ): Promise<ReferenceDataStatus> {
@@ -118,7 +116,7 @@ export class ProvidersService {
     return await this.client.send(messagePattern, message).toPromise()
   }
 
-  async getBreeds (
+  async getBreeds(
     providerId: string,
     integrationId: string
   ): Promise<ReferenceDataResponse<Breed>> {
@@ -144,7 +142,7 @@ export class ProvidersService {
     return await this.client.send(messagePattern, message).toPromise()
   }
 
-  async getSexes (
+  async getSexes(
     providerId: string,
     integrationId: string
   ): Promise<ReferenceDataResponse<Sex>> {
@@ -170,7 +168,7 @@ export class ProvidersService {
     return await this.client.send(messagePattern, message).toPromise()
   }
 
-  async getSpecies (
+  async getSpecies(
     providerId: string,
     integrationId: string
   ): Promise<ReferenceDataResponse<Species>> {

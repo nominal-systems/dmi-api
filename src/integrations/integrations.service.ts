@@ -200,7 +200,6 @@ export class IntegrationsService {
     const providerConfiguration = await this.providerConfigurationRepository.findOne({ id: createIntegrationDto.providerConfigurationId })
     // TODO(gb): actually use the ProviderService to do this
     const provider = providersList.find(provider => provider.id === providerConfiguration?.providerId)
-
     if (provider == null) {
       throw new BadRequestException("The provider doesn't exist")
     }
@@ -217,9 +216,7 @@ export class IntegrationsService {
         required: option.required
       }
     }
-
     const providerValidator = createValidator(validatorOptions as any)
-
     if (!providerValidator(createIntegrationDto.integrationOptions)) {
       throw new BadRequestException('Invalid integration options')
     }
