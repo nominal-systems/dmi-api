@@ -1,4 +1,4 @@
-import { Body, Controller, Inject, Logger, Param, Post, UseGuards } from '@nestjs/common'
+import { BadRequestException, Body, Controller, Inject, Logger, Param, Post, UseGuards } from '@nestjs/common'
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard'
 import ieMessageBuilder from '../common/utils/ieMessageBuilder'
 import { ClientProxy } from '@nestjs/microservices'
@@ -24,12 +24,16 @@ export class ResultsController {
       resource: Resource.Results,
       operation: Operation.Submit,
       data: {
-        payload: results
+        results: results
       }
     })
 
-    await this.client.send(messagePattern, message).toPromise()
-    this.logger.log(`Results from ${providerId} submitted`)
-    // is returning 201 ok?
+    try {
+      await this.client.send(messagePattern, message).toPromise()
+      this.logger.log(`Results from ${providerId} submitted`)
+      // is returning 201 ok?
+    } catch (err) {
+      throw new BadRequestException(err.message)
+    }
   }
 }
