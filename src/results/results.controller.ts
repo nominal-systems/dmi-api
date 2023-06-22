@@ -15,22 +15,23 @@ export class ResultsController {
   }
 
   // TODO(gb): assert that the user is allowed to post results?
-  @Post(':providerId')
+  @Post('heska/:clientId/')
   async processHeskaResults (
-    @Param('providerId') providerId: string,
+    @Param('clientId') clientId: string,
     @Body() results: any
   ): Promise<void> {
-    const { message, messagePattern } = ieMessageBuilder(providerId, {
+    const { message, messagePattern } = ieMessageBuilder(clientId, {
       resource: Resource.Results,
       operation: Operation.Submit,
       data: {
+        clientId: clientId,
         results: results
       }
     })
 
     try {
       await this.client.send(messagePattern, message).toPromise()
-      this.logger.log(`Results from ${providerId} submitted`)
+      this.logger.log(`Results from Heska client ${clientId} submitted`)
       // is returning 201 ok?
     } catch (err) {
       throw new BadRequestException(err.message)

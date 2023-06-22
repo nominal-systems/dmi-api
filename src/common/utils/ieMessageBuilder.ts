@@ -8,6 +8,7 @@ interface IntergrationEngineOutgoingMessageData {
 }
 
 interface IntegrationEngineResultsData {
+  clientId?: string
   results: any
 }
 
