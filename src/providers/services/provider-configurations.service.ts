@@ -96,6 +96,7 @@ export class ProviderConfigurationsService {
     providerConfigurationOptions: any
   ): Promise<void> {
     const provider = await this.providersService.findOneById(providerId)
+
     if (provider == null) {
       throw new BadRequestException("The provider doesn't exist")
     }
@@ -112,6 +113,7 @@ export class ProviderConfigurationsService {
         required: option.required
       }
     }
+
     const providerValidator = createValidator(validatorOptions as any)
 
     if (!providerValidator(providerConfigurationOptions.configuration)) {

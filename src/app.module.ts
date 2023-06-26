@@ -19,7 +19,6 @@ import { ReportsModule } from './reports/reports.module'
 import { AdminModule } from './admin/admin.module'
 import { HealthModule } from './health/health.module'
 import { AllExceptionsFilter } from './common/interceptors/all-exceptions.filter'
-import { LoggingInterceptor } from './common/interceptors/http.interceptor'
 
 @Module({
   imports: [
@@ -62,10 +61,6 @@ import { LoggingInterceptor } from './common/interceptors/http.interceptor'
     {
       provide: APP_INTERCEPTOR,
       useClass: RpcExceptionInterceptor
-    },
-    {
-      provide: APP_INTERCEPTOR,
-      useClass: LoggingInterceptor,
     },
     {
       provide: APP_FILTER,
