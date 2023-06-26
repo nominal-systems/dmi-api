@@ -53,6 +53,7 @@ export class ProvidersService {
         relations: ['providerConfiguration']
       }
     })
+
     const { message, messagePattern } = ieMessageBuilder(providerId, {
       resource: 'services',
       operation: 'list',
@@ -61,6 +62,7 @@ export class ProvidersService {
         providerConfiguration: configurationOptions
       }
     })
+
     return await this.client.send(messagePattern, message).toPromise()
   }
 
