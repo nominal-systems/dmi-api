@@ -10,10 +10,23 @@ import { ClientsModule } from '@nestjs/microservices'
 import { ConfigModule } from '@nestjs/config'
 import activeMQClientProvider from '../common/providers/activemq-client.provider'
 import { Integration } from '../integrations/entities/integration.entity'
+import { MongooseModule, getConnectionToken } from '@nestjs/mongoose'
+import { ProviderExternalRequests, ProviderExternalRequestsSchema } from './entities/provider-external-requests.entity'
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([ProviderConfiguration, Integration]),
+    MongooseModule.forFeatureAsync([
+      {
+        name: ProviderExternalRequests.name,
+        useFactory: () => {
+          const schema = ProviderExternalRequestsSchema
+
+          return schema
+        },
+        inject: [getConnectionToken()]
+      }
+    ]),
     ClientsModule.registerAsync([
       activeMQClientProvider
     ]),
