@@ -1532,6 +1532,13 @@ describe('ReportsService', () => {
           type: EventType.REPORT_UPDATED
         }))
       })
+      it('should set patient for reports of drop n run tests', async () => {
+        const externalResultsA = FileUtils.loadFile('test/idexx/external_results-02a.json')
+        await reportsService.handleExternalResults(externalResultsA)
+
+        const externalResultsB = FileUtils.loadFile('test/idexx/external_results-02b.json')
+        await reportsService.handleExternalResults(externalResultsB)
+      })
     })
 
     describe('Antech', () => {
