@@ -21,9 +21,10 @@ import { ReferenceDataQueryParams } from './dtos/reference-data-queryparams.dto'
 import { ProviderConfiguration } from './entities/provider-configuration.entity'
 import { ProviderConfigurationsService } from './services/provider-configurations.service'
 import { ProvidersService } from './services/providers.service'
-import { Device, ProviderRawData } from '@nominal-systems/dmi-engine-common'
+import { Device } from '@nominal-systems/dmi-engine-common'
 import { EventPattern } from '@nestjs/microservices'
 import { DisableGuards } from '../common/decorators/disable-guards.decorator'
+import { ProviderRawDataDto } from './dtos/provider-raw-data.dto'
 
 @Controller('providers')
 @UseGuards(ApiGuard)
@@ -153,7 +154,7 @@ export class ProvidersController {
 
   @EventPattern('raw_data')
   @DisableGuards(ApiGuard)
-  async handleProviderRawData (data: ProviderRawData): Promise<void> {
-    return await this.providersService.handleProviderRawData(data)
+  async saveProviderRawData (data: ProviderRawDataDto): Promise<void> {
+    await this.providersService.saveProviderRawData(data)
   }
 }

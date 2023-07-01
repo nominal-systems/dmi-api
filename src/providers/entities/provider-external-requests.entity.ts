@@ -10,10 +10,13 @@ export class ProviderExternalRequests {
     provider: string
 
     @Prop()
-    url: string
+    status: number
 
     @Prop()
     method: string
+
+    @Prop()
+    url: string
 
     @Prop({ type: mongoose.Schema.Types.Mixed })
     body: any
