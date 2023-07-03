@@ -13,6 +13,7 @@ import { reportRepositoryMockFactory } from './test/report.repository.mock'
 import { EventNamespace } from '../events/constants/event-namespace.enum'
 import { EventType } from '../events/constants/event-type.enum'
 import { FileUtils } from '../common/utils/file-utils'
+import { Order } from '../orders/entities/order.entity'
 
 const repositoryMockFactory: () => MockUtils<Repository<any>> = jest.fn(() => ({
   findOne: jest.fn(entity => entity),
@@ -26,6 +27,7 @@ describe('ReportsService', () => {
   let reportsRepositoryMock: Partial<Repository<Report>>
   const ordersServiceMock = {
     findOrdersByExternalIds: jest.fn().mockImplementation((orders) => orders),
+    findOneByExternalId: jest.fn().mockImplementation((order) => order),
     getOrderFromProvider: jest.fn().mockImplementation((order) => order),
     createOrderForResult: jest.fn().mockImplementation((integrationId, result) => {
       return {}
@@ -77,7 +79,6 @@ describe('ReportsService', () => {
     reportsService = module.get<ReportsService>(ReportsService)
     reportsRepositoryMock = module.get(getRepositoryToken(Report))
   })
-
   afterEach(() => {
     jest.clearAllMocks()
   })
@@ -1441,20 +1442,20 @@ describe('ReportsService', () => {
 
   describe('handleExternalResults()', () => {
     describe('Idexx', () => {
-      const batchResults: ProviderResult[] = FileUtils.loadFile('test/idexx/results-drop-n-run-02.json')
-      const expectedOrder = {
-        orderId: undefined,
-        order: expect.objectContaining({
-          integrationId: 'idexx',
-          status: OrderStatus.COMPLETED,
-          patient: expect.anything(),
-          tests: [
-            { code: 'fBNP' }
-          ]
-        })
-      }
-
       it('should support drop n run tests, i.e. create orders and reports', async () => {
+        const externalResults: ProviderResult[] = FileUtils.loadFile('test/idexx/results-drop-n-run-02.json')
+        const expectedOrder = {
+          orderId: undefined,
+          order: expect.objectContaining({
+            integrationId: 'idexx',
+            status: OrderStatus.COMPLETED,
+            patient: expect.anything(),
+            tests: [
+              { code: 'fBNP' }
+            ]
+          })
+        }
+        ordersServiceMock.findOneByExternalId.mockResolvedValueOnce(null)
         ordersServiceMock.findOrdersByExternalIds.mockResolvedValueOnce([])
         ordersServiceMock.createOrderForResult.mockResolvedValueOnce({
           integrationId: 'idexx',
@@ -1463,7 +1464,7 @@ describe('ReportsService', () => {
         })
         await reportsService.handleExternalResults({
           integrationId: 'idexx',
-          results: batchResults
+          results: externalResults
         })
         expect(eventsServiceMock.addEvent).toHaveBeenCalledTimes(2)
         expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
@@ -1477,13 +1478,136 @@ describe('ReportsService', () => {
           type: EventType.REPORT_CREATED
         }))
       })
+      it('should not duplicate orders/reports for drop n run tests', async () => {
+        const externalResults: ProviderResult[] = FileUtils.loadFile('test/idexx/results-drop-n-run-03.json')
+
+        // #1: update report only
+        ordersServiceMock.findOneByExternalId.mockReturnValueOnce(null)
+        ordersServiceMock.saveOrder.mockResolvedValueOnce({
+          externalId: '123'
+        })
+        await reportsService.handleExternalResults({
+          integrationId: 'idexx',
+          results: externalResults
+        })
+        // expect(eventsServiceMock.addEvent).toHaveBeenCalledTimes(2)
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
+          namespace: EventNamespace.ORDERS,
+          type: EventType.ORDER_CREATED
+        }))
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
+          namespace: EventNamespace.REPORTS,
+          type: EventType.REPORT_CREATED
+        }))
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
+          namespace: EventNamespace.REPORTS,
+          type: EventType.REPORT_CREATED
+        }))
+        eventsServiceMock.addEvent.mockClear()
+
+        // #2: update report only
+        jest.spyOn(ordersServiceMock, 'findOneByExternalId')
+          .mockReturnValueOnce({
+            externalId: '123'
+          })
+        jest.spyOn(reportsService, 'findReportsByExternalOrderIds')
+          .mockResolvedValueOnce([])
+          .mockResolvedValueOnce([{
+            testResultsSet: []
+          } as unknown as Report])
+        await reportsService.handleExternalResults({
+          integrationId: 'idexx',
+          results: externalResults
+        })
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledTimes(1)
+        expect(eventsServiceMock.addEvent).not.toHaveBeenCalledWith(expect.objectContaining({
+          namespace: EventNamespace.ORDERS,
+          type: EventType.ORDER_CREATED
+        }))
+        expect(eventsServiceMock.addEvent).not.toHaveBeenCalledWith(expect.objectContaining({
+          namespace: EventNamespace.REPORTS,
+          type: EventType.REPORT_CREATED
+        }))
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
+          namespace: EventNamespace.REPORTS,
+          type: EventType.REPORT_UPDATED
+        }))
+      })
+      it('should set patient for reports of new drop n run test results', async () => {
+        // Orphan result with non-existing report:
+        //   - Order should be created and patient should be set
+        //   - Report should be created and patient should be set
+        const externalResultsA = FileUtils.loadFile('test/idexx/external_results-02a.json')
+        ordersServiceMock.findOneByExternalId.mockResolvedValueOnce(null)
+        await reportsService.handleExternalResults(externalResultsA)
+
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
+          namespace: EventNamespace.ORDERS,
+          type: EventType.ORDER_CREATED,
+          data: expect.objectContaining({
+            order: expect.objectContaining({
+              patient: expect.any(Object),
+              status: OrderStatus.PARTIAL
+            })
+          })
+        }))
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
+          namespace: EventNamespace.REPORTS,
+          type: EventType.REPORT_CREATED,
+          data: expect.objectContaining({
+            report: expect.objectContaining({
+              patient: expect.any(Object),
+              status: ReportStatus.PARTIAL
+            })
+          })
+        }))
+        expect(eventsServiceMock.addEvent).not.toHaveBeenCalledWith(expect.objectContaining({
+          namespace: EventNamespace.ORDERS,
+          type: EventType.ORDER_UPDATED
+        }))
+        expect(eventsServiceMock.addEvent).not.toHaveBeenCalledWith(expect.objectContaining({
+          namespace: EventNamespace.REPORTS,
+          type: EventType.REPORT_UPDATED
+        }))
+        jest.clearAllMocks()
+      })
+      it('should set patient for reports of updated drop n run test results', async () => {
+        // Orphan result with existing report
+        //   - Report should be updated and patient should be set
+        const externalResultsB = FileUtils.loadFile('test/idexx/external_results-02b.json')
+        const existingOrder = {
+          integrationId: 'e025ab13-d6e6-4602-a935-72c2a8c8718e',
+          externalId: '20230619_135522_8720',
+          status: 'PARTIAL',
+          patient: {
+            name: 'Hope'
+          }
+        } as unknown as Order
+        ordersServiceMock.findOneByExternalId.mockResolvedValueOnce(existingOrder)
+        ordersServiceMock.getOrderFromProvider.mockResolvedValueOnce(null)
+        jest.spyOn(reportsService, 'findReportByExternalOrderId').mockImplementationOnce(async () => {
+          return {
+            order: existingOrder,
+            testResultsSet: []
+          } as unknown as Report
+        })
+        await reportsService.handleExternalResults(externalResultsB)
+
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
+          namespace: EventNamespace.REPORTS,
+          type: EventType.REPORT_UPDATED,
+          data: expect.objectContaining({
+            report: expect.objectContaining({
+              patient: expect.any(Object),
+              status: ReportStatus.FINAL
+            })
+          })
+        }))
+      })
     })
-
     describe('Antech', () => {
-      const results: ProviderResult[] = FileUtils.loadFile('test/antech/results-01.json')
-      const resultsMissing01: ProviderResult[] = FileUtils.loadFile('test/antech/missing-01.json')
-
       it('should create orders/reports', async () => {
+        const results: ProviderResult[] = FileUtils.loadFile('test/antech/results-01.json')
         jest.spyOn(reportsService, 'findReportsByExternalOrderIds').mockResolvedValueOnce([])
         jest.spyOn(ordersServiceMock, 'getOrderFromProvider').mockResolvedValue(null)
         await reportsService.handleExternalResults({
@@ -1495,6 +1619,7 @@ describe('ReportsService', () => {
         eventsServiceMock.addEvent.mockReset()
       })
       it('should handle missing results', async () => {
+        const resultsMissing01: ProviderResult[] = FileUtils.loadFile('test/antech/missing-01.json')
         jest.spyOn(reportsService, 'findReportsByExternalOrderIds').mockResolvedValueOnce([])
         jest.spyOn(ordersServiceMock, 'getOrderFromProvider').mockResolvedValue(null)
         await reportsService.handleExternalResults({

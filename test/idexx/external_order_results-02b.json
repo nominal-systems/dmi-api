@@ -1,0 +1,105 @@
+{
+  "integrationId": "e025ab13-d6e6-4602-a935-72c2a8c8718e",
+  "results": [
+    {
+      "id": "vcp.IMjAyMzA2MTlfMTM1NTIyXzg3MjBIT1BFTEFSU0VO",
+      "orderId": "20230619_135522_8720",
+      "order": {
+        "externalId": "20230619_135522_8720",
+        "status": "COMPLETED",
+        "patient": {
+          "name": "Hope",
+          "sex": "",
+          "species": "Canine",
+          "breed": ""
+        },
+        "client": {
+          "firstName": "",
+          "lastName": "Larsen"
+        },
+        "tests": [
+          {
+            "code": "Hematology"
+          },
+          {
+            "code": "Chemistry"
+          }
+        ],
+        "editable": false
+      },
+      "status": "COMPLETED",
+      "testResults": [
+        {
+          "seq": 1,
+          "code": "Hematology",
+          "name": "Hematology",
+          "items": [
+            {
+              "seq": 1,
+              "code": "RBC",
+              "name": "RBC",
+              "status": "DONE",
+              "valueQuantity": {
+                "value": 8.13,
+                "units": "M/µL"
+              },
+              "referenceRange": [
+                {
+                  "type": "NORMAL",
+                  "low": 5.65,
+                  "high": 8.87,
+                  "text": "5.65 - 8.87 M/µL"
+                },
+                {
+                  "type": "CRITICAL",
+                  "low": 2,
+                  "high": 5.65
+                },
+                {
+                  "type": "CRITICAL",
+                  "low": 8.87,
+                  "high": 10
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "seq": 2,
+          "code": "Chemistry",
+          "name": "Chemistry",
+          "items": [
+            {
+              "seq": 1,
+              "code": "GLU",
+              "name": "Glucose",
+              "status": "DONE",
+              "valueQuantity": {
+                "value": 89,
+                "units": "mg/dL"
+              },
+              "referenceRange": [
+                {
+                  "type": "NORMAL",
+                  "low": 77,
+                  "high": 150,
+                  "text": "77 - 150 mg/dL"
+                },
+                {
+                  "type": "CRITICAL",
+                  "low": 15,
+                  "high": 77
+                },
+                {
+                  "type": "CRITICAL",
+                  "low": 150,
+                  "high": 700
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

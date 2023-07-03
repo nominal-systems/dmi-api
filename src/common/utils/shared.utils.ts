@@ -14,6 +14,24 @@ export function isString (fn: any): fn is string {
   return typeof fn === 'string'
 }
 
+export function isNullOrEmpty (obj: any): boolean {
+  if (obj === null || obj === undefined) {
+    return true
+  }
+
+  // If it's a string, check if it's empty
+  if (typeof obj === 'string' && obj.trim() === '') {
+    return true
+  }
+
+  // If it's an object, check if it has any properties
+  if (typeof obj === 'object' && Object.keys(obj).length === 0) {
+    return true
+  }
+
+  return false
+}
+
 export function isJson (item: any): boolean {
   item = !isString(item) ? JSON.stringify(item) : item
 
