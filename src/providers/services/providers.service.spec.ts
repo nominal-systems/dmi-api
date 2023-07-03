@@ -71,7 +71,7 @@ describe('ProvidersService', () => {
       const createSpy = jest.spyOn(providerExternalRequestsModel, 'create')
       const data = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', '..', 'test', 'externalRequests', 'results.json'), 'utf8'))
 
-      await service.handleProviderRawData(data)
+      await service.saveProviderRawData(data)
 
       expect(createSpy).toHaveBeenCalledWith({
         createdAt: expect.any(Date),
@@ -88,7 +88,7 @@ describe('ProvidersService', () => {
       const createSpy = jest.spyOn(providerExternalRequestsModel, 'create')
       const data = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', '..', 'test', 'externalRequests', 'results.json'), 'utf8'))
       data.body = fs.readFileSync(path.join(__dirname, '..', '..', '..', 'test', 'externalRequests', 'results.xml'), 'utf8')
-      await service.handleProviderRawData(data)
+      await service.saveProviderRawData(data)
 
       expect(createSpy).toHaveBeenCalledWith({
         createdAt: expect.any(Date),
