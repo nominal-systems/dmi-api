@@ -1,0 +1,560 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LabReport>
+  <ReportHeader>
+    <Requested-By />
+    <Requested-On>06/28/2023 09:27 AM PST</Requested-On>
+  </ReportHeader>
+  <Clinic AccountNumber="135371" Ext-ID="135371" Status="Active">
+    <Name>Voyager Test 3</Name>
+    <Address>
+      <Street>1235 PENNY LN CHICAGO IL  60007</Street>
+      <Street />
+      <City>1235 PENNY LN CHICAGO IL</City>
+      <StateProv />
+      <PostalCode>60007</PostalCode>
+      <Country>USA</Country>
+    </Address>
+    <Phone>123-456-7890</Phone>
+    <Fax>098-765-4321</Fax>
+    <Rtf-Version>2</Rtf-Version>
+  </Clinic>
+  <LabLocation LabId="1" LabLocationId="183">
+    <LocationCode>KEV</LocationCode>
+    <LocationName>Fancy Building 1</LocationName>
+    <Address>
+      <Street>1 McArthur Pl</Street>
+      <City>Santa Ana</City>
+      <StateProv>CA</StateProv>
+      <PostalCode>92707</PostalCode>
+      <Country>USA</Country>
+    </Address>
+    <LocationPhone>800-123-4567</LocationPhone>
+  </LabLocation>
+  <Accession Acc-Result-ID="533956931" Lab-ID="1" LabClinicExt-ID="27003" Location-ID="183" Order-Status="F">
+    <AccessionHeader>
+      <Accession-ID ID="135371" Type="Clinic-AccID" />
+      <Accession-ID ID="4332" Type="Chart-ID" />
+      <Accession-ID ID="94651486" Type="Requisition-ID" />
+      <Accession-ID ID="KEV1687969245866" Type="Lab-AccID" />
+      <TimeStamp Type="Order Received DateTime" Value="06/28/2023" />
+      <TimeStamp Type="Latest Results Received DateTime" Value="06/28/2023 04:26 PM" />
+      <TimeStamp Type="Printed DateTime" Value="" />
+      <Pet>
+        <Name>Loki</Name>
+        <Age>3Years</Age>
+        <Sex>M</Sex>
+        <Species Ext-ID="F">Feline</Species>
+        <Breed Ext-ID="DSH">DOMESTIC SHORTHAIR</Breed>
+        <Owner>Viglianco Juan</Owner>
+        <Doctor>Doc, Test</Doctor>
+      </Pet>
+    </AccessionHeader>
+    <UnitCode Ext-ID="527" OrderCode="SA020" Order-Control-Status="RE" Profile-ID="526" Status="F" Type="SUPERCHEM">
+      <Name>Superchem</Name>
+      <TimeStamp Type="Released Datetime" Value="06/28/2023 04:26 PM" />
+      <TimeStamp Type="Viewed Datetime" Value="" />
+      <TestCode Ext-ID="1078" Status="F">
+        <Name>MAGNESIUM</Name>
+        <Value>2.2</Value>
+        <Units><![CDATA[mEq/L.]]></Units>
+        <Range>1.5-2.5</Range>
+      </TestCode>
+      <TestCode Ext-ID="1046" Status="F">
+        <Name>SODIUM</Name>
+        <Value>150</Value>
+        <Units><![CDATA[MEQ/L]]></Units>
+        <Range>139-154</Range>
+      </TestCode>
+      <TestCode Abnormal="L" Ext-ID="1048" Status="F">
+        <Name>POTASSIUM</Name>
+        <Value>3.5</Value>
+        <Units><![CDATA[MEQ/L]]></Units>
+        <Range>3.6-5.5</Range>
+      </TestCode>
+      <TestCode Abnormal="H" Ext-ID="1050" Status="F">
+        <Name>NA/K RATIO</Name>
+        <Value>43</Value>
+        <Units />
+        <Range>27-38</Range>
+      </TestCode>
+      <TestCode Ext-ID="1052" Status="F">
+        <Name>CHLORIDE</Name>
+        <Value>114</Value>
+        <Units><![CDATA[MEQ/L]]></Units>
+        <Range>102-120</Range>
+      </TestCode>
+      <TestCode Ext-ID="1022" Status="F">
+        <Name>CHOLESTEROL</Name>
+        <Value>166</Value>
+        <Units><![CDATA[MG/DL]]></Units>
+        <Range>92-324</Range>
+      </TestCode>
+      <TestCode Ext-ID="1310" Status="F">
+        <Name>TRIGLYCERIDE</Name>
+        <Value>52</Value>
+        <Units><![CDATA[mg/dL]]></Units>
+        <Range>29-291</Range>
+      </TestCode>
+      <TestCode Ext-ID="1042" Status="F">
+        <Name>AMYLASE</Name>
+        <Value>538</Value>
+        <Units><![CDATA[IU/L]]></Units>
+        <Range>290-1125</Range>
+      </TestCode>
+      <TestCode Ext-ID="1045" Status="F" Type="TPSL">
+        <Name>PrecisionPSL</Name>
+        <Value>133</Value>
+        <Units><![CDATA[U/L]]></Units>
+        <Range>24-140</Range>
+        <Comment><![CDATA[Pancreatitis is unlikely, but a normal PrecisionPSL result does not completely exclude pancreatitis as a cause for gastrointestinal signs.]]></Comment>
+      </TestCode>
+      <TestCode Ext-ID="1056" Status="F">
+        <Name>CPK</Name>
+        <Value>104</Value>
+        <Units><![CDATA[IU/L]]></Units>
+        <Range>59-895</Range>
+      </TestCode>
+      <TestCode Ext-ID="1004" Status="F">
+        <Name>Total Bilirubin</Name>
+        <Value>0.2</Value>
+        <Units><![CDATA[MG/DL]]></Units>
+        <Range>0.1-0.3</Range>
+      </TestCode>
+      <TestCode Ext-ID="1024" Status="F">
+        <Name>BUN</Name>
+        <Value>20</Value>
+        <Units><![CDATA[MG/DL]]></Units>
+        <Range>6-31</Range>
+      </TestCode>
+      <TestCode Abnormal="H" Ext-ID="1026" Status="F">
+        <Name>Creatinine</Name>
+        <Value>2.0</Value>
+        <Units><![CDATA[MG/DL]]></Units>
+        <Range>0.5-1.6</Range>
+      </TestCode>
+      <TestCode Abnormal="H" Ext-ID="3575" Status="F">
+        <Name>SDMA</Name>
+        <Value>19.9</Value>
+        <Units><![CDATA[UG/dL]]></Units>
+        <Range>&lt;14.0</Range>
+        <Comment><![CDATA[An increased SDMA (>20.0 ug/dL in cats and >16.0 ug/dL in dogs) should be interpreted in light of the patient's history, clinical presentation and hydration status. Additional diagnostic testing may be warranted to differentiate acute kidney injury versus chronic kidney disease and/or identify the presence of underlying conditions that can cause a significant increase in SDMA. Refer to the Antech SDMA algorithm for guidance regarding further diagnostics, treatment and/or monitoring. It is recommended to recheck SDMA and creatinine in 2-4 weeks to assess for persistence or trends in SDMA, and interpret in light of the creatinine.
+ 
+To access the SDMA algorithm, please visit: https://tinyurl.com/4ypuxfuw]]></Comment>
+      </TestCode>
+      <TestCode Ext-ID="1028" Status="F">
+        <Name>BUN/CREAT RATIO</Name>
+        <Value>10</Value>
+        <Units />
+        <Range>4-27</Range>
+      </TestCode>
+      <TestCode Ext-ID="1030" Status="F">
+        <Name>PHOSPHORUS</Name>
+        <Value>2.7</Value>
+        <Units><![CDATA[MG/DL]]></Units>
+        <Range>2.5-6.0</Range>
+      </TestCode>
+      <TestCode Ext-ID="1040" Status="F">
+        <Name>Glucose</Name>
+        <Value>103</Value>
+        <Units><![CDATA[MG/DL]]></Units>
+        <Range>70-138</Range>
+      </TestCode>
+      <TestCode Ext-ID="1032" Status="F">
+        <Name>CALCIUM</Name>
+        <Value>8.9</Value>
+        <Units><![CDATA[MG/DL]]></Units>
+        <Range>8.9-11.4</Range>
+      </TestCode>
+      <TestCode Ext-ID="1014" Status="F">
+        <Name>TOTAL PROTEIN</Name>
+        <Value>5.4</Value>
+        <Units><![CDATA[g/dL]]></Units>
+        <Range>5.0-7.4</Range>
+      </TestCode>
+      <TestCode Ext-ID="1016" Status="F">
+        <Name>ALBUMIN</Name>
+        <Value>3.6</Value>
+        <Units><![CDATA[g/dL]]></Units>
+        <Range>2.7-4.4</Range>
+      </TestCode>
+      <TestCode Ext-ID="1018" Status="F">
+        <Name>GLOBULIN</Name>
+        <Value>1.8</Value>
+        <Units><![CDATA[g/dL]]></Units>
+        <Range>1.6-3.6</Range>
+      </TestCode>
+      <TestCode Ext-ID="1020" Status="F">
+        <Name>A/G RATIO</Name>
+        <Value>2.0</Value>
+        <Units />
+        <Range>0.8-2.0</Range>
+      </TestCode>
+      <TestCode Ext-ID="1000" Status="F">
+        <Name>AST (SGOT)</Name>
+        <Value>54</Value>
+        <Units><![CDATA[IU/L]]></Units>
+        <Range>15-66</Range>
+      </TestCode>
+      <TestCode Ext-ID="1002" Status="F">
+        <Name>ALT (SGPT)</Name>
+        <Value>47</Value>
+        <Units><![CDATA[IU/L]]></Units>
+        <Range>12-118</Range>
+      </TestCode>
+      <TestCode Ext-ID="1010" Status="F">
+        <Name>Alk Phosphatase</Name>
+        <Value>57</Value>
+        <Units><![CDATA[IU/L]]></Units>
+        <Range>5-131</Range>
+      </TestCode>
+      <TestCode Ext-ID="1012" Status="F">
+        <Name>GGT</Name>
+        <Value>6</Value>
+        <Units><![CDATA[IU/L]]></Units>
+        <Range>1-12</Range>
+      </TestCode>
+    </UnitCode>
+    <UnitCode Ext-ID="5174" OrderCode="SA020" Order-Control-Status="RE" Profile-ID="526" Status="F" Type="CBC">
+      <Name>Complete Blood Count</Name>
+      <TimeStamp Type="Released Datetime" Value="06/28/2023 04:26 PM" />
+      <TimeStamp Type="Viewed Datetime" Value="" />
+      <TestCode Ext-ID="34" Status="F" Type="CBCDIF" Related-Ext-ID="47">
+        <Name>Basophils</Name>
+        <Value>0</Value>
+        <Units><![CDATA[%]]></Units>
+        <Range>0-1</Range>
+      </TestCode>
+      <TestCode Ext-ID="30" Status="F" Type="CBCDIF" Related-Ext-ID="43">
+        <Name>Bands</Name>
+        <Value>0</Value>
+        <Units><![CDATA[%]]></Units>
+        <Range>0-3</Range>
+      </TestCode>
+      <TestCode Ext-ID="31" Status="F" Type="CBCDIF" Related-Ext-ID="44">
+        <Name>Lymphocytes</Name>
+        <Value>16</Value>
+        <Units><![CDATA[%]]></Units>
+        <Range>12-30</Range>
+      </TestCode>
+      <TestCode Ext-ID="32" Status="F" Type="CBCDIF" Related-Ext-ID="45">
+        <Name>Monocytes</Name>
+        <Value>8</Value>
+        <Units><![CDATA[%]]></Units>
+        <Range>3-10</Range>
+      </TestCode>
+      <TestCode Abnormal="L" Ext-ID="33" Status="F" Type="CBCDIF" Related-Ext-ID="46">
+        <Name>Eosinophils</Name>
+        <Value>1</Value>
+        <Units><![CDATA[%]]></Units>
+        <Range>2-10</Range>
+      </TestCode>
+      <TestCode Ext-ID="46" Status="F" Type="CBCABS">
+        <Name>Absolute Eosinophils</Name>
+        <Value>43</Value>
+        <Units><![CDATA[/UL]]></Units>
+        <Range>0-1200</Range>
+      </TestCode>
+      <TestCode Ext-ID="47" Status="F" Type="CBCABS">
+        <Name>Absolute Basophils</Name>
+        <Value>0</Value>
+        <Units><![CDATA[/UL]]></Units>
+        <Range>0-150</Range>
+      </TestCode>
+      <TestCode Ext-ID="41" Status="F" Type="CBCABS">
+        <Name>Absolute Neutrophils</Name>
+        <Value>3225</Value>
+        <Units><![CDATA[/UL]]></Units>
+        <Range>2060-10600</Range>
+      </TestCode>
+      <TestCode Abnormal="L" Ext-ID="44" Status="F" Type="CBCABS">
+        <Name>Absolute Lymphocytes</Name>
+        <Value>688</Value>
+        <Units><![CDATA[/UL]]></Units>
+        <Range>690-4500</Range>
+      </TestCode>
+      <TestCode Ext-ID="45" Status="F" Type="CBCABS">
+        <Name>Absolute Monocytes</Name>
+        <Value>344</Value>
+        <Units><![CDATA[/UL]]></Units>
+        <Range>0-840</Range>
+      </TestCode>
+      <TestCode Ext-ID="25" Status="F">
+        <Name>Platelet Count</Name>
+        <Value>176</Value>
+        <Units><![CDATA[X1000/UL]]></Units>
+        <Range>170-400</Range>
+      </TestCode>
+      <TestCode Ext-ID="26" Status="F">
+        <Name>Platelet Estimate</Name>
+        <Value>Adequate</Value>
+        <Units />
+        <Range />
+      </TestCode>
+      <TestCode Ext-ID="28" Status="F" Type="CBCDIF" Related-Ext-ID="41">
+        <Name>Neutrophils</Name>
+        <Value>75</Value>
+        <Units><![CDATA[%]]></Units>
+        <Range>60-77</Range>
+      </TestCode>
+      <TestCode Ext-ID="10" Status="F">
+        <Name>WBC</Name>
+        <Value>4.3</Value>
+        <Units><![CDATA[1000/UL]]></Units>
+        <Range>4.0-15.5</Range>
+      </TestCode>
+      <TestCode Ext-ID="11" Status="F">
+        <Name>RBC</Name>
+        <Value>8.1</Value>
+        <Units><![CDATA[1000000/UL]]></Units>
+        <Range>4.8-9.3</Range>
+      </TestCode>
+      <TestCode Abnormal="H" Ext-ID="12" Status="F">
+        <Name>HGB</Name>
+        <Value>20.5</Value>
+        <Units><![CDATA[G/DL]]></Units>
+        <Range>12.1-20.3</Range>
+      </TestCode>
+      <TestCode Ext-ID="13" Status="F">
+        <Name>HCT</Name>
+        <Value>60</Value>
+        <Units><![CDATA[%]]></Units>
+        <Range>36-60</Range>
+      </TestCode>
+      <TestCode Ext-ID="14" Status="F">
+        <Name>MCV</Name>
+        <Value>74</Value>
+        <Units><![CDATA[FL]]></Units>
+        <Range>58-79</Range>
+      </TestCode>
+      <TestCode Ext-ID="15" Status="F">
+        <Name>MCH</Name>
+        <Value>25.4</Value>
+        <Units><![CDATA[PG]]></Units>
+        <Range>19-28</Range>
+      </TestCode>
+      <TestCode Ext-ID="16" Status="F">
+        <Name>MCHC</Name>
+        <Value>34</Value>
+        <Units><![CDATA[G/DL]]></Units>
+        <Range>30-38</Range>
+      </TestCode>
+    </UnitCode>
+    <UnitCode Ext-ID="5556" OrderCode="ADD190" Order-Control-Status="RE" Status="F">
+      <Name>T4 Add-On</Name>
+      <TimeStamp Type="Released Datetime" Value="06/28/2023 04:26 PM" />
+      <TimeStamp Type="Viewed Datetime" Value="" />
+      <TestCode Abnormal="H" Ext-ID="4022" Status="F">
+        <Name>T4</Name>
+        <Value>4.3</Value>
+        <Units><![CDATA[UG/DL]]></Units>
+        <Range>0.8-4.0</Range>
+      </TestCode>
+    </UnitCode>
+    <UnitCode Ext-ID="9818" OrderCode="ADD70" Order-Control-Status="RE" Status="F">
+      <Name>Heartworm Antigen Add-On</Name>
+      <TimeStamp Type="Released Datetime" Value="06/28/2023 04:26 PM" />
+      <TimeStamp Type="Viewed Datetime" Value="" />
+      <TestCode Ext-ID="4010" Status="F">
+        <Name>HEARTWORM ANTIGEN</Name>
+        <Value>NEGATIVE</Value>
+        <Units />
+        <Range />
+        <Comment><![CDATA[Negative for adult heartworm antigen (mature female heartworms).  Infection occurring sooner than 5 to 7 months prior to testing may not be detected.]]></Comment>
+      </TestCode>
+    </UnitCode>
+    <UnitCode Ext-ID="86440" OrderCode="T960" Order-Control-Status="RE" Status="F">
+      <Name>Canine Tick Borne PCR Panel</Name>
+      <TimeStamp Type="Released Datetime" Value="06/28/2023 04:26 PM" />
+      <TimeStamp Type="Viewed Datetime" Value="" />
+      <TestCode Ext-ID="5489" Status="F">
+        <Name>Ehrlichia canis</Name>
+        <Value>NEGATIVE</Value>
+        <Units />
+        <Range />
+      </TestCode>
+      <TestCode Ext-ID="5478" Status="F">
+        <Name>Ehrlichia spp. (non-canis)</Name>
+        <Value>NEGATIVE</Value>
+        <Units />
+        <Range />
+      </TestCode>
+      <TestCode Ext-ID="5479" Status="F">
+        <Name>Mycoplasma haemocanis/haematoparvum</Name>
+        <Value>NEGATIVE</Value>
+        <Units />
+        <Range />
+      </TestCode>
+      <TestCode Ext-ID="5480" Status="F">
+        <Name>Neorickettsia risticii</Name>
+        <Value>NEGATIVE</Value>
+        <Units />
+        <Range />
+      </TestCode>
+      <TestCode Ext-ID="5481" Status="F">
+        <Name>Rickettsia rickettsii</Name>
+        <Value>NEGATIVE</Value>
+        <Units />
+        <Range />
+        <Comment><![CDATA[* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
+For the organisms marked NEGATIVE, DNA was not amplified from the
+sample provided. This finding indicates:
+1.  The animal is not infected by the organism.
+2.  The infection is peracute and amounts of DNA have not yet achieved
+    detectable limits in the sample provided.
+3.  The infection is present in other fluids or tissues of the body
+    but not the sample provided.  If clinical signs are present and an
+    antibody test is available for this organism it should be
+    performed to evaluate for previous infection or exposure.
+4.  Previous anti-microbial therapy lowered the amounts of DNA to
+    below detectable limits in the sample provided.  If clinical signs
+    are present and an antibody test is available for this organism it
+    should be performed to evaluate for previous infection or
+    exposure.
+5.  The infection is chronic and the immune system has limited the
+    amounts of DNA to below detectable limits in the sample provided.
+    If clinical signs are present an antibody test is available for
+    this organism it should be performed to evaluate for previous
+    infection or exposure.
+6.  Presence of PCR inhibitors in the sample provided led to false
+    negative results.
+*********************************************************************]]></Comment>
+      </TestCode>
+      <TestCode Ext-ID="5488" Status="F">
+        <Name>Babesia speciation (non-canis)</Name>
+        <Value>NEGATIVE</Value>
+        <Units />
+        <Range />
+      </TestCode>
+      <TestCode Ext-ID="5475" Status="F">
+        <Name>Bartonella henselae</Name>
+        <Value>NEGATIVE</Value>
+        <Units />
+        <Range />
+      </TestCode>
+      <TestCode Ext-ID="5476" Status="F">
+        <Name>Bartonella Vinsonii</Name>
+        <Value>NEGATIVE</Value>
+        <Units />
+        <Range />
+      </TestCode>
+      <TestCode Ext-ID="5471" Status="F">
+        <Name>Anaplasma phagocytophilum</Name>
+        <Value>NEGATIVE</Value>
+        <Units />
+        <Range />
+      </TestCode>
+      <TestCode Ext-ID="5472" Status="F">
+        <Name>Anaplasma platys</Name>
+        <Value>NEGATIVE</Value>
+        <Units />
+        <Range />
+      </TestCode>
+      <TestCode Ext-ID="5473" Status="F">
+        <Name>Babesia Canis</Name>
+        <Value>NEGATIVE</Value>
+        <Units />
+        <Range />
+      </TestCode>
+    </UnitCode>
+    <UnitCode Ext-ID="16100" OrderCode="S16100" Order-Control-Status="RE" Status="F">
+      <Name>Blood Type, Canine - Full Panel</Name>
+      <TimeStamp Type="Released Datetime" Value="06/28/2023 04:26 PM" />
+      <TimeStamp Type="Viewed Datetime" Value="" />
+      <TestCode Ext-ID="6163" Status="F">
+        <Name>DEA 5</Name>
+        <Value>NEGATIVE</Value>
+        <Units />
+        <Range />
+      </TestCode>
+      <TestCode Ext-ID="16100" Status="F">
+        <Name>INTERPRETATION</Name>
+        <Value />
+        <Units />
+        <Range />
+        <Comment><![CDATA[*
+*
+                    INTERPRETATION:
+1) DEA 1.1 OR 1.2 POSITIVE, DEA 7 POSITIVE OR NEGATIVE. * NOT A
+SUITABLE BLOOD DONOR. CAN RECEIVE DEA NEGATIVE BLOOD OR BLOOD OF THE
+DOG'S SAME TYPE.
+--------------------------------------------------------------------
+2) DEA 1.1 AND 1.2 NEGATIVE, DEA 7 NEGATIVE. *SUITABLE BLOOD DONOR.
+CAN NOT RECEIVE BLOOD OTHER THAN FROM DEA 1 & 7 NEGATIVE DONORS.
+--------------------------------------------------------------------
+3) DEA 1.1 AND 1.2 NEGATIVE, DEA 7 POSITIVE. * SUITABLE BLOOD DONOR.
+CAN RECEIVE BLOOD ONLY FROM DEA 1 NEGATIVE DONORS.
+---------------------------------------------------------------------
+4) DEA 4 POSITIVE ONLY (NEGATIVE FOR ALL OTHER CANINE RBC ANTIGENS)
+ *IDEAL, UNIVERSAL BLOOD DONOR. CAN RECEIVE BLOOD ONLY FROM DOGS OF
+THE SAME BLOOD TYPE.
+*
+TEST PERFORMED AT MIDWEST ANIMAL BLOOD SERVICES.]]></Comment>
+      </TestCode>
+      <TestCode Ext-ID="6164" Status="F">
+        <Name>DEA 7</Name>
+        <Value>NEGATIVE</Value>
+        <Units />
+        <Range />
+      </TestCode>
+      <TestCode Abnormal="P" Ext-ID="6162" Status="F">
+        <Name>DEA 4</Name>
+        <Value>POSITIVE</Value>
+        <Units />
+        <Range />
+      </TestCode>
+      <TestCode Ext-ID="6161" Status="F">
+        <Name>DEA 1</Name>
+        <Value>NEGATIVE</Value>
+        <Units />
+        <Range />
+      </TestCode>
+    </UnitCode>
+    <UnitCode Ext-ID="85716" OrderCode="SA804" Order-Control-Status="RE" Status="F">
+      <Name>Chemistry Panel</Name>
+      <TimeStamp Type="Released Datetime" Value="06/28/2023 04:26 PM" />
+      <TimeStamp Type="Viewed Datetime" Value="" />
+      <TestCode Ext-ID="3575" Status="F">
+        <Name>SDMA</Name>
+        <Value>13.5</Value>
+        <Units><![CDATA[UG/dL]]></Units>
+        <Range>&lt;15.0</Range>
+      </TestCode>
+      <TestCode Ext-ID="1004" Status="F">
+        <Name>Total Bilirubin</Name>
+        <Value>0.1</Value>
+        <Units><![CDATA[MG/DL]]></Units>
+        <Range>0.1-0.4</Range>
+      </TestCode>
+      <TestCode Ext-ID="1024" Status="F">
+        <Name>BUN</Name>
+        <Value>25</Value>
+        <Units><![CDATA[MG/DL]]></Units>
+        <Range>14-36</Range>
+      </TestCode>
+      <TestCode Ext-ID="1026" Status="F">
+        <Name>Creatinine</Name>
+        <Value>1.5</Value>
+        <Units><![CDATA[MG/DL]]></Units>
+        <Range>0.6-2.4</Range>
+      </TestCode>
+      <TestCode Ext-ID="1014" Status="F">
+        <Name>TOTAL PROTEIN</Name>
+        <Value>6.1</Value>
+        <Units><![CDATA[g/dL]]></Units>
+        <Range>5.2-8.8</Range>
+      </TestCode>
+      <TestCode Ext-ID="1002" Status="F">
+        <Name>ALT (SGPT)</Name>
+        <Value>43</Value>
+        <Units><![CDATA[IU/L]]></Units>
+        <Range>10-100</Range>
+      </TestCode>
+      <TestCode Ext-ID="1010" Status="F">
+        <Name>Alk Phosphatase</Name>
+        <Value>25</Value>
+        <Units><![CDATA[IU/L]]></Units>
+        <Range>6-102</Range>
+      </TestCode>
+    </UnitCode>
+  </Accession>
+</LabReport>

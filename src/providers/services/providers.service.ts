@@ -15,6 +15,10 @@ import {
   Sex,
   Species
 } from '@nominal-systems/dmi-engine-common'
+import { ProviderExternalRequestDocument, ProviderExternalRequests } from '../entities/provider-external-requests.entity'
+import { Model } from 'mongoose'
+import { InjectModel } from '@nestjs/mongoose'
+import { ProviderRawDataDto } from '../dtos/provider-raw-data.dto'
 
 @Injectable()
 export class ProvidersService {
@@ -22,6 +26,8 @@ export class ProvidersService {
 
   constructor (
     private readonly integrationsService: IntegrationsService,
+    @InjectModel(ProviderExternalRequests.name)
+    private readonly providerExternalRequestsModel: Model<ProviderExternalRequestDocument>,
     @Inject('ACTIVEMQ') private readonly client: ClientProxy
   ) {
   }
@@ -194,5 +200,17 @@ export class ProvidersService {
     })
 
     return await this.client.send(messagePattern, message).toPromise()
+  }
+
+  async saveProviderRawData (data: ProviderRawDataDto): Promise<void> {
+    const { body, url, method, provider, status } = data
+    await this.providerExternalRequestsModel.create({
+      createdAt: new Date(),
+      provider,
+      status,
+      method,
+      url,
+      body
+    })
   }
 }

@@ -180,15 +180,17 @@ export class ReportsService {
         report = new Report()
         report.order = order
         report.testResultsSet = []
+        if (order.patient !== undefined) {
+          report.patient = order.patient
+        }
         await this.updateReportResults(report, orphanResults)
         createdReports.push(report)
       } else {
+        if (order.patient !== undefined) {
+          report.patient = order.patient
+        }
         await this.updateReportResults(report, orphanResults)
         updatedReports.push(report)
-      }
-
-      if (order.patient !== undefined) {
-        report.patient = order.patient
       }
     }
 

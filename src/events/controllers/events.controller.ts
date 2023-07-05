@@ -10,7 +10,8 @@ import { EventsService } from '../services/events.service'
 @Controller('events')
 @UseGuards(ApiGuard)
 export class EventsController {
-  constructor (private readonly eventsService: EventsService) {}
+  constructor (private readonly eventsService: EventsService) {
+  }
 
   @Get()
   async getEvents (
