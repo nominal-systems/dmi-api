@@ -1,0 +1,13 @@
+{
+  "createdAt":"2023-06-28 13:27:17",
+  "provider": "antech",
+  "status": 200,
+  "method": "POST",
+  "url": "https://onlineapi-onboard.antechdiagnostics.com/api/v1.1/Users/login",
+  "body":"{''LabOrders'':[],''LabResults'':[{''ClinicAccessionID'':''94651486'',''LabAccessionID'':''KEV1687969245866'',''LatestResultReceivedDate'':''2023-06-28T16:26:35'',''ResultStatus'':''F'',''DoctorName'':''Doc, Test'',''PetName'':''Loki'',''ClientName'':''Viglianco Juan'',''SpeciesID'':42,''BreedID'':343,''OrderDate'':''2023-06-28T09:20:31'',''LabTests'':[{''CodeID'':12212,''Mnemonic'':''ADD190'',''DisplayName'':''T4 Add-On''},{''CodeID'':12432,''Mnemonic'':''S16100'',''DisplayName'':''Blood Type, Canine - Full Panel''},{''CodeID'':12675,''Mnemonic'':''SA010'',''DisplayName'':''Superchem''},{''CodeID'':12171,''Mnemonic'':''T330'',''DisplayName'':''Complete Blood Count''},{''CodeID'':12247,''Mnemonic'':''ADD70'',''DisplayName'':''Heartworm Antigen Add-On''},{''CodeID'':12687,''Mnemonic'':''SA804'',''DisplayName'':''Chemistry Panel''},{''CodeID'':12309,''Mnemonic'':''T960'',''DisplayName'':''Canine Tick Borne PCR Panel''}]}]}",
+  "payload": {
+    "UserName": "PIMS_USER",
+    "Password": "devtest",
+    "ClinicID": "135371"
+  }
+}
