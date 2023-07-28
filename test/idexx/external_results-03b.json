@@ -1,0 +1,195 @@
+{
+  "integrationId": "e025ab13-d6e6-4602-a935-72c2a8c8718e",
+  "results": [
+    {
+      "id": "vcp.IMjAyMzA3MjJfMTM0ODIzXzg4MzZCQVhURVJCQVVHVUVTUw",
+      "orderId": "20230722_134823_8836",
+      "order": {
+        "externalId": "20230722_134823_8836",
+        "status": "COMPLETED",
+        "patient": {
+          "name": "Baxter",
+          "sex": "",
+          "species": "Canine",
+          "breed": ""
+        },
+        "client": {
+          "firstName": "Laura",
+          "lastName": "Bauguess"
+        },
+        "tests": [
+          {
+            "code": "Serology"
+          }
+        ],
+        "editable": false
+      },
+      "status": "COMPLETED",
+      "testResults": [
+        {
+          "seq": 1,
+          "code": "Serology",
+          "name": "Serology",
+          "items": [
+            {
+              "seq": 1,
+              "code": "HW",
+              "name": "Heartworm Antigen",
+              "status": "DONE",
+              "valueString": "Negative"
+            },
+            {
+              "seq": 2,
+              "code": "EC-EE",
+              "name": "Ehrlichia spp.",
+              "status": "DONE",
+              "valueString": "Negative"
+            },
+            {
+              "seq": 3,
+              "code": "Lyme",
+              "name": "Lyme (Borrelia burgdorferi)",
+              "status": "DONE",
+              "valueString": "Negative"
+            },
+            {
+              "seq": 4,
+              "code": "AP_spp",
+              "name": "Anaplasma spp.",
+              "status": "DONE",
+              "valueString": "Negative"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vcp.IMjAyMzA3MjJfMTM0MjE5Xzg4MzVUWUZBTENP",
+      "orderId": "20230722_134219_8835",
+      "order": {
+        "externalId": "20230722_134219_8835",
+        "status": "COMPLETED",
+        "patient": {
+          "name": "Ty",
+          "sex": "",
+          "species": "Canine",
+          "breed": ""
+        },
+        "client": {
+          "firstName": "Nicole",
+          "lastName": "Falco"
+        },
+        "tests": [
+          {
+            "code": "Chemistry"
+          }
+        ],
+        "editable": false
+      },
+      "status": "COMPLETED",
+      "testResults": [
+        {
+          "seq": 1,
+          "code": "Chemistry",
+          "name": "Chemistry",
+          "items": [
+            {
+              "seq": 1,
+              "code": "Na",
+              "name": "Sodium",
+              "status": "DONE",
+              "valueQuantity": {
+                "value": 151,
+                "units": "mmol/L"
+              },
+              "referenceRange": [
+                {
+                  "type": "NORMAL",
+                  "low": 144,
+                  "high": 160,
+                  "text": "144 - 160 mmol/L"
+                },
+                {
+                  "type": "CRITICAL",
+                  "low": 115,
+                  "high": 144
+                },
+                {
+                  "type": "CRITICAL",
+                  "low": 160,
+                  "high": 170
+                }
+              ]
+            },
+            {
+              "seq": 2,
+              "code": "K",
+              "name": "Potassium",
+              "status": "DONE",
+              "valueQuantity": {
+                "value": 4.6,
+                "units": "mmol/L"
+              },
+              "referenceRange": [
+                {
+                  "type": "NORMAL",
+                  "low": 3.5,
+                  "high": 5.8,
+                  "text": "3.5 - 5.8 mmol/L"
+                },
+                {
+                  "type": "CRITICAL",
+                  "low": 2,
+                  "high": 3.5
+                },
+                {
+                  "type": "CRITICAL",
+                  "low": 5.8,
+                  "high": 9.5
+                }
+              ]
+            },
+            {
+              "seq": 3,
+              "code": "Na/K",
+              "name": "Na: K Ratio",
+              "status": "DONE",
+              "valueQuantity": {
+                "value": 33,
+                "units": ""
+              }
+            },
+            {
+              "seq": 4,
+              "code": "Cl",
+              "name": "Chloride",
+              "status": "DONE",
+              "valueQuantity": {
+                "value": 111,
+                "units": "mmol/L"
+              },
+              "referenceRange": [
+                {
+                  "type": "NORMAL",
+                  "low": 109,
+                  "high": 122,
+                  "text": "109 - 122 mmol/L"
+                },
+                {
+                  "type": "CRITICAL",
+                  "low": 50,
+                  "high": 109
+                },
+                {
+                  "type": "CRITICAL",
+                  "low": 122,
+                  "high": 150
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

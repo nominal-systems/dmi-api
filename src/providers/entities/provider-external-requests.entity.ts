@@ -20,6 +20,9 @@ export class ProviderExternalRequests {
 
     @Prop({ type: mongoose.Schema.Types.Mixed })
     body: any
+
+    @Prop({ type: mongoose.Schema.Types.Mixed })
+    payload?: any
 }
 
 export type ProviderExternalRequestDocument = ProviderExternalRequests & mongoose.Document

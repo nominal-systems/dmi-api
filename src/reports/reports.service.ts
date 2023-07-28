@@ -183,13 +183,13 @@ export class ReportsService {
         if (order.patient !== undefined) {
           report.patient = order.patient
         }
-        await this.updateReportResults(report, orphanResults)
+        await this.updateReportResults(report, [orphanResult])
         createdReports.push(report)
       } else {
         if (order.patient !== undefined) {
           report.patient = order.patient
         }
-        await this.updateReportResults(report, orphanResults)
+        await this.updateReportResults(report, [orphanResult])
         updatedReports.push(report)
       }
     }
@@ -282,6 +282,7 @@ export class ReportsService {
     results: ProviderResult[]
   ): Promise<boolean> {
     const providerTestResults = results
+      // .filter(result => result.orderId === report.order.externalId)
       .map(result => result.testResults)
       .reduce((a, v) => a.concat(v), [])
 
@@ -298,6 +299,7 @@ export class ReportsService {
         this.logger.warn(`Multiple test result item status for test result '${providerTestResult.code}'`)
       }
       const existingTestResult = report.testResultsSet.find(testResult => testResult.code === providerTestResult.code)
+
       if (existingTestResult != null) {
         existingTestResult.seq = providerTestResult.seq
         existingTestResult.status = testResultStatus

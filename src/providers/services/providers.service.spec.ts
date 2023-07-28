@@ -78,7 +78,8 @@ describe('ProvidersService', () => {
         body: data.body,
         url: data.url,
         method: data.method,
-        provider: data.provider
+        provider: data.provider,
+        status: data.status
       })
 
       createSpy.mockRestore()
@@ -95,7 +96,27 @@ describe('ProvidersService', () => {
         body: data.body,
         url: data.url,
         method: data.method,
-        provider: data.provider
+        provider: data.provider,
+        status: data.status
+      })
+
+      createSpy.mockRestore()
+    })
+
+    it('should save the payload when defined', async () => {
+      const createSpy = jest.spyOn(providerExternalRequestsModel, 'create')
+      const data = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', '..', 'test', 'externalRequests', 'result-payload.json'), 'utf8'))
+
+      await service.saveProviderRawData(data)
+
+      expect(createSpy).toHaveBeenCalledWith({
+        createdAt: expect.any(Date),
+        body: data.body,
+        url: data.url,
+        method: data.method,
+        provider: data.provider,
+        status: data.status,
+        payload: data.payload
       })
 
       createSpy.mockRestore()

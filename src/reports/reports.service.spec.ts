@@ -1604,6 +1604,130 @@ describe('ReportsService', () => {
           })
         }))
       })
+      it('should not merge in-house results for different patients', async () => {
+        const externalResults3A = FileUtils.loadFile('test/idexx/external_results-03a.json')
+        const externalResults3B = FileUtils.loadFile('test/idexx/external_results-03b.json')
+
+        // #1: create order for patient Baxter, and report with Serology only
+        ordersServiceMock.findOneByExternalId.mockResolvedValueOnce(null)
+        await reportsService.handleExternalResults(externalResults3A)
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
+          namespace: EventNamespace.REPORTS,
+          type: EventType.REPORT_CREATED,
+          data: expect.objectContaining({
+            report: expect.objectContaining({
+              testResultsSet: expect.arrayContaining([
+                expect.objectContaining({ code: 'Serology' })
+              ])
+            })
+          })
+        }))
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
+          namespace: EventNamespace.REPORTS,
+          type: EventType.REPORT_CREATED,
+          data: expect.objectContaining({
+            report: expect.objectContaining({
+              testResultsSet: expect.not.arrayContaining([
+                expect.objectContaining({ code: 'Chemistry' })
+              ])
+            })
+          })
+        }))
+        jest.clearAllMocks()
+
+        // #2: update report for patient Baxter (Serology only), create report for Ty (Chemistry only)
+        ordersServiceMock.findOneByExternalId
+          .mockResolvedValueOnce({
+            patient: {
+              name: 'Baxter'
+            }
+          })
+          .mockResolvedValueOnce(null)
+        jest.spyOn(reportsService, 'findReportByExternalOrderId').mockImplementationOnce(async () => {
+          return {
+            order: {
+              externalId: '20230722_134823_8836',
+              status: 'COMPLETED'
+            },
+            testResultsSet: [
+              {
+                seq: 1,
+                code: 'Serology',
+                name: 'Serology',
+                observations: [
+                  {
+                    code: 'HW',
+                    name: 'Heartworm Antigen',
+                    seq: 1
+                  },
+                  {
+                    code: 'EC-EE',
+                    name: 'Ehrlichia spp.',
+                    seq: 2
+                  },
+                  {
+                    code: 'Lyme',
+                    name: 'Lyme (Borrelia burgdorferi)',
+                    seq: 3
+                  },
+                  {
+                    code: 'AP_spp',
+                    name: 'Anaplasma spp.',
+                    seq: 4
+                  }
+                ],
+                status: 'COMPLETED'
+              }
+            ],
+            status: 'FINAL'
+          } as unknown as Report
+        })
+        await reportsService.handleExternalResults(externalResults3B)
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
+          namespace: EventNamespace.REPORTS,
+          type: EventType.REPORT_UPDATED,
+          data: expect.objectContaining({
+            report: expect.objectContaining({
+              testResultsSet: expect.arrayContaining([
+                expect.objectContaining({ code: 'Serology' })
+              ])
+            })
+          })
+        }))
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
+          namespace: EventNamespace.REPORTS,
+          type: EventType.REPORT_UPDATED,
+          data: expect.objectContaining({
+            report: expect.objectContaining({
+              testResultsSet: expect.not.arrayContaining([
+                expect.objectContaining({ code: 'Chemistry' })
+              ])
+            })
+          })
+        }))
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
+          namespace: EventNamespace.REPORTS,
+          type: EventType.REPORT_CREATED,
+          data: expect.objectContaining({
+            report: expect.objectContaining({
+              testResultsSet: expect.arrayContaining([
+                expect.objectContaining({ code: 'Chemistry' })
+              ])
+            })
+          })
+        }))
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
+          namespace: EventNamespace.REPORTS,
+          type: EventType.REPORT_CREATED,
+          data: expect.objectContaining({
+            report: expect.objectContaining({
+              testResultsSet: expect.not.arrayContaining([
+                expect.objectContaining({ code: 'Serology' })
+              ])
+            })
+          })
+        }))
+      })
     })
     describe('Antech', () => {
       it('should create orders/reports', async () => {

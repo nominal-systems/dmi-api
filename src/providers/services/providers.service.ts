@@ -203,14 +203,21 @@ export class ProvidersService {
   }
 
   async saveProviderRawData (data: ProviderRawDataDto): Promise<void> {
-    const { body, url, method, provider, status } = data
-    await this.providerExternalRequestsModel.create({
+    const { body, url, method, provider, status, payload } = data
+
+    const rawData: ProviderExternalRequests = {
       createdAt: new Date(),
       provider,
       status,
       method,
       url,
       body
-    })
+    }
+
+    if (payload !== undefined) {
+      rawData.payload = payload
+    }
+
+    await this.providerExternalRequestsModel.create(rawData)
   }
 }
