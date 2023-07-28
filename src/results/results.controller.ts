@@ -2,7 +2,7 @@ import { BadRequestException, Body, Controller, Inject, Logger, Param, Post, Use
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard'
 import ieMessageBuilder from '../common/utils/ieMessageBuilder'
 import { ClientProxy } from '@nestjs/microservices'
-import { Operation, Resource } from '../../../dmi-engine-common'
+import { Operation, Resource } from '@nominal-systems/dmi-engine-common'
 
 @Controller('results')
 @UseGuards(JwtAuthGuard)
@@ -20,7 +20,7 @@ export class ResultsController {
     @Param('clientId') clientId: string,
     @Body() results: any
   ): Promise<void> {
-    const { message, messagePattern } = ieMessageBuilder(clientId, {
+    const { message, messagePattern } = ieMessageBuilder('heska', {
       resource: Resource.Results,
       operation: Operation.Submit,
       data: {
