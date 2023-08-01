@@ -85,8 +85,8 @@ const providers: Provider[] = [
       },
       {
         type: 'string',
-        name: 'decimalSeparator',
-        description: 'Parsing decimal separator',
+        name: 'locale',
+        description: 'Locale parsing',
         required: false
       }
     ]
