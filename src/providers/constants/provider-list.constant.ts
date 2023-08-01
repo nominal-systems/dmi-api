@@ -82,6 +82,12 @@ const providers: Provider[] = [
         name: 'password',
         description: 'IDEXX API Password',
         required: true
+      },
+      {
+        type: 'string',
+        name: 'decimalSeparator',
+        description: 'Parsing decimal separator',
+        required: false
       }
     ]
   },
