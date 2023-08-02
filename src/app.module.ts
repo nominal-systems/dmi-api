@@ -19,6 +19,7 @@ import { ReportsModule } from './reports/reports.module'
 import { AdminModule } from './admin/admin.module'
 import { HealthModule } from './health/health.module'
 import { AllExceptionsFilter } from './common/interceptors/all-exceptions.filter'
+import { ResultsModule } from './results/results.module'
 
 @Module({
   imports: [
@@ -54,9 +55,12 @@ import { AllExceptionsFilter } from './common/interceptors/all-exceptions.filter
     RefsModule,
     ReportsModule,
     AdminModule,
-    HealthModule
+    HealthModule,
+    ResultsModule
   ],
-  controllers: [AppController],
+  controllers: [
+    AppController
+  ],
   providers: [
     {
       provide: APP_INTERCEPTOR,

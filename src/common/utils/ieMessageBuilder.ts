@@ -7,11 +7,16 @@ interface IntergrationEngineOutgoingMessageData {
   payload?: any
 }
 
+interface IntegrationEngineResultsData {
+  clientId?: string
+  results: any
+}
+
 interface IntergrationEngineOutgoingMessage {
   id: string
   version: string
   type: string
-  data: IntergrationEngineOutgoingMessageData
+  data: IntergrationEngineOutgoingMessageData | IntegrationEngineResultsData
 }
 
 interface MessageAndPattern {
@@ -22,7 +27,7 @@ interface MessageAndPattern {
 interface Parameters {
   resource: string
   operation: string
-  data: IntergrationEngineOutgoingMessageData
+  data: IntergrationEngineOutgoingMessageData | IntegrationEngineResultsData
 }
 
 export default function (providerId: string, params: Parameters): MessageAndPattern {

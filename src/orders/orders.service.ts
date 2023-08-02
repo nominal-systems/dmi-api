@@ -14,6 +14,7 @@ import { EventsService } from '../events/services/events.service'
 import { OrderSearchQueryParams } from './dtos/order-search-queryparams.dto'
 import { Test } from './entities/test.entity'
 import {
+  IntegrationOptions,
   Operation,
   Order as ExternalOrder,
   OrderCreatedResponse,
@@ -29,6 +30,7 @@ import { Report } from '../reports/entities/report.entity'
 import { ExternalOrderMapper } from './mappers/external-order.mapper'
 import { ExternalResultEventData } from '../common/typings/external-result-event-data.interface'
 import { ProviderResultUtils } from '../common/utils/provider-result-utils'
+import { ProviderConfiguration } from '../providers/entities/provider-configuration.entity'
 
 interface OrderTestCancelOrAddParams {
   orderId: string
@@ -623,9 +625,10 @@ export class OrdersService {
 
   async getOrderFromProvider (
     externalId: string,
-    providerConfiguration,
-    integrationOptions
+    providerConfiguration: ProviderConfiguration,
+    integrationOptions: IntegrationOptions
   ): Promise<ExternalOrder> {
+    this.logger.debug(`Getting order ${externalId} from ${providerConfiguration.providerId}`)
     const { message, messagePattern } = ieMessageBuilder(
       providerConfiguration.providerId,
       {
