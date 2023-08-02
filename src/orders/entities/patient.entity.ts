@@ -18,7 +18,7 @@ export class Patient {
   @Type(() => Identifier)
   identifier: Identifier[]
 
-  @Column()
+  @Column({ default: 'UNKNOWN' })
   sex: string
 
   @Column()
