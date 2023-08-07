@@ -94,14 +94,13 @@ export class ProviderConfigurationsService {
           )
       this.logger.log(`Updated Provider Configuration -> Provider: '${providerId}'`)
 
-      const integration = await this.integrationsRepository.findOne({ where: { providerConfigurationId: configId }, relations: ['providerConfiguration', 'practice'] })
+      const integrations = await this.integrationsRepository.find({ where: { providerConfigurationId: configId }, relations: ['providerConfiguration', 'practice'] })
 
-      if (integration === undefined) {
-        throw new NotFoundException('Integration not found')
+      if (integrations.length > 0) {
+        for (const integration of integrations) {
+          await this.integrationsService.updateJob(integration.id, integration.providerConfiguration, integration.integrationOptions)
+        }
       }
-      await this.integrationsService.doUpdate(integration.id, integration.providerConfiguration, integration.integrationOptions)
-
-      return await this.findOne({ id: configId })
   }
 
   async delete (

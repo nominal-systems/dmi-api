@@ -7,8 +7,8 @@ import {
   HttpStatus,
   NotFoundException,
   Param,
-  Patch,
   Post,
+  Put,
   Query,
   UseGuards
 } from '@nestjs/common'
@@ -118,7 +118,8 @@ export class ProvidersController {
     })
   }
 
-  @Patch(':providerId/configurations/:configId')
+  @Put(':providerId/configurations/:configId')
+  @HttpCode(HttpStatus.OK)
   async updateProviderConfiguration (
     @Organization() organization: OrganizationEntity,
     @Param('providerId') providerId: string,

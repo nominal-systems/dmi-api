@@ -68,9 +68,9 @@ export class IntegrationsController {
 
   @Patch(':id')
   @HttpCode(HttpStatus.OK)
-  async updateProviderConfiguration (
+  async updateIntegrationOptions (
     @Param('id') integrationId: string,
-    @Body() updateIntegration: CreateIntegrationDto
+    @Body() updateIntegration: Pick<CreateIntegrationDto, 'integrationOptions'>
   ): Promise<Integration> {
     return await this.integrationsService.update(
       integrationId,
