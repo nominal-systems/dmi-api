@@ -67,6 +67,7 @@ export class IntegrationsController {
   }
 
   @Patch(':id')
+  @HttpCode(HttpStatus.OK)
   async updateProviderConfiguration (
     @Param('id') integrationId: string,
     @Body() updateIntegration: CreateIntegrationDto
