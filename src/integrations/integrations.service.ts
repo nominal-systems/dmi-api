@@ -107,35 +107,35 @@ export class IntegrationsService {
   async update (
     integrationId: string,
     updateIntegration: Pick<CreateIntegrationDto, 'integrationOptions'>): Promise<any> {
-      const integration = await this.findOne({
-        id: integrationId,
-        options: { relations: ['providerConfiguration', 'practice'] }
-      })
+    const integration = await this.findOne({
+      id: integrationId,
+      options: { relations: ['providerConfiguration', 'practice'] }
+    })
 
-      if (integration == null) {
-        throw new NotFoundException("The integration doesn't exist")
-      }
-      await this.validateIntegrationOptions({
-        practiceId: integration.practiceId,
-        integrationOptions: updateIntegration,
-        providerConfigurationId: integration.providerConfigurationId
-      })
+    if (integration == null) {
+      throw new NotFoundException('The integration doesn\'t exist')
+    }
+    await this.validateIntegrationOptions({
+      practiceId: integration.practiceId,
+      integrationOptions: updateIntegration,
+      providerConfigurationId: integration.providerConfigurationId
+    })
 
-      updateIntegration.integrationOptions = encrypt(
-        updateIntegration.integrationOptions,
-        this.secretKey
-      )
+    updateIntegration.integrationOptions = encrypt(
+      updateIntegration.integrationOptions,
+      this.secretKey
+    )
 
-      await this.integrationsRepository.update(
-          { id: integrationId },
-          { ...updateIntegration }
-          )
+    await this.integrationsRepository.update(
+      { id: integrationId },
+      { ...updateIntegration }
+    )
 
-      this.logger.log(`Updated Integration: [${integration.id}]`)
+    this.logger.log(`Updated Integration: [${integration.id}]`)
 
-      await this.updateJob(integrationId, integration.providerConfiguration, updateIntegration)
+    await this.updateJobs(integrationId, integration.providerConfiguration, updateIntegration)
 
-      return integration
+    return integration
   }
 
   async delete (
@@ -228,10 +228,10 @@ export class IntegrationsService {
     this.logger.log(`Started integration ${integrationId}`)
   }
 
-  async updateJob (
+  async updateJobs (
     integrationId: string,
-    providerConfiguration,
-    integrationOptions
+    providerConfiguration: any,
+    integrationOptions: any
   ): Promise<void> {
     // Notify engine to update jobs
     const { message, messagePattern } = ieMessageBuilder(
@@ -260,7 +260,7 @@ export class IntegrationsService {
     const provider = providersList.find(provider => provider.id === providerConfiguration?.providerId)
 
     if (provider == null) {
-      throw new BadRequestException("The provider doesn't exist")
+      throw new BadRequestException('The provider doesn\'t exist')
     }
 
     const validatorOptions = {

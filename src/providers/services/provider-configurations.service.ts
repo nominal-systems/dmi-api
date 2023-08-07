@@ -9,7 +9,7 @@ import { ConfigService } from '@nestjs/config'
 import { encrypt } from '../../common/utils/crypto.utils'
 import { FindOneOfTypeOptions } from '../../common/typings/find-one-of-type-options.interface'
 import { Integration } from '../../integrations/entities/integration.entity'
-import { IntegrationsService } from 'src/integrations/integrations.service'
+import { IntegrationsService } from '../../integrations/integrations.service'
 
 @Injectable()
 export class ProviderConfigurationsService {
@@ -78,29 +78,32 @@ export class ProviderConfigurationsService {
     providerId: string,
     configId: string,
     providerConfigurationOptions: any): Promise<any> {
-      const providerConfig = await this.findOne({ id: configId, options: { relations: ['organization'] } })
-      if (providerConfig == null) {
-        throw new NotFoundException("The provider configuration doesn't exist")
+    const providerConfig = await this.findOne({ id: configId, options: { relations: ['organization'] } })
+    if (providerConfig == null) {
+      throw new NotFoundException('The provider configuration doesn\'t exist')
+    }
+    await this.validateProviderConfiguration(providerId, providerConfigurationOptions)
+    providerConfig.configurationOptions = encrypt(providerConfigurationOptions.configuration, this.secretKey)
+    await this.providerConfigurationRepository.update(
+      { id: configId },
+      {
+        providerId,
+        configurationOptions: providerConfig.configurationOptions,
+        organization
       }
-      await this.validateProviderConfiguration(providerId, providerConfigurationOptions)
-      providerConfig.configurationOptions = encrypt(providerConfigurationOptions.configuration, this.secretKey)
-      await this.providerConfigurationRepository.update(
-          { id: configId },
-          {
-              providerId,
-              configurationOptions: providerConfig.configurationOptions,
-              organization
-            }
-          )
-      this.logger.log(`Updated Provider Configuration -> Provider: '${providerId}'`)
+    )
+    this.logger.log(`Updated Provider Configuration -> Provider: '${providerId}'`)
 
-      const integrations = await this.integrationsRepository.find({ where: { providerConfigurationId: configId }, relations: ['providerConfiguration', 'practice'] })
+    const integrations = await this.integrationsRepository.find({
+      where: { providerConfigurationId: configId },
+      relations: ['providerConfiguration', 'practice']
+    })
 
-      if (integrations.length > 0) {
-        for (const integration of integrations) {
-          await this.integrationsService.updateJob(integration.id, integration.providerConfiguration, integration.integrationOptions)
-        }
+    if (integrations.length > 0) {
+      for (const integration of integrations) {
+        await this.integrationsService.updateJobs(integration.id, integration.providerConfiguration, integration.integrationOptions)
       }
+    }
   }
 
   async delete (
@@ -109,7 +112,7 @@ export class ProviderConfigurationsService {
     const providerConfig = await this.findOne(args)
 
     if (providerConfig == null) {
-      throw new NotFoundException("The provider configuration doesn't exist")
+      throw new NotFoundException('The provider configuration doesn\'t exist')
     }
 
     await this.providerConfigurationRepository.softDelete(providerConfig.id)
@@ -130,7 +133,7 @@ export class ProviderConfigurationsService {
     const provider = await this.providersService.findOneById(providerId)
 
     if (provider == null) {
-      throw new BadRequestException("The provider doesn't exist")
+      throw new BadRequestException('The provider doesn\'t exist')
     }
 
     const validatorOptions = {
