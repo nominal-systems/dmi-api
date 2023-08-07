@@ -99,10 +99,8 @@ export class ProviderConfigurationsService {
       relations: ['providerConfiguration', 'practice']
     })
 
-    if (integrations.length > 0) {
-      for (const integration of integrations) {
-        await this.integrationsService.updateJobs(integration.id, integration.providerConfiguration, integration.integrationOptions)
-      }
+    for (const integration of integrations) {
+      await this.integrationsService.updateJobs(integration.id, integration.providerConfiguration, integration.integrationOptions)
     }
   }
 
