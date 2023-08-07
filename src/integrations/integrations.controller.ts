@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, UseGuards } from '@nestjs/common'
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, UseGuards } from '@nestjs/common'
 import { SelectQueryBuilder } from 'typeorm'
 import { Organization } from '../common/decorators/organization.decorator'
 import { ApiGuard } from '../common/guards/api.guard'
@@ -64,6 +64,17 @@ export class IntegrationsController {
     @Body() createIntegrationDto: CreateIntegrationDto
   ): Promise<Integration> {
     return await this.integrationsService.create(createIntegrationDto)
+  }
+
+  @Patch(':id')
+  async updateProviderConfiguration (
+    @Param('id') integrationId: string,
+    @Body() updateIntegration: CreateIntegrationDto
+  ): Promise<Integration> {
+    return await this.integrationsService.update(
+      integrationId,
+      updateIntegration
+    )
   }
 
   @Delete(':id')

@@ -7,6 +7,7 @@ import {
   HttpStatus,
   NotFoundException,
   Param,
+  Patch,
   Post,
   Query,
   UseGuards
@@ -115,6 +116,21 @@ export class ProvidersController {
         }
       }
     })
+  }
+
+  @Patch(':providerId/configurations/:configId')
+  async updateProviderConfiguration (
+    @Organization() organization: OrganizationEntity,
+    @Param('providerId') providerId: string,
+    @Param('configId') configId: string,
+    @Body() providerConfiguration: any
+  ): Promise<ProviderConfiguration> {
+    return await this.providerConfigurationsService.update(
+      organization,
+      providerId,
+      configId,
+      providerConfiguration
+    )
   }
 
   @Delete(':providerId/configurations/:configId')

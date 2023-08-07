@@ -104,6 +104,41 @@ export class IntegrationsService {
     }
   }
 
+  async update (
+    integrationId: string,
+    updateIntegration: CreateIntegrationDto): Promise<any> {
+      const integration = await this.findOne({
+        id: integrationId,
+        options: { relations: ['providerConfiguration', 'practice'] }
+      })
+
+      if (integration == null) {
+        throw new NotFoundException("The integration doesn't exist")
+      }
+      await this.validateIntegrationOptions(updateIntegration)
+
+      updateIntegration.integrationOptions = encrypt(
+        updateIntegration.integrationOptions,
+        this.secretKey
+      )
+
+      await this.integrationsRepository.update(
+          { id: integrationId },
+          { ...updateIntegration }
+          )
+
+      this.logger.log(`Updated Integration: [${integration.id}]`)
+
+      const { providerConfiguration, integrationOptions } = await this.findOne({
+        id: integrationId,
+        options: { relations: ['providerConfiguration', 'practice'] }
+      })
+
+      await this.doUpdate(integrationId, providerConfiguration, integrationOptions)
+
+      return integration
+  }
+
   async delete (
     organization: Organization,
     integrationId: string
@@ -192,6 +227,30 @@ export class IntegrationsService {
     await this.integrationsRepository.update(integrationId, { status: IntegrationStatus.RUNNING })
     this.client.emit(messagePattern, message)
     this.logger.log(`Started integration ${integrationId}`)
+  }
+
+  async doUpdate (
+    integrationId: string,
+    providerConfiguration,
+    integrationOptions
+  ): Promise<void> {
+    // Notify engine to update jobs
+    const { message, messagePattern } = ieMessageBuilder(
+      providerConfiguration.providerId,
+      {
+        resource: Resource.Integration,
+        operation: Operation.Update,
+        data: {
+          integrationOptions: integrationOptions,
+          providerConfiguration: providerConfiguration.configurationOptions,
+          payload: {
+            integrationId
+          }
+        }
+      }
+    )
+    this.client.emit(messagePattern, message)
+    this.logger.log(`Updated integration ${integrationId}`)
   }
 
   private async validateIntegrationOptions (
