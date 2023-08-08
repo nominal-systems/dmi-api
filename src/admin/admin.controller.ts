@@ -27,7 +27,7 @@ import { Organization } from '../organizations/entities/organization.entity'
 import { IntegrationStatus } from '../integrations/constants/integration-status.enum'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { CreateIntegrationDto } from 'src/integrations/dtos/create-integration.dto'
+import { CreateIntegrationDto } from '../integrations/dtos/create-integration.dto'
 
 @Controller('admin')
 @UseGuards(BasicAuthGuard)
