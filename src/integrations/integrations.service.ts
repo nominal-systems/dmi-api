@@ -106,7 +106,7 @@ export class IntegrationsService {
 
   async update (
     integrationId: string,
-    updateIntegration: Pick<CreateIntegrationDto, 'integrationOptions'>): Promise<any> {
+    integrationUpdate: Pick<CreateIntegrationDto, 'integrationOptions'>): Promise<any> {
     const integration = await this.findOne({
       id: integrationId,
       options: { relations: ['providerConfiguration', 'practice'] }
@@ -116,25 +116,26 @@ export class IntegrationsService {
       throw new NotFoundException('The integration doesn\'t exist')
     }
 
-    await this.validateIntegrationOptions({
+    const newIntegrationOptions = integrationUpdate.integrationOptions
+    const updatedIntegration = {
       practiceId: integration.practiceId,
-      integrationOptions: updateIntegration.integrationOptions,
+      integrationOptions: newIntegrationOptions,
       providerConfigurationId: integration.providerConfigurationId
-    })
+    }
+    await this.validateIntegrationOptions(updatedIntegration)
 
-    updateIntegration.integrationOptions = encrypt(
-      updateIntegration.integrationOptions,
+    integrationUpdate.integrationOptions = encrypt(
+      integrationUpdate.integrationOptions,
       this.secretKey
     )
 
     await this.integrationsRepository.update(
       { id: integrationId },
-      { ...updateIntegration }
+      { ...integrationUpdate }
     )
 
     this.logger.log(`Updated Integration: [${integration.id}]`)
-
-    await this.updateJobs(integrationId, integration.providerConfiguration, updateIntegration)
+    await this.updateJobs(integrationId, integration.providerConfiguration, newIntegrationOptions)
 
     return await this.findOne({ id: integrationId })
   }
