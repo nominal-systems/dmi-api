@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   DefaultValuePipe,
   Delete,
@@ -6,7 +7,9 @@ import {
   NotFoundException,
   Param,
   ParseBoolPipe,
+  Patch,
   Post,
+  Put,
   Query,
   Res,
   UseGuards
@@ -24,6 +27,7 @@ import { Organization } from '../organizations/entities/organization.entity'
 import { IntegrationStatus } from '../integrations/constants/integration-status.enum'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
+import { CreateIntegrationDto } from 'src/integrations/dtos/create-integration.dto'
 
 @Controller('admin')
 @UseGuards(BasicAuthGuard)
@@ -46,6 +50,30 @@ export class AdminController {
   @Get('providerConfigurations')
   async getProviderConfigurations (): Promise<ProviderConfiguration[]> {
     return await this.providerConfigurationsService.findAll()
+  }
+
+  @Put('providerConfigurations/:id')
+  async updateProviderConfigurations (
+    @Param('id') providerConfigurationId: string,
+    @Body() updatedProviderConfiguration: any
+  ): Promise<ProviderConfiguration> {
+    const providerConfiguration = await this.providerConfigurationsService.findOne({
+      id: providerConfigurationId,
+      options: { relations: ['organization'] }
+    })
+
+    if (providerConfiguration == null) {
+      throw new Error('Integration not found')
+    }
+
+    await this.providerConfigurationsService.update(
+      providerConfiguration.organization,
+      providerConfiguration.providerId,
+      providerConfigurationId,
+      updatedProviderConfiguration
+    )
+
+    return await this.providerConfigurationsService.findOne({ id: providerConfigurationId })
   }
 
   @Get('event-subscriptions')
@@ -88,6 +116,27 @@ export class AdminController {
     }
 
     await this.integrationsService.doDelete(integration)
+  }
+
+  @Patch('integrations/:id')
+  async updateIntegration (
+    @Param('id') integrationId: string,
+    @Body() updateIntegration: Pick<CreateIntegrationDto, 'integrationOptions'>
+  ): Promise<Integration> {
+    const integration = await this.integrationsService.findOne({
+      id: integrationId,
+      options: {
+        relations: ['practice', 'providerConfiguration']
+      }
+    })
+
+    if (integration == null) {
+      throw new Error('Integration not found')
+    }
+
+    await this.integrationsService.update(integrationId, updateIntegration)
+
+    return await this.integrationsService.findById(integrationId)
   }
 
   @Post('integrations/:id/stop')
