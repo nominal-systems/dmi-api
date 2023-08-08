@@ -136,7 +136,7 @@ export class IntegrationsService {
 
     await this.updateJobs(integrationId, integration.providerConfiguration, updateIntegration)
 
-    return integration
+    return await this.findOne({ id: integrationId })
   }
 
   async delete (
