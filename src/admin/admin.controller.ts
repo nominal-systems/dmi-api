@@ -52,6 +52,18 @@ export class AdminController {
     return await this.providerConfigurationsService.findAll()
   }
 
+  @Get('providerConfigurations/:id')
+  async getProviderConfiguration (
+    @Param('id') providerConfigurationId: string
+  ): Promise<ProviderConfiguration> {
+    return await this.providerConfigurationsService.findOne({
+      id: providerConfigurationId,
+      options: {
+        relations: ['integrations']
+      }
+    })
+  }
+
   @Put('providerConfigurations/:id')
   async updateProviderConfigurations (
     @Param('id') providerConfigurationId: string,
