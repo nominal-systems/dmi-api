@@ -115,9 +115,10 @@ export class IntegrationsService {
     if (integration == null) {
       throw new NotFoundException('The integration doesn\'t exist')
     }
+
     await this.validateIntegrationOptions({
       practiceId: integration.practiceId,
-      integrationOptions: updateIntegration,
+      integrationOptions: updateIntegration.integrationOptions,
       providerConfigurationId: integration.providerConfigurationId
     })
 
