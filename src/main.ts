@@ -7,6 +7,7 @@ import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify
 import { AppModule } from './app.module'
 import { AppConfig, DocsConfig } from './config/config.interface'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
+import { IntegrationsService } from './integrations/integrations.service'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { version } = require('../package.json')
 
@@ -53,6 +54,8 @@ async function bootstrap (): Promise<void> {
       }
     })
   }
+  const jobsRestart = app.get(IntegrationsService)
+  await jobsRestart.restart()
 
   // Start application
   const PORT = configService.get<number>('port', 3000)

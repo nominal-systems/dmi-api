@@ -174,6 +174,23 @@ export class IntegrationsService {
     await this.doDelete(integration)
   }
 
+  async restart (): Promise<void> {
+    const integrations = await this.findAll({
+      withDeleted: true,
+      relations: ['providerConfiguration']
+    })
+    for (const integration of integrations) {
+      await this.doStop(integration)
+      if (integration.status === IntegrationStatus.RUNNING) {
+        await this.doStart(
+          integration.id,
+          integration.providerConfiguration,
+          integration.integrationOptions
+        )
+      }
+    }
+  }
+
   async doDelete (
     integration: Integration
   ): Promise<void> {
