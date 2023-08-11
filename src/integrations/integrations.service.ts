@@ -174,6 +174,24 @@ export class IntegrationsService {
     await this.doDelete(integration)
   }
 
+  async restartIntegration (integrationId): Promise<void> {
+    const integration = await this.findOne({
+      id: integrationId,
+      options: { relations: ['providerConfiguration', 'practice'] }
+    })
+
+    if (integration == null) {
+      throw new NotFoundException('The integration doesn\'t exist')
+    }
+
+    await this.doStop(integration)
+    await this.doStart(
+      integration.id,
+      integration.providerConfiguration,
+      integration.integrationOptions
+    )
+  }
+
   async doDelete (
     integration: Integration
   ): Promise<void> {

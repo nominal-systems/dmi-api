@@ -86,4 +86,12 @@ export class IntegrationsController {
   ): Promise<void> {
     return await this.integrationsService.delete(organization, integrationId)
   }
+
+  @Post(':id/restart')
+  @HttpCode(HttpStatus.OK)
+  async restartIntegration (
+    @Param('id') integrationId: string
+  ): Promise<void> {
+    return await this.integrationsService.restartIntegration(integrationId)
+  }
 }

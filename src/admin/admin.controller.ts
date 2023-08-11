@@ -199,4 +199,13 @@ export class AdminController {
       res.status(201).send('Integration started')
     }
   }
+
+  @Post('integrations/:id/restart')
+  async restartIntegration (
+    @Res() res: Response,
+    @Param('id') integrationId: string
+  ): Promise<void> {
+      await this.integrationsService.restartIntegration(integrationId)
+      res.status(201).send('Integration restarted')
+  }
 }
