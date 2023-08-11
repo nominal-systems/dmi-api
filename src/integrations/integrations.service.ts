@@ -189,6 +189,12 @@ export class IntegrationsService {
         )
       }
     }
+
+    const runningIntegrations = integrations.filter(integration => integration.status === IntegrationStatus.RUNNING)
+    this.logger.log(`Found: ${runningIntegrations.length} integrations RUNNING`)
+
+    const stoppedIntegrations = integrations.filter(integration => integration.status === IntegrationStatus.STOPPED)
+    this.logger.log(`Found: ${stoppedIntegrations.length} integrations STOPPED`)
   }
 
   async doDelete (

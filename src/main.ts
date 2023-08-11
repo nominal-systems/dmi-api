@@ -54,8 +54,8 @@ async function bootstrap (): Promise<void> {
       }
     })
   }
-  const jobsRestart = app.get(IntegrationsService)
-  await jobsRestart.restart()
+  const integrationsService = app.get(IntegrationsService)
+  await integrationsService.restart()
 
   // Start application
   const PORT = configService.get<number>('port', 3000)
