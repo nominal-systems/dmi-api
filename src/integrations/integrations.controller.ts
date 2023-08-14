@@ -86,4 +86,23 @@ export class IntegrationsController {
   ): Promise<void> {
     return await this.integrationsService.delete(organization, integrationId)
   }
+
+  @Post(':id/restart')
+  @HttpCode(HttpStatus.OK)
+  async restartIntegration (
+    @Param('id') integrationId: string
+  ): Promise<void> {
+    const integration = await this.integrationsService.findOne({
+      options: {
+        join: {
+          alias: 'integration',
+          leftJoinAndSelect: {
+            practice: 'integration.practice',
+            providerConfiguration: 'integration.providerConfiguration'
+          }
+        }
+      }
+    })
+    return await this.integrationsService.restart(integration)
+  }
 }

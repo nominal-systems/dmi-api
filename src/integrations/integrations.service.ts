@@ -140,6 +140,18 @@ export class IntegrationsService {
     return await this.findOne({ id: integrationId })
   }
 
+  async restart (integration: Integration): Promise<void> {
+    await this.doStop(integration)
+
+    if (integration.status === IntegrationStatus.RUNNING) {
+        await this.doStart(
+            integration.id,
+            integration.providerConfiguration,
+            integration.integrationOptions
+        )
+    }
+  }
+
   async delete (
     organization: Organization,
     integrationId: string
@@ -174,27 +186,22 @@ export class IntegrationsService {
     await this.doDelete(integration)
   }
 
-  async restart (): Promise<void> {
+  async ensureStatusAll (): Promise<void> {
     const integrations = await this.findAll({
       withDeleted: true,
       relations: ['providerConfiguration']
     })
+
+    const integrationStatusCounts = integrations.reduce((counts, integration) => {
+      counts[integration.status]++
+      return counts
+    }, { RUNNING: 0, STOPPED: 0 })
+
+    this.logger.log(`Found: ${integrationStatusCounts.RUNNING} integrations RUNNING, ${integrationStatusCounts.STOPPED} integrations STOPPED`)
+
     for (const integration of integrations) {
-      await this.doStop(integration)
-      if (integration.status === IntegrationStatus.RUNNING) {
-        await this.doStart(
-          integration.id,
-          integration.providerConfiguration,
-          integration.integrationOptions
-        )
-      }
+      await this.restart(integration)
     }
-
-    const runningIntegrations = integrations.filter(integration => integration.status === IntegrationStatus.RUNNING)
-    this.logger.log(`Found: ${runningIntegrations.length} integrations RUNNING`)
-
-    const stoppedIntegrations = integrations.filter(integration => integration.status === IntegrationStatus.STOPPED)
-    this.logger.log(`Found: ${stoppedIntegrations.length} integrations STOPPED`)
   }
 
   async doDelete (
