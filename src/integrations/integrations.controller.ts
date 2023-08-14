@@ -93,6 +93,7 @@ export class IntegrationsController {
     @Param('id') integrationId: string
   ): Promise<void> {
     const integration = await this.integrationsService.findOne({
+      id: integrationId,
       options: {
         join: {
           alias: 'integration',
