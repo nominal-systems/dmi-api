@@ -211,7 +211,8 @@ export class AdminController {
         relations: ['practice', 'providerConfiguration']
       }
     })
-      await this.integrationsService.restart(integration)
-      res.status(201).send('Integration restarted')
+
+    await this.integrationsService.restart(integration)
+    res.status(201).send('Integration restarted')
   }
 }

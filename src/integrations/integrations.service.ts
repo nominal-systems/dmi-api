@@ -188,7 +188,7 @@ export class IntegrationsService {
 
   async ensureStatusAll (): Promise<void> {
     const integrations = await this.findAll({
-      withDeleted: true,
+      withDeleted: false,
       relations: ['providerConfiguration']
     })
 
