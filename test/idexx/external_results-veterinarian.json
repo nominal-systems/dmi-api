@@ -1,0 +1,872 @@
+{
+    "integrationId": "integrationId",
+    "results": [
+        {
+            "id": "vcp.IMjAyMzA4MDhfMTYyNTAyXzI0MDExUEVURVJST0RSSUdVRVogQUxPTlNP",
+            "orderId": "20230808_162502_24011",
+            "order": {
+                "externalId": "20230808_162502_24011",
+                "status": "COMPLETED",
+                "patient": {
+                    "name": "peter",
+                    "sex": "Macho",
+                    "species": "Gato",
+                    "breed": ""
+                },
+                "tests": [
+                    {
+                        "code": "Hematology"
+                    },
+                    {
+                        "code": "Chemistry"
+                    }
+                ],
+                "veterinarian": {
+                    "lastName": "JESUS FLOREZ"
+                },
+                "editable": false,
+                "client": {
+                    "firstName": "angeles",
+                    "lastName": "rodriguez alonso"
+                }
+            },
+            "status": "COMPLETED",
+            "testResults": [
+                {
+                    "seq": 1,
+                    "code": "Hematology",
+                    "name": "Hematología",
+                    "items": [
+                        {
+                            "seq": 1,
+                            "code": "RBC",
+                            "name": "Hematíes",
+                            "status": "DONE",
+                            "valueQuantity": {
+                                "value": 662,
+                                "units": "M/µL"
+                            },
+                            "referenceRange": [
+                                {
+                                    "type": "NORMAL",
+                                    "low": 6.54,
+                                    "high": 12.2,
+                                    "text": "6,54 - 12,20 M/µL"
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 3,
+                                    "high": 6.54
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 12.2,
+                                    "high": 15
+                                }
+                            ]
+                        },
+                        {
+                            "seq": 2,
+                            "code": "HCT",
+                            "name": "Hematocrito",
+                            "status": "DONE",
+                            "valueQuantity": {
+                                "value": 282,
+                                "units": "%"
+                            },
+                            "referenceRange": [
+                                {
+                                    "type": "NORMAL",
+                                    "low": 30.3,
+                                    "high": 52.3,
+                                    "text": "30,3 - 52,3 %"
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 15,
+                                    "high": 30.3
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 52.3,
+                                    "high": 65
+                                }
+                            ],
+                            "interpretation": {
+                                "code": "A",
+                                "text": "Abnormal"
+                            }
+                        },
+                        {
+                            "seq": 3,
+                            "code": "HGB",
+                            "name": "Hemoglobina",
+                            "status": "DONE",
+                            "valueQuantity": {
+                                "value": 91,
+                                "units": "g/dL"
+                            },
+                            "referenceRange": [
+                                {
+                                    "type": "NORMAL",
+                                    "low": 9.8,
+                                    "high": 16.2,
+                                    "text": "9,8 - 16,2 g/dL"
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 5,
+                                    "high": 9.8
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 16.2,
+                                    "high": 22
+                                }
+                            ],
+                            "interpretation": {
+                                "code": "A",
+                                "text": "Abnormal"
+                            }
+                        },
+                        {
+                            "seq": 4,
+                            "code": "MCV",
+                            "name": "VCM",
+                            "status": "DONE",
+                            "valueQuantity": {
+                                "value": 426,
+                                "units": "fL"
+                            },
+                            "referenceRange": [
+                                {
+                                    "type": "NORMAL",
+                                    "low": 35.9,
+                                    "high": 53.1,
+                                    "text": "35,9 - 53,1 fL"
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 25,
+                                    "high": 35.9
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 53.1,
+                                    "high": 65
+                                }
+                            ]
+                        },
+                        {
+                            "seq": 5,
+                            "code": "MCH",
+                            "name": "HCM",
+                            "status": "DONE",
+                            "valueQuantity": {
+                                "value": 137,
+                                "units": "pg"
+                            },
+                            "referenceRange": [
+                                {
+                                    "type": "NORMAL",
+                                    "low": 11.8,
+                                    "high": 17.3,
+                                    "text": "11,8 - 17,3 pg"
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 9,
+                                    "high": 11.8
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 17.3,
+                                    "high": 25
+                                }
+                            ]
+                        },
+                        {
+                            "seq": 6,
+                            "code": "MCHC",
+                            "name": "CHCM",
+                            "status": "DONE",
+                            "valueQuantity": {
+                                "value": 323,
+                                "units": "g/dL"
+                            },
+                            "referenceRange": [
+                                {
+                                    "type": "NORMAL",
+                                    "low": 28.1,
+                                    "high": 35.8,
+                                    "text": "28,1 - 35,8 g/dL"
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 25,
+                                    "high": 28.1
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 35.8,
+                                    "high": 42
+                                }
+                            ]
+                        },
+                        {
+                            "seq": 7,
+                            "code": "RDW",
+                            "name": "RDW",
+                            "status": "DONE",
+                            "valueQuantity": {
+                                "value": 224,
+                                "units": "%"
+                            },
+                            "referenceRange": [
+                                {
+                                    "type": "NORMAL",
+                                    "low": 15,
+                                    "high": 27,
+                                    "text": "15,0 - 27,0 %"
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 5,
+                                    "high": 15
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 27,
+                                    "high": 35
+                                }
+                            ]
+                        },
+                        {
+                            "seq": 8,
+                            "code": "%RETIC",
+                            "name": "% Reticulocitos",
+                            "status": "DONE",
+                            "valueQuantity": {
+                                "value": 2,
+                                "units": "%"
+                            }
+                        },
+                        {
+                            "seq": 9,
+                            "code": "RETIC",
+                            "name": "Reticulocitos",
+                            "status": "DONE",
+                            "valueQuantity": {
+                                "value": 113,
+                                "units": "K/µL"
+                            },
+                            "referenceRange": [
+                                {
+                                    "type": "NORMAL",
+                                    "low": 3,
+                                    "high": 50,
+                                    "text": "3,0 - 50,0 K/µL"
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 0,
+                                    "high": 3
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 50,
+                                    "high": 300
+                                }
+                            ]
+                        },
+                        {
+                            "seq": 10,
+                            "code": "RET-He",
+                            "name": "Hemoglobina del retitulocito",
+                            "status": "DONE",
+                            "valueQuantity": {
+                                "value": 153,
+                                "units": "pg"
+                            },
+                            "referenceRange": [
+                                {
+                                    "type": "NORMAL",
+                                    "low": 13.2,
+                                    "high": 20.8,
+                                    "text": "13,2 - 20,8 pg"
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 9,
+                                    "high": 13.2
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 20.8,
+                                    "high": 30
+                                }
+                            ]
+                        },
+                        {
+                            "seq": 11,
+                            "code": "WBC",
+                            "name": "Leucocitos",
+                            "status": "DONE",
+                            "valueQuantity": {
+                                "value": 504,
+                                "units": "K/µL"
+                            },
+                            "referenceRange": [
+                                {
+                                    "type": "NORMAL",
+                                    "low": 2.87,
+                                    "high": 17.02,
+                                    "text": "2,87 - 17,02 K/µL"
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 2,
+                                    "high": 2.87
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 17.02,
+                                    "high": 35
+                                }
+                            ]
+                        },
+                        {
+                            "seq": 12,
+                            "code": "%NEU",
+                            "name": "% Neutrófilos segmentados",
+                            "status": "DONE",
+                            "valueQuantity": {
+                                "value": 670,
+                                "units": "%"
+                            }
+                        },
+                        {
+                            "seq": 13,
+                            "code": "%LYM",
+                            "name": "% Linfocitos",
+                            "status": "DONE",
+                            "valueQuantity": {
+                                "value": 232,
+                                "units": "%"
+                            }
+                        },
+                        {
+                            "seq": 14,
+                            "code": "%MONO",
+                            "name": "% Monocitos",
+                            "status": "DONE",
+                            "valueQuantity": {
+                                "value": 50,
+                                "units": "%"
+                            }
+                        },
+                        {
+                            "seq": 15,
+                            "code": "%EOS",
+                            "name": "% Eosinófilos",
+                            "status": "DONE",
+                            "valueQuantity": {
+                                "value": 42,
+                                "units": "%"
+                            }
+                        },
+                        {
+                            "seq": 16,
+                            "code": "%BASO",
+                            "name": "% Basófilos",
+                            "status": "DONE",
+                            "valueQuantity": {
+                                "value": 6,
+                                "units": "%"
+                            }
+                        },
+                        {
+                            "seq": 17,
+                            "code": "NEU",
+                            "name": "Neutrófilos segmentados",
+                            "status": "DONE",
+                            "valueQuantity": {
+                                "value": 338,
+                                "units": "K/µL"
+                            },
+                            "referenceRange": [
+                                {
+                                    "type": "NORMAL",
+                                    "low": 2.3,
+                                    "high": 10.29,
+                                    "text": "2,30 - 10,29 K/µL"
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 0.5,
+                                    "high": 2.3
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 10.29,
+                                    "high": 35
+                                }
+                            ]
+                        },
+                        {
+                            "seq": 18,
+                            "code": "LYM",
+                            "name": "Linfocitos",
+                            "status": "DONE",
+                            "valueQuantity": {
+                                "value": 117,
+                                "units": "K/µL"
+                            },
+                            "referenceRange": [
+                                {
+                                    "type": "NORMAL",
+                                    "low": 0.92,
+                                    "high": 6.88,
+                                    "text": "0,92 - 6,88 K/µL"
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 0.1,
+                                    "high": 0.92
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 6.88,
+                                    "high": 20
+                                }
+                            ]
+                        },
+                        {
+                            "seq": 19,
+                            "code": "MONO",
+                            "name": "Monocitos",
+                            "status": "DONE",
+                            "valueQuantity": {
+                                "value": 25,
+                                "units": "K/µL"
+                            },
+                            "referenceRange": [
+                                {
+                                    "type": "NORMAL",
+                                    "low": 0.05,
+                                    "high": 0.67,
+                                    "text": "0,05 - 0,67 K/µL"
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 0,
+                                    "high": 0.05
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 0.67,
+                                    "high": 4
+                                }
+                            ]
+                        },
+                        {
+                            "seq": 20,
+                            "code": "EOS",
+                            "name": "Eosinófilos",
+                            "status": "DONE",
+                            "valueQuantity": {
+                                "value": 21,
+                                "units": "K/µL"
+                            },
+                            "referenceRange": [
+                                {
+                                    "type": "NORMAL",
+                                    "low": 0.17,
+                                    "high": 1.57,
+                                    "text": "0,17 - 1,57 K/µL"
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 0,
+                                    "high": 0.17
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 1.57,
+                                    "high": 6
+                                }
+                            ]
+                        },
+                        {
+                            "seq": 21,
+                            "code": "BASO",
+                            "name": "Basófilos",
+                            "status": "DONE",
+                            "valueQuantity": {
+                                "value": 3,
+                                "units": "K/µL"
+                            },
+                            "referenceRange": [
+                                {
+                                    "type": "NORMAL",
+                                    "low": 0.01,
+                                    "high": 0.26,
+                                    "text": "0,01 - 0,26 K/µL"
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 0,
+                                    "high": 0.01
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 0.26,
+                                    "high": 0.5
+                                }
+                            ]
+                        },
+                        {
+                            "seq": 22,
+                            "code": "PLT",
+                            "name": "Plaquetas",
+                            "status": "DONE",
+                            "valueQuantity": {
+                                "value": 271,
+                                "units": "K/µL"
+                            },
+                            "referenceRange": [
+                                {
+                                    "type": "NORMAL",
+                                    "low": 151,
+                                    "high": 600,
+                                    "text": "151 - 600 K/µL"
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 25,
+                                    "high": 151
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 600,
+                                    "high": 1000
+                                }
+                            ]
+                        },
+                        {
+                            "seq": 23,
+                            "code": "MPV",
+                            "name": "VPM",
+                            "status": "DONE",
+                            "valueQuantity": {
+                                "value": 175,
+                                "units": "fL"
+                            },
+                            "referenceRange": [
+                                {
+                                    "type": "NORMAL",
+                                    "low": 11.4,
+                                    "high": 21.6,
+                                    "text": "11,4 - 21,6 fL"
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 5,
+                                    "high": 11.4
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 21.6,
+                                    "high": 35
+                                }
+                            ]
+                        },
+                        {
+                            "seq": 24,
+                            "code": "PCT",
+                            "name": "Plaquetocrito",
+                            "status": "DONE",
+                            "valueQuantity": {
+                                "value": 47,
+                                "units": "%"
+                            },
+                            "referenceRange": [
+                                {
+                                    "type": "NORMAL",
+                                    "low": 0.17,
+                                    "high": 0.86,
+                                    "text": "0,17 - 0,86 %"
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 0,
+                                    "high": 0.17
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 0.86,
+                                    "high": 1
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "seq": 2,
+                    "code": "Chemistry",
+                    "name": "Química",
+                    "items": [
+                        {
+                            "seq": 1,
+                            "code": "GLU",
+                            "name": "Glucosa",
+                            "status": "DONE",
+                            "valueQuantity": {
+                                "value": 174,
+                                "units": "mg/dL"
+                            },
+                            "referenceRange": [
+                                {
+                                    "type": "NORMAL",
+                                    "low": 74,
+                                    "high": 159,
+                                    "text": "74 - 159 mg/dL"
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 15,
+                                    "high": 74
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 159,
+                                    "high": 700
+                                }
+                            ],
+                            "interpretation": {
+                                "code": "A",
+                                "text": "Abnormal"
+                            }
+                        },
+                        {
+                            "seq": 2,
+                            "code": "CREA",
+                            "name": "Creatinina",
+                            "status": "DONE",
+                            "valueQuantity": {
+                                "value": 17,
+                                "units": "mg/dL"
+                            },
+                            "referenceRange": [
+                                {
+                                    "type": "NORMAL",
+                                    "low": 0.8,
+                                    "high": 2.4,
+                                    "text": "0,8 - 2,4 mg/dL"
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 0,
+                                    "high": 0.8
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 2.4,
+                                    "high": 5
+                                }
+                            ]
+                        },
+                        {
+                            "seq": 3,
+                            "code": "BUN",
+                            "name": "BUN",
+                            "status": "DONE",
+                            "valueQuantity": {
+                                "value": 22,
+                                "units": "mg/dL"
+                            },
+                            "referenceRange": [
+                                {
+                                    "type": "NORMAL",
+                                    "low": 16,
+                                    "high": 36,
+                                    "text": "16 - 36 mg/dL"
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 0,
+                                    "high": 16
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 36,
+                                    "high": 100
+                                }
+                            ]
+                        },
+                        {
+                            "seq": 4,
+                            "code": "BUN/CREA",
+                            "name": "Ratio urea / creatinina",
+                            "status": "DONE",
+                            "valueQuantity": {
+                                "value": 13,
+                                "units": ""
+                            }
+                        },
+                        {
+                            "seq": 5,
+                            "code": "TP",
+                            "name": "Proteínas totales",
+                            "status": "DONE",
+                            "valueQuantity": {
+                                "value": 64,
+                                "units": "g/dL"
+                            },
+                            "referenceRange": [
+                                {
+                                    "type": "NORMAL",
+                                    "low": 5.7,
+                                    "high": 8.9,
+                                    "text": "5,7 - 8,9 g/dL"
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 1,
+                                    "high": 5.7
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 8.9,
+                                    "high": 15
+                                }
+                            ]
+                        },
+                        {
+                            "seq": 6,
+                            "code": "ALB",
+                            "name": "Albúmina",
+                            "status": "DONE",
+                            "valueQuantity": {
+                                "value": 27,
+                                "units": "g/dL"
+                            },
+                            "referenceRange": [
+                                {
+                                    "type": "NORMAL",
+                                    "low": 2.2,
+                                    "high": 4,
+                                    "text": "2,2 - 4,0 g/dL"
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 0.5,
+                                    "high": 2.2
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 4,
+                                    "high": 4.5
+                                }
+                            ]
+                        },
+                        {
+                            "seq": 7,
+                            "code": "GLOB",
+                            "name": "Globulina",
+                            "status": "DONE",
+                            "valueQuantity": {
+                                "value": 37,
+                                "units": "g/dL"
+                            },
+                            "referenceRange": [
+                                {
+                                    "type": "NORMAL",
+                                    "low": 2.8,
+                                    "high": 5.1,
+                                    "text": "2,8 - 5,1 g/dL"
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 0.5,
+                                    "high": 2.8
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 5.1,
+                                    "high": 14
+                                }
+                            ]
+                        },
+                        {
+                            "seq": 8,
+                            "code": "ALB/GLOB",
+                            "name": "Ratio albúmina / globulinas",
+                            "status": "DONE",
+                            "valueQuantity": {
+                                "value": 7,
+                                "units": ""
+                            }
+                        },
+                        {
+                            "seq": 9,
+                            "code": "ALT",
+                            "name": "ALT",
+                            "status": "DONE",
+                            "valueQuantity": {
+                                "value": 17,
+                                "units": "U/L"
+                            },
+                            "referenceRange": [
+                                {
+                                    "type": "NORMAL",
+                                    "low": 12,
+                                    "high": 130,
+                                    "text": "12 - 130 U/L"
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 0,
+                                    "high": 12
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 130,
+                                    "high": 2000
+                                }
+                            ]
+                        },
+                        {
+                            "seq": 10,
+                            "code": "ALKP",
+                            "name": "Fosfatasa alcalina",
+                            "status": "DONE",
+                            "valueQuantity": {
+                                "value": 35,
+                                "units": "U/L"
+                            },
+                            "referenceRange": [
+                                {
+                                    "type": "NORMAL",
+                                    "low": 14,
+                                    "high": 111,
+                                    "text": "14 - 111 U/L"
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 0,
+                                    "high": 14
+                                },
+                                {
+                                    "type": "CRITICAL",
+                                    "low": 111,
+                                    "high": 2500
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
