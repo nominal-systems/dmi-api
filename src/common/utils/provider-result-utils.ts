@@ -3,6 +3,7 @@ import { Order } from '../../orders/entities/order.entity'
 import { Test } from '../../orders/entities/test.entity'
 import { Patient } from '../../orders/entities/patient.entity'
 import { Client } from '../../orders/entities/client.entity'
+import { Veterinarian } from '../../orders/entities/veterinarian.entity'
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class ProviderResultUtils {
@@ -31,6 +32,12 @@ export class ProviderResultUtils {
         client.firstName = result.order.client.firstName
         client.lastName = result.order.client.lastName
         order.client = client
+      }
+      if (result.order.veterinarian !== undefined) {
+        const veterinarian = new Veterinarian()
+        veterinarian.firstName = <string>result.order.veterinarian.firstName
+        veterinarian.lastName = <string>result.order.veterinarian.lastName
+        order.veterinarian = veterinarian
       }
       if (result.order.editable !== undefined) {
         order.editable = result.order.editable

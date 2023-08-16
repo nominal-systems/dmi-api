@@ -1728,6 +1728,35 @@ describe('ReportsService', () => {
           })
         }))
       })
+      it('should set veterinarian for reports of test results', async () => {
+       // Orphan result with existing report
+        //   - Report should be updated and patient should be set
+        const externalResultsB = FileUtils.loadFile('test/idexx/external_results-veterinarian.json')
+        ordersServiceMock.findOneByExternalId.mockResolvedValueOnce(null)
+        await reportsService.handleExternalResults(externalResultsB)
+
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
+          namespace: EventNamespace.ORDERS,
+          type: EventType.ORDER_CREATED,
+          data: expect.objectContaining({
+            order: expect.objectContaining({
+              veterinarian: expect.any(Object),
+              status: OrderStatus.COMPLETED
+            })
+          })
+        }))
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
+          namespace: EventNamespace.REPORTS,
+          type: EventType.REPORT_CREATED,
+          data: expect.objectContaining({
+            report: expect.objectContaining({
+              patient: expect.any(Object),
+              status: ReportStatus.FINAL
+            })
+          })
+        }))
+        jest.clearAllMocks()
+      })
     })
     describe('Antech', () => {
       it('should create orders/reports', async () => {
