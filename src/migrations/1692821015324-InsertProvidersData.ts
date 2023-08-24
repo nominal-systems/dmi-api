@@ -1,10 +1,9 @@
-import { Provider } from '../../common/typings/provider.interface'
+import { MigrationInterface, QueryRunner } from "typeorm";
 
-const providers: Provider[] = [
+const providersData = [
   {
     id: 'antech',
     description: 'Antech',
-    configurationUri: '/providers/antech/configurations',
     configurationOptions: [
       {
         type: 'string',
@@ -35,7 +34,7 @@ const providers: Provider[] = [
       {
         type: 'string',
         name: 'ClinicID',
-        description: 'Clinic ID used to login to Antech\'s API',
+        description: "Clinic ID used to login to Antech's API",
         required: true
       }
     ]
@@ -43,7 +42,6 @@ const providers: Provider[] = [
   {
     id: 'idexx',
     description: 'IDEXX VetConnect Plus',
-    configurationUri: '/providers/idexx/configurations',
     configurationOptions: [
       {
         type: 'string',
@@ -60,13 +58,13 @@ const providers: Provider[] = [
       {
         type: 'string',
         name: 'X-Pims-Id',
-        description: 'PIMS ID set in request\'s header',
+        description: "PIMS ID set in request's header",
         required: true
       },
       {
         type: 'string',
         name: 'X-Pims-Version',
-        description: 'PIMS Version set in request\'s header',
+        description: "PIMS Version set in request's header",
         required: true
       }
     ],
@@ -94,7 +92,6 @@ const providers: Provider[] = [
   {
     id: 'zoetis',
     description: 'Zoetis Vetsync v1',
-    configurationUri: '/providers/zoetis/configurations',
     configurationOptions: [
       {
         type: 'string',
@@ -127,7 +124,6 @@ const providers: Provider[] = [
   {
     id: 'heska',
     description: 'Heska',
-    configurationUri: '/providers/heska/configurations',
     configurationOptions: [
       {
         type: 'string',
@@ -160,7 +156,6 @@ const providers: Provider[] = [
   {
     id: 'demo',
     description: 'Demo Provider',
-    configurationUri: '/providers/demo/configurations',
     configurationOptions: [
       {
         type: 'string',
@@ -180,4 +175,24 @@ const providers: Provider[] = [
   }
 ]
 
-export default providers
+export class InsertProvidersData1692821015324 implements MigrationInterface {
+
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    for (const provider of providersData) {
+      const configurationOptionsJson = JSON.stringify(provider.configurationOptions);
+      const integrationOptionsJson = JSON.stringify(provider.integrationOptions);
+
+      await queryRunner.query(`
+            INSERT INTO providers (id, description, configurationOptions, integrationOptions)
+            VALUES ( ?, ?, ?, ? )`, [provider.id, provider.description, configurationOptionsJson, integrationOptionsJson]
+      );
+    }
+  }
+
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    for (const provider of providersData) {
+      await queryRunner.query(`DELETE FROM providers WHERE id = '${provider.id}'`);
+    }
+  }
+
+}

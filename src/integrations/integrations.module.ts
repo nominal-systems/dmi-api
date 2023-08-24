@@ -8,10 +8,11 @@ import { ConfigModule } from '@nestjs/config'
 import { ClientsModule } from '@nestjs/microservices'
 import activeMQClientProvider from '../common/providers/activemq-client.provider'
 import { ProviderConfiguration } from '../providers/entities/provider-configuration.entity'
+import { Providers } from './../providers/entities/providers.entity'
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Integration, ProviderConfiguration]),
+    TypeOrmModule.forFeature([Integration, ProviderConfiguration, Providers]),
     ClientsModule.registerAsync([activeMQClientProvider]),
     OrganizationsModule,
     ConfigModule

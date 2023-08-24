@@ -10,10 +10,10 @@ import { Organization } from '../organizations/entities/organization.entity'
 import { CreateIntegrationDto } from './dtos/create-integration.dto'
 import { Integration } from './entities/integration.entity'
 import { ProviderConfiguration } from '../providers/entities/provider-configuration.entity'
-import providersList from '../providers/constants/provider-list.constant'
 import * as createValidator from 'is-my-json-valid'
 import { Operation, Resource } from '@nominal-systems/dmi-engine-common'
 import { IntegrationStatus } from './constants/integration-status.enum'
+import { Providers } from '../providers/entities/providers.entity'
 
 @Injectable()
 export class IntegrationsService {
@@ -26,6 +26,8 @@ export class IntegrationsService {
     private readonly integrationsRepository: Repository<Integration>,
     @InjectRepository(ProviderConfiguration)
     private readonly providerConfigurationRepository: Repository<ProviderConfiguration>,
+    @InjectRepository(Providers)
+    private readonly providersRepository: Repository<Providers>,
     @Inject('ACTIVEMQ') private readonly client: ClientProxy
   ) {
     this.secretKey = this.configService.get('secretKey') ?? ''
@@ -288,8 +290,7 @@ export class IntegrationsService {
     createIntegrationDto: CreateIntegrationDto
   ): Promise<void> {
     const providerConfiguration = await this.providerConfigurationRepository.findOne({ id: createIntegrationDto.providerConfigurationId })
-    // TODO(gb): actually use the ProviderService to do this
-    const provider = providersList.find(provider => provider.id === providerConfiguration?.providerId)
+    const provider = await this.providersRepository.findOne(<string>providerConfiguration?.providerId)
 
     if (provider == null) {
       throw new BadRequestException('The provider doesn\'t exist')

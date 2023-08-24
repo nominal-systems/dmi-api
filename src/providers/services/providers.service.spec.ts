@@ -11,6 +11,7 @@ import { ConfigService } from '@nestjs/config'
 import { getRepositoryToken } from '@nestjs/typeorm'
 import { Integration } from '../../integrations/entities/integration.entity'
 import { ProviderConfiguration } from '../entities/provider-configuration.entity'
+import { Providers } from '../entities/providers.entity'
 
 const configServiceMock = {
   get: jest.fn()
@@ -23,6 +24,11 @@ const integrationRepositoryMock = {
 const providerConfigurationRepositoryMock = {}
 const clientProxyMock = {
   emit: jest.fn()
+}
+const providersRepositoryMock = {
+  findOne: jest.fn((obj) => obj),
+  find: jest.fn((obj) => obj),
+  update: jest.fn()
 }
 
 describe('ProvidersService', () => {
@@ -50,6 +56,10 @@ describe('ProvidersService', () => {
         },
         { provide: ClientProxy, useValue: {} },
         { provide: getModelToken('ProviderExternalRequests'), useValue: { create: jest.fn() } },
+        {
+          provide: getRepositoryToken(Providers),
+          useValue: providersRepositoryMock
+        },
         {
           provide: 'ACTIVEMQ',
           useValue: clientProxyMock

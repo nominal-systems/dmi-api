@@ -15,7 +15,6 @@ import {
 import { Organization } from '../common/decorators/organization.decorator'
 import { ApiGuard } from '../common/guards/api.guard'
 import { ProviderService } from '../common/typings/provider-services.interface'
-import { Provider } from '../common/typings/provider.interface'
 import { ReferenceDataStatus } from '../common/typings/reference-data-status.interface'
 import { Organization as OrganizationEntity } from '../organizations/entities/organization.entity'
 import { ReferenceDataQueryParams } from './dtos/reference-data-queryparams.dto'
@@ -26,6 +25,7 @@ import { Device } from '@nominal-systems/dmi-engine-common'
 import { EventPattern } from '@nestjs/microservices'
 import { DisableGuards } from '../common/decorators/disable-guards.decorator'
 import { ProviderRawDataDto } from './dtos/provider-raw-data.dto'
+import { Providers } from './entities/providers.entity'
 
 @Controller('providers')
 @UseGuards(ApiGuard)
@@ -37,12 +37,12 @@ export class ProvidersController {
   }
 
   @Get()
-  async listProviders (): Promise<Provider[]> {
+  async listProviders (): Promise<Providers[]> {
     return await this.providersService.findAll()
   }
 
   @Get(':id')
-  async getProvider (@Param('id') providerId: string): Promise<Provider> {
+  async getProvider (@Param('id') providerId: string): Promise<Providers> {
     const provider = await this.providersService.findOneById(providerId)
 
     if (provider == null) {

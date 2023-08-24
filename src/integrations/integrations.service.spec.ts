@@ -5,6 +5,7 @@ import { Integration } from './entities/integration.entity'
 import { getRepositoryToken } from '@nestjs/typeorm'
 import { Organization } from '../organizations/entities/organization.entity'
 import { ProviderConfiguration } from '../providers/entities/provider-configuration.entity'
+import { Providers } from '../providers/entities/providers.entity'
 
 const organization = {} as Organization
 
@@ -23,6 +24,9 @@ describe('IntegrationsService', () => {
   const clientProxyMock = {
     emit: jest.fn()
   }
+  const providersRepositoryMock = {
+    findOne: jest.fn((obj) => obj)
+  }
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -39,6 +43,10 @@ describe('IntegrationsService', () => {
         {
           provide: getRepositoryToken(ProviderConfiguration),
           useValue: providerConfigurationRepositoryMock
+        },
+        {
+          provide: getRepositoryToken(Providers),
+          useValue: providersRepositoryMock
         },
         {
           provide: 'ACTIVEMQ',
