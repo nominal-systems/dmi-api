@@ -1,4 +1,4 @@
-import { MigrationInterface, QueryRunner } from "typeorm";
+import { MigrationInterface, QueryRunner } from 'typeorm'
 
 const providersData = [
   {
@@ -34,7 +34,7 @@ const providersData = [
       {
         type: 'string',
         name: 'ClinicID',
-        description: "Clinic ID used to login to Antech's API",
+        description: 'Clinic ID used to login to Antech\'s API',
         required: true
       }
     ]
@@ -58,13 +58,13 @@ const providersData = [
       {
         type: 'string',
         name: 'X-Pims-Id',
-        description: "PIMS ID set in request's header",
+        description: 'PIMS ID set in request\'s header',
         required: true
       },
       {
         type: 'string',
         name: 'X-Pims-Version',
-        description: "PIMS Version set in request's header",
+        description: 'PIMS Version set in request\'s header',
         required: true
       }
     ],
@@ -177,21 +177,21 @@ const providersData = [
 
 export class InsertProvidersData1692821015324 implements MigrationInterface {
 
-  public async up(queryRunner: QueryRunner): Promise<void> {
+  public async up (queryRunner: QueryRunner): Promise<void> {
     for (const provider of providersData) {
-      const configurationOptionsJson = JSON.stringify(provider.configurationOptions);
-      const integrationOptionsJson = JSON.stringify(provider.integrationOptions);
+      const configurationOptionsJson = JSON.stringify(provider.configurationOptions)
+      const integrationOptionsJson = JSON.stringify(provider.integrationOptions)
 
       await queryRunner.query(`
-            INSERT INTO providers (id, description, configurationOptions, integrationOptions)
-            VALUES ( ?, ?, ?, ? )`, [provider.id, provider.description, configurationOptionsJson, integrationOptionsJson]
-      );
+          INSERT INTO \`providers\` (\`id\`, \`description\`, \`configurationOptions\`, \`integrationOptions\`)
+          VALUES (?, ?, ?, ?)`, [provider.id, provider.description, configurationOptionsJson, integrationOptionsJson]
+      )
     }
   }
 
-  public async down(queryRunner: QueryRunner): Promise<void> {
+  public async down (queryRunner: QueryRunner): Promise<void> {
     for (const provider of providersData) {
-      await queryRunner.query(`DELETE FROM providers WHERE id = '${provider.id}'`);
+      await queryRunner.query(`DELETE FROM \`providers\` WHERE \`id \` = '${provider.id}'`)
     }
   }
 
