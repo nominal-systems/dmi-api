@@ -1,5 +1,4 @@
 import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
-// import { Refs } from './entities/refs.entity'
 import { ProvidersService } from '../providers/services/providers.service'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
@@ -25,7 +24,7 @@ export class RefsService {
 
   async syncProviderRefs (providerId: string, mapList: any, type: 'species' | 'breed' | 'sex'): Promise<void> {
     const provider = await this.providersService.findOneById(providerId)
-     if (provider.hashes === null || provider.hashes[type] !== mapList.hash) {
+    if (provider.hashes === null || provider.hashes[type] !== mapList.hash) {
       for (const item of mapList.items) {
         const existingItem = await this.providerRefsRepository.findOne({ where: { code: item.code, type: type } })
 
@@ -38,12 +37,12 @@ export class RefsService {
             species: item.species
           })
 
-           await this.providerRefsRepository.save(newItem)
+          await this.providerRefsRepository.save(newItem)
         }
       }
       provider.hashes = { ...provider.hashes, [type]: mapList.hash }
       await this.providersService.update(provider)
-     }
+    }
   }
 
   async syncSpecies (
@@ -175,13 +174,13 @@ export class RefsService {
       .select(['providerRefs', 'ref', 'refsMap', 'provider.id'])
       .getMany()
 
-      const { mappedRefs, unmappedRefs } = refs.reduce((acc, obj) => {
-        if (obj.refsMap.length > 0) {
-            acc.mappedRefs.push(obj)
-        } else {
-            acc.unmappedRefs.push(obj)
-        }
-        return acc
+    const { mappedRefs, unmappedRefs } = refs.reduce((acc, obj) => {
+      if (obj.refsMap.length > 0) {
+        acc.mappedRefs.push(obj)
+      } else {
+        acc.unmappedRefs.push(obj)
+      }
+      return acc
     }, { mappedRefs: [] as ProviderRefs[], unmappedRefs: [] as ProviderRefs[] })
 
     return { mappedRefs, unmappedRefs }

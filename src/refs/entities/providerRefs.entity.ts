@@ -1,4 +1,4 @@
-import { Providers } from './../../providers/entities/providers.entity'
+import { Providers } from '../../providers/entities/providers.entity'
 import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm'
 import { RefsMap } from './refsMap.entity'
 

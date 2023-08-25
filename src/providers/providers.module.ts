@@ -10,7 +10,7 @@ import { ClientsModule } from '@nestjs/microservices'
 import { ConfigModule } from '@nestjs/config'
 import activeMQClientProvider from '../common/providers/activemq-client.provider'
 import { Integration } from '../integrations/entities/integration.entity'
-import { MongooseModule, getConnectionToken } from '@nestjs/mongoose'
+import { getConnectionToken, MongooseModule } from '@nestjs/mongoose'
 import { ProviderExternalRequests, ProviderExternalRequestsSchema } from './entities/provider-external-requests.entity'
 import { Providers } from './entities/providers.entity'
 
