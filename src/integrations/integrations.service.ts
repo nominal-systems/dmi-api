@@ -188,26 +188,25 @@ export class IntegrationsService {
   }
 
   async ensureStatusAll (): Promise<void> {
-      const integrations = await this.findAll({
-        withDeleted: false,
-        relations: ['providerConfiguration']
-      })
+    const integrations = await this.findAll({
+      relations: ['providerConfiguration']
+    })
 
-      const integrationStatusCounts = integrations.reduce((counts, integration) => {
-        counts[integration.status]++
-        return counts
-      }, { RUNNING: 0, STOPPED: 0 })
+    const integrationStatusCounts = integrations.reduce((counts, integration) => {
+      counts[integration.status]++
+      return counts
+    }, { RUNNING: 0, STOPPED: 0 })
 
-      this.logger.log(`Found: ${integrationStatusCounts.RUNNING} integrations RUNNING, ${integrationStatusCounts.STOPPED} integrations STOPPED`)
+    this.logger.log(`Found: ${integrationStatusCounts.RUNNING} integrations RUNNING, ${integrationStatusCounts.STOPPED} integrations STOPPED`)
 
-      for (const integration of integrations) {
-        const response = await this.restart(integration)
-        if (response?.message === undefined) {
-          this.logger.log(`Successfully restarted integration ${integration.id}`)
-        } else {
-          this.logger.error(`Error restarting integration ${integration.id}`)
-        }
+    for (const integration of integrations) {
+      const response = await this.restart(integration)
+      if (response?.message === undefined) {
+        this.logger.log(`Successfully restarted integration ${integration.id}`)
+      } else {
+        this.logger.error(`Error restarting integration ${integration.id}`)
       }
+    }
   }
 
   async doDelete (

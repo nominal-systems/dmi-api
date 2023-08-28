@@ -157,31 +157,31 @@ export class AdminController {
     @Param('id') integrationId: string,
     @Query('force', new DefaultValuePipe(false), ParseBoolPipe) force: boolean
   ): Promise<void> {
-      const queryBuilder = this.integrationsRepository.createQueryBuilder('integration')
-        .leftJoinAndSelect('integration.practice', 'practice')
-        .leftJoinAndSelect('integration.providerConfiguration', 'providerConfiguration')
-        .where('integration.id = :id', { id: integrationId })
+    const queryBuilder = this.integrationsRepository.createQueryBuilder('integration')
+      .leftJoinAndSelect('integration.practice', 'practice')
+      .leftJoinAndSelect('integration.providerConfiguration', 'providerConfiguration')
+      .where('integration.id = :id', { id: integrationId })
 
-      if (force) {
-        queryBuilder.withDeleted()
-      }
+    if (force) {
+      queryBuilder.withDeleted()
+    }
 
-      const integration = await queryBuilder.getOne()
+    const integration = await queryBuilder.getOne()
 
-      if (integration === undefined) {
-        throw new NotFoundException('Integration not found')
-      }
+    if (integration === undefined) {
+      throw new NotFoundException('Integration not found')
+    }
 
-      if (integration.status === IntegrationStatus.STOPPED) {
-        res.status(201).send('Integration is already stopped')
+    if (integration.status === IntegrationStatus.STOPPED) {
+      res.status(201).send('Integration is already stopped')
+    } else {
+      const response = await this.integrationsService.doStop(integration)
+      if (response?.message === undefined) {
+        res.status(201).send('Integration stopped')
       } else {
-        const response = await this.integrationsService.doStop(integration)
-        if (response?.message === undefined) {
-          res.status(201).send('Integration stopped')
-        } else {
-          res.status(400).send(response.message)
-        }
+        res.status(400).send(response.message)
       }
+    }
   }
 
   @Post('integrations/:id/start')
