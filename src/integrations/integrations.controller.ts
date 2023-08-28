@@ -1,4 +1,5 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, UseGuards } from '@nestjs/common'
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Res, UseGuards } from '@nestjs/common'
+import { Response } from 'express'
 import { SelectQueryBuilder } from 'typeorm'
 import { Organization } from '../common/decorators/organization.decorator'
 import { ApiGuard } from '../common/guards/api.guard'
@@ -90,20 +91,26 @@ export class IntegrationsController {
   @Post(':id/restart')
   @HttpCode(HttpStatus.OK)
   async restartIntegration (
+    @Res() res: Response,
     @Param('id') integrationId: string
   ): Promise<void> {
-    const integration = await this.integrationsService.findOne({
-      id: integrationId,
-      options: {
-        join: {
-          alias: 'integration',
-          leftJoinAndSelect: {
-            practice: 'integration.practice',
-            providerConfiguration: 'integration.providerConfiguration'
+      const integration = await this.integrationsService.findOne({
+        id: integrationId,
+        options: {
+          join: {
+            alias: 'integration',
+            leftJoinAndSelect: {
+              practice: 'integration.practice',
+              providerConfiguration: 'integration.providerConfiguration'
+            }
           }
         }
+      })
+      const response = await this.integrationsService.restart(integration)
+      if (response?.message === undefined) {
+        res.status(201).send('Integration restarted')
+      } else {
+        res.status(400).send(response.message)
       }
-    })
-    return await this.integrationsService.restart(integration)
   }
 }

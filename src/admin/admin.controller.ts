@@ -157,27 +157,31 @@ export class AdminController {
     @Param('id') integrationId: string,
     @Query('force', new DefaultValuePipe(false), ParseBoolPipe) force: boolean
   ): Promise<void> {
-    const queryBuilder = this.integrationsRepository.createQueryBuilder('integration')
-      .leftJoinAndSelect('integration.practice', 'practice')
-      .leftJoinAndSelect('integration.providerConfiguration', 'providerConfiguration')
-      .where('integration.id = :id', { id: integrationId })
+      const queryBuilder = this.integrationsRepository.createQueryBuilder('integration')
+        .leftJoinAndSelect('integration.practice', 'practice')
+        .leftJoinAndSelect('integration.providerConfiguration', 'providerConfiguration')
+        .where('integration.id = :id', { id: integrationId })
 
-    if (force) {
-      queryBuilder.withDeleted()
-    }
+      if (force) {
+        queryBuilder.withDeleted()
+      }
 
-    const integration = await queryBuilder.getOne()
+      const integration = await queryBuilder.getOne()
 
-    if (integration === undefined) {
-      throw new NotFoundException('Integration not found')
-    }
+      if (integration === undefined) {
+        throw new NotFoundException('Integration not found')
+      }
 
-    if (integration.status === IntegrationStatus.STOPPED) {
-      res.status(201).send('Integration is already stopped')
-    } else {
-      await this.integrationsService.doStop(integration)
-      res.status(201).send('Integration stopped')
-    }
+      if (integration.status === IntegrationStatus.STOPPED) {
+        res.status(201).send('Integration is already stopped')
+      } else {
+        const response = await this.integrationsService.doStop(integration)
+        if (response?.message === undefined) {
+          res.status(201).send('Integration stopped')
+        } else {
+          res.status(400).send(response.message)
+        }
+      }
   }
 
   @Post('integrations/:id/start')
@@ -185,19 +189,23 @@ export class AdminController {
     @Res() res: Response,
     @Param('id') integrationId: string
   ): Promise<void> {
-    const integration = await this.integrationsService.findOne({
-      id: integrationId,
-      options: {
-        relations: ['practice', 'providerConfiguration']
-      }
-    })
+      const integration = await this.integrationsService.findOne({
+        id: integrationId,
+        options: {
+          relations: ['practice', 'providerConfiguration']
+        }
+      })
 
-    if (integration.status === IntegrationStatus.RUNNING) {
-      res.status(201).send('Integration is already running')
-    } else {
-      await this.integrationsService.doStart(integrationId, integration.providerConfiguration, integration.integrationOptions)
-      res.status(201).send('Integration started')
-    }
+      if (integration.status === IntegrationStatus.RUNNING) {
+        res.status(201).send('Integration is already running')
+      } else {
+        const response = await this.integrationsService.doStart(integrationId, integration.providerConfiguration, integration.integrationOptions)
+        if (response?.message === undefined) {
+          res.status(201).send('Integration started')
+        } else {
+          res.status(400).send(response.message)
+        }
+      }
   }
 
   @Post('integrations/:id/restart')
@@ -205,14 +213,17 @@ export class AdminController {
     @Res() res: Response,
     @Param('id') integrationId: string
   ): Promise<void> {
-    const integration = await this.integrationsService.findOne({
-      id: integrationId,
-      options: {
-        relations: ['practice', 'providerConfiguration']
+      const integration = await this.integrationsService.findOne({
+        id: integrationId,
+        options: {
+          relations: ['practice', 'providerConfiguration']
+        }
+      })
+      const response = await this.integrationsService.restart(integration)
+      if (response?.message === undefined) {
+        res.status(201).send('Integration restarted')
+      } else {
+        res.status(400).send(response.message)
       }
-    })
-
-    await this.integrationsService.restart(integration)
-    res.status(201).send('Integration restarted')
   }
 }

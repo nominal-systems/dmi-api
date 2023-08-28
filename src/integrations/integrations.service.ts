@@ -140,16 +140,17 @@ export class IntegrationsService {
     return await this.findOne({ id: integrationId })
   }
 
-  async restart (integration: Integration): Promise<void> {
-    await this.doStop(integration)
-
-    if (integration.status === IntegrationStatus.RUNNING) {
+  async restart (integration: Integration): Promise<Error | undefined> {
+      const responseStop = await this.doStop(integration)
+      if (responseStop?.message === undefined && integration.status === IntegrationStatus.RUNNING) {
         await this.doStart(
-            integration.id,
-            integration.providerConfiguration,
-            integration.integrationOptions
-        )
-    }
+          integration.id,
+          integration.providerConfiguration,
+              integration.integrationOptions
+              )
+      } else if (responseStop?.message !== undefined) {
+        return responseStop
+      }
   }
 
   async delete (
@@ -187,21 +188,26 @@ export class IntegrationsService {
   }
 
   async ensureStatusAll (): Promise<void> {
-    const integrations = await this.findAll({
-      withDeleted: false,
-      relations: ['providerConfiguration']
-    })
+      const integrations = await this.findAll({
+        withDeleted: false,
+        relations: ['providerConfiguration']
+      })
 
-    const integrationStatusCounts = integrations.reduce((counts, integration) => {
-      counts[integration.status]++
-      return counts
-    }, { RUNNING: 0, STOPPED: 0 })
+      const integrationStatusCounts = integrations.reduce((counts, integration) => {
+        counts[integration.status]++
+        return counts
+      }, { RUNNING: 0, STOPPED: 0 })
 
-    this.logger.log(`Found: ${integrationStatusCounts.RUNNING} integrations RUNNING, ${integrationStatusCounts.STOPPED} integrations STOPPED`)
+      this.logger.log(`Found: ${integrationStatusCounts.RUNNING} integrations RUNNING, ${integrationStatusCounts.STOPPED} integrations STOPPED`)
 
-    for (const integration of integrations) {
-      await this.restart(integration)
-    }
+      for (const integration of integrations) {
+        const response = await this.restart(integration)
+        if (response?.message === undefined) {
+          this.logger.log(`Successfully restarted integration ${integration.id}`)
+        } else {
+          this.logger.error(`Error restarting integration ${integration.id}`)
+        }
+      }
   }
 
   async doDelete (
@@ -215,49 +221,55 @@ export class IntegrationsService {
 
   async doStop (
     integration: Integration
-  ): Promise<void> {
-    // Notify engine to remove jobs
-    const { message, messagePattern } = ieMessageBuilder(
-      integration.providerConfiguration.providerId,
-      {
-        resource: Resource.Integration,
-        operation: Operation.Remove,
-        data: {
-          payload: {
-            integrationId: integration.id
+  ): Promise<Error | undefined> {
+    try {
+      // Notify engine to remove jobs
+      const { message, messagePattern } = ieMessageBuilder(
+        integration.providerConfiguration.providerId,
+        {
+          resource: Resource.Integration,
+          operation: Operation.Remove,
+          data: {
+            payload: {
+              integrationId: integration.id
+            }
           }
         }
-      }
-    )
+      )
 
-    this.client.emit(messagePattern, message)
-    await this.integrationsRepository.update(integration.id, { status: IntegrationStatus.STOPPED })
-    this.logger.log(`Stopped integration ${integration.id}`)
+      await this.client.send(messagePattern, message).toPromise()
+      await this.integrationsRepository.update(integration.id, { status: IntegrationStatus.STOPPED })
+    } catch (e) {
+      return new Error(`Error stopping integration ${integration.id}`)
+    }
   }
 
   async doStart (
     integrationId: string,
     providerConfiguration,
     integrationOptions
-  ): Promise<void> {
-    // Notify engine to add jobs
-    const { message, messagePattern } = ieMessageBuilder(
-      providerConfiguration.providerId,
-      {
-        resource: Resource.Integration,
-        operation: Operation.Create,
-        data: {
-          integrationOptions: integrationOptions,
-          providerConfiguration: providerConfiguration.configurationOptions,
-          payload: {
-            integrationId
+  ): Promise<Error | undefined> {
+    try {
+      // Notify engine to add jobs
+      const { message, messagePattern } = ieMessageBuilder(
+        providerConfiguration.providerId,
+        {
+          resource: Resource.Integration,
+          operation: Operation.Create,
+          data: {
+            integrationOptions: integrationOptions,
+            providerConfiguration: providerConfiguration.configurationOptions,
+            payload: {
+              integrationId
+            }
           }
         }
-      }
-    )
-    await this.integrationsRepository.update(integrationId, { status: IntegrationStatus.RUNNING })
-    this.client.emit(messagePattern, message)
-    this.logger.log(`Started integration ${integrationId}`)
+      )
+      await this.client.send(messagePattern, message).toPromise()
+      await this.integrationsRepository.update(integrationId, { status: IntegrationStatus.RUNNING })
+    } catch (e) {
+      return new Error(`Error starting integration ${integrationId}`)
+    }
   }
 
   async updateJobs (
