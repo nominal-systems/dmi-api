@@ -29,8 +29,8 @@ import { IntegrationStatus } from '../integrations/constants/integration-status.
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { CreateIntegrationDto } from '../integrations/dtos/create-integration.dto'
-import { ReferenceDataQueryParams } from 'src/providers/dtos/reference-data-queryparams.dto'
-import { RefsService } from 'src/refs/refs.service'
+import { ReferenceDataQueryParams } from '../providers/dtos/reference-data-queryparams.dto'
+import { RefsService } from '../refs/refs.service'
 
 @Controller('admin')
 @UseGuards(BasicAuthGuard)

@@ -3,15 +3,15 @@ import { RefsService } from './refs.service'
 import { ProvidersService } from '../providers/services/providers.service'
 import { getRepositoryToken } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { Refs } from './entities/ref.entity'
-import { ProviderRefs } from './entities/providerRef.entity'
-import { RefsMap } from './entities/refMap.entity'
+import { Ref } from './entities/ref.entity'
+import { ProviderRef } from './entities/providerRef.entity'
+import { RefMap } from './entities/refMap.entity'
 import { CreateRefsDTO } from './dtos/create-refs.dto'
 
 describe('RefsService', () => {
   let refsService: RefsService
-  let refsRepository: Repository<Refs>
-  let refsMapRepository: Repository<RefsMap>
+  let refsRepository: Repository<Ref>
+  let refsMapRepository: Repository<RefMap>
 
   const mockRefsRepository = {
     find: jest.fn(entity => entity),
@@ -50,23 +50,23 @@ describe('RefsService', () => {
           useValue: mockProvidersService
         },
         {
-          provide: getRepositoryToken(Refs),
+          provide: getRepositoryToken(Ref),
           useValue: mockRefsRepository
         },
         {
-          provide: getRepositoryToken(ProviderRefs),
+          provide: getRepositoryToken(ProviderRef),
           useValue: mockProviderRefsRepository
         },
         {
-          provide: getRepositoryToken(RefsMap),
+          provide: getRepositoryToken(RefMap),
           useValue: mockRefsMapRepository
         }
       ]
     }).compile()
 
     refsService = module.get<RefsService>(RefsService)
-    refsRepository = module.get<Repository<Refs>>(getRepositoryToken(Refs))
-    refsMapRepository = module.get<Repository<RefsMap>>(getRepositoryToken(RefsMap))
+    refsRepository = module.get<Repository<Ref>>(getRepositoryToken(Ref))
+    refsMapRepository = module.get<Repository<RefMap>>(getRepositoryToken(RefMap))
   })
 
   it('should be defined', () => {

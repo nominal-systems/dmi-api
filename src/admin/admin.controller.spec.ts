@@ -6,6 +6,7 @@ import { EventSubscriptionService } from '../events/services/event-subscription.
 import { OrganizationsService } from '../organizations/services/organizations.service'
 import { getRepositoryToken } from '@nestjs/typeorm'
 import { Integration } from '../integrations/entities/integration.entity'
+import { RefsService } from '../refs/refs.service'
 
 describe('AdminController', () => {
   let controller: AdminController
@@ -14,6 +15,7 @@ describe('AdminController', () => {
   const integrationsServiceMock = {}
   const integrationsRepositoryMock = {}
   const eventSubscriptionsServiceMock = {}
+  const refsServiceMock = {}
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -38,6 +40,10 @@ describe('AdminController', () => {
         {
           provide: getRepositoryToken(Integration),
           useValue: integrationsRepositoryMock
+        },
+        {
+          provide: RefsService,
+          useValue: refsServiceMock
         }
       ]
     }).compile()
