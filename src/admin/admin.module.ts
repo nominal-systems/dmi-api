@@ -6,6 +6,7 @@ import { EventsModule } from '../events/events.module'
 import { OrganizationsModule } from '../organizations/organizations.module'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { Integration } from '../integrations/entities/integration.entity'
+import { RefsModule } from 'src/refs/refs.module'
 
 @Module({
   imports: [
@@ -13,7 +14,8 @@ import { Integration } from '../integrations/entities/integration.entity'
     OrganizationsModule,
     ProvidersModule,
     EventsModule,
-    IntegrationsModule
+    IntegrationsModule,
+    RefsModule
   ],
   controllers: [AdminController]
 })

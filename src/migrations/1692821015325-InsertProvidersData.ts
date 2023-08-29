@@ -191,7 +191,7 @@ export class InsertProvidersData1692821015324 implements MigrationInterface {
 
   public async down (queryRunner: QueryRunner): Promise<void> {
     for (const provider of providersData) {
-      await queryRunner.query(`DELETE FROM \`providers\` WHERE \`id \` = '${provider.id}'`)
+      await queryRunner.query(`DELETE FROM \`providers\` WHERE \`id\` = '${provider.id}'`)
     }
   }
 

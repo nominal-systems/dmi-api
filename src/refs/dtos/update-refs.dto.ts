@@ -7,10 +7,8 @@ export class UpdateRefsDTO {
     @IsOptional()
     code?: string
 
-    species?: string | null
-
     @IsOptional()
-    type?: 'species' | 'breed' | 'sex'
+    species?: string | null
 
     @IsArray()
     @IsInt({ each: true })

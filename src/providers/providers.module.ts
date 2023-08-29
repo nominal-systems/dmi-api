@@ -12,11 +12,11 @@ import activeMQClientProvider from '../common/providers/activemq-client.provider
 import { Integration } from '../integrations/entities/integration.entity'
 import { getConnectionToken, MongooseModule } from '@nestjs/mongoose'
 import { ProviderExternalRequests, ProviderExternalRequestsSchema } from './entities/provider-external-requests.entity'
-import { Providers } from './entities/providers.entity'
+import { Provider } from './entities/provider.entity'
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ProviderConfiguration, Integration, Providers]),
+    TypeOrmModule.forFeature([ProviderConfiguration, Integration, Provider]),
     MongooseModule.forFeatureAsync([
       {
         name: ProviderExternalRequests.name,

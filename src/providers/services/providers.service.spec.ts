@@ -11,7 +11,7 @@ import { ConfigService } from '@nestjs/config'
 import { getRepositoryToken } from '@nestjs/typeorm'
 import { Integration } from '../../integrations/entities/integration.entity'
 import { ProviderConfiguration } from '../entities/provider-configuration.entity'
-import { Providers } from '../entities/providers.entity'
+import { Providers } from '../entities/provider.entity'
 
 const configServiceMock = {
   get: jest.fn()

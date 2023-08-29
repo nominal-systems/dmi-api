@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   DefaultValuePipe,
@@ -28,6 +29,8 @@ import { IntegrationStatus } from '../integrations/constants/integration-status.
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { CreateIntegrationDto } from '../integrations/dtos/create-integration.dto'
+import { ReferenceDataQueryParams } from 'src/providers/dtos/reference-data-queryparams.dto'
+import { RefsService } from 'src/refs/refs.service'
 
 @Controller('admin')
 @UseGuards(BasicAuthGuard)
@@ -38,7 +41,8 @@ export class AdminController {
     private readonly eventSubscriptionsService: EventSubscriptionService,
     private readonly integrationsService: IntegrationsService,
     @InjectRepository(Integration)
-    private readonly integrationsRepository: Repository<Integration>
+    private readonly integrationsRepository: Repository<Integration>,
+    private readonly refsService: RefsService
   ) {
   }
 
@@ -214,5 +218,44 @@ export class AdminController {
 
     await this.integrationsService.restart(integration)
     res.status(201).send('Integration restarted')
+  }
+
+  @Post('refs/sync/:providerId')
+  async sync (
+    @Param('providerId') providerId: string,
+    @Query() { integrationId }: ReferenceDataQueryParams
+  ): Promise<void> {
+    try {
+      await this.refsService.syncSpecies(providerId, integrationId)
+      await this.refsService.syncBreeds(providerId, integrationId)
+      await this.refsService.syncSexes(providerId, integrationId)
+    } catch (error) {
+      throw new BadRequestException(error.message)
+    }
+  }
+
+  @Post('refs/sync/:providerId/:type')
+  async syncType (
+    @Param('providerId') providerId: string,
+    @Param('type') type: string,
+    @Query() { integrationId }: ReferenceDataQueryParams
+  ): Promise<void> {
+    try {
+      switch (type) {
+        case 'species':
+          await this.refsService.syncSpecies(providerId, integrationId)
+          break
+        case 'breeds':
+          await this.refsService.syncBreeds(providerId, integrationId)
+          break
+        case 'sexes':
+          await this.refsService.syncSexes(providerId, integrationId)
+          break
+        default:
+          throw new BadRequestException('Invalid type')
+      }
+    } catch (error) {
+      throw new BadRequestException(error.message)
+    }
   }
 }

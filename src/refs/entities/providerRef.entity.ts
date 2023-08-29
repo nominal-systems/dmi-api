@@ -1,10 +1,10 @@
-import { Providers } from '../../providers/entities/providers.entity'
+import { Provider } from '../../providers/entities/provider.entity'
 import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm'
-import { RefsMap } from './refsMap.entity'
+import { RefMap } from './refMap.entity'
 
 @Entity()
 @Index('idx_species_code', ['code'])
-export class ProviderRefs {
+export class ProviderRef {
   @PrimaryGeneratedColumn()
   id: number
 
@@ -23,14 +23,14 @@ export class ProviderRefs {
   })
   type: 'species' | 'breed' | 'sex'
 
-  @ManyToOne(() => Providers)
+  @ManyToOne(() => Provider)
   @JoinColumn({ name: 'provider', referencedColumnName: 'id' })
-  provider: Providers
+  provider: Provider
 
-  @ManyToOne(() => ProviderRefs, { onDelete: 'SET NULL' })
+  @ManyToOne(() => ProviderRef, { onDelete: 'SET NULL' })
   @JoinColumn({ name: 'species', referencedColumnName: 'code' })
-  speciesEntity: ProviderRefs | null
+  speciesEntity: ProviderRef | null
 
-  @OneToMany(() => RefsMap, RefsMap => RefsMap.providerRef)
-  refsMap: RefsMap[]
+  @OneToMany(() => RefMap, refMap => refMap.providerRef)
+  refsMap: RefMap[]
 }

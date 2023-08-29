@@ -25,7 +25,7 @@ import { Device } from '@nominal-systems/dmi-engine-common'
 import { EventPattern } from '@nestjs/microservices'
 import { DisableGuards } from '../common/decorators/disable-guards.decorator'
 import { ProviderRawDataDto } from './dtos/provider-raw-data.dto'
-import { Providers } from './entities/providers.entity'
+import { Provider } from './entities/provider.entity'
 
 @Controller('providers')
 @UseGuards(ApiGuard)
@@ -37,12 +37,12 @@ export class ProvidersController {
   }
 
   @Get()
-  async listProviders (): Promise<Providers[]> {
-    return await this.providersService.findAll()
+  async listProviders (): Promise<Provider[]> {
+    return await this.providersService.findAll({ relations: ['configurationOptions', 'integrationOptions'] })
   }
 
   @Get(':id')
-  async getProvider (@Param('id') providerId: string): Promise<Providers> {
+  async getProvider (@Param('id') providerId: string): Promise<Provider> {
     const provider = await this.providersService.findOneById(providerId)
 
     if (provider == null) {

@@ -18,16 +18,17 @@ import { Model } from 'mongoose'
 import { InjectModel } from '@nestjs/mongoose'
 import { ProviderRawDataDto } from '../dtos/provider-raw-data.dto'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Providers } from '../entities/providers.entity'
+import { Provider } from '../entities/provider.entity'
 import { FindManyOptions, Repository } from 'typeorm'
+import { UpdateProvider } from '../dtos/update-provider.dto'
 
 @Injectable()
 export class ProvidersService {
   private readonly logger = new Logger(ProvidersService.name)
 
   constructor (
-    @InjectRepository(Providers)
-    private readonly providersRepository: Repository<Providers>,
+    @InjectRepository(Provider)
+    private readonly providerRepository: Repository<Provider>,
     private readonly integrationsService: IntegrationsService,
     @InjectModel(ProviderExternalRequests.name)
     private readonly providerExternalRequestsModel: Model<ProviderExternalRequestDocument>,
@@ -35,12 +36,12 @@ export class ProvidersService {
   ) {
   }
 
-  async findAll (options?: FindManyOptions<Providers>): Promise<Providers[]> {
-    return await this.providersRepository.find(options)
+  async findAll (options?: FindManyOptions<Provider>): Promise<Provider[]> {
+    return await this.providerRepository.find(options)
   }
 
-  async findOneById (providerId: string): Promise<Providers> {
-    const provider = await this.providersRepository.findOne(providerId)
+  async findOneById (providerId: string): Promise<Provider> {
+    const provider = await this.providerRepository.findOne(providerId, { relations: ['configurationOptions', 'integrationOptions'] })
 
     if (provider == null) {
       throw new NotFoundException("The provider doesn't exist")
@@ -192,6 +193,7 @@ export class ProvidersService {
         relations: ['providerConfiguration']
       }
     })
+    console.log(configurationOptions, integrationOptions)
 
     const { message, messagePattern } = ieMessageBuilder(providerId, {
       resource: 'species',
@@ -224,10 +226,7 @@ export class ProvidersService {
     await this.providerExternalRequestsModel.create(rawData)
   }
 
-  async update (provider: any): Promise<void> {
-    await this.providersRepository.update(
-      { id: provider.id },
-      { ...provider }
-    )
+  async update (provider: UpdateProvider): Promise<void> {
+    await this.providerRepository.save(provider)
   }
 }

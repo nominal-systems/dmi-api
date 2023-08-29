@@ -2,10 +2,10 @@ import { ConflictException, Injectable, Logger, NotFoundException } from '@nestj
 import { ProvidersService } from '../providers/services/providers.service'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { Refs } from './entities/refs.entity'
-import { ProviderRefs } from './entities/providerRefs.entity'
+import { Ref } from './entities/ref.entity'
+import { ProviderRef } from './entities/providerRef.entity'
 import { CreateRefsDTO } from './dtos/create-refs.dto'
-import { RefsMap } from './entities/refsMap.entity'
+import { RefMap } from './entities/refMap.entity'
 
 @Injectable()
 export class RefsService {
@@ -13,23 +13,26 @@ export class RefsService {
 
   constructor (
     private readonly providersService: ProvidersService,
-    @InjectRepository(ProviderRefs)
-    private readonly providerRefsRepository: Repository<ProviderRefs>,
-    @InjectRepository(Refs)
-    private readonly refsRepository: Repository<Refs>,
-    @InjectRepository(RefsMap)
-    private readonly refsMapRepository: Repository<RefsMap>
+    @InjectRepository(ProviderRef)
+    private readonly providerRefRepository: Repository<ProviderRef>,
+    @InjectRepository(Ref)
+    private readonly refRepository: Repository<Ref>,
+    @InjectRepository(RefMap)
+    private readonly refMapRepository: Repository<RefMap>
   ) {
   }
 
   async syncProviderRefs (providerId: string, mapList: any, type: 'species' | 'breed' | 'sex'): Promise<void> {
     const provider = await this.providersService.findOneById(providerId)
     if (provider.hashes === null || provider.hashes[type] !== mapList.hash) {
+      let newRefsCount = 0
+      let existingRefsCount = 0
+      let foundInProviderCount = 0
       for (const item of mapList.items) {
-        const existingItem = await this.providerRefsRepository.findOne({ where: { code: item.code, type: type } })
+        const [existingItem, count] = await this.providerRefRepository.findAndCount({ where: { code: item.code, type: type } })
 
         if (existingItem === undefined) {
-          const newItem = this.providerRefsRepository.create({
+          const newItem = this.providerRefRepository.create({
             code: item.code,
             name: item.name,
             type: type,
@@ -37,9 +40,19 @@ export class RefsService {
             species: item.species
           })
 
-          await this.providerRefsRepository.save(newItem)
+          await this.providerRefRepository.save(newItem)
+          newRefsCount++
+        } else {
+          existingRefsCount++
+        }
+        if (count > 0) {
+          foundInProviderCount++
         }
       }
+      this.logger.log(`New ${type} refs created: ${newRefsCount}`)
+      this.logger.log(`Existing ${type} refs: ${existingRefsCount}`)
+      this.logger.log(`Found in provider ${type} refs: ${foundInProviderCount}`)
+
       provider.hashes = { ...provider.hashes, [type]: mapList.hash }
       await this.providersService.update(provider)
     }
@@ -69,89 +82,89 @@ export class RefsService {
     await this.syncProviderRefs(providerId, sexes, 'sex')
   }
 
-  async getSpecies (): Promise<Refs[]> {
-    return await this.refsRepository.find({ where: { type: 'species' }, relations: ['refsMap', 'refsMap.providerRef'] })
+  async getSpecies (): Promise<Ref[]> {
+    return await this.refRepository.find({ where: { type: 'species' }, relations: ['refsMap', 'refsMap.providerRef'] })
   }
 
-  async getBreeds (): Promise<Refs[]> {
-    return await this.refsRepository.find({ where: { type: 'breed' }, relations: ['refsMap', 'refsMap.providerRef'] })
+  async getBreeds (): Promise<Ref[]> {
+    return await this.refRepository.find({ where: { type: 'breed' }, relations: ['refsMap', 'refsMap.providerRef'] })
   }
 
-  async getSexes (): Promise<Refs[]> {
-    return await this.refsRepository.find({ where: { type: 'sex' }, relations: ['refsMap', 'refsMap.providerRef'] })
+  async getSexes (): Promise<Ref[]> {
+    return await this.refRepository.find({ where: { type: 'sex' }, relations: ['refsMap', 'refsMap.providerRef'] })
   }
 
-  async createRefs (refDto: CreateRefsDTO): Promise<Refs> {
-    const existingRef = await this.refsRepository.findOne({ where: { code: refDto.code } })
+  async createRefs (refDto: CreateRefsDTO): Promise<Ref> {
+    const existingRef = await this.refRepository.findOne({ where: { code: refDto.code } })
 
     if (existingRef !== undefined) {
       throw new ConflictException('Ref already exists')
     }
-    const newRef = this.refsRepository.create({
+    const newRef = this.refRepository.create({
       name: refDto.name,
       code: refDto.code,
       type: refDto.type,
       species: refDto.species !== null ? refDto.species : undefined
     })
-    await this.refsRepository.save(newRef)
+    await this.refRepository.save(newRef)
 
     for (const providerRefId of refDto.providerRefIds) {
-      const providerRef = await this.providerRefsRepository.findOne(providerRefId)
+      const providerRef = await this.providerRefRepository.findOne(providerRefId)
       if (providerRef === undefined) {
         throw new NotFoundException('Provider ref not found')
       }
-      const newRefsMap = this.refsMapRepository.create({
+      const newRefsMap = this.refMapRepository.create({
         ref: newRef,
         providerRef: providerRef
       })
-      await this.refsMapRepository.save(newRefsMap)
+      await this.refMapRepository.save(newRefsMap)
     }
 
     return newRef
   }
 
-  async updateRefs (id: string, updateRefDto: any): Promise<Refs> {
+  async updateRefs (id: string, updateRefDto: any): Promise<Ref> {
     const existingRef = await this.findOneById(id)
     if (existingRef === undefined) {
       throw new NotFoundException(`Ref with ID ${id} not found`)
     }
 
     if (updateRefDto.providerRefIds !== undefined && updateRefDto.providerRefIds.length > 0) {
-      const providerRefs = await this.providerRefsRepository.findByIds(updateRefDto.providerRefIds)
+      const providerRefs = await this.providerRefRepository.findByIds(updateRefDto.providerRefIds)
       if (providerRefs.length !== updateRefDto.providerRefIds.length) {
         throw new NotFoundException('Provider refs not found')
       }
 
-      await this.refsMapRepository.delete(existingRef.refsMap.map(refsMap => refsMap.id))
+      await this.refMapRepository.delete(existingRef.refsMap.map(refsMap => refsMap.id))
       existingRef.refsMap = existingRef.refsMap.filter(refsMap => updateRefDto.providerRefIds.includes(refsMap.providerRef.id))
       existingRef.refsMap = providerRefs.map(providerRef => {
-        return this.refsMapRepository.create({
+        return this.refMapRepository.create({
           ref: existingRef,
           providerRef: providerRef
         })
       })
-      await this.refsMapRepository.save(existingRef.refsMap)
+      await this.refMapRepository.save(existingRef.refsMap)
     } else {
       existingRef.refsMap = []
     }
 
-    await this.refsRepository.merge(existingRef, updateRefDto)
-    await this.refsRepository.save(existingRef)
+    await this.refRepository.merge(existingRef, updateRefDto)
+    await this.refRepository.save(existingRef)
     return await this.findOneById(id)
   }
 
   async deleteRefs (id: string): Promise<void> {
-    const ref = await this.refsRepository.findOne(id, { relations: ['refsMap'] })
+    const ref = await this.refRepository.findOne(id, { relations: ['refsMap'] })
 
     if (ref === undefined) {
       throw new NotFoundException(`Ref with ID ${id} not found`)
     }
-    await this.refsMapRepository.delete(ref.refsMap.map(refsMap => refsMap.id))
-    await this.refsRepository.delete(id)
+    await this.refMapRepository.delete(ref.refsMap.map(refsMap => refsMap.id))
+    await this.refRepository.delete(id)
   }
 
-  async findOneById (id: string): Promise<Refs> {
-    const ref = await this.refsRepository.createQueryBuilder('ref')
+  async findOneById (id: string): Promise<Ref> {
+    const ref = await this.refRepository.createQueryBuilder('ref')
       .leftJoin('ref.refsMap', 'refsMap')
       .leftJoin('refsMap.providerRef', 'providerRef')
       .leftJoin('providerRef.provider', 'provider', 'provider.id = providerRef.provider')
@@ -167,7 +180,7 @@ export class RefsService {
   }
 
   async findProvidersMappedRefs (): Promise<any> {
-    const refs = await this.providerRefsRepository.createQueryBuilder('providerRefs')
+    const refs = await this.providerRefRepository.createQueryBuilder('providerRefs')
       .leftJoin('providerRefs.refsMap', 'refsMap')
       .leftJoin('refsMap.ref', 'ref')
       .leftJoin('providerRefs.provider', 'provider', 'provider.id = providerRefs.provider')
@@ -181,7 +194,7 @@ export class RefsService {
         acc.unmappedRefs.push(obj)
       }
       return acc
-    }, { mappedRefs: [] as ProviderRefs[], unmappedRefs: [] as ProviderRefs[] })
+    }, { mappedRefs: [] as ProviderRef[], unmappedRefs: [] as ProviderRef[] })
 
     return { mappedRefs, unmappedRefs }
   }

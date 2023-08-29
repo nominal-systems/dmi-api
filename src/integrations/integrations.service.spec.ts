@@ -5,7 +5,7 @@ import { Integration } from './entities/integration.entity'
 import { getRepositoryToken } from '@nestjs/typeorm'
 import { Organization } from '../organizations/entities/organization.entity'
 import { ProviderConfiguration } from '../providers/entities/provider-configuration.entity'
-import { Providers } from '../providers/entities/providers.entity'
+import { Providers } from '../providers/entities/provider.entity'
 
 const organization = {} as Organization
 

@@ -1,22 +1,23 @@
 import { Module } from '@nestjs/common'
-import { RefsController } from './refs.controller'
+import { RefController } from './refs.controller'
 import { OrganizationsModule } from '../organizations/organizations.module'
 import { ProvidersModule } from '../providers/providers.module'
 import { RefsService } from './refs.service'
 import { IntegrationsModule } from '../integrations/integrations.module'
 import { TypeOrmModule } from '@nestjs/typeorm'
-import { Refs } from './entities/refs.entity'
-import { ProviderRefs } from './entities/providerRefs.entity'
-import { RefsMap } from './entities/refsMap.entity'
+import { Ref } from './entities/ref.entity'
+import { ProviderRef } from './entities/providerRef.entity'
+import { RefMap } from './entities/refMap.entity'
 
 @Module({
   imports: [
     OrganizationsModule,
     ProvidersModule,
     IntegrationsModule,
-    TypeOrmModule.forFeature([ProviderRefs, Refs, RefsMap])
+    TypeOrmModule.forFeature([ProviderRef, Ref, RefMap])
   ],
-  controllers: [RefsController],
-  providers: [RefsService]
+  controllers: [RefController],
+  providers: [RefsService],
+  exports: [RefsService]
 })
 export class RefsModule {}

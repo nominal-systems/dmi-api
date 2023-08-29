@@ -3,9 +3,9 @@ import { RefsService } from './refs.service'
 import { ProvidersService } from '../providers/services/providers.service'
 import { getRepositoryToken } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { Refs } from './entities/refs.entity'
-import { ProviderRefs } from './entities/providerRefs.entity'
-import { RefsMap } from './entities/refsMap.entity'
+import { Refs } from './entities/ref.entity'
+import { ProviderRefs } from './entities/providerRef.entity'
+import { RefsMap } from './entities/refMap.entity'
 import { CreateRefsDTO } from './dtos/create-refs.dto'
 
 describe('RefsService', () => {

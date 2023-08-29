@@ -13,7 +13,7 @@ import { ProviderConfiguration } from '../providers/entities/provider-configurat
 import * as createValidator from 'is-my-json-valid'
 import { Operation, Resource } from '@nominal-systems/dmi-engine-common'
 import { IntegrationStatus } from './constants/integration-status.enum'
-import { Providers } from '../providers/entities/providers.entity'
+import { Provider } from '../providers/entities/provider.entity'
 
 @Injectable()
 export class IntegrationsService {
@@ -26,8 +26,8 @@ export class IntegrationsService {
     private readonly integrationsRepository: Repository<Integration>,
     @InjectRepository(ProviderConfiguration)
     private readonly providerConfigurationRepository: Repository<ProviderConfiguration>,
-    @InjectRepository(Providers)
-    private readonly providersRepository: Repository<Providers>,
+    @InjectRepository(Provider)
+    private readonly providerRepository: Repository<Provider>,
     @Inject('ACTIVEMQ') private readonly client: ClientProxy
   ) {
     this.secretKey = this.configService.get('secretKey') ?? ''
@@ -290,7 +290,7 @@ export class IntegrationsService {
     createIntegrationDto: CreateIntegrationDto
   ): Promise<void> {
     const providerConfiguration = await this.providerConfigurationRepository.findOne({ id: createIntegrationDto.providerConfigurationId })
-    const provider = await this.providersRepository.findOne(<string>providerConfiguration?.providerId)
+    const provider = await this.providerRepository.findOne(<string>providerConfiguration?.providerId)
 
     if (provider == null) {
       throw new BadRequestException('The provider doesn\'t exist')

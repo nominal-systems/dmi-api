@@ -5,13 +5,13 @@ import { ReferenceDataList } from './interfaces/reference-data-list.interface'
 import { ReferenceDataQueryParams } from '../providers/dtos/reference-data-queryparams.dto'
 import { ProvidersService } from '../providers/services/providers.service'
 import { RefsService } from './refs.service'
-import { Refs } from './entities/refs.entity'
+import { Ref } from './entities/ref.entity'
 import { CreateRefsDTO } from './dtos/create-refs.dto'
 import { UpdateRefsDTO } from './dtos/update-refs.dto'
 
 @Controller('refs')
 @UseGuards(ApiGuard)
-export class RefsController {
+export class RefController {
   constructor (
     private readonly providersService: ProvidersService,
     private readonly refsService: RefsService
@@ -81,20 +81,10 @@ export class RefsController {
     }
   }
 
-  @Post('sync/:providerId')
-  async sync (
-    @Param('providerId') providerId: string,
-    @Query() { integrationId }: ReferenceDataQueryParams
-  ): Promise<void> {
-    await this.refsService.syncSpecies(providerId, integrationId)
-    await this.refsService.syncBreeds(providerId, integrationId)
-    await this.refsService.syncSexes(providerId, integrationId)
-  }
-
   @Post('create')
   async createRef (
     @Body() createDto: CreateRefsDTO
-  ): Promise<Refs> {
+  ): Promise<Ref> {
     return await this.refsService.createRefs(createDto)
   }
 
@@ -102,7 +92,7 @@ export class RefsController {
   async updateRef (
     @Param('id') id: string,
     @Body() updateDto: UpdateRefsDTO
-  ): Promise<Refs> {
+  ): Promise<Ref> {
     return await this.refsService.updateRefs(id, updateDto)
   }
 
@@ -116,12 +106,12 @@ export class RefsController {
   @Get(':id')
   async getRef (
     @Param('id') id: string
-  ): Promise<Refs> {
+  ): Promise<Ref> {
     return await this.refsService.findOneById(id)
   }
 
   @Get('/mapped')
-  async getMappedRefs (): Promise<Refs[]> {
+  async getMappedRefs (): Promise<Ref[]> {
     return await this.refsService.findProvidersMappedRefs()
   }
 }

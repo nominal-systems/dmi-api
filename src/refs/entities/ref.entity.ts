@@ -1,9 +1,9 @@
 import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm'
-import { RefsMap } from './refsMap.entity'
+import { RefMap } from './refMap.entity'
 
 @Entity()
 @Index('idx_species_code', ['code'])
-export class Refs {
+export class Ref {
   @PrimaryGeneratedColumn()
   id: number
 
@@ -22,10 +22,10 @@ export class Refs {
   })
   type: 'species' | 'breed' | 'sex'
 
-  @ManyToOne(() => Refs, { onDelete: 'SET NULL' })
+  @ManyToOne(() => Ref, { onDelete: 'SET NULL' })
   @JoinColumn({ name: 'species', referencedColumnName: 'code' })
-  speciesEntity: Refs | null
+  speciesEntity: Ref | null
 
-  @OneToMany(() => RefsMap, RefsMap => RefsMap.ref)
-  refsMap: RefsMap[]
+  @OneToMany(() => RefMap, refMap => refMap.ref)
+  refsMap: RefMap[]
 }
