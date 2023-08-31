@@ -32,7 +32,9 @@ describe('ReportsService', () => {
     createOrderForResult: jest.fn().mockImplementation((integrationId, result) => {
       return {}
     }),
-    saveOrder: jest.fn().mockImplementation((order) => order)
+    saveOrder: jest.fn().mockImplementation((order) => order),
+    createExternalOrder: jest.fn().mockImplementation((integrationId, order) => order),
+    updateOrderStatusFromResults: jest.fn().mockImplementation((order, results) => order)
   }
   const integrationsServiceMock = {
     findById: jest.fn().mockImplementation((integrationId) => {
@@ -1729,7 +1731,7 @@ describe('ReportsService', () => {
         }))
       })
       it('should set veterinarian for reports of test results', async () => {
-       // Orphan result with existing report
+        // Orphan result with existing report
         //   - Report should be updated and patient should be set
         const externalResultsB = FileUtils.loadFile('test/idexx/external_results-veterinarian.json')
         ordersServiceMock.findOneByExternalId.mockResolvedValueOnce(null)
@@ -1781,6 +1783,32 @@ describe('ReportsService', () => {
         })
 
         expect(eventsServiceMock.addEvent).toHaveBeenCalledTimes(resultsMissing01.length)
+      })
+    })
+    describe('Heska', () => {
+      it('should correctly match results for an order with a result batch', async () => {
+        const results: ProviderResult[] = FileUtils.loadFile('test/heska/heska-results-batch-01.json')
+        jest.spyOn(reportsService, 'findReportsByExternalOrderIds').mockResolvedValueOnce([])
+        jest.spyOn(ordersServiceMock, 'findOrdersByExternalIds').mockResolvedValue([])
+        jest.spyOn(ordersServiceMock, 'getOrderFromProvider').mockResolvedValue({
+          externalId: 'DMI-DR94877',
+          status: 'COMPLETED'
+        } as unknown as Order)
+        await reportsService.handleExternalResults({
+          integrationId: 'heska',
+          results: results
+        })
+
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledTimes(2)
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
+          namespace: EventNamespace.ORDERS,
+          type: EventType.ORDER_CREATED
+        }))
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
+          namespace: EventNamespace.REPORTS,
+          type: EventType.REPORT_CREATED
+        }))
+        eventsServiceMock.addEvent.mockReset()
       })
     })
   })

@@ -119,9 +119,11 @@ export class ReportsService {
     results
   }: ExternalResultEventData): Promise<void> {
     const integration = await this.integrationsService.findById(integrationId)
-    const externalOrderIds = results
-      .filter(result => !isNullOrEmpty(result.orderId) && isNullOrEmpty(result.order))
-      .map(result => result.orderId)
+    const externalOrderIds = [...new Set(
+      results
+        .filter(result => !isNullOrEmpty(result.orderId) && isNullOrEmpty(result.order))
+        .map(result => result.orderId)
+    )]
     const orphanResults = results
       .filter(result => isNullOrEmpty(result.orderId) || !isNullOrEmpty(result.order))
     const createdReports: Report[] = []

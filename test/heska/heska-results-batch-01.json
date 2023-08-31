@@ -1,0 +1,610 @@
+[
+  {
+    "id": "DMI-DR94877",
+    "orderId": "DMI-DR94877",
+    "status": "COMPLETED",
+    "testResults": [
+      {
+        "seq": 1,
+        "code": "Hematology-94877002-2018-03-07T08:54:11",
+        "name": "CBC",
+        "notes": "",
+        "items": [
+          {
+            "seq": 1,
+            "code": "WBC",
+            "name": "WBC",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 0.07,
+              "units": "10^3/uL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "low": 6,
+                "high": 17
+              }
+            ]
+          },
+          {
+            "seq": 2,
+            "code": "NEU#",
+            "name": "NEU",
+            "status": "DONE",
+            "valueString": "*****",
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "low": 3.62,
+                "high": 12.3
+              }
+            ]
+          },
+          {
+            "seq": 3,
+            "code": "LYM#",
+            "name": "LYM",
+            "status": "DONE",
+            "valueString": "*****",
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "low": 0.83,
+                "high": 4.91
+              }
+            ]
+          },
+          {
+            "seq": 4,
+            "code": "MON#",
+            "name": "MONO",
+            "status": "DONE",
+            "valueString": "*****",
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "low": 0.14,
+                "high": 1.97
+              }
+            ]
+          },
+          {
+            "seq": 5,
+            "code": "EOS#",
+            "name": "EOS",
+            "status": "DONE",
+            "valueString": "*****",
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "low": 0.04,
+                "high": 1.62
+              }
+            ]
+          },
+          {
+            "seq": 6,
+            "code": "BAS#",
+            "name": "BAS",
+            "status": "DONE",
+            "valueString": "*****",
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "low": 0,
+                "high": 0.12
+              }
+            ]
+          },
+          {
+            "seq": 7,
+            "code": "NEU%",
+            "name": "NEU %",
+            "status": "DONE",
+            "valueString": "*****",
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "low": 52,
+                "high": 81
+              }
+            ]
+          },
+          {
+            "seq": 8,
+            "code": "LYM%",
+            "name": "LYM %",
+            "status": "DONE",
+            "valueString": "*****",
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "low": 12,
+                "high": 33
+              }
+            ]
+          },
+          {
+            "seq": 9,
+            "code": "MON%",
+            "name": "MONO %",
+            "status": "DONE",
+            "valueString": "*****",
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "low": 2,
+                "high": 13
+              }
+            ]
+          },
+          {
+            "seq": 10,
+            "code": "EOS%",
+            "name": "EOS %",
+            "status": "DONE",
+            "valueString": "*****",
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "low": 0.5,
+                "high": 10
+              }
+            ]
+          },
+          {
+            "seq": 11,
+            "code": "BAS%",
+            "name": "BAS %",
+            "status": "DONE",
+            "valueString": "*****",
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "low": 0,
+                "high": 1.3
+              }
+            ]
+          },
+          {
+            "seq": 12,
+            "code": "RBC",
+            "name": "RBC",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 0,
+              "units": "10^6/uL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "low": 5.1,
+                "high": 8.5
+              }
+            ]
+          },
+          {
+            "seq": 13,
+            "code": "HGB",
+            "name": "HGB",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 0,
+              "units": "g/dL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "low": 11,
+                "high": 19
+              }
+            ]
+          },
+          {
+            "seq": 14,
+            "code": "HCT",
+            "name": "HCT",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 0,
+              "units": "%"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "low": 33,
+                "high": 56
+              }
+            ]
+          },
+          {
+            "seq": 15,
+            "code": "MCV",
+            "name": "MCV",
+            "status": "DONE",
+            "valueString": "*****",
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "low": 60,
+                "high": 76
+              }
+            ]
+          },
+          {
+            "seq": 16,
+            "code": "MCH",
+            "name": "MCH",
+            "status": "DONE",
+            "valueString": "*****",
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "low": 20,
+                "high": 27
+              }
+            ]
+          },
+          {
+            "seq": 17,
+            "code": "MCHC",
+            "name": "MCHC",
+            "status": "DONE",
+            "valueString": "*****",
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "low": 30,
+                "high": 38
+              }
+            ]
+          },
+          {
+            "seq": 18,
+            "code": "RDW-CV",
+            "name": "RDW %",
+            "status": "DONE",
+            "valueString": "*****",
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "low": 12.5,
+                "high": 17.2
+              }
+            ]
+          },
+          {
+            "seq": 19,
+            "code": "PLT",
+            "name": "PLT",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 2,
+              "units": "10^3/uL"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "low": 117,
+                "high": 490
+              }
+            ]
+          },
+          {
+            "seq": 20,
+            "code": "MPV",
+            "name": "MPV",
+            "status": "DONE",
+            "valueString": "*****",
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "low": 8,
+                "high": 14.1
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "DMI-DR94877",
+    "orderId": "DMI-DR94877",
+    "status": "COMPLETED",
+    "testResults": [
+      {
+        "seq": 1,
+        "code": "Blood gas-94877001-2018-03-07T08:54:11",
+        "name": "Blood gas, electrolytes, metabolic",
+        "notes": "",
+        "items": [
+          {
+            "seq": 1,
+            "code": "pO2",
+            "name": "pO2",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 183.4,
+              "units": "mmHg"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "low": 5,
+                "high": 750
+              }
+            ]
+          },
+          {
+            "seq": 2,
+            "code": "O2SAT",
+            "name": "cSO2",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 96.3,
+              "units": "%"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "low": 0,
+                "high": 100
+              }
+            ]
+          },
+          {
+            "seq": 3,
+            "code": "pCO2",
+            "name": "pCO2",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 18.6,
+              "units": "mmHg"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "low": 5,
+                "high": 250
+              }
+            ]
+          },
+          {
+            "seq": 4,
+            "code": "HCO3-act",
+            "name": "Bicarbonate",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 2,
+              "units": "mmol/L"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "low": 1,
+                "high": 85
+              }
+            ]
+          },
+          {
+            "seq": 5,
+            "code": "cTCO2",
+            "name": "cTCO2",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 2.6,
+              "units": "mmol/L"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "low": 1,
+                "high": 85
+              }
+            ]
+          },
+          {
+            "seq": 6,
+            "code": "pH",
+            "name": "pH",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 6.635,
+              "units": ""
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "low": 6.5,
+                "high": 8
+              }
+            ]
+          },
+          {
+            "seq": 7,
+            "code": "BE(ecf)",
+            "name": "BE, ECF",
+            "status": "DONE",
+            "valueString": "< -30.0",
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "low": -30,
+                "high": 30
+              }
+            ]
+          },
+          {
+            "seq": 8,
+            "code": "Na+",
+            "name": "Sodium",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 105,
+              "units": "mmol/L"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "low": 85,
+                "high": 180
+              }
+            ]
+          },
+          {
+            "seq": 9,
+            "code": "K+",
+            "name": "Potassium",
+            "status": "DONE",
+            "valueString": "Failed iQC",
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "low": 1.5,
+                "high": 12
+              }
+            ]
+          },
+          {
+            "seq": 10,
+            "code": "Cl-",
+            "name": "Chloride",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 115,
+              "units": "mmol/L"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "low": 65,
+                "high": 140
+              }
+            ]
+          },
+          {
+            "seq": 11,
+            "code": "Ca++",
+            "name": "Calcium, ionized",
+            "status": "DONE",
+            "valueString": "< 0.25",
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "low": 0.25,
+                "high": 4
+              }
+            ]
+          },
+          {
+            "seq": 12,
+            "code": "AGapK",
+            "name": "Anion gap",
+            "status": "DONE",
+            "valueString": "cnc",
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "low": -10,
+                "high": 99
+              }
+            ]
+          },
+          {
+            "seq": 13,
+            "code": "Lact",
+            "name": "Lactate",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 5.15,
+              "units": "mmol/L"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "low": 0.3,
+                "high": 20
+              }
+            ]
+          },
+          {
+            "seq": 14,
+            "code": "Crea",
+            "name": "Creatinine",
+            "status": "DONE",
+            "valueString": "cnc",
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "low": 0.31,
+                "high": 15
+              }
+            ]
+          },
+          {
+            "seq": 15,
+            "code": "Glu",
+            "name": "Glucose",
+            "status": "DONE",
+            "valueString": "< 20",
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "low": 20,
+                "high": 700
+              }
+            ]
+          },
+          {
+            "seq": 16,
+            "code": "Hct",
+            "name": "HCT",
+            "status": "DONE",
+            "valueString": "cnc",
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "low": 10,
+                "high": 75
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "DMI-DR94877",
+    "orderId": "DMI-DR94877",
+    "status": "COMPLETED",
+    "testResults": [
+      {
+        "seq": 1,
+        "code": "Chemistry-94877003-2018-03-07T08:54:11",
+        "name": "Amylase",
+        "notes": "#: The valid term of the slide has expired",
+        "items": [
+          {
+            "seq": 1,
+            "code": "Amy",
+            "name": "Amylase",
+            "status": "DONE",
+            "valueQuantity": {
+              "value": 3,
+              "units": "mg/dl"
+            },
+            "referenceRange": [
+              {
+                "type": "NORMAL",
+                "low": 1.5,
+                "high": 2.4
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]
