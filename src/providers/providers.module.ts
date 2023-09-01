@@ -13,10 +13,11 @@ import { Integration } from '../integrations/entities/integration.entity'
 import { getConnectionToken, MongooseModule } from '@nestjs/mongoose'
 import { ProviderExternalRequests, ProviderExternalRequestsSchema } from './entities/provider-external-requests.entity'
 import { Provider } from './entities/provider.entity'
+import { ProviderOption } from './entities/provider-option.entity'
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ProviderConfiguration, Integration, Provider]),
+    TypeOrmModule.forFeature([ProviderConfiguration, Integration, Provider, ProviderOption]),
     MongooseModule.forFeatureAsync([
       {
         name: ProviderExternalRequests.name,
@@ -39,4 +40,4 @@ import { Provider } from './entities/provider.entity'
   providers: [ProvidersService, ProviderConfigurationsService],
   exports: [ProvidersService, ProviderConfigurationsService]
 })
-export class ProvidersModule {}
+export class ProvidersModule { }

@@ -143,16 +143,16 @@ export class IntegrationsService {
   }
 
   async restart (integration: Integration): Promise<Error | undefined> {
-      const responseStop = await this.doStop(integration)
-      if (responseStop?.message === undefined && integration.status === IntegrationStatus.RUNNING) {
-        await this.doStart(
-          integration.id,
-          integration.providerConfiguration,
-              integration.integrationOptions
-              )
-      } else if (responseStop?.message !== undefined) {
-        return responseStop
-      }
+    const responseStop = await this.doStop(integration)
+    if (responseStop?.message === undefined && integration.status === IntegrationStatus.RUNNING) {
+      await this.doStart(
+        integration.id,
+        integration.providerConfiguration,
+        integration.integrationOptions
+      )
+    } else if (responseStop?.message !== undefined) {
+      return responseStop
+    }
   }
 
   async delete (

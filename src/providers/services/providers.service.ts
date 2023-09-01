@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { ProviderService } from '../../common/typings/provider-services.interface'
 import { ClientProxy } from '@nestjs/microservices'
 import { IntegrationsService } from '../../integrations/integrations.service'
@@ -20,7 +20,9 @@ import { ProviderRawDataDto } from '../dtos/provider-raw-data.dto'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Provider } from '../entities/provider.entity'
 import { FindManyOptions, Repository } from 'typeorm'
-import { UpdateProvider } from '../dtos/update-provider.dto'
+import { UpdateProviderDto } from '../dtos/update-provider.dto'
+import { ProviderOption } from '../entities/provider-option.entity'
+import { ProviderOptionDto } from '../dtos/provider-option.dto'
 
 @Injectable()
 export class ProvidersService {
@@ -32,21 +34,29 @@ export class ProvidersService {
     private readonly integrationsService: IntegrationsService,
     @InjectModel(ProviderExternalRequests.name)
     private readonly providerExternalRequestsModel: Model<ProviderExternalRequestDocument>,
-    @Inject('ACTIVEMQ') private readonly client: ClientProxy
+    @Inject('ACTIVEMQ') private readonly client: ClientProxy,
+    @InjectRepository(ProviderOption)
+    private readonly providerOptionRepository: Repository<ProviderOption>
   ) {
   }
 
   async findAll (options?: FindManyOptions<Provider>): Promise<Provider[]> {
-    return await this.providerRepository.find(options)
+    const providers = await this.providerRepository.find(options)
+    for (const provider of providers) {
+      provider.integrationOptions = provider.options.filter((option) => option.providerOptionType === 'integration')
+      provider.configurationOptions = provider.options.filter((option) => option.providerOptionType === 'configuration')
+    }
+
+    return providers
   }
 
   async findOneById (providerId: string): Promise<Provider> {
-    const provider = await this.providerRepository.findOne(providerId, { relations: ['configurationOptions', 'integrationOptions'] })
-
+    const provider = await this.providerRepository.findOne(providerId, { relations: ['options'] })
     if (provider == null) {
       throw new NotFoundException("The provider doesn't exist")
     }
-
+    provider.integrationOptions = provider.options.filter((option) => option.providerOptionType === 'integration')
+    provider.configurationOptions = provider.options.filter((option) => option.providerOptionType === 'configuration')
     return provider
   }
 
@@ -193,7 +203,6 @@ export class ProvidersService {
         relations: ['providerConfiguration']
       }
     })
-    console.log(configurationOptions, integrationOptions)
 
     const { message, messagePattern } = ieMessageBuilder(providerId, {
       resource: 'species',
@@ -205,6 +214,30 @@ export class ProvidersService {
     })
 
     return await this.client.send(messagePattern, message).toPromise()
+  }
+
+  async createProviderOptions (providerId: string, providerOptions: ProviderOptionDto[]): Promise<void> {
+    const provider = await this.findOneById(providerId)
+    for (const providerOption of providerOptions) {
+      const existingOption = provider.options.find((option) => option.name === providerOption.name)
+      if (existingOption !== undefined) {
+        throw new BadRequestException(`The option ${existingOption.name} already exists`)
+      }
+      const option = this.providerOptionRepository.create({
+        ...providerOption,
+        provider
+      })
+      await this.providerOptionRepository.save(option)
+    }
+  }
+
+  async deleteProviderOption (providerId: string, providerOptionId: string): Promise<void> {
+    const provider = await this.findOneById(providerId)
+    const providerOption = provider.options.find((option) => option.id === Number(providerOptionId))
+    if (providerOption === undefined) {
+      throw new BadRequestException(`The option ${providerOptionId} doesn't exist`)
+    }
+    await this.providerOptionRepository.delete(providerOptionId)
   }
 
   async saveProviderRawData (data: ProviderRawDataDto): Promise<void> {
@@ -226,7 +259,7 @@ export class ProvidersService {
     await this.providerExternalRequestsModel.create(rawData)
   }
 
-  async update (provider: UpdateProvider): Promise<void> {
+  async update (provider: UpdateProviderDto): Promise<void> {
     await this.providerRepository.save(provider)
   }
 }

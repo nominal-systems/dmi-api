@@ -24,12 +24,12 @@ export class RefsService {
 
   async syncProviderRefs (providerId: string, mapList: any, type: 'species' | 'breed' | 'sex'): Promise<void> {
     const provider = await this.providersService.findOneById(providerId)
+    this.logger.log(`Found ${type} in ${provider.id}: ${<string>mapList.items.length}`)
     if (provider.hashes === null || provider.hashes[type] !== mapList.hash) {
       let newRefsCount = 0
       let existingRefsCount = 0
-      let foundInProviderCount = 0
       for (const item of mapList.items) {
-        const [existingItem, count] = await this.providerRefRepository.findAndCount({ where: { code: item.code, type: type } })
+        const existingItem = await this.providerRefRepository.findOne({ where: { code: item.code, type: type, provider: providerId } })
 
         if (existingItem === undefined) {
           const newItem = this.providerRefRepository.create({
@@ -45,13 +45,9 @@ export class RefsService {
         } else {
           existingRefsCount++
         }
-        if (count > 0) {
-          foundInProviderCount++
-        }
       }
       this.logger.log(`New ${type} refs created: ${newRefsCount}`)
       this.logger.log(`Existing ${type} refs: ${existingRefsCount}`)
-      this.logger.log(`Found in provider ${type} refs: ${foundInProviderCount}`)
 
       provider.hashes = { ...provider.hashes, [type]: mapList.hash }
       await this.providersService.update(provider)

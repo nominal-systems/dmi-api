@@ -5,6 +5,8 @@ import {
   DefaultValuePipe,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   NotFoundException,
   Param,
   ParseBoolPipe,
@@ -31,6 +33,8 @@ import { Repository } from 'typeorm'
 import { CreateIntegrationDto } from '../integrations/dtos/create-integration.dto'
 import { ReferenceDataQueryParams } from '../providers/dtos/reference-data-queryparams.dto'
 import { RefsService } from '../refs/refs.service'
+import { ProviderOptionDto } from '../providers/dtos/provider-option.dto'
+import { ProvidersService } from '../providers/services/providers.service'
 
 @Controller('admin')
 @UseGuards(BasicAuthGuard)
@@ -42,7 +46,8 @@ export class AdminController {
     private readonly integrationsService: IntegrationsService,
     @InjectRepository(Integration)
     private readonly integrationsRepository: Repository<Integration>,
-    private readonly refsService: RefsService
+    private readonly refsService: RefsService,
+    private readonly providersService: ProvidersService
   ) {
   }
 
@@ -193,23 +198,23 @@ export class AdminController {
     @Res() res: Response,
     @Param('id') integrationId: string
   ): Promise<void> {
-      const integration = await this.integrationsService.findOne({
-        id: integrationId,
-        options: {
-          relations: ['practice', 'providerConfiguration']
-        }
-      })
-
-      if (integration.status === IntegrationStatus.RUNNING) {
-        res.status(201).send('Integration is already running')
-      } else {
-        const response = await this.integrationsService.doStart(integrationId, integration.providerConfiguration, integration.integrationOptions)
-        if (response?.message === undefined) {
-          res.status(201).send('Integration started')
-        } else {
-          res.status(400).send(response.message)
-        }
+    const integration = await this.integrationsService.findOne({
+      id: integrationId,
+      options: {
+        relations: ['practice', 'providerConfiguration']
       }
+    })
+
+    if (integration.status === IntegrationStatus.RUNNING) {
+      res.status(201).send('Integration is already running')
+    } else {
+      const response = await this.integrationsService.doStart(integrationId, integration.providerConfiguration, integration.integrationOptions)
+      if (response?.message === undefined) {
+        res.status(201).send('Integration started')
+      } else {
+        res.status(400).send(response.message)
+      }
+    }
   }
 
   @Post('integrations/:id/restart')
@@ -217,18 +222,18 @@ export class AdminController {
     @Res() res: Response,
     @Param('id') integrationId: string
   ): Promise<void> {
-      const integration = await this.integrationsService.findOne({
-        id: integrationId,
-        options: {
-          relations: ['practice', 'providerConfiguration']
-        }
-      })
-      const response = await this.integrationsService.restart(integration)
-      if (response?.message === undefined) {
-        res.status(201).send('Integration restarted')
-      } else {
-        res.status(400).send(response.message)
+    const integration = await this.integrationsService.findOne({
+      id: integrationId,
+      options: {
+        relations: ['practice', 'providerConfiguration']
       }
+    })
+    const response = await this.integrationsService.restart(integration)
+    if (response?.message === undefined) {
+      res.status(201).send('Integration restarted')
+    } else {
+      res.status(400).send(response.message)
+    }
   }
 
   @Post('refs/sync/:providerId')
@@ -268,5 +273,29 @@ export class AdminController {
     } catch (error) {
       throw new BadRequestException(error.message)
     }
+  }
+
+  @Post('providers/:providerId/options/create')
+  @HttpCode(HttpStatus.CREATED)
+  async createProviderOptions (
+    @Param('providerId') providerId: string,
+    @Body() providerOptions: ProviderOptionDto[]
+  ): Promise<void> {
+    return await this.providersService.createProviderOptions(
+      providerId,
+      providerOptions
+    )
+  }
+
+  @Delete('/providers/:providerId/options/:providerOptionId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteProviderOption (
+    @Param('providerId') providerId: string,
+    @Param('providerOptionId') providerOptionId: string
+  ): Promise<void> {
+    return await this.providersService.deleteProviderOption(
+      providerId,
+      providerOptionId
+    )
   }
 }

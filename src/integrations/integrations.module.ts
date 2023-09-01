@@ -21,4 +21,4 @@ import { Provider } from '../providers/entities/provider.entity'
   providers: [IntegrationsService],
   exports: [IntegrationsService]
 })
-export class IntegrationsModule {}
+export class IntegrationsModule { }

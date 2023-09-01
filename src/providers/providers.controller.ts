@@ -38,7 +38,7 @@ export class ProvidersController {
 
   @Get()
   async listProviders (): Promise<Provider[]> {
-    return await this.providersService.findAll({ relations: ['configurationOptions', 'integrationOptions'] })
+    return await this.providersService.findAll({ relations: ['options'] })
   }
 
   @Get(':id')

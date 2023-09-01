@@ -148,7 +148,6 @@ export class ProviderConfigurationsService {
     }
 
     const providerValidator = createValidator(validatorOptions as any)
-
     if (!providerValidator(providerConfigurationOptions.configuration)) {
       throw new BadRequestException('The provider configuration is invalid')
     }

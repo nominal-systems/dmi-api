@@ -15,8 +15,9 @@ import { RefsModule } from 'src/refs/refs.module'
     ProvidersModule,
     EventsModule,
     IntegrationsModule,
-    RefsModule
+    RefsModule,
+    ProvidersModule
   ],
   controllers: [AdminController]
 })
-export class AdminModule {}
+export class AdminModule { }
