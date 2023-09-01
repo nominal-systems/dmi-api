@@ -22,7 +22,7 @@ describe('IntegrationsService', () => {
   }
   const providerConfigurationRepositoryMock = {}
   const clientProxyMock = {
-    emit: jest.fn()
+    send: jest.fn()
   }
   const providersRepositoryMock = {
     findOne: jest.fn((obj) => obj)
@@ -84,14 +84,14 @@ describe('IntegrationsService', () => {
     it('should delete an integration', async () => {
       integrationRepositoryMock.findOne.mockResolvedValue(integrationA)
       await service.delete(organization, integrationA.id)
-      expect(clientProxyMock.emit).toHaveBeenCalled()
+      expect(clientProxyMock.send).toHaveBeenCalled()
       expect(integrationRepositoryMock.softDelete).toHaveBeenCalledWith(integrationA.id)
     })
 
     it('should not delete a deleted integration', async () => {
       integrationRepositoryMock.findOne.mockResolvedValue(integrationB)
       await service.delete(organization, integrationA.id)
-      expect(clientProxyMock.emit).toHaveBeenCalledTimes(0)
+      expect(clientProxyMock.send).toHaveBeenCalledTimes(0)
       expect(integrationRepositoryMock.softDelete).toHaveBeenCalledTimes(0)
     })
 
