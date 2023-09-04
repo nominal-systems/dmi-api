@@ -6,6 +6,7 @@ import { Ref } from './entities/ref.entity'
 import { ProviderRef } from './entities/providerRef.entity'
 import { CreateRefsDTO } from './dtos/create-refs.dto'
 import { RefMap } from './entities/refMap.entity'
+import { Provider } from '../providers/entities/provider.entity'
 
 @Injectable()
 export class RefsService {
@@ -22,14 +23,13 @@ export class RefsService {
   ) {
   }
 
-  async syncProviderRefs (providerId: string, mapList: any, type: 'species' | 'breed' | 'sex'): Promise<void> {
-    const provider = await this.providersService.findOneById(providerId)
+  async syncProviderRefs (provider: Provider, mapList: any, type: 'species' | 'breed' | 'sex'): Promise<void> {
     this.logger.log(`Found ${type} in ${provider.id}: ${<string>mapList.items.length}`)
     if (provider.hashes === null || provider.hashes[type] !== mapList.hash) {
       let newRefsCount = 0
       let existingRefsCount = 0
       for (const item of mapList.items) {
-        const existingItem = await this.providerRefRepository.findOne({ where: { code: item.code, type: type, provider: providerId } })
+        const existingItem = await this.providerRefRepository.findOne({ where: { code: item.code, type: type, provider: provider } })
 
         if (existingItem === undefined) {
           const newItem = this.providerRefRepository.create({
@@ -51,43 +51,45 @@ export class RefsService {
 
       provider.hashes = { ...provider.hashes, [type]: mapList.hash }
       await this.providersService.update(provider)
+    } else {
+      this.logger.log(`No ${type} to sync for ${provider.id}`)
     }
   }
 
   async syncSpecies (
-    providerId: string,
+    provider: Provider,
     integrationId: string
   ): Promise<void> {
-    const species = await this.providersService.getSpecies(providerId, integrationId)
-    await this.syncProviderRefs(providerId, species, 'species')
+    const species = await this.providersService.getSpecies(provider.id, integrationId)
+    await this.syncProviderRefs(provider, species, 'species')
   }
 
   async syncBreeds (
-    providerId: string,
+    provider: Provider,
     integrationId: string
   ): Promise<void> {
-    const breeds = await this.providersService.getBreeds(providerId, integrationId)
-    await this.syncProviderRefs(providerId, breeds, 'breed')
+    const breeds = await this.providersService.getBreeds(provider.id, integrationId)
+    await this.syncProviderRefs(provider, breeds, 'breed')
   }
 
   async syncSexes (
-    providerId: string,
+    provider: Provider,
     integrationId: string
   ): Promise<void> {
-    const sexes = await this.providersService.getSexes(providerId, integrationId)
-    await this.syncProviderRefs(providerId, sexes, 'sex')
+    const sexes = await this.providersService.getSexes(provider.id, integrationId)
+    await this.syncProviderRefs(provider, sexes, 'sex')
   }
 
   async getSpecies (): Promise<Ref[]> {
-    return await this.refRepository.find({ where: { type: 'species' }, relations: ['refsMap', 'refsMap.providerRef'] })
+    return await this.refRepository.find({ where: { type: 'species' }, select: ['code', 'name'] })
   }
 
   async getBreeds (): Promise<Ref[]> {
-    return await this.refRepository.find({ where: { type: 'breed' }, relations: ['refsMap', 'refsMap.providerRef'] })
+    return await this.refRepository.find({ where: { type: 'breed' }, select: ['code', 'name', 'species'] })
   }
 
   async getSexes (): Promise<Ref[]> {
-    return await this.refRepository.find({ where: { type: 'sex' }, relations: ['refsMap', 'refsMap.providerRef'] })
+    return await this.refRepository.find({ where: { type: 'sex' }, select: ['code', 'name'] })
   }
 
   async createRefs (refDto: CreateRefsDTO): Promise<Ref> {

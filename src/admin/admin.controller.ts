@@ -241,10 +241,15 @@ export class AdminController {
     @Param('providerId') providerId: string,
     @Query() { integrationId }: ReferenceDataQueryParams
   ): Promise<void> {
+    const provider = await this.providersService.findOneById(providerId)
+
+    if (provider === undefined) {
+      throw new BadRequestException(`The provider ${providerId} doesn't exist`)
+    }
     try {
-      await this.refsService.syncSpecies(providerId, integrationId)
-      await this.refsService.syncBreeds(providerId, integrationId)
-      await this.refsService.syncSexes(providerId, integrationId)
+      await this.refsService.syncSpecies(provider, integrationId)
+      await this.refsService.syncBreeds(provider, integrationId)
+      await this.refsService.syncSexes(provider, integrationId)
     } catch (error) {
       throw new BadRequestException(error.message)
     }
@@ -256,16 +261,21 @@ export class AdminController {
     @Param('type') type: string,
     @Query() { integrationId }: ReferenceDataQueryParams
   ): Promise<void> {
+    const provider = await this.providersService.findOneById(providerId)
+
+    if (provider === undefined) {
+      throw new BadRequestException(`The provider ${providerId} doesn't exist`)
+    }
     try {
       switch (type) {
         case 'species':
-          await this.refsService.syncSpecies(providerId, integrationId)
+          await this.refsService.syncSpecies(provider, integrationId)
           break
         case 'breeds':
-          await this.refsService.syncBreeds(providerId, integrationId)
+          await this.refsService.syncBreeds(provider, integrationId)
           break
         case 'sexes':
-          await this.refsService.syncSexes(providerId, integrationId)
+          await this.refsService.syncSexes(provider, integrationId)
           break
         default:
           throw new BadRequestException('Invalid type')

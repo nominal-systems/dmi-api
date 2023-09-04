@@ -218,6 +218,9 @@ export class ProvidersService {
 
   async createProviderOptions (providerId: string, providerOptions: ProviderOptionDto[]): Promise<void> {
     const provider = await this.findOneById(providerId)
+    if (provider === undefined) {
+      throw new BadRequestException(`The provider ${providerId} doesn't exist`)
+    }
     for (const providerOption of providerOptions) {
       const existingOption = provider.options.find((option) => option.name === providerOption.name)
       if (existingOption !== undefined) {
@@ -233,6 +236,9 @@ export class ProvidersService {
 
   async deleteProviderOption (providerId: string, providerOptionId: string): Promise<void> {
     const provider = await this.findOneById(providerId)
+    if (provider === undefined) {
+      throw new BadRequestException(`The provider ${providerId} doesn't exist`)
+    }
     const providerOption = provider.options.find((option) => option.id === Number(providerOptionId))
     if (providerOption === undefined) {
       throw new BadRequestException(`The option ${providerOptionId} doesn't exist`)
