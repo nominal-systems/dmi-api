@@ -181,7 +181,8 @@ const providerRefs = [
     name: 'Male',
     species: null,
     type: 'sex',
-    provider: 'antech'
+    provider: 'antech',
+    ref: 1
   },
   {
     id: 2,
@@ -189,7 +190,8 @@ const providerRefs = [
     name: 'Male',
     species: null,
     type: 'sex',
-    provider: 'idexx'
+    provider: 'idexx',
+    ref: 1
   },
   {
     id: 3,
@@ -197,7 +199,8 @@ const providerRefs = [
     name: 'Female',
     species: null,
     type: 'sex',
-    provider: 'antech'
+    provider: 'antech',
+    ref: 2
   },
   {
     id: 4,
@@ -205,7 +208,8 @@ const providerRefs = [
     name: 'Female',
     species: null,
     type: 'sex',
-    provider: 'idexx'
+    provider: 'idexx',
+    ref: 2
   },
   {
     id: 5,
@@ -213,7 +217,8 @@ const providerRefs = [
     name: 'Unknown',
     species: null,
     type: 'sex',
-    provider: 'antech'
+    provider: 'antech',
+    ref: 3
   },
   {
     id: 6,
@@ -221,7 +226,8 @@ const providerRefs = [
     name: 'Unknown',
     species: null,
     type: 'sex',
-    provider: 'idexx'
+    provider: 'idexx',
+    ref: 3
   },
   {
     id: 7,
@@ -229,7 +235,8 @@ const providerRefs = [
     name: 'Canine',
     species: null,
     type: 'species',
-    provider: 'idexx'
+    provider: 'idexx',
+    ref: 4
   },
   {
     id: 8,
@@ -237,7 +244,8 @@ const providerRefs = [
     name: 'Feline',
     species: null,
     type: 'species',
-    provider: 'idexx'
+    provider: 'idexx',
+    ref: 5
   },
   {
     id: 9,
@@ -245,7 +253,8 @@ const providerRefs = [
     name: 'Bull Terrier',
     species: 'CANINE',
     type: 'breed',
-    provider: 'idexx'
+    provider: 'idexx',
+    ref: 6
   },
   {
     id: 10,
@@ -253,7 +262,8 @@ const providerRefs = [
     name: 'Canine',
     species: null,
     type: 'species',
-    provider: 'antech'
+    provider: 'antech',
+    ref: 4
   },
   {
     id: 11,
@@ -261,7 +271,8 @@ const providerRefs = [
     name: 'Bovine',
     species: null,
     type: 'species',
-    provider: 'idexx'
+    provider: 'idexx',
+    ref: 7
   },
   {
     id: 12,
@@ -269,7 +280,8 @@ const providerRefs = [
     name: 'Bull Terrier',
     species: '41',
     type: 'breed',
-    provider: 'antech'
+    provider: 'antech',
+    ref: 6
   },
   {
     id: 13,
@@ -277,7 +289,8 @@ const providerRefs = [
     name: 'Feline',
     species: null,
     type: 'species',
-    provider: 'antech'
+    provider: 'antech',
+    ref: 5
   },
   {
     id: 14,
@@ -285,7 +298,8 @@ const providerRefs = [
     name: 'Bovine',
     species: null,
     type: 'species',
-    provider: 'antech'
+    provider: 'antech',
+    ref: 7
   }
 ]
 const refs = [
@@ -339,78 +353,6 @@ const refs = [
     type: 'species'
   }
 ]
-const refsMap = [
-  {
-    id: 1,
-    refId: 1,
-    providerRefId: 1
-  },
-  {
-    id: 2,
-    refId: 1,
-    providerRefId: 2
-  },
-  {
-    id: 3,
-    refId: 2,
-    providerRefId: 3
-  },
-  {
-    id: 4,
-    refId: 2,
-    providerRefId: 4
-  },
-  {
-    id: 5,
-    refId: 3,
-    providerRefId: 5
-  },
-  {
-    id: 6,
-    refId: 3,
-    providerRefId: 6
-  },
-  {
-    id: 7,
-    refId: 4,
-    providerRefId: 7
-  },
-  {
-    id: 8,
-    refId: 4,
-    providerRefId: 10
-  },
-  {
-    id: 9,
-    refId: 5,
-    providerRefId: 8
-  },
-  {
-    id: 10,
-    refId: 5,
-    providerRefId: 13
-  },
-  {
-    id: 11,
-    refId: 6,
-    providerRefId: 9
-  },
-  {
-    id: 12,
-    refId: 6,
-    providerRefId: 12
-  },
-  {
-    id: 13,
-    refId: 7,
-    providerRefId: 11
-  },
-  {
-    id: 14,
-    refId: 7,
-    providerRefId: 14
-  }
-]
 
 export class MigrateRefsAndProviderOptions1693863305605 implements MigrationInterface {
   name = 'MigrateRefsAndProviderOptions1693863305605'
@@ -434,23 +376,18 @@ export class MigrateRefsAndProviderOptions1693863305605 implements MigrationInte
         )
       }
     }
-    for (const providerRef of providerRefs) {
-      await queryRunner.query(`INSERT INTO \`provider_ref\` (\`id\`, \`code\`, \`name\`, \`species\`, \`type\`, \`provider\`)
-            VALUES (?, ?, ?, ?, ?, ?)`, [providerRef.id, providerRef.code, providerRef.name, providerRef.species, providerRef.type, providerRef.provider])
-    }
     for (const ref of refs) {
       await queryRunner.query(`INSERT INTO \`ref\` (\`id\`, \`name\`, \`code\`, \`species\`, \`type\`)
             VALUES (?, ?, ?, ?, ?)`, [ref.id, ref.name, ref.code, ref.species, ref.type])
     }
-    for (const refMap of refsMap) {
-      await queryRunner.query(`INSERT INTO \`ref_map\` (\`id\`, \`refId\`, \`providerRefId\`)
-            VALUES (?, ?, ?)`, [refMap.id, refMap.refId, refMap.providerRefId])
+    for (const providerRef of providerRefs) {
+      await queryRunner.query(`INSERT INTO \`provider_ref\` (\`id\`, \`code\`, \`name\`, \`species\`, \`type\`, \`provider\`, \`refId\`)
+            VALUES (?, ?, ?, ?, ?, ?, ?)`, [providerRef.id, providerRef.code, providerRef.name, providerRef.species, providerRef.type, providerRef.provider, providerRef.ref])
     }
   }
 
   public async down (queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query('DELETE FROM `provider_option`')
-    await queryRunner.query('DELETE FROM `ref_map`')
     await queryRunner.query('DELETE FROM `provider_ref`')
     await queryRunner.query('DELETE FROM `ref`')
   }

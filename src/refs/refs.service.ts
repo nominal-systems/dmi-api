@@ -5,7 +5,6 @@ import { Repository } from 'typeorm'
 import { Ref } from './entities/ref.entity'
 import { ProviderRef } from './entities/providerRef.entity'
 import { CreateRefsDTO } from './dtos/create-refs.dto'
-import { RefMap } from './entities/refMap.entity'
 import { Provider } from '../providers/entities/provider.entity'
 
 @Injectable()
@@ -17,9 +16,7 @@ export class RefsService {
     @InjectRepository(ProviderRef)
     private readonly providerRefRepository: Repository<ProviderRef>,
     @InjectRepository(Ref)
-    private readonly refRepository: Repository<Ref>,
-    @InjectRepository(RefMap)
-    private readonly refMapRepository: Repository<RefMap>
+    private readonly refRepository: Repository<Ref>
   ) {
   }
 
@@ -111,11 +108,8 @@ export class RefsService {
       if (providerRef === undefined) {
         throw new NotFoundException('Provider ref not found')
       }
-      const newRefsMap = this.refMapRepository.create({
-        ref: newRef,
-        providerRef: providerRef
-      })
-      await this.refMapRepository.save(newRefsMap)
+      providerRef.ref = newRef
+      await this.providerRefRepository.save(providerRef)
     }
 
     return newRef
@@ -126,47 +120,27 @@ export class RefsService {
     if (existingRef === undefined) {
       throw new NotFoundException(`Ref with ID ${id} not found`)
     }
-
     if (updateRefDto.providerRefIds !== undefined && updateRefDto.providerRefIds.length > 0) {
-      const providerRefs = await this.providerRefRepository.findByIds(updateRefDto.providerRefIds)
-      if (providerRefs.length !== updateRefDto.providerRefIds.length) {
-        throw new NotFoundException('Provider refs not found')
-      }
-
-      await this.refMapRepository.delete(existingRef.refsMap.map(refsMap => refsMap.id))
-      existingRef.refsMap = existingRef.refsMap.filter(refsMap => updateRefDto.providerRefIds.includes(refsMap.providerRef.id))
-      existingRef.refsMap = providerRefs.map(providerRef => {
-        return this.refMapRepository.create({
-          ref: existingRef,
-          providerRef: providerRef
-        })
-      })
-      await this.refMapRepository.save(existingRef.refsMap)
-    } else {
-      existingRef.refsMap = []
+      existingRef.providerRef = await this.providerRefRepository.findByIds(updateRefDto.providerRefIds)
     }
-
     await this.refRepository.merge(existingRef, updateRefDto)
     await this.refRepository.save(existingRef)
     return await this.findOneById(id)
   }
 
   async deleteRefs (id: string): Promise<void> {
-    const ref = await this.refRepository.findOne(id, { relations: ['refsMap'] })
-
+    const ref = await this.refRepository.findOne(id, { relations: ['providerRef'] })
     if (ref === undefined) {
       throw new NotFoundException(`Ref with ID ${id} not found`)
     }
-    await this.refMapRepository.delete(ref.refsMap.map(refsMap => refsMap.id))
-    await this.refRepository.delete(id)
+    await this.refRepository.remove(ref)
   }
 
   async findOneById (id: string): Promise<Ref> {
     const ref = await this.refRepository.createQueryBuilder('ref')
-      .leftJoin('ref.refsMap', 'refsMap')
-      .leftJoin('refsMap.providerRef', 'providerRef')
+      .leftJoin('ref.providerRef', 'providerRef')
       .leftJoin('providerRef.provider', 'provider', 'provider.id = providerRef.provider')
-      .select(['ref', 'refsMap', 'providerRef', 'provider.id'])
+      .select(['ref', 'providerRef', 'provider.id'])
       .where('ref.id = :id', { id })
       .getOne()
 
@@ -179,14 +153,13 @@ export class RefsService {
 
   async findProvidersMappedRefs (): Promise<any> {
     const refs = await this.providerRefRepository.createQueryBuilder('providerRefs')
-      .leftJoin('providerRefs.refsMap', 'refsMap')
-      .leftJoin('refsMap.ref', 'ref')
+      .leftJoin('providerRefs.ref', 'ref', 'ref.id = providerRefs.ref')
       .leftJoin('providerRefs.provider', 'provider', 'provider.id = providerRefs.provider')
-      .select(['providerRefs', 'ref', 'refsMap', 'provider.id'])
+      .select(['providerRefs', 'ref', 'provider.id'])
       .getMany()
 
     const { mappedRefs, unmappedRefs } = refs.reduce((acc, obj) => {
-      if (obj.refsMap.length > 0) {
+      if (obj.ref !== null) {
         acc.mappedRefs.push(obj)
       } else {
         acc.unmappedRefs.push(obj)

@@ -1,6 +1,6 @@
 import { Provider } from '../../providers/entities/provider.entity'
-import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm'
-import { RefMap } from './refMap.entity'
+import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm'
+import { Ref } from './ref.entity'
 
 @Entity()
 @Index('idx_species_code', ['code'])
@@ -31,6 +31,7 @@ export class ProviderRef {
   @JoinColumn({ name: 'species', referencedColumnName: 'code' })
   speciesEntity: ProviderRef | null
 
-  @OneToMany(() => RefMap, refMap => refMap.providerRef)
-  refsMap: RefMap[]
+  @ManyToOne(() => Ref, { onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'refId', referencedColumnName: 'id' })
+  ref: Ref | null
 }

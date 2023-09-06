@@ -5,13 +5,11 @@ import { getRepositoryToken } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { Ref } from './entities/ref.entity'
 import { ProviderRef } from './entities/providerRef.entity'
-import { RefMap } from './entities/refMap.entity'
 import { CreateRefsDTO } from './dtos/create-refs.dto'
 
 describe('RefsService', () => {
   let refsService: RefsService
   let refsRepository: Repository<Ref>
-  let refsMapRepository: Repository<RefMap>
 
   const mockRefsRepository = {
     find: jest.fn(entity => entity),
@@ -27,12 +25,6 @@ describe('RefsService', () => {
     save: jest.fn(entity => entity),
     delete: jest.fn(entity => entity),
     findByIds: jest.fn(entity => entity)
-  }
-
-  const mockRefsMapRepository = {
-    create: jest.fn(entity => entity),
-    save: jest.fn(entity => entity),
-    delete: jest.fn(entity => entity)
   }
 
   const mockProvidersService = {
@@ -56,17 +48,12 @@ describe('RefsService', () => {
         {
           provide: getRepositoryToken(ProviderRef),
           useValue: mockProviderRefsRepository
-        },
-        {
-          provide: getRepositoryToken(RefMap),
-          useValue: mockRefsMapRepository
         }
       ]
     }).compile()
 
     refsService = module.get<RefsService>(RefsService)
     refsRepository = module.get<Repository<Ref>>(getRepositoryToken(Ref))
-    refsMapRepository = module.get<Repository<RefMap>>(getRepositoryToken(RefMap))
   })
 
   it('should be defined', () => {
@@ -79,7 +66,7 @@ describe('RefsService', () => {
             name: 'Male',
             code: 'MALE',
             type: 'sex',
-            providerRefIds: [1832, 1774]
+            providerRefIds: [1, 2]
       }
 
       const mockNewRef = {
@@ -90,6 +77,16 @@ describe('RefsService', () => {
     }
 
     mockRefsRepository.findOne.mockResolvedValue(undefined)
+    mockProviderRefsRepository.findOne.mockResolvedValue({
+      id: 1,
+      code: 'DACHSHUND',
+      name: 'Dachshund',
+      species: 'CANINE',
+      type: 'breed',
+      provider: {
+          id: 'idexx'
+      }
+  })
     const result = await refsService.createRefs(createDto)
     mockRefsRepository.create.mockResolvedValue(mockNewRef)
     mockRefsRepository.save.mockResolvedValue(mockNewRef)
@@ -133,9 +130,6 @@ describe('RefsService', () => {
     }
 
       refsService.findOneById = jest.fn().mockResolvedValue(existingRef)
-      refsMapRepository.delete = jest.fn().mockResolvedValue(true)
-      refsMapRepository.create = jest.fn().mockReturnValue({}) // mock refsMap object
-      refsMapRepository.save = jest.fn().mockResolvedValue(true)
       refsRepository.merge = jest.fn()
       refsRepository.save = jest.fn().mockResolvedValue(existingRef)
 
