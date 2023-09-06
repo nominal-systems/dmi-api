@@ -6,7 +6,7 @@ import { EventsModule } from '../events/events.module'
 import { OrganizationsModule } from '../organizations/organizations.module'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { Integration } from '../integrations/entities/integration.entity'
-import { RefsModule } from 'src/refs/refs.module'
+import { RefsModule } from '../refs/refs.module'
 
 @Module({
   imports: [
