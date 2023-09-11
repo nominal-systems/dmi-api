@@ -15,12 +15,12 @@ import {
   Put,
   Query,
   Res,
+  UnauthorizedException,
   UseGuards
 } from '@nestjs/common'
 import { Response } from 'express'
 import { ProviderConfiguration } from '../providers/entities/provider-configuration.entity'
 import { ProviderConfigurationsService } from '../providers/services/provider-configurations.service'
-import { BasicAuthGuard } from '../common/guards/basic-auth.guard'
 import { Integration } from '../integrations/entities/integration.entity'
 import { IntegrationsService } from '../integrations/integrations.service'
 import { EventSubscriptionService } from '../events/services/event-subscription.service'
@@ -35,33 +35,57 @@ import { ReferenceDataQueryParams } from '../providers/dtos/reference-data-query
 import { RefsService } from '../refs/refs.service'
 import { ProviderOptionDto } from '../providers/dtos/provider-option.dto'
 import { ProvidersService } from '../providers/services/providers.service'
+import { AdminUserCredentialsDto } from '../users/dtos/admin-user-credentials.dto'
+import { ConfigService } from '@nestjs/config'
+import { JwtService } from '@nestjs/jwt'
+import { AdminGuard } from '../common/guards/admin.guard'
+import { EventsService } from '../events/services/events.service'
+import { Event } from '../events/entities/event.entity'
 
 @Controller('admin')
-@UseGuards(BasicAuthGuard)
 export class AdminController {
   constructor (
     private readonly organizationsService: OrganizationsService,
     private readonly providerConfigurationsService: ProviderConfigurationsService,
+    private readonly eventsService: EventsService,
     private readonly eventSubscriptionsService: EventSubscriptionService,
     private readonly integrationsService: IntegrationsService,
-    @InjectRepository(Integration)
-    private readonly integrationsRepository: Repository<Integration>,
+    @InjectRepository(Integration) private readonly integrationsRepository: Repository<Integration>,
     private readonly refsService: RefsService,
-    private readonly providersService: ProvidersService
+    private readonly providersService: ProvidersService,
+    private readonly configService: ConfigService,
+    private readonly jwtService: JwtService
   ) {
   }
 
+  @Post('login')
+  @HttpCode(HttpStatus.OK)
+  async authenticate (
+    @Body() credentials: AdminUserCredentialsDto
+  ): Promise<{ token: string }> {
+    const adminCredentials = this.configService.get('admin')
+    if (credentials.username === adminCredentials.username && credentials.password === adminCredentials.password) {
+      const token = await this.jwtService.signAsync({}, { subject: 'admin' })
+      return { token }
+    }
+
+    throw new UnauthorizedException('Username or password is incorrect')
+  }
+
   @Get('organizations')
+  @UseGuards(AdminGuard)
   async getOrganizations (): Promise<Organization[]> {
     return await this.organizationsService.findAll()
   }
 
   @Get('providerConfigurations')
+  @UseGuards(AdminGuard)
   async getProviderConfigurations (): Promise<ProviderConfiguration[]> {
     return await this.providerConfigurationsService.findAll()
   }
 
   @Get('providerConfigurations/:id')
+  @UseGuards(AdminGuard)
   async getProviderConfiguration (
     @Param('id') providerConfigurationId: string
   ): Promise<ProviderConfiguration> {
@@ -74,6 +98,7 @@ export class AdminController {
   }
 
   @Put('providerConfigurations/:id')
+  @UseGuards(AdminGuard)
   async updateProviderConfigurations (
     @Param('id') providerConfigurationId: string,
     @Body() updatedProviderConfiguration: any
@@ -98,18 +123,30 @@ export class AdminController {
   }
 
   @Get('event-subscriptions')
+  @UseGuards(AdminGuard)
   async getEventSubscriptions (): Promise<EventSubscription[]> {
     return await this.eventSubscriptionsService.findAll()
   }
 
+  @Get('events')
+  @UseGuards(AdminGuard)
+  async getEvents (): Promise<Event[]> {
+    return await this.eventsService.findAll()
+  }
+
   @Get('integrations')
+  @UseGuards(AdminGuard)
   async getIntegrations (): Promise<Integration[]> {
     return await this.integrationsService.findAll({
-      relations: ['practice', 'providerConfiguration']
+      relations: ['practice', 'practice.organization', 'providerConfiguration'],
+      order: {
+        status: 'ASC'
+      }
     })
   }
 
   @Get('integrations/:id')
+  @UseGuards(AdminGuard)
   async getIntegration (
     @Param('id') integrationId: string
   ): Promise<Integration> {
@@ -122,6 +159,7 @@ export class AdminController {
   }
 
   @Delete('integrations/:id')
+  @UseGuards(AdminGuard)
   async deleteIntegration (
     @Param('id') integrationId: string
   ): Promise<void> {
@@ -140,6 +178,7 @@ export class AdminController {
   }
 
   @Patch('integrations/:id')
+  @UseGuards(AdminGuard)
   async updateIntegration (
     @Param('id') integrationId: string,
     @Body() updateIntegration: Pick<CreateIntegrationDto, 'integrationOptions'>
@@ -161,6 +200,7 @@ export class AdminController {
   }
 
   @Post('integrations/:id/stop')
+  @UseGuards(AdminGuard)
   async stopIntegration (
     @Res() res: Response,
     @Param('id') integrationId: string,
@@ -194,6 +234,7 @@ export class AdminController {
   }
 
   @Post('integrations/:id/start')
+  @UseGuards(AdminGuard)
   async startIntegration (
     @Res() res: Response,
     @Param('id') integrationId: string
@@ -218,6 +259,7 @@ export class AdminController {
   }
 
   @Post('integrations/:id/restart')
+  @UseGuards(AdminGuard)
   async restartIntegration (
     @Res() res: Response,
     @Param('id') integrationId: string
@@ -237,6 +279,7 @@ export class AdminController {
   }
 
   @Post('refs/sync/:providerId')
+  @UseGuards(AdminGuard)
   async sync (
     @Param('providerId') providerId: string,
     @Query() { integrationId }: ReferenceDataQueryParams
@@ -256,6 +299,7 @@ export class AdminController {
   }
 
   @Post('refs/sync/:providerId/:type')
+  @UseGuards(AdminGuard)
   async syncType (
     @Param('providerId') providerId: string,
     @Param('type') type: string,
@@ -287,6 +331,7 @@ export class AdminController {
 
   @Post('providers/:providerId/options/create')
   @HttpCode(HttpStatus.CREATED)
+  @UseGuards(AdminGuard)
   async createProviderOptions (
     @Param('providerId') providerId: string,
     @Body() providerOptions: ProviderOptionDto[]
@@ -299,6 +344,7 @@ export class AdminController {
 
   @Delete('/providers/:providerId/options/:providerOptionId')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @UseGuards(AdminGuard)
   async deleteProviderOption (
     @Param('providerId') providerId: string,
     @Param('providerOptionId') providerOptionId: string

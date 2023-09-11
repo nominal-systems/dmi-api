@@ -8,6 +8,9 @@ import { getRepositoryToken } from '@nestjs/typeorm'
 import { Integration } from '../integrations/entities/integration.entity'
 import { RefsService } from '../refs/refs.service'
 import { ProvidersService } from '../providers/services/providers.service'
+import { EventsService } from '../events/services/events.service'
+import { ConfigService } from '@nestjs/config'
+import { JwtService } from '@nestjs/jwt'
 
 describe('AdminController', () => {
   let controller: AdminController
@@ -32,6 +35,10 @@ describe('AdminController', () => {
           useValue: providersConfigurationsServiceMock
         },
         {
+          provide: EventsService,
+          useValue: {}
+        },
+        {
           provide: EventSubscriptionService,
           useValue: eventSubscriptionsServiceMock
         },
@@ -50,6 +57,14 @@ describe('AdminController', () => {
         {
           provide: ProvidersService,
           useValue: providersServiceMock
+        },
+        {
+          provide: ConfigService,
+          useValue: {}
+        },
+        {
+          provide: JwtService,
+          useValue: {}
         }
       ]
     }).compile()

@@ -57,6 +57,9 @@ async function bootstrap (): Promise<void> {
   const integrationsService = app.get(IntegrationsService)
   await integrationsService.ensureStatusAll()
 
+  // CORS
+  app.enableCors()
+
   // Start application
   const PORT = configService.get<number>('port', 3000)
   await app.startAllMicroservices()
