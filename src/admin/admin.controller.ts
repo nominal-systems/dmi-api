@@ -41,6 +41,9 @@ import { JwtService } from '@nestjs/jwt'
 import { AdminGuard } from '../common/guards/admin.guard'
 import { EventsService } from '../events/services/events.service'
 import { Event } from '../events/entities/event.entity'
+import { ReferenceDataList } from '../refs/interfaces/reference-data-list.interface'
+import { hash } from '../common/utils/crypto.utils'
+import { Ref } from '../refs/entities/ref.entity'
 
 @Controller('admin')
 export class AdminController {
@@ -275,6 +278,36 @@ export class AdminController {
       res.status(201).send('Integration restarted')
     } else {
       res.status(400).send(response.message)
+    }
+  }
+
+  @Get('refs/:type')
+  @UseGuards(AdminGuard)
+  async getRefs (
+    @Param('type') type: 'sexes' | 'species' | 'breeds'
+  ): Promise<ReferenceDataList> {
+    let items: Ref[] = []
+    switch (type) {
+      case 'sexes':
+        items = await this.refsService.getSexes()
+        return {
+          items: items,
+          hash: hash(items)
+        }
+      case 'species':
+        items = await this.refsService.getSpecies()
+        return {
+          items: items,
+          hash: hash(items)
+        }
+      case 'breeds':
+        items = await this.refsService.getBreeds()
+        return {
+          items: items,
+          hash: hash(items)
+        }
+      default:
+        throw new BadRequestException('Invalid type')
     }
   }
 
