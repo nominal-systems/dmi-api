@@ -15,7 +15,7 @@ export class ExternalOrderMapper {
       veterinarian: externalOrder.veterinarian,
       technician: externalOrder.technician,
       devices: externalOrder.devices,
-      manifestUri: externalOrder.manifestUri,
+      manifest: externalOrder.manifest,
       submissionUri: externalOrder.submissionUri,
       notes: externalOrder.notes,
       editable: externalOrder.editable

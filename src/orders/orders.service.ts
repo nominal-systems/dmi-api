@@ -136,14 +136,15 @@ export class OrdersService {
           'tests',
           'veterinarian',
           'integration',
-          'integration.providerConfiguration'
+          'integration.providerConfiguration',
+          'manifest'
         ]
       }
     })
 
     const {
       externalId,
-      manifestUri,
+      manifest,
       integration: { providerConfiguration, integrationOptions }
     } = order
 
@@ -151,10 +152,10 @@ export class OrdersService {
       throw new ForbiddenException('You don\'t have access to this resource')
     }
 
-    if (manifestUri == null) {
+    if (manifest == null) {
       const response = await this.getOrderFromProvider(externalId, providerConfiguration, integrationOptions)
 
-      if (response.manifestUri != null || response.status !== order.status) {
+      if (response.manifest != null || response.status !== order.status) {
         Object.assign(order, response)
 
         await this.ordersRepository.save(order)
@@ -192,7 +193,7 @@ export class OrdersService {
           payload: { id: externalId },
           integrationOptions,
           providerConfiguration:
-          providerConfiguration.configurationOptions
+            providerConfiguration.configurationOptions
         }
       }
     )
@@ -400,7 +401,7 @@ export class OrdersService {
         operation: 'tests.add',
         data: {
           providerConfiguration:
-          providerConfiguration.configurationOptions,
+            providerConfiguration.configurationOptions,
           integrationOptions,
           payload: {
             id: externalId,
@@ -456,7 +457,7 @@ export class OrdersService {
         operation: 'tests.cancel',
         data: {
           providerConfiguration:
-          providerConfiguration.configurationOptions,
+            providerConfiguration.configurationOptions,
           integrationOptions,
           payload: {
             id: externalId,
@@ -479,7 +480,7 @@ export class OrdersService {
     orders
   }: ExternalOrdersEventData): Promise<void> {
     const externalOrdersIds = orders.map(order => order.externalId)
-
+    console.log('ORDER', orders)
     // Handle existing orders
     const existingOrders = await this.findOrdersByExternalIds(externalOrdersIds)
     const updatedOrders: Order[] = []

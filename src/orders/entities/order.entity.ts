@@ -6,10 +6,12 @@ import {
   JoinTable,
   ManyToMany,
   ManyToOne,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn
 } from 'typeorm'
 import { Integration } from '../../integrations/entities/integration.entity'
+import { Attachment } from './attachment.entity'
 import { Client } from './client.entity'
 import { Patient } from './patient.entity'
 import { Test } from './test.entity'
@@ -30,9 +32,9 @@ export class Order {
   @Column()
   integrationId: string
 
-  // TODO(gb): use manifest object instead
-  @Column({ nullable: true })
-  manifestUri: string
+  @Type(() => Attachment)
+  @OneToOne(() => Attachment, { cascade: true })
+  manifest: Attachment
 
   @Column({ nullable: true })
   submissionUri: string
