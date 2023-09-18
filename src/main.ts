@@ -54,8 +54,10 @@ async function bootstrap (): Promise<void> {
       }
     })
   }
-  const integrationsService = app.get(IntegrationsService)
-  await integrationsService.ensureStatusAll()
+  if (process.env.RUN_ENSURE_STATUS_ALL === 'true') {
+    const integrationsService = app.get(IntegrationsService)
+    await integrationsService.ensureStatusAll()
+  }
 
   // CORS
   app.enableCors()
