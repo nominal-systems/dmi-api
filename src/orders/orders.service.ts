@@ -160,8 +160,9 @@ export class OrdersService {
 
         await this.ordersRepository.save(order)
       }
+    } else {
+      manifest.data = Buffer.from(manifest.data, 'base64').toString()
     }
-
     return order
   }
 
@@ -480,7 +481,7 @@ export class OrdersService {
     orders
   }: ExternalOrdersEventData): Promise<void> {
     const externalOrdersIds = orders.map(order => order.externalId)
-    console.log('ORDER', orders)
+
     // Handle existing orders
     const existingOrders = await this.findOrdersByExternalIds(externalOrdersIds)
     const updatedOrders: Order[] = []

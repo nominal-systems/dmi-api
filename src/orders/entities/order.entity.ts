@@ -6,7 +6,6 @@ import {
   JoinTable,
   ManyToMany,
   ManyToOne,
-  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn
 } from 'typeorm'
@@ -33,7 +32,7 @@ export class Order {
   integrationId: string
 
   @Type(() => Attachment)
-  @OneToOne(() => Attachment, { cascade: true })
+  @ManyToOne(() => Attachment, { cascade: true })
   manifest: Attachment
 
   @Column({ nullable: true })
