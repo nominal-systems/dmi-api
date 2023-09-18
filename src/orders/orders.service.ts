@@ -160,8 +160,6 @@ export class OrdersService {
 
         await this.ordersRepository.save(order)
       }
-    } else {
-      manifest.data = Buffer.from(manifest.data, 'base64').toString()
     }
     return order
   }
