@@ -44,6 +44,7 @@ import { Event } from '../events/entities/event.entity'
 import { ReferenceDataList } from '../refs/interfaces/reference-data-list.interface'
 import { hash } from '../common/utils/crypto.utils'
 import { Ref } from '../refs/entities/ref.entity'
+import { Provider } from '../providers/entities/provider.entity'
 
 @Controller('admin')
 export class AdminController {
@@ -289,19 +290,19 @@ export class AdminController {
     let items: Ref[] = []
     switch (type) {
       case 'sexes':
-        items = await this.refsService.getSexes()
+        items = await this.refsService.getSexes(['id', 'name', 'code', 'type', 'providerRef'], ['providerRef', 'providerRef.provider'])
         return {
           items: items,
           hash: hash(items)
         }
       case 'species':
-        items = await this.refsService.getSpecies()
+        items = await this.refsService.getSpecies(['id', 'name', 'code', 'type'], ['providerRef', 'providerRef.provider'])
         return {
           items: items,
           hash: hash(items)
         }
       case 'breeds':
-        items = await this.refsService.getBreeds()
+        items = await this.refsService.getBreeds(['id', 'name', 'code', 'species', 'type'], ['providerRef', 'providerRef.provider'])
         return {
           items: items,
           hash: hash(items)
@@ -360,6 +361,14 @@ export class AdminController {
     } catch (error) {
       throw new BadRequestException(error.message)
     }
+  }
+
+  @Get('providers')
+  @UseGuards(AdminGuard)
+  async getProviders (): Promise<Provider[]> {
+    return await this.providersService.findAll({
+      relations: ['options']
+    })
   }
 
   @Post('providers/:providerId/options/create')
