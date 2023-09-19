@@ -54,7 +54,8 @@ async function bootstrap (): Promise<void> {
       }
     })
   }
-  if (process.env.RUN_ENSURE_STATUS_ALL === 'true') {
+  console.log('VERIFY_INTEGRATION_STATUS', process.env.VERIFY_INTEGRATION_STATUS)
+  if (process.env.VERIFY_INTEGRATION_STATUS === 'true') {
     const integrationsService = app.get(IntegrationsService)
     await integrationsService.ensureStatusAll()
   }
