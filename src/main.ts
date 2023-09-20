@@ -54,8 +54,14 @@ async function bootstrap (): Promise<void> {
       }
     })
   }
-  const integrationsService = app.get(IntegrationsService)
-  await integrationsService.ensureStatusAll()
+
+  if (process.env.VERIFY_INTEGRATION_STATUS === 'true') {
+    const integrationsService = app.get(IntegrationsService)
+    await integrationsService.ensureStatusAll()
+  }
+
+  // CORS
+  app.enableCors()
 
   // Start application
   const PORT = configService.get<number>('port', 3000)

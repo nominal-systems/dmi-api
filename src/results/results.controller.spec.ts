@@ -1,8 +1,24 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { ResultsController } from './results.controller'
+import { ProvidersService } from '../providers/services/providers.service'
+import { FastifyRequest } from 'fastify'
 
 describe('ResultsController', () => {
-  let controller: ResultsController
+  let resultsController: ResultsController
+
+  const clientProxyMock = {
+    send: jest.fn()
+  }
+  const providersServiceMock = {
+    saveProviderRawData: jest.fn()
+  }
+  const requestMock = {
+    protocol: 'http',
+    headers: {
+      host: 'localhost'
+    },
+    url: '/results/heska/clientA'
+  } as unknown as FastifyRequest
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -10,15 +26,19 @@ describe('ResultsController', () => {
       providers: [
         {
           provide: 'ACTIVEMQ',
-          useValue: {}
+          useValue: clientProxyMock
+        },
+        {
+          provide: ProvidersService,
+          useValue: providersServiceMock
         }
       ]
     }).compile()
 
-    controller = module.get<ResultsController>(ResultsController)
+    resultsController = module.get<ResultsController>(ResultsController)
   })
 
   it('should be defined', () => {
-    expect(controller).toBeDefined()
+    expect(resultsController).toBeDefined()
   })
 })
