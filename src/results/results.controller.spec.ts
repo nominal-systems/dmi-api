@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { ResultsController } from './results.controller'
 import { ProvidersService } from '../providers/services/providers.service'
-import { FastifyRequest } from 'fastify'
 
 describe('ResultsController', () => {
   let resultsController: ResultsController
@@ -12,13 +11,6 @@ describe('ResultsController', () => {
   const providersServiceMock = {
     saveProviderRawData: jest.fn()
   }
-  const requestMock = {
-    protocol: 'http',
-    headers: {
-      host: 'localhost'
-    },
-    url: '/results/heska/clientA'
-  } as unknown as FastifyRequest
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
