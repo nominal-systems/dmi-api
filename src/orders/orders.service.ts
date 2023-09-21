@@ -277,6 +277,8 @@ export class OrdersService {
           order: order
         }
       })
+
+      return order
     }
 
     // Update order
