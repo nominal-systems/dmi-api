@@ -700,7 +700,7 @@ Wire-haired Hungarian Vizsla,505,41,breed,antech
 Asian Cat Semi-Long-hair,1334,42,breed,antech
 Cane corso Mix,345,41,breed,antech
 Canis latrans latrans,505,41,breed,antech
-z Other Canids Mix,345,41,breed,antech
+Other Canids Mix,345,41,breed,antech
 Kangal Shepherd Dog,49,41,breed,antech
 Cockapoo,932,41,breed,antech
 Long-haired Saint Bernard Dog,160,41,breed,antech
@@ -930,7 +930,7 @@ Atlas Shepherd Dog Mix,345,41,breed,antech
 Schipperke Mix,345,41,breed,antech
 Portuguese Podengo,505,41,breed,antech
 Smooth-haired Fox Terrier,100,41,breed,antech
-z Other Canidae,505,41,breed,antech
+Other Canidae,505,41,breed,antech
 Australian Mist Mix,650,42,breed,antech
 West Siberian Laïka Mix,345,41,breed,antech
 Russian Spotted Hound Mix,345,41,breed,antech
@@ -1541,7 +1541,7 @@ Boerboel,BOERBOEL,CANINE,breed,idexx
 Boerboel Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Bohemian Shepherd,CANINE_OTHER,CANINE,breed,idexx
 Bohemian Shepherd Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
-Bohemian Wire-haired Pointing Griffon,WIREHAIRED_POINTING_GRIFFON,CANINE,breed,idexx
+Bohemian Wire-haired Pointing Griffon, WIREHAIRED_POINTING_GRIFFON,CANINE,breed,idexx
 Bohemian Wire-haired Pointing Griffon Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Bolognese,BOLOGNESE,CANINE,breed,idexx
 Bolognese Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
@@ -1717,7 +1717,7 @@ Estrela Mountain Dog,CANINE_OTHER,CANINE,breed,idexx
 Estrela Mountain Dog Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Eurasian,EURASIER,CANINE,breed,idexx
 Eurasian Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
-Landseer Mix,European Continental type,MIXED_BREED_CANINE,CANINE,breed,idexx
+Landseer Mix European Continental type,MIXED_BREED_CANINE,CANINE,breed,idexx
 European German Shepherd Dog,GERMAN_SHEPHERD,CANINE,breed,idexx
 European German Shepherd Dog Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Fawn Brittany Basset,CANINE_OTHER,CANINE,breed,idexx
@@ -1745,13 +1745,13 @@ French Bulldog Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 French Hound Mix Tricolour,MIXED_BREED_CANINE,CANINE,breed,idexx
 French Hound Mix White and Black,MIXED_BREED_CANINE,CANINE,breed,idexx
 French Hound Mix White and Orange,MIXED_BREED_CANINE,CANINE,breed,idexx
-French Hound,Tricolour,CANINE_OTHER,CANINE,breed,idexx
-French Hound,White and Black,CANINE_OTHER,CANINE,breed,idexx
-French Hound,White and Orange,CANINE_OTHER,CANINE,breed,idexx
+French Hound Tricolour,CANINE_OTHER,CANINE,breed,idexx
+French Hound White and Black,CANINE_OTHER,CANINE,breed,idexx
+French Hound White and Orange,CANINE_OTHER,CANINE,breed,idexx
 French Pointing Dog,CANINE_OTHER,CANINE,breed,idexx
-French Pointing Dog,Gascogne,CANINE_OTHER,CANINE,breed,idexx
+French Pointing Dog Gascogne,CANINE_OTHER,CANINE,breed,idexx
 French Pointing Dog Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
-French Pointing Dog,Pyrenean,CANINE_OTHER,CANINE,breed,idexx
+French Pointing Dog Pyrenean,CANINE_OTHER,CANINE,breed,idexx
 French Spaniel,CANINE_OTHER,CANINE,breed,idexx
 French Spaniel Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 French Wire-haired Korthals Pointing Griffon,CANINE_OTHER,CANINE,breed,idexx
@@ -1760,7 +1760,7 @@ Galician Shepherd Dog,CANINE_OTHER,CANINE,breed,idexx
 Galician Shepherd Dog Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Garafian Shepherd,CANINE_OTHER,CANINE,breed,idexx
 Garafian Shepherd Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
-French Pointing Dog Mix,Gascogne,MIXED_BREED_CANINE,CANINE,breed,idexx
+French Pointing Dog Mix Gascogne,MIXED_BREED_CANINE,CANINE,breed,idexx
 Gascon Saintongeois,CANINE_OTHER,CANINE,breed,idexx
 Gascon Saintongeois Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Georgian Shepherd,CANINE_OTHER,CANINE,breed,idexx
@@ -1775,21 +1775,21 @@ German Pinscher,GERMAN_PINSCHER,CANINE,breed,idexx
 German Pinscher Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 German Shepherd Dog,GERMAN_SHEPHERD,CANINE,breed,idexx
 German Shepherd Dog Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
-German Shepherd Dog Mix,Short-haired,MIXED_BREED_CANINE,CANINE,breed,idexx
+German Shepherd Dog Mix Short-haired,MIXED_BREED_CANINE,CANINE,breed,idexx
 German Short-haired Pointer,GERMAN_SHORTHAIRED_POINTER,CANINE,breed,idexx
 German Short-haired Pointer Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 German Spaniel,CANINE_OTHER,CANINE,breed,idexx
 German Spaniel Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 German Spitz,GERMAN_SPITZ,CANINE,breed,idexx
-German Spitz,Gross,GERMAN_SPITZ,CANINE,breed,idexx
+German Spitz Gross,GERMAN_SPITZ,CANINE,breed,idexx
 German Spitz Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 German Spitz Mix Pomeranian,MIXED_BREED_CANINE,CANINE,breed,idexx
 German Spitz Mix Gross,MIXED_BREED_CANINE,CANINE,breed,idexx
 German Spitz Mix Miniature,MIXED_BREED_CANINE,CANINE,breed,idexx
 German Spitz Mix Mittel,MIXED_BREED_CANINE,CANINE,breed,idexx
-German Spitz,Pomeranian,POMERANIAN,CANINE,breed,idexx
-German Spitz,Miniature,GERMAN_SPITZ,CANINE,breed,idexx
-Pointer,German Wire-Haired,GERMAN_WIREHAIRED_POINTER,CANINE,breed,idexx
+German Spitz Pomeranian,POMERANIAN,CANINE,breed,idexx
+German Spitz Miniature,GERMAN_SPITZ,CANINE,breed,idexx
+Pointer German Wire-Haired,GERMAN_WIREHAIRED_POINTER,CANINE,breed,idexx
 German Wire-Haired Pointer Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Ghadrejani Dog,CANINE_OTHER,CANINE,breed,idexx
 Ghadrejani Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
@@ -1829,7 +1829,6 @@ Greyhound Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Griffon Nivernais,CANINE_OTHER,CANINE,breed,idexx
 Griffon Nivernais Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Belgian Shepherd Dog Mix Groenendael,MIXED_BREED_CANINE,CANINE,breed,idexx
-Belgian Shepherd Dog Mix Groenendael,MIXED_BREED_CANINE,CANINE,breed,idexx
 Gull Terrier,CANINE_OTHER,CANINE,breed,idexx
 Gull Terrier Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 HÃ¤lleforshund,CANINE_OTHER,CANINE,breed,idexx
@@ -1863,8 +1862,8 @@ Hygen Hound,CANINE_OTHER,CANINE,breed,idexx
 Hygen Hound Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Ibizan Hound,HOUND_IBIZAN,CANINE,breed,idexx
 Ibizan Hound Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
-Ibizan Hound,rough-haired,CANINE_OTHER,CANINE,breed,idexx
-Ibizan Hound,smooth-haired,CANINE_OTHER,CANINE,breed,idexx
+Ibizan Hound rough-haired,CANINE_OTHER,CANINE,breed,idexx
+Ibizan Hound smooth-haired,CANINE_OTHER,CANINE,breed,idexx
 Icelandic Sheepdog,CANINE_OTHER,CANINE,breed,idexx
 Icelandic Sheepdog Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Indian Spitz,CANINE_OTHER,CANINE,breed,idexx
@@ -1889,10 +1888,10 @@ Istrian Shorthaired Hound,CANINE_OTHER,CANINE,breed,idexx
 Istrian Shorthaired Hound Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Italian Greyhound,ITALIAN_GREYHOUND,CANINE,breed,idexx
 Italian Greyhound Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
-Italian Hound,Coarse-haired,CANINE_OTHER,CANINE,breed,idexx
+Italian Hound Coarse-haired,CANINE_OTHER,CANINE,breed,idexx
 Italian Hound Mix Coarse-haired,MIXED_BREED_CANINE,CANINE,breed,idexx
 Italian Hound Mix Short-haired,MIXED_BREED_CANINE,CANINE,breed,idexx
-Italian Hound,Short-haired,CANINE_OTHER,CANINE,breed,idexx
+Italian Hound Short-haired,CANINE_OTHER,CANINE,breed,idexx
 Italian Spinone,SPINONE_ITALIANO,CANINE,breed,idexx
 Italian Spinone Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Jack Russell Terrier,JACK_RUSSEL_TERRIER,CANINE,breed,idexx
@@ -1953,37 +1952,37 @@ Lakeland Terrier,LAKELAND_TERRIER,CANINE,breed,idexx
 Lakeland Terrier Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Lancashire Heeler,CANINE_OTHER,CANINE,breed,idexx
 Lancashire Heeler Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
-Landseer,European Continental type,CANINE_OTHER,CANINE,breed,idexx
+Landseer European Continental type,CANINE_OTHER,CANINE,breed,idexx
 Lapponian Herder,CANINE_OTHER,CANINE,breed,idexx
 Lapponian Herder Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Large MÃ¼nsterlander,MUNSTERLANDER_POINTER,CANINE,breed,idexx
 Large MÃ¼nsterlander Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
-Peruvian Hairless Dog Mix,Large,MIXED_BREED_CANINE,CANINE,breed,idexx
+Peruvian Hairless Dog Mix Large,MIXED_BREED_CANINE,CANINE,breed,idexx
 Leonberger,LEONBERGER,CANINE,breed,idexx
 Leonberger Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Lhasa Apso,LHASA_APSO,CANINE,breed,idexx
 Lhasa Apso Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
-Majorcan Shepherd Dog,long haired,CANINE_OTHER,CANINE,breed,idexx
-Majorcan Shepherd Dog Mix,long haired,MIXED_BREED_CANINE,CANINE,breed,idexx
-Chihuahua,Long-haired,CHIHUAHUA,CANINE,breed,idexx
-Chihuahua Mix,Long-haired,MIXED_BREED_CANINE,CANINE,breed,idexx
-Dutch Shepherd Dog,Long-haired,DUTCH_SHEPHERD,CANINE,breed,idexx
-Dutch Shepherd Dog Mix,Long-haired,MIXED_BREED_CANINE,CANINE,breed,idexx
-German Shepherd Dog,Long-haired,GERMAN_SHEPHERD,CANINE,breed,idexx
-German Shepherd Dog Mix,Long-haired,MIXED_BREED_CANINE,CANINE,breed,idexx
+Majorcan Shepherd Dog long haired,CANINE_OTHER,CANINE,breed,idexx
+Majorcan Shepherd Dog Mix long haired,MIXED_BREED_CANINE,CANINE,breed,idexx
+Chihuahua Long-haired,CHIHUAHUA,CANINE,breed,idexx
+Chihuahua Mix Long-haired,MIXED_BREED_CANINE,CANINE,breed,idexx
+Dutch Shepherd Dog Long-haired,DUTCH_SHEPHERD,CANINE,breed,idexx
+Dutch Shepherd Dog Mix Long-haired,MIXED_BREED_CANINE,CANINE,breed,idexx
+German Shepherd Dog Long-haired,GERMAN_SHEPHERD,CANINE,breed,idexx
+German Shepherd Dog Mix Long-haired,MIXED_BREED_CANINE,CANINE,breed,idexx
 Dachshund Mix Long-haired Miniature,MIXED_BREED_CANINE,CANINE,breed,idexx
-Pyrenean Sheepdog,Long-haired,CANINE_OTHER,CANINE,breed,idexx
-Pyrenean Sheepdog Mix,Long-haired,MIXED_BREED_CANINE,CANINE,breed,idexx
+Pyrenean Sheepdog Long-haired,CANINE_OTHER,CANINE,breed,idexx
+Pyrenean Sheepdog Mix Long-haired,MIXED_BREED_CANINE,CANINE,breed,idexx
 Dachshund Long-haired Rabbit Hunting,DACHSHUND,CANINE,breed,idexx
 Dachshund Mix Long-haired Rabbit Hunting,MIXED_BREED_CANINE,CANINE,breed,idexx
-Russian Toy,Long-haired,CANINE_OTHER,CANINE,breed,idexx
-Russian Toy Mix,Long-haired,MIXED_BREED_CANINE,CANINE,breed,idexx
-Saint Bernard Dog,Long-haired,CANINE_OTHER,CANINE,breed,idexx
-Saint Bernard Dog Mix,Long-haired,MIXED_BREED_CANINE,CANINE,breed,idexx
+Russian Toy Long-haired,CANINE_OTHER,CANINE,breed,idexx
+Russian Toy Mix Long-haired,MIXED_BREED_CANINE,CANINE,breed,idexx
+Saint Bernard Dog Long-haired,CANINE_OTHER,CANINE,breed,idexx
+Saint Bernard Dog Mix Long-haired,MIXED_BREED_CANINE,CANINE,breed,idexx
 Dachshund Long-haired Standard,DACHSHUND,CANINE,breed,idexx
 Dachshund Mix Long-haired Standard,MIXED_BREED_CANINE,CANINE,breed,idexx
-Weimaraner,Long-haired,CANINE_OTHER,CANINE,breed,idexx
-Weimaraner Mix,Long-haired,MIXED_BREED_CANINE,CANINE,breed,idexx
+Weimaraner Long-haired,CANINE_OTHER,CANINE,breed,idexx
+Weimaraner Mix Long-haired,MIXED_BREED_CANINE,CANINE,breed,idexx
 Majorca Mastiff,MASTIFF,CANINE,breed,idexx
 Majorca Mastiff Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Majorcan Shepherd Dog,CANINE_OTHER,CANINE,breed,idexx
@@ -2003,13 +2002,13 @@ Medium Griffon Vendeen,CANINE_OTHER,CANINE,breed,idexx
 Medium Griffon Vendeen Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Medium-Sized Anglo-French Hound,CANINE_OTHER,CANINE,breed,idexx
 Medium-Sized Anglo-French Hound Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
-Mexican Hairless Dog Mix,Medium-Sized,MIXED_BREED_CANINE,CANINE,breed,idexx
+Mexican Hairless Dog Mix Medium-Sized,MIXED_BREED_CANINE,CANINE,breed,idexx
 Mexican Hairless Dog,MEXICAN_HAIRLESS,CANINE,breed,idexx
-Mexican Hairless Dog,Medium-Sized,MEXICAN_HAIRLESS,CANINE,breed,idexx
-Mexican Hairless Dog,Miniature,MEXICAN_HAIRLESS,CANINE,breed,idexx
+Mexican Hairless Dog Medium-Sized,MEXICAN_HAIRLESS,CANINE,breed,idexx
+Mexican Hairless Dog Miniature,MEXICAN_HAIRLESS,CANINE,breed,idexx
 Mexican Hairless Dog Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
-Mexican Hairless Dog Mix,Miniature,MIXED_BREED_CANINE,CANINE,breed,idexx
-Mexican Hairless Dog,Standard,MEXICAN_HAIRLESS,CANINE,breed,idexx
+Mexican Hairless Dog Mix Miniature,MIXED_BREED_CANINE,CANINE,breed,idexx
+Mexican Hairless Dog Standard,MEXICAN_HAIRLESS,CANINE,breed,idexx
 Miniature American Shepherd,CANINE_OTHER,CANINE,breed,idexx
 Miniature American Shepherd Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Miniature Bull Terrier,BULL_TERRIER,CANINE,breed,idexx
@@ -2020,10 +2019,10 @@ Miniature Fox Terrier,FOX_TERRIER,CANINE,breed,idexx
 Miniature Fox Terrier Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Miniature Pinscher,PINSCHER_MINIATURE,CANINE,breed,idexx
 Miniature Pinscher Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
-Portuguese Podengo,Miniature,CANINE_OTHER,CANINE,breed,idexx
-Shar Pei,Miniature,SHAR_PEI,CANINE,breed,idexx
-Shar Pei Mix,Miniature,MIXED_BREED_CANINE,CANINE,breed,idexx
-German Spitz,Mittel,GERMAN_SPITZ,CANINE,breed,idexx
+Portuguese Podengo Miniature,CANINE_OTHER,CANINE,breed,idexx
+Shar Pei Miniature,SHAR_PEI,CANINE,breed,idexx
+Shar Pei Mix Miniature,MIXED_BREED_CANINE,CANINE,breed,idexx
+German Spitz Mittel,GERMAN_SPITZ,CANINE,breed,idexx
 Mixed Breed Dog,MIXED_BREED_CANINE,CANINE,breed,idexx
 Montenegrin Mountain Hound,CANINE_OTHER,CANINE,breed,idexx
 Montenegrin Mountain Hound Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
@@ -2046,8 +2045,8 @@ Norrbottenspitz Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Norwegian Buhund,CANINE_OTHER,CANINE,breed,idexx
 Norwegian Buhund Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Norwegian Elkhound,NORWEGIAN_ELKHOUND,CANINE,breed,idexx
-Norwegian Elkhound,black,NORWEGIAN_ELKHOUND,CANINE,breed,idexx
-Norwegian Elkhound,grey,NORWEGIAN_ELKHOUND,CANINE,breed,idexx
+Norwegian Elkhound black,NORWEGIAN_ELKHOUND,CANINE,breed,idexx
+Norwegian Elkhound grey,NORWEGIAN_ELKHOUND,CANINE,breed,idexx
 Norwegian Elkhound Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Norwegian Lundehund,CANINE_OTHER,CANINE,breed,idexx
 Norwegian Lundehund Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
@@ -2075,11 +2074,11 @@ Peekapoo Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Pekingese Dog,PEKINGESE,CANINE,breed,idexx
 Pekingese Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Welsh Corgi Mix Pembroke,MIXED_BREED_CANINE,CANINE,breed,idexx
-Peruvian Hairless Dog,Large,CANINE_OTHER,CANINE,breed,idexx
-Peruvian Hairless Dog,medium-sized,CANINE_OTHER,CANINE,breed,idexx
-Peruvian Hairless Dog,miniature,CANINE_OTHER,CANINE,breed,idexx
-Peruvian Hairless Dog Mix,medium-sized,MIXED_BREED_CANINE,CANINE,breed,idexx
-Peruvian Hairless Dog Mix,miniature,MIXED_BREED_CANINE,CANINE,breed,idexx
+Peruvian Hairless Dog Large,CANINE_OTHER,CANINE,breed,idexx
+Peruvian Hairless Dog medium-sized,CANINE_OTHER,CANINE,breed,idexx
+Peruvian Hairless Dog miniature,CANINE_OTHER,CANINE,breed,idexx
+Peruvian Hairless Dog Mix medium-sized,MIXED_BREED_CANINE,CANINE,breed,idexx
+Peruvian Hairless Dog Mix miniature,MIXED_BREED_CANINE,CANINE,breed,idexx
 Peruvian Inca Orchid,CANINE_OTHER,CANINE,breed,idexx
 Peruvian Inca Orchid Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Petit Basset Griffon Vendeen,PETIT_BASSET_GRIFFON_VENDEEN,CANINE,breed,idexx
@@ -2111,14 +2110,14 @@ Polish Tatra Sheepdog Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Pont-Audemer Spaniel,CANINE_OTHER,CANINE,breed,idexx
 Pont-Audemer Spaniel Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Poodle Dog,POODLE,CANINE,breed,idexx
-Poodle,Medium,POODLE,CANINE,breed,idexx
-Poodle,Miniature,POODLE,CANINE,breed,idexx
+Poodle Medium,POODLE,CANINE,breed,idexx
+Poodle Miniature,POODLE,CANINE,breed,idexx
 Poodle Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
-Poodle Mix,Medium,MIXED_BREED_CANINE,CANINE,breed,idexx
-Poodle Mix,Miniature,MIXED_BREED_CANINE,CANINE,breed,idexx
-Poodle Mix,Standard,MIXED_BREED_CANINE,CANINE,breed,idexx
-Poodle Mix,Toy,MIXED_BREED_CANINE,CANINE,breed,idexx
-Poodle,Toy,POODLE,CANINE,breed,idexx
+Poodle Mix Medium,MIXED_BREED_CANINE,CANINE,breed,idexx
+Poodle Mix Miniature,MIXED_BREED_CANINE,CANINE,breed,idexx
+Poodle Mix Standard,MIXED_BREED_CANINE,CANINE,breed,idexx
+Poodle Mix Toy,MIXED_BREED_CANINE,CANINE,breed,idexx
+Poodle Toy,POODLE,CANINE,breed,idexx
 Porcelain,CANINE_OTHER,CANINE,breed,idexx
 Porcelain Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Portuguese Podengo,CANINE_OTHER,CANINE,breed,idexx
@@ -2142,7 +2141,7 @@ Puli Dog,PULI,CANINE,breed,idexx
 Puli Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Pumi Dog,CANINE_OTHER,CANINE,breed,idexx
 Pumi Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
-French Pointing Dog Mix,Pyrenean,MIXED_BREED_CANINE,CANINE,breed,idexx
+French Pointing Dog Mix Pyrenean,MIXED_BREED_CANINE,CANINE,breed,idexx
 Pyrenean Mastiff,MASTIFF,CANINE,breed,idexx
 Pyrenean Mastiff Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Pyrenean Sheepdog,CANINE_OTHER,CANINE,breed,idexx
@@ -2169,11 +2168,11 @@ Romanian Mioritic Shepherd Dog,CANINE_OTHER,CANINE,breed,idexx
 Romanian Mioritic Shepherd Dog Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Rottweiler Dog,ROTTWEILER,CANINE,breed,idexx
 Rottweiler Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
-Collie,Rough-coated,COLLIE,CANINE,breed,idexx
-Collie Mix,Rough-coated,MIXED_BREED_CANINE,CANINE,breed,idexx
-Dutch Shepherd Dog,rough-haired,DUTCH_SHEPHERD,CANINE,breed,idexx
-Dutch Shepherd Dog Mix,rough-haired,MIXED_BREED_CANINE,CANINE,breed,idexx
-Ibizan Hound Mix,rough-haired,MIXED_BREED_CANINE,CANINE,breed,idexx
+Collie Rough-coated,COLLIE,CANINE,breed,idexx
+Collie Mix Rough-coated,MIXED_BREED_CANINE,CANINE,breed,idexx
+Dutch Shepherd Dog rough-haired,DUTCH_SHEPHERD,CANINE,breed,idexx
+Dutch Shepherd Dog Mix rough-haired,MIXED_BREED_CANINE,CANINE,breed,idexx
+Ibizan Hound Mix rough-haired,MIXED_BREED_CANINE,CANINE,breed,idexx
 Russian Black Terrier,BLACK_RUSSIAN_TERRIER,CANINE,breed,idexx
 Russian Black Terrier Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Russian Spaniel,CANINE_OTHER,CANINE,breed,idexx
@@ -2205,14 +2204,14 @@ Schiller Hound Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Schipperke,SCHIPPERKE,CANINE,breed,idexx
 Schipperke Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Schnauzer Dog,CANINE_OTHER,CANINE,breed,idexx
-Schnauzer,Giant,SCHNAUZER_GIANT,CANINE,breed,idexx
-Schnauzer,Miniature,SCHNAUZER_MINIATURE,CANINE,breed,idexx
+Schnauzer Giant,SCHNAUZER_GIANT,CANINE,breed,idexx
+Schnauzer Miniature,SCHNAUZER_MINIATURE,CANINE,breed,idexx
 Schnauzer Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
-Schnauzer Mix,Giant,MIXED_BREED_CANINE,CANINE,breed,idexx
-Schnauzer Mix,Miniature,MIXED_BREED_CANINE,CANINE,breed,idexx
+Schnauzer Mix Giant,MIXED_BREED_CANINE,CANINE,breed,idexx
+Schnauzer Mix Miniature,MIXED_BREED_CANINE,CANINE,breed,idexx
 Schnoodle,MIXED_BREED_CANINE,CANINE,breed,idexx
 Schnoodle Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
-Swiss Hound,Schwyz,CANINE_OTHER,CANINE,breed,idexx
+Swiss Hound Schwyz,CANINE_OTHER,CANINE,breed,idexx
 Scottish Deerhound,SCOTTISH_DEERHOUND,CANINE,breed,idexx
 Scottish Deerhound Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Scottish Terrier,SCOTTISH_TERRIER,CANINE,breed,idexx
@@ -2241,17 +2240,17 @@ Shikoku Dog,CANINE_OTHER,CANINE,breed,idexx
 Shikoku Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Shiloh Shepherd,SHILOH_SHEPHERD,CANINE,breed,idexx
 Shiloh Shepherd Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
-Majorcan Shepherd Dog Mix,short haired,MIXED_BREED_CANINE,CANINE,breed,idexx
-Dutch Shepherd Dog,Short-haired,DUTCH_SHEPHERD,CANINE,breed,idexx
-Dutch Shepherd Dog Mix,Short-haired,MIXED_BREED_CANINE,CANINE,breed,idexx
-German Shepherd Dog,Short-haired,GERMAN_SHEPHERD,CANINE,breed,idexx
-Hungarian Vizsla,Short-haired,VIZSLA,CANINE,breed,idexx
-Hungarian Vizsla Mix,Short-haired,MIXED_BREED_CANINE,CANINE,breed,idexx
-Majorcan Shepherd Dog,short haired,CANINE_OTHER,CANINE,breed,idexx
-Saint Bernard Dog,Short-haired,SAINT_BERNARD,CANINE,breed,idexx
-Saint Bernard Dog Mix,Short-haired,MIXED_BREED_CANINE,CANINE,breed,idexx
-Weimaraner,Short-haired,WEIMARANER,CANINE,breed,idexx
-Weimaraner Mix,Short-haired,MIXED_BREED_CANINE,CANINE,breed,idexx
+Majorcan Shepherd Dog Mix short haired,MIXED_BREED_CANINE,CANINE,breed,idexx
+Dutch Shepherd Dog Short-haired,DUTCH_SHEPHERD,CANINE,breed,idexx
+Dutch Shepherd Dog Mix Short-haired,MIXED_BREED_CANINE,CANINE,breed,idexx
+German Shepherd Dog Short-haired,GERMAN_SHEPHERD,CANINE,breed,idexx
+Hungarian Vizsla Short-haired,VIZSLA,CANINE,breed,idexx
+Hungarian Vizsla Mix Short-haired,MIXED_BREED_CANINE,CANINE,breed,idexx
+Majorcan Shepherd Dog short haired,CANINE_OTHER,CANINE,breed,idexx
+Saint Bernard Dog Short-haired,SAINT_BERNARD,CANINE,breed,idexx
+Saint Bernard Dog Mix Short-haired,MIXED_BREED_CANINE,CANINE,breed,idexx
+Weimaraner Short-haired,WEIMARANER,CANINE,breed,idexx
+Weimaraner Mix Short-haired,MIXED_BREED_CANINE,CANINE,breed,idexx
 Siberian Husky,SIBERIAN_HUSKY,CANINE,breed,idexx
 Siberian Husky Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Silky Terrier,SILKY_TERRIER,CANINE,breed,idexx
@@ -2276,20 +2275,20 @@ Small Brabant Griffon,CANINE_OTHER,CANINE,breed,idexx
 Small Brabant Griffon Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Small MÃ¼nsterlÃ¤nder,MUNSTERLANDER_POINTER,CANINE,breed,idexx
 Small MÃ¼nsterlÃ¤nder Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
-Portuguese Podengo Mix,Small,MIXED_BREED_CANINE,CANINE,breed,idexx
-Collie,Smooth-coated,COLLIE,CANINE,breed,idexx
-Collie Mix,Smooth-coated,MIXED_BREED_CANINE,CANINE,breed,idexx
-Pyrenean Sheepdog,Smooth-faced,CANINE_OTHER,CANINE,breed,idexx
-Pyrenean Sheepdog Mix,Smooth-faced,MIXED_BREED_CANINE,CANINE,breed,idexx
-Chihuahua,Smooth-haired,CHIHUAHUA,CANINE,breed,idexx
-Chihuahua Mix,Smooth-haired,MIXED_BREED_CANINE,CANINE,breed,idexx
-Fox Terrier,smooth,FOX_TERRIER,CANINE,breed,idexx
-Fox Terrier Mix,smooth,MIXED_BREED_CANINE,CANINE,breed,idexx
-Ibizan Hound Mix,smooth-haired,MIXED_BREED_CANINE,CANINE,breed,idexx
-Portuguese Podengo,Smooth-Haired Large,CANINE_OTHER,CANINE,breed,idexx
-Portuguese Podengo Mix,Smooth-Haired Large,MIXED_BREED_CANINE,CANINE,breed,idexx
-Portuguese Podengo,Smooth-Haired Medium-Sized,CANINE_OTHER,CANINE,breed,idexx
-Portuguese Podengo Mix,Smooth-Haired Medium-Sized,MIXED_BREED_CANINE,CANINE,breed,idexx
+Portuguese Podengo Mix Small,MIXED_BREED_CANINE,CANINE,breed,idexx
+Collie Smooth-coated,COLLIE,CANINE,breed,idexx
+Collie Mix Smooth-coated,MIXED_BREED_CANINE,CANINE,breed,idexx
+Pyrenean Sheepdog Smooth-faced,CANINE_OTHER,CANINE,breed,idexx
+Pyrenean Sheepdog Mix Smooth-faced,MIXED_BREED_CANINE,CANINE,breed,idexx
+Chihuahua Smooth-haired,CHIHUAHUA,CANINE,breed,idexx
+Chihuahua Mix Smooth-haired,MIXED_BREED_CANINE,CANINE,breed,idexx
+Fox Terrier smooth,FOX_TERRIER,CANINE,breed,idexx
+Fox Terrier Mix smooth,MIXED_BREED_CANINE,CANINE,breed,idexx
+Ibizan Hound Mix smooth-haired,MIXED_BREED_CANINE,CANINE,breed,idexx
+Portuguese Podengo Smooth-Haired Large,CANINE_OTHER,CANINE,breed,idexx
+Portuguese Podengo Mix Smooth-Haired Large,MIXED_BREED_CANINE,CANINE,breed,idexx
+Portuguese Podengo Smooth-Haired Medium-Sized,CANINE_OTHER,CANINE,breed,idexx
+Portuguese Podengo Mix Smooth-Haired Medium-Sized,MIXED_BREED_CANINE,CANINE,breed,idexx
 Dachshund Smooth-Haired Miniature,DACHSHUND,CANINE,breed,idexx
 Dachshund Mix Smooth-Haired Miniature,MIXED_BREED_CANINE,CANINE,breed,idexx
 Portuguese Podengo Smooth-Haired Miniature,CANINE_OTHER,CANINE,breed,idexx
@@ -2324,10 +2323,10 @@ Staffordshire Bull terrier,STAFFORDSHIRE_BULL_TERRIER,CANINE,breed,idexx
 Staffordshire Bull terrier Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Dachshund Standard,DACHSHUND,CANINE,breed,idexx
 Dachshund Mix Standard,MIXED_BREED_CANINE,CANINE,breed,idexx
-Mexican Hairless Dog Mix,Standard,MIXED_BREED_CANINE,CANINE,breed,idexx
-Poodle,Standard,POODLE,CANINE,breed,idexx
-Schnauzer,Standard,SCHNAUZER_STANDARD,CANINE,breed,idexx
-Schnauzer Mix,Standard,MIXED_BREED_CANINE,CANINE,breed,idexx
+Mexican Hairless Dog Mix Standard,MIXED_BREED_CANINE,CANINE,breed,idexx
+Poodle Standard,POODLE,CANINE,breed,idexx
+Schnauzer Standard,SCHNAUZER_STANDARD,CANINE,breed,idexx
+Schnauzer Mix Standard,MIXED_BREED_CANINE,CANINE,breed,idexx
 Styrian Coarse-haired Hound,CANINE_OTHER,CANINE,breed,idexx
 Styrian Coarse-haired Hound Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Sussex Spaniel,SUSSEX_SPANIEL,CANINE,breed,idexx
@@ -2341,7 +2340,7 @@ Swedish Vallhund Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Swedish White Elkhound,CANINE_OTHER,CANINE,breed,idexx
 Swedish White Elkhound Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Swiss Hound,CANINE_OTHER,CANINE,breed,idexx
-Swiss Hound,Lucerne,CANINE_OTHER,CANINE,breed,idexx
+Swiss Hound Lucerne,CANINE_OTHER,CANINE,breed,idexx
 Swiss Hound Lucerne Hound Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Swiss Hound Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Swiss Hound Schwyz Hound Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
@@ -2393,9 +2392,9 @@ Valencian rat hunting dog Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Volpino Italiano,CANINE_OTHER,CANINE,breed,idexx
 Volpino Italiano Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Welsh Corgi,WELSH_CORGI,CANINE,breed,idexx
-Welsh Corgi,Cardigan,CARDIGAN_WELSH_CORGI,CANINE,breed,idexx
+Welsh Corgi Cardigan,CARDIGAN_WELSH_CORGI,CANINE,breed,idexx
 Welsh Corgi Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
-Welsh Corgi,Pembroke,PEMBROKE_WELSH_CORGI,CANINE,breed,idexx
+Welsh Corgi Pembroke,PEMBROKE_WELSH_CORGI,CANINE,breed,idexx
 Welsh Sheepdog,CANINE_OTHER,CANINE,breed,idexx
 Welsh Sheepdog Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 Welsh Springer Spaniel,WELSH_SPRINGER_SPANIEL,CANINE,breed,idexx
@@ -2416,14 +2415,14 @@ White Shepherd,CANINE_OTHER,CANINE,breed,idexx
 White Shepherd Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
 White Swiss Shepherd Dog,BERGER_BLANC_SUISSE,CANINE,breed,idexx
 White Swiss Shepherd Dog Mix,MIXED_BREED_CANINE,CANINE,breed,idexx
-Fox Terrier,wire,FOX_TERRIER,CANINE,breed,idexx
-Fox Terrier Mix,wire,MIXED_BREED_CANINE,CANINE,breed,idexx
-Hungarian Vizsla,Wire-haired,VIZSLA,CANINE,breed,idexx
-Hungarian Vizsla Mix,Wire-haired,MIXED_BREED_CANINE,CANINE,breed,idexx
-Portuguese Podengo,Wire-Haired Large,CANINE_OTHER,CANINE,breed,idexx
-Portuguese Podengo Mix,Wire-Haired Large,MIXED_BREED_CANINE,CANINE,breed,idexx
-Portuguese Podengo,Wire-Haired Medium-Sized,CANINE_OTHER,CANINE,breed,idexx
-Portuguese Podengo Mix,Wire-Haired Medium-Sized,MIXED_BREED_CANINE,CANINE,breed,idexx
+Fox Terrier wire,FOX_TERRIER,CANINE,breed,idexx
+Fox Terrier Mix wire,MIXED_BREED_CANINE,CANINE,breed,idexx
+Hungarian Vizsla Wire-haired,VIZSLA,CANINE,breed,idexx
+Hungarian Vizsla Mix Wire-haired,MIXED_BREED_CANINE,CANINE,breed,idexx
+Portuguese Podengo Wire-Haired Large,CANINE_OTHER,CANINE,breed,idexx
+Portuguese Podengo Mix Wire-Haired Large,MIXED_BREED_CANINE,CANINE,breed,idexx
+Portuguese Podengo Wire-Haired Medium-Sized,CANINE_OTHER,CANINE,breed,idexx
+Portuguese Podengo Mix Wire-Haired Medium-Sized,MIXED_BREED_CANINE,CANINE,breed,idexx
 Dachshund Wire-Haired Miniature,DACHSHUND,CANINE,breed,idexx
 Dachshund Mix Wire-Haired Miniature,MIXED_BREED_CANINE,CANINE,breed,idexx
 Portuguese Podengo Wire-Haired Miniature,CANINE_OTHER,CANINE,breed,idexx
@@ -2453,10 +2452,10 @@ American Bobtail Shorthair,BOBTAIL_AMERICAN,FELINE,breed,idexx
 American Bobtail Shorthair Mix,MIXED_BREED_FELINE,FELINE,breed,idexx
 American Curl,AMERICAN_CURL,FELINE,breed,idexx
 American Curl Mix,MIXED_BREED_FELINE,FELINE,breed,idexx
-American Curl,Longhair,AMERICAN_CURL,FELINE,breed,idexx
-American Curl,Longhair Mix,MIXED_BREED_FELINE,FELINE,breed,idexx
-American Curl,Shorthair,AMERICAN_CURL,FELINE,breed,idexx
-American Curl,Shorthair Mix,MIXED_BREED_FELINE,FELINE,breed,idexx
+American Curl Longhair,AMERICAN_CURL,FELINE,breed,idexx
+American Curl Longhair Mix,MIXED_BREED_FELINE,FELINE,breed,idexx
+American Curl Shorthair,AMERICAN_CURL,FELINE,breed,idexx
+American Curl Shorthair Mix,MIXED_BREED_FELINE,FELINE,breed,idexx
 American Domestic Long-haired cat,DOMESTIC_LONGHAIR,FELINE,breed,idexx
 American Domestic Medium-haired cat,MIXED_BREED_FELINE,FELINE,breed,idexx
 American Domestic Short-haired cat,DOMESTIC_SHORTHAIR,FELINE,breed,idexx
@@ -2471,12 +2470,12 @@ Arabian Mau,MIXED_BREED_FELINE,FELINE,breed,idexx
 Arabian Mau Mix,MIXED_BREED_FELINE,FELINE,breed,idexx
 Asian Cat,MIXED_BREED_FELINE,FELINE,breed,idexx
 Asian Cat Mix,MIXED_BREED_FELINE,FELINE,breed,idexx
-Asian Cat,Long-haired,MIXED_BREED_FELINE,FELINE,breed,idexx
-Asian Cat,Long-haired Mix,MIXED_BREED_FELINE,FELINE,breed,idexx
-Asian Cat,Semi-Long-hair,MIXED_BREED_FELINE,FELINE,breed,idexx
-Asian Cat,Semi-Long-hair Mix,MIXED_BREED_FELINE,FELINE,breed,idexx
-Asian Cat,Shorthair,MIXED_BREED_FELINE,FELINE,breed,idexx
-Asian Cat,Shorthair Mix,MIXED_BREED_FELINE,FELINE,breed,idexx
+Asian Cat Long-haired,MIXED_BREED_FELINE,FELINE,breed,idexx
+Asian Cat Long-haired Mix,MIXED_BREED_FELINE,FELINE,breed,idexx
+Asian Cat Semi-Long-hair,MIXED_BREED_FELINE,FELINE,breed,idexx
+Asian Cat Semi-Long-hair Mix,MIXED_BREED_FELINE,FELINE,breed,idexx
+Asian Cat Shorthair,MIXED_BREED_FELINE,FELINE,breed,idexx
+Asian Cat Shorthair Mix,MIXED_BREED_FELINE,FELINE,breed,idexx
 Australian Mist,AUSTRALIAN_MIST,FELINE,breed,idexx
 Australian Mist Mix,MIXED_BREED_FELINE,FELINE,breed,idexx
 Balinese Cat,BALINESE,FELINE,breed,idexx
@@ -2712,10 +2711,10 @@ American Bobtail Shorthair,UNK,FELINE,breed,heska
 American Bobtail Shorthair Mix,MIX,FELINE,breed,heska
 American Curl,UNK,FELINE,breed,heska
 American Curl Mix,MIX,FELINE,breed,heska
-American Curl,Longhair,UNK,FELINE,breed,heska
-American Curl,Longhair Mix,MIX,FELINE,breed,heska
-American Curl,Shorthair,UNK,FELINE,breed,heska
-American Curl,Shorthair Mix,MIX,FELINE,breed,heska
+American Curl Longhair,UNK,FELINE,breed,heska
+American Curl Longhair Mix,MIX,FELINE,breed,heska
+American Curl Shorthair,UNK,FELINE,breed,heska
+American Curl Shorthair Mix,MIX,FELINE,breed,heska
 American Domestic Long-haired cat,DLH,FELINE,breed,heska
 American Domestic Medium-haired cat,DMH,FELINE,breed,heska
 American Domestic Short-haired cat,DSH,FELINE,breed,heska
@@ -2730,12 +2729,12 @@ Arabian Mau,UNK,FELINE,breed,heska
 Arabian Mau Mix,MIX,FELINE,breed,heska
 Asian Cat,UNK,FELINE,breed,heska
 Asian Cat Mix,MIX,FELINE,breed,heska
-Asian Cat,Long-haired,UNK,FELINE,breed,heska
-Asian Cat,Long-haired Mix,MIX,FELINE,breed,heska
-Asian Cat,Semi-Long-hair,UNK,FELINE,breed,heska
-Asian Cat,Semi-Long-hair Mix,MIX,FELINE,breed,heska
-Asian Cat,Shorthair,UNK,FELINE,breed,heska
-Asian Cat,Shorthair Mix,MIX,FELINE,breed,heska
+Asian Cat Long-haired,UNK,FELINE,breed,heska
+Asian Cat Long-haired Mix,MIX,FELINE,breed,heska
+Asian Cat Semi-Long-hair,UNK,FELINE,breed,heska
+Asian Cat Semi-Long-hair Mix,MIX,FELINE,breed,heska
+Asian Cat Shorthair,UNK,FELINE,breed,heska
+Asian Cat Shorthair Mix,MIX,FELINE,breed,heska
 Australian Mist,UNK,FELINE,breed,heska
 Australian Mist Mix,MIX,FELINE,breed,heska
 Balinese Cat,BALIN,FELINE,breed,heska
@@ -2997,7 +2996,7 @@ American Staffordshire Terrier Mix,AMSTX,CANINE,breed,heska
 American Water Spaniel,AMEWS,CANINE,breed,heska
 American Water Spaniel Mix,MIX,CANINE,breed,heska
 Anatolian Shepherd Dog,ANASH,CANINE,breed,heska
-Anatolian Shepherd Dog Mix,Shepherd,Mix,CANINE,breed,heska
+Anatolian Shepherd Dog Mix Shepherd,Mix,CANINE,breed,heska
 Anglo-FranÃ§ais de Moyen VÃ©nerie,UNK,CANINE,breed,heska
 Anglo-FranÃ§ais de Moyen VÃ©nerie Mix,MIX,CANINE,breed,heska
 Anglo-FranÃ§ais de Petite VÃ©nerie,UNK,CANINE,breed,heska
@@ -3013,7 +3012,7 @@ Artesian-Norman Basset Mix,MIX,CANINE,breed,heska
 Artois Hound,HOUND,CANINE,breed,heska
 Artois Hound Mix,HOUX,CANINE,breed,heska
 Atlas Shepherd Dog,UNK,CANINE,breed,heska
-Atlas Shepherd Dog Mix,Shepherd,Mix,CANINE,breed,heska
+Atlas Shepherd Dog Mix Shepherd,Mix,CANINE,breed,heska
 Australian Cattle Dog,AUSCD,CANINE,breed,heska
 Australian Cattle Dog Mix,AUSCX,CANINE,breed,heska
 Australian Kelpie,AUSKE,CANINE,breed,heska
@@ -3041,7 +3040,7 @@ Barbet Mix,MIX,CANINE,breed,heska
 Basenji,BASEN,CANINE,breed,heska
 Basenji Mix,BASMX,CANINE,breed,heska
 Basque Shepherd Dog,UNK,CANINE,breed,heska
-Basque Shepherd Dog Mix,Shepherd,Mix,CANINE,breed,heska
+Basque Shepherd Dog Mix Shepherd,Mix,CANINE,breed,heska
 Basset Griffon Vendeen,UNK,CANINE,breed,heska
 Basset Griffon Vendeen Mix,MIX,CANINE,breed,heska
 Basset Hound,BASHO,CANINE,breed,heska
@@ -3061,8 +3060,7 @@ Bedlington Terrier Mix,BEDTX,CANINE,breed,heska
 Belgian Griffon,UNK,CANINE,breed,heska
 Belgian Griffon Mix,MIX,CANINE,breed,heska
 Belgian Shepherd Dog,BELSH,CANINE,breed,heska
-Belgian Shepherd Dog Mix Shepherd,Mix,CANINE,breed,heska
-Belgian Shepherd Dog Mix Groenendael,Shepherd Mix,CANINE,breed,heska
+Belgian Shepherd Dog Mix ,Shepherd Mix,CANINE,breed,heska
 Belgian Shepherd Dog Mix Groenendael,Shepherd Mix,CANINE,breed,heska
 Belgian Shepherd Dog Mix Laekenois,Shepherd Mix,CANINE,breed,heska
 Belgian Shepherd Dog Mix Malinois,BELMX,CANINE,breed,heska
@@ -3072,7 +3070,7 @@ Belgian Shepherd Dog Laekenois,UNK,CANINE,breed,heska
 Belgian Shepherd Dog Malinois,BELMA,CANINE,breed,heska
 Belgian Shepherd Dog Tervuren,BELTE,CANINE,breed,heska
 Bergamasco Shepherd Dog,UNK,CANINE,breed,heska
-Bergamasco Shepherd Dog Mix,Shepherd,Mix,CANINE,breed,heska
+Bergamasco Shepherd Dog Mix Shepherd,Mix,CANINE,breed,heska
 Berger Picard,UNK,CANINE,breed,heska
 Berger Picard Mix,MIX,CANINE,breed,heska
 Bernadoodle,POODX,CANINE,breed,heska
@@ -3148,8 +3146,8 @@ Brussels Griffon,GRIBR,CANINE,breed,heska
 Brussels Griffon Mix,MIX,CANINE,breed,heska
 Bucovina Shepherd Dog,UNK,CANINE,breed,heska
 Bucovina Shepherd Dog Mix,SHPMX,CANINE,breed,heska
-Bull Terrier Mix,Standard,BULTX,CANINE,breed,heska
-Bull Terrier,Standard,BULTE,CANINE,breed,heska
+Bull Terrier Mix Standard,BULTX,CANINE,breed,heska
+Bull Terrier Standard,BULTE,CANINE,breed,heska
 Bullmastiff,BULMA,CANINE,breed,heska
 Bullmastiff Mix,MASTX,CANINE,breed,heska
 Burgos Pointing Dog,POINT,CANINE,breed,heska
@@ -3191,10 +3189,10 @@ Cheasapeake Bay Retriever,CHEBR,CANINE,breed,heska
 Cheasapeake Bay Retriever Mix,CHEBX,CANINE,breed,heska
 Chihuahua,CHIHU,CANINE,breed,heska
 Chihuahua Mix,CHIHX,CANINE,breed,heska
-Chihuahua Mix,Long-haired,CHIHX,CANINE,breed,heska
-Chihuahua Mix,Smooth-haired,CHIHX,CANINE,breed,heska
-Chihuahua,Long-haired,CHIHU,CANINE,breed,heska
-Chihuahua,Smooth-haired,CHIHU,CANINE,breed,heska
+Chihuahua Mix Long-haired,CHIHX,CANINE,breed,heska
+Chihuahua Mix Smooth-haired,CHIHX,CANINE,breed,heska
+Chihuahua Long-haired,CHIHU,CANINE,breed,heska
+Chihuahua Smooth-haired,CHIHU,CANINE,breed,heska
 Chilean Terrier,TERRI,CANINE,breed,heska
 Chilean Terrier Mix,TERRIX,CANINE,breed,heska
 Chinese Crested,CHICR,CANINE,breed,heska
@@ -3213,14 +3211,14 @@ Clumber Spaniel,CLUSP,CANINE,breed,heska
 Clumber Spaniel Mix,MIX,CANINE,breed,heska
 Cockapoo,COCKA,CANINE,breed,heska
 Cockapoo Mix,POODX,CANINE,breed,heska
-Collie Mix,Rough-coated,COLLX,CANINE,breed,heska
-Collie Mix,Smooth-coated,COLLX,CANINE,breed,heska
-Collie,Rough-coated,COLLI,CANINE,breed,heska
-Collie,Smooth-coated,COLLI,CANINE,breed,heska
+Collie Mix Rough-coated,COLLX,CANINE,breed,heska
+Collie Mix Smooth-coated,COLLX,CANINE,breed,heska
+Collie Rough-coated,COLLI,CANINE,breed,heska
+Collie Smooth-coated,COLLI,CANINE,breed,heska
 Continental Toy Spaniel Mix Papillon,MIX,CANINE,breed,heska
 Continental Toy Spaniel Mix PhalÃ¨ne,MIX,CANINE,breed,heska
-Continental Toy Spaniel,Papillon,PAPIL,CANINE,breed,heska
-Continental Toy Spaniel,PhalÃ¨ne,UNK,CANINE,breed,heska
+Continental Toy Spaniel Papillon,PAPIL,CANINE,breed,heska
+Continental Toy Spaniel PhalÃ¨ne,UNK,CANINE,breed,heska
 Coonhound,UNK,CANINE,breed,heska
 Coonhound Mix,COONX,CANINE,breed,heska
 Coton de TulÃ©ar,COTDT,CANINE,breed,heska
@@ -3283,12 +3281,12 @@ Dunker Hound,HOUND,CANINE,breed,heska
 Dunker Hound Mix,HOUX,CANINE,breed,heska
 Dutch Shepherd Dog,UNK,CANINE,breed,heska
 Dutch Shepherd Dog Mix,SHPMX,CANINE,breed,heska
-Dutch Shepherd Dog Mix,Long-haired,SHPMX,CANINE,breed,heska
-Dutch Shepherd Dog Mix,Short-haired,SHPMX,CANINE,breed,heska
-Dutch Shepherd Dog Mix,rough-haired,SHPMX,CANINE,breed,heska
-Dutch Shepherd Dog,Long-haired,UNK,CANINE,breed,heska
-Dutch Shepherd Dog,Short-haired,UNK,CANINE,breed,heska
-Dutch Shepherd Dog,rough-haired,UNK,CANINE,breed,heska
+Dutch Shepherd Dog Mix Long-haired,SHPMX,CANINE,breed,heska
+Dutch Shepherd Dog Mix Short-haired,SHPMX,CANINE,breed,heska
+Dutch Shepherd Dog Mix rough-haired,SHPMX,CANINE,breed,heska
+Dutch Shepherd Dog Long-haired,UNK,CANINE,breed,heska
+Dutch Shepherd Dog Short-haired,UNK,CANINE,breed,heska
+Dutch Shepherd Dog rough-haired,UNK,CANINE,breed,heska
 East European Shepherd,UNK,CANINE,breed,heska
 East European Shepherd Mix,SHPMX,CANINE,breed,heska
 East Siberian LaÃ¯ka,UNK,CANINE,breed,heska
@@ -3347,24 +3345,24 @@ Flat Coated Retriever,FLACR,CANINE,breed,heska
 Flat Coated Retriever Mix,MIX,CANINE,breed,heska
 Fox Terrier,FOXTE,CANINE,breed,heska
 Fox Terrier Mix,FOXTX,CANINE,breed,heska
-Fox Terrier Mix,smooth,FOXTX,CANINE,breed,heska
-Fox Terrier Mix,wire,FOXTX,CANINE,breed,heska
-Fox Terrier,smooth,FOXTS,CANINE,breed,heska
-Fox Terrier,wire,FOXTW,CANINE,breed,heska
+Fox Terrier Mix smooth,FOXTX,CANINE,breed,heska
+Fox Terrier Mix wire,FOXTX,CANINE,breed,heska
+Fox Terrier smooth,FOXTS,CANINE,breed,heska
+Fox Terrier wire,FOXTW,CANINE,breed,heska
 French Bulldog,BULLF,CANINE,breed,heska
 French Bulldog Mix,BULLX,CANINE,breed,heska
 French Hound Mix Tricolour,HOUX,CANINE,breed,heska
 French Hound Mix White and Black,HOUX,CANINE,breed,heska
 French Hound Mix White and Orange,HOUX,CANINE,breed,heska
-French Hound,Tricolour,HOUND,CANINE,breed,heska
-French Hound,White and Black,HOUND,CANINE,breed,heska
-French Hound,White and Orange,HOUND,CANINE,breed,heska
+French Hound Tricolour,HOUND,CANINE,breed,heska
+French Hound White and Black,HOUND,CANINE,breed,heska
+French Hound White and Orange,HOUND,CANINE,breed,heska
 French Pointing Dog,POINT,CANINE,breed,heska
 French Pointing Dog Mix,POINX,CANINE,breed,heska
-French Pointing Dog Mix,Gascogne,POINX,CANINE,breed,heska
-French Pointing Dog Mix,Pyrenean,POINX,CANINE,breed,heska
-French Pointing Dog,Gascogne,POINT,CANINE,breed,heska
-French Pointing Dog,Pyrenean,POINT,CANINE,breed,heska
+French Pointing Dog Mix Gascogne,POINX,CANINE,breed,heska
+French Pointing Dog Mix Pyrenean,POINX,CANINE,breed,heska
+French Pointing Dog Gascogne,POINT,CANINE,breed,heska
+French Pointing Dog Pyrenean,POINT,CANINE,breed,heska
 French Spaniel,UNK,CANINE,breed,heska
 French Spaniel Mix,MIX,CANINE,breed,heska
 French Wire-haired Korthals Pointing Griffon,POINT,CANINE,breed,heska
@@ -3387,10 +3385,10 @@ German Pinscher,UNK,CANINE,breed,heska
 German Pinscher Mix,MIX,CANINE,breed,heska
 German Shepherd Dog,GERSH,CANINE,breed,heska
 German Shepherd Dog Mix,GERSX,CANINE,breed,heska
-German Shepherd Dog Mix,Long-haired,GERSX,CANINE,breed,heska
-German Shepherd Dog Mix,Short-haired,GERSX,CANINE,breed,heska
-German Shepherd Dog,Long-haired,GERSH,CANINE,breed,heska
-German Shepherd Dog,Short-haired,GERSH,CANINE,breed,heska
+German Shepherd Dog Mix Long-haired,GERSX,CANINE,breed,heska
+German Shepherd Dog Mix Short-haired,GERSX,CANINE,breed,heska
+German Shepherd Dog Long-haired,GERSH,CANINE,breed,heska
+German Shepherd Dog Short-haired,GERSH,CANINE,breed,heska
 German Short-haired Pointer,POIGS,CANINE,breed,heska
 German Short-haired Pointer Mix,POINX,CANINE,breed,heska
 German Spaniel,UNK,CANINE,breed,heska
@@ -3401,10 +3399,10 @@ German Spitz Mix Gross,MIX,CANINE,breed,heska
 German Spitz Mix Miniature,MIX,CANINE,breed,heska
 German Spitz Mix Mittel,MIX,CANINE,breed,heska
 German Spitz Mix Pomeranian,POMEX,CANINE,breed,heska
-German Spitz,Gross,SPITZ,CANINE,breed,heska
-German Spitz,Miniature,SPITZ,CANINE,breed,heska
-German Spitz,Mittel,SPITZ,CANINE,breed,heska
-German Spitz,Pomeranian,POMER,CANINE,breed,heska
+German Spitz Gross,SPITZ,CANINE,breed,heska
+German Spitz Miniature,SPITZ,CANINE,breed,heska
+German Spitz Mittel,SPITZ,CANINE,breed,heska
+German Spitz Pomeranian,POMER,CANINE,breed,heska
 German Wire-Haired Pointer Mix,POINX,CANINE,breed,heska
 Ghadrejani Dog,UNK,CANINE,breed,heska
 Ghadrejani Dog Mix,MIX,CANINE,breed,heska
@@ -3468,20 +3466,20 @@ Hovawart,UNK,CANINE,breed,heska
 Hovawart Mix,MIX,CANINE,breed,heska
 Hungarian Greyhound,GREYH,CANINE,breed,heska
 Hungarian Greyhound Mix,GREYX,CANINE,breed,heska
-Hungarian Vizsla Mix,Short-haired,MIX,CANINE,breed,heska
-Hungarian Vizsla Mix,Wire-haired,MIX,CANINE,breed,heska
-Hungarian Vizsla,Short-haired,VIZSL,CANINE,breed,heska
-Hungarian Vizsla,Wire-haired,VIZSL,CANINE,breed,heska
+Hungarian Vizsla Mix Short-haired,MIX,CANINE,breed,heska
+Hungarian Vizsla Mix Wire-haired,MIX,CANINE,breed,heska
+Hungarian Vizsla Short-haired,VIZSL,CANINE,breed,heska
+Hungarian Vizsla Wire-haired,VIZSL,CANINE,breed,heska
 Hygen Hound,HOUND,CANINE,breed,heska
 Hygen Hound Mix,HOUX,CANINE,breed,heska
 HÃ¤lleforshund,UNK,CANINE,breed,heska
 HÃ¤lleforshund Mix,MIX,CANINE,breed,heska
 Ibizan Hound,IBIHO,CANINE,breed,heska
 Ibizan Hound Mix,HOUX,CANINE,breed,heska
-Ibizan Hound Mix,rough-haired,HOUX,CANINE,breed,heska
-Ibizan Hound Mix,smooth-haired,HOUX,CANINE,breed,heska
-Ibizan Hound,rough-haired,IBIHO,CANINE,breed,heska
-Ibizan Hound,smooth-haired,IBIHO,CANINE,breed,heska
+Ibizan Hound Mix rough-haired,HOUX,CANINE,breed,heska
+Ibizan Hound Mix smooth-haired,HOUX,CANINE,breed,heska
+Ibizan Hound rough-haired,IBIHO,CANINE,breed,heska
+Ibizan Hound smooth-haired,IBIHO,CANINE,breed,heska
 Icelandic Sheepdog,UNK,CANINE,breed,heska
 Icelandic Sheepdog Mix,MIX,CANINE,breed,heska
 Indian Spitz,SPITZ,CANINE,breed,heska
@@ -3508,8 +3506,8 @@ Italian Greyhound,GREIT,CANINE,breed,heska
 Italian Greyhound Mix,GREYX,CANINE,breed,heska
 Italian Hound Mix Coarse-haired,HOUX,CANINE,breed,heska
 Italian Hound Mix Short-haired,HOUX,CANINE,breed,heska
-Italian Hound,Coarse-haired,HOUND,CANINE,breed,heska
-Italian Hound,Short-haired,HOUND,CANINE,breed,heska
+Italian Hound Coarse-haired,HOUND,CANINE,breed,heska
+Italian Hound Short-haired,HOUND,CANINE,breed,heska
 Italian Spinone,ITISP,CANINE,breed,heska
 Italian Spinone Mix,MIX,CANINE,breed,heska
 Jack Russell Terrier,JACRU,CANINE,breed,heska
@@ -3566,8 +3564,8 @@ Lakeland Terrier,LAKTE,CANINE,breed,heska
 Lakeland Terrier Mix,TERRIX,CANINE,breed,heska
 Lancashire Heeler,UNK,CANINE,breed,heska
 Lancashire Heeler Mix,MIX,CANINE,breed,heska
-Landseer Mix,European Continental type,MIX,CANINE,breed,heska
-Landseer,European Continental type,UNK,CANINE,breed,heska
+Landseer Mix European Continental type,MIX,CANINE,breed,heska
+Landseer European Continental type,UNK,CANINE,breed,heska
 Lapponian Herder,UNK,CANINE,breed,heska
 Lapponian Herder Mix,MIX,CANINE,breed,heska
 Large MÃ¼nsterlander,UNK,CANINE,breed,heska
@@ -3582,10 +3580,10 @@ Majorca Mastiff,MASTI,CANINE,breed,heska
 Majorca Mastiff Mix,MASTX,CANINE,breed,heska
 Majorcan Shepherd Dog,UNK,CANINE,breed,heska
 Majorcan Shepherd Dog Mix,SHPMX,CANINE,breed,heska
-Majorcan Shepherd Dog Mix,long haired,SHPMX,CANINE,breed,heska
-Majorcan Shepherd Dog Mix,short haired,SHPMX,CANINE,breed,heska
-Majorcan Shepherd Dog,long haired,UNK,CANINE,breed,heska
-Majorcan Shepherd Dog,short haired,UNK,CANINE,breed,heska
+Majorcan Shepherd Dog Mix long haired,SHPMX,CANINE,breed,heska
+Majorcan Shepherd Dog Mix short haired,SHPMX,CANINE,breed,heska
+Majorcan Shepherd Dog long haired,UNK,CANINE,breed,heska
+Majorcan Shepherd Dog short haired,UNK,CANINE,breed,heska
 Maltese,MALTE,CANINE,breed,heska
 Maltese Mix,MALTX,CANINE,breed,heska
 Maltipoo,POODX,CANINE,breed,heska
@@ -3602,12 +3600,12 @@ Medium-Sized Anglo-French Hound,HOUND,CANINE,breed,heska
 Medium-Sized Anglo-French Hound Mix,HOUX,CANINE,breed,heska
 Mexican Hairless Dog,XOLO,CANINE,breed,heska
 Mexican Hairless Dog Mix,MIX,CANINE,breed,heska
-Mexican Hairless Dog Mix,Medium-Sized,MIX,CANINE,breed,heska
-Mexican Hairless Dog Mix,Miniature,MIX,CANINE,breed,heska
-Mexican Hairless Dog Mix,Standard,MIX,CANINE,breed,heska
-Mexican Hairless Dog,Medium-Sized,XOLO,CANINE,breed,heska
-Mexican Hairless Dog,Miniature,XOLO,CANINE,breed,heska
-Mexican Hairless Dog,Standard,XOLO,CANINE,breed,heska
+Mexican Hairless Dog Mix Medium-Sized,MIX,CANINE,breed,heska
+Mexican Hairless Dog Mix Miniature,MIX,CANINE,breed,heska
+Mexican Hairless Dog Mix Standard,MIX,CANINE,breed,heska
+Mexican Hairless Dog Medium-Sized,XOLO,CANINE,breed,heska
+Mexican Hairless Dog Miniature,XOLO,CANINE,breed,heska
+Mexican Hairless Dog Standard,XOLO,CANINE,breed,heska
 Miniature American Shepherd,UNK,CANINE,breed,heska
 Miniature American Shepherd Mix,SHPMX,CANINE,breed,heska
 Miniature Bull Terrier,TERRI,CANINE,breed,heska
@@ -3668,12 +3666,12 @@ Peekapoo,POODX,CANINE,breed,heska
 Peekapoo Mix,POODX,CANINE,breed,heska
 Pekingese Dog,PEKIN,CANINE,breed,heska
 Pekingese Mix,PEKINX,CANINE,breed,heska
-Peruvian Hairless Dog Mix,Large,MIX,CANINE,breed,heska
-Peruvian Hairless Dog Mix,medium-sized,MIX,CANINE,breed,heska
-Peruvian Hairless Dog Mix,miniature,MIX,CANINE,breed,heska
-Peruvian Hairless Dog,Large,UNK,CANINE,breed,heska
-Peruvian Hairless Dog,medium-sized,UNK,CANINE,breed,heska
-Peruvian Hairless Dog,miniature,UNK,CANINE,breed,heska
+Peruvian Hairless Dog Mix Large,MIX,CANINE,breed,heska
+Peruvian Hairless Dog Mix medium-sized,MIX,CANINE,breed,heska
+Peruvian Hairless Dog Mix miniature,MIX,CANINE,breed,heska
+Peruvian Hairless Dog Large,UNK,CANINE,breed,heska
+Peruvian Hairless Dog medium-sized,UNK,CANINE,breed,heska
+Peruvian Hairless Dog miniature,UNK,CANINE,breed,heska
 Peruvian Inca Orchid,UNK,CANINE,breed,heska
 Peruvian Inca Orchid Mix,MIX,CANINE,breed,heska
 Petit Basset Griffon Vendeen,PETBG,CANINE,breed,heska
@@ -3705,32 +3703,32 @@ Pont-Audemer Spaniel,UNK,CANINE,breed,heska
 Pont-Audemer Spaniel Mix,MIX,CANINE,breed,heska
 Poodle Dog,POODL,CANINE,breed,heska
 Poodle Mix,POODX,CANINE,breed,heska
-Poodle Mix,Medium,POODX,CANINE,breed,heska
-Poodle Mix,Miniature,POODX,CANINE,breed,heska
-Poodle Mix,Standard,POODX,CANINE,breed,heska
-Poodle Mix,Toy,POODX,CANINE,breed,heska
-Poodle,Medium,POODL,CANINE,breed,heska
-Poodle,Miniature,POOMI,CANINE,breed,heska
-Poodle,Standard,POOST,CANINE,breed,heska
-Poodle,Toy,POOTO,CANINE,breed,heska
+Poodle Mix Medium,POODX,CANINE,breed,heska
+Poodle Mix Miniature,POODX,CANINE,breed,heska
+Poodle Mix Standard,POODX,CANINE,breed,heska
+Poodle Mix Toy,POODX,CANINE,breed,heska
+Poodle Medium,POODL,CANINE,breed,heska
+Poodle Miniature,POOMI,CANINE,breed,heska
+Poodle Standard,POOST,CANINE,breed,heska
+Poodle Toy,POOTO,CANINE,breed,heska
 Porcelain,UNK,CANINE,breed,heska
 Porcelain Mix,MIX,CANINE,breed,heska
 Portuguese Podengo,UNK,CANINE,breed,heska
 Portuguese Podengo Mix,MIX,CANINE,breed,heska
-Portuguese Podengo Mix,Small,MIX,CANINE,breed,heska
-Portuguese Podengo Mix,Smooth-Haired Large,MIX,CANINE,breed,heska
-Portuguese Podengo Mix,Smooth-Haired Medium-Sized,MIX,CANINE,breed,heska
-Portuguese Podengo Mix,Smooth-Haired Miniature,MIX,CANINE,breed,heska
-Portuguese Podengo Mix,Wire-Haired Large,MIX,CANINE,breed,heska
-Portuguese Podengo Mix,Wire-Haired Medium-Sized,MIX,CANINE,breed,heska
-Portuguese Podengo Mix,Wire-Haired Miniature,MIX,CANINE,breed,heska
-Portuguese Podengo,Miniature,UNK,CANINE,breed,heska
-Portuguese Podengo,Smooth-Haired Large,UNK,CANINE,breed,heska
-Portuguese Podengo,Smooth-Haired Medium-Sized,UNK,CANINE,breed,heska
-Portuguese Podengo,Smooth-Haired Miniature,UNK,CANINE,breed,heska
-Portuguese Podengo,Wire-Haired Large,UNK,CANINE,breed,heska
-Portuguese Podengo,Wire-Haired Medium-Sized,UNK,CANINE,breed,heska
-Portuguese Podengo,Wire-Haired Miniature,UNK,CANINE,breed,heska
+Portuguese Podengo Mix Small,MIX,CANINE,breed,heska
+Portuguese Podengo Mix Smooth-Haired Large,MIX,CANINE,breed,heska
+Portuguese Podengo Mix Smooth-Haired Medium-Sized,MIX,CANINE,breed,heska
+Portuguese Podengo Mix Smooth-Haired Miniature,MIX,CANINE,breed,heska
+Portuguese Podengo Mix Wire-Haired Large,MIX,CANINE,breed,heska
+Portuguese Podengo Mix Wire-Haired Medium-Sized,MIX,CANINE,breed,heska
+Portuguese Podengo Mix Wire-Haired Miniature,MIX,CANINE,breed,heska
+Portuguese Podengo Miniature,UNK,CANINE,breed,heska
+Portuguese Podengo Smooth-Haired Large,UNK,CANINE,breed,heska
+Portuguese Podengo Smooth-Haired Medium-Sized,UNK,CANINE,breed,heska
+Portuguese Podengo Smooth-Haired Miniature,UNK,CANINE,breed,heska
+Portuguese Podengo Wire-Haired Large,UNK,CANINE,breed,heska
+Portuguese Podengo Wire-Haired Medium-Sized,UNK,CANINE,breed,heska
+Portuguese Podengo Wire-Haired Miniature,UNK,CANINE,breed,heska
 Portuguese Pointing Dog,POINT,CANINE,breed,heska
 Portuguese Pointing Dog Mix,POINX,CANINE,breed,heska
 Portuguese Sheepdog,UNK,CANINE,breed,heska
@@ -3753,10 +3751,10 @@ Pyrenean Mastiff,MASTI,CANINE,breed,heska
 Pyrenean Mastiff Mix,MASTX,CANINE,breed,heska
 Pyrenean Sheepdog,UNK,CANINE,breed,heska
 Pyrenean Sheepdog Mix,MIX,CANINE,breed,heska
-Pyrenean Sheepdog Mix,Long-haired,MIX,CANINE,breed,heska
-Pyrenean Sheepdog Mix,Smooth-faced,MIX,CANINE,breed,heska
-Pyrenean Sheepdog,Long-haired,UNK,CANINE,breed,heska
-Pyrenean Sheepdog,Smooth-faced,UNK,CANINE,breed,heska
+Pyrenean Sheepdog Mix Long-haired,MIX,CANINE,breed,heska
+Pyrenean Sheepdog Mix Smooth-faced,MIX,CANINE,breed,heska
+Pyrenean Sheepdog Long-haired,UNK,CANINE,breed,heska
+Pyrenean Sheepdog Smooth-faced,UNK,CANINE,breed,heska
 Pyrenean Shepherd,UNK,CANINE,breed,heska
 Pyrenean Shepherd Mix,SHPMX,CANINE,breed,heska
 Rafeiro of Alentejo,UNK,CANINE,breed,heska
@@ -3783,10 +3781,10 @@ Russian Spaniel,UNK,CANINE,breed,heska
 Russian Spaniel Mix,MIX,CANINE,breed,heska
 Russian Spotted Hound,HOUND,CANINE,breed,heska
 Russian Spotted Hound Mix,HOUX,CANINE,breed,heska
-Russian Toy Mix,Long-haired,MIX,CANINE,breed,heska
-Russian Toy Mix,Smooth-haired,MIX,CANINE,breed,heska
-Russian Toy,Long-haired,UNK,CANINE,breed,heska
-Russian Toy,smooth-haired,UNK,CANINE,breed,heska
+Russian Toy Mix Long-haired,MIX,CANINE,breed,heska
+Russian Toy Mix Smooth-haired,MIX,CANINE,breed,heska
+Russian Toy Long-haired,UNK,CANINE,breed,heska
+Russian Toy smooth-haired,UNK,CANINE,breed,heska
 Russian Tsvetnaya Bolonka,UNK,CANINE,breed,heska
 Russian Tsvetnaya Bolonka Mix,MIX,CANINE,breed,heska
 Russian-European LaÃ¯ka,UNK,CANINE,breed,heska
@@ -3795,10 +3793,10 @@ Saarloos Wolfdog,UNK,CANINE,breed,heska
 Saarloos Wolfdog Mix,MIX,CANINE,breed,heska
 Saint Bernard Dog,SAIBE,CANINE,breed,heska
 Saint Bernard Dog Mix,SAIBX,CANINE,breed,heska
-Saint Bernard Dog Mix,Long-haired,SAIBX,CANINE,breed,heska
-Saint Bernard Dog Mix,Short-haired,SAIBX,CANINE,breed,heska
-Saint Bernard Dog,Long-haired,SAIBE,CANINE,breed,heska
-Saint Bernard Dog,Short-haired,SAIBE,CANINE,breed,heska
+Saint Bernard Dog Mix Long-haired,SAIBX,CANINE,breed,heska
+Saint Bernard Dog Mix Short-haired,SAIBX,CANINE,breed,heska
+Saint Bernard Dog Long-haired,SAIBE,CANINE,breed,heska
+Saint Bernard Dog Short-haired,SAIBE,CANINE,breed,heska
 Saint-Usuge Spaniel,UNK,CANINE,breed,heska
 Saint-Usuge Spaniel Mix,MIX,CANINE,breed,heska
 Saluki Dog,SALUK,CANINE,breed,heska
@@ -3817,12 +3815,12 @@ Schipperke,SCHIP,CANINE,breed,heska
 Schipperke Mix,MIX,CANINE,breed,heska
 Schnauzer Dog,SCHNA,CANINE,breed,heska
 Schnauzer Mix,SCHNX,CANINE,breed,heska
-Schnauzer Mix,Giant,SCHNX,CANINE,breed,heska
-Schnauzer Mix,Miniature,SCHNX,CANINE,breed,heska
-Schnauzer Mix,Standard,SCHNX,CANINE,breed,heska
-Schnauzer,Giant,SCHGI,CANINE,breed,heska
-Schnauzer,Miniature,SCHMI,CANINE,breed,heska
-Schnauzer,Standard,SCHST,CANINE,breed,heska
+Schnauzer Mix Giant,SCHNX,CANINE,breed,heska
+Schnauzer Mix Miniature,SCHNX,CANINE,breed,heska
+Schnauzer Mix Standard,SCHNX,CANINE,breed,heska
+Schnauzer Giant,SCHGI,CANINE,breed,heska
+Schnauzer Miniature,SCHMI,CANINE,breed,heska
+Schnauzer Standard,SCHST,CANINE,breed,heska
 Schnoodle,POODX,CANINE,breed,heska
 Schnoodle Mix,POODX,CANINE,breed,heska
 Scottish Deerhound,SCODE,CANINE,breed,heska
@@ -3841,8 +3839,8 @@ Setter dog,UNK,CANINE,breed,heska
 Setter dog Mix,MIX,CANINE,breed,heska
 Shar Pei,SHAPE,CANINE,breed,heska
 Shar Pei Mix,SHAPX,CANINE,breed,heska
-Shar Pei Mix,Miniature,SHAPX,CANINE,breed,heska
-Shar Pei,Miniature,SHAPE,CANINE,breed,heska
+Shar Pei Mix Miniature,SHAPX,CANINE,breed,heska
+Shar Pei Miniature,SHAPE,CANINE,breed,heska
 Shepherd,SHPMX,CANINE,breed,heska
 Shepherd Mix,SHPMX,CANINE,breed,heska
 Shetland Sheepdog,SHESH,CANINE,breed,heska
@@ -3917,8 +3915,8 @@ Swiss Hound,HOUND,CANINE,breed,heska
 Swiss Hound Lucerne Hound Mix,HOUX,CANINE,breed,heska
 Swiss Hound Mix,HOUX,CANINE,breed,heska
 Swiss Hound Schwyz Hound Mix,HOUX,CANINE,breed,heska
-Swiss Hound,Lucerne,HOUND,CANINE,breed,heska
-Swiss Hound,Schwyz,HOUND,CANINE,breed,heska
+Swiss Hound Lucerne,HOUND,CANINE,breed,heska
+Swiss Hound Schwyz,HOUND,CANINE,breed,heska
 Taiwan Dog,UNK,CANINE,breed,heska
 Taiwan Dog Mix,MIX,CANINE,breed,heska
 Tatra Shepherd Dog,UNK,CANINE,breed,heska
@@ -3966,16 +3964,16 @@ Valencian rat hunting dog,UNK,CANINE,breed,heska
 Valencian rat hunting dog Mix,MIX,CANINE,breed,heska
 Volpino Italiano,UNK,CANINE,breed,heska
 Volpino Italiano Mix,MIX,CANINE,breed,heska
-Weimaraner Mix,Long-haired,WEIMX,CANINE,breed,heska
-Weimaraner Mix,Short-haired,WEIMX,CANINE,breed,heska
-Weimaraner,Long-haired,WEIMA,CANINE,breed,heska
-Weimaraner,Short-haired,WEIMA,CANINE,breed,heska
+Weimaraner Mix Long-haired,WEIMX,CANINE,breed,heska
+Weimaraner Mix Short-haired,WEIMX,CANINE,breed,heska
+Weimaraner Long-haired,WEIMA,CANINE,breed,heska
+Weimaraner Short-haired,WEIMA,CANINE,breed,heska
 Welsh Corgi,WELCO,CANINE,breed,heska
 Welsh Corgi Mix,WELCX,CANINE,breed,heska
 Welsh Corgi Mix Cardigan,WELCX,CANINE,breed,heska
 Welsh Corgi Mix Pembroke,WELCX,CANINE,breed,heska
-Welsh Corgi,Cardigan,WELCC,CANINE,breed,heska
-Welsh Corgi,Pembroke,WELCP,CANINE,breed,heska
+Welsh Corgi Cardigan,WELCC,CANINE,breed,heska
+Welsh Corgi Pembroke,WELCP,CANINE,breed,heska
 Welsh Sheepdog,UNK,CANINE,breed,heska
 Welsh Sheepdog Mix,MIX,CANINE,breed,heska
 Welsh Springer Spaniel,SPRSW,CANINE,breed,heska
@@ -4256,7 +4254,7 @@ Clumber Spaniel Mix,1ddc90c7-d7ed-11ea-b1a3-302432eba3ec,DOG,breed,zoetis
 Cockapoo,1ddc1b4c-d7ed-11ea-a4ce-302432eba3ec,DOG,breed,zoetis
 Cockapoo Mix,1ddc90c8-d7ed-11ea-abdf-302432eba3ec,DOG,breed,zoetis
 Continental Toy Spaniel Mix Papillon,1ddc90cb-d7ed-11ea-ba6f-302432eba3ec,DOG,breed,zoetis
-Continental Toy Spaniel,Papillon,1ddc1b4f-d7ed-11ea-90e1-302432eba3ec,DOG,breed,zoetis
+Continental Toy Spaniel Papillon,1ddc1b4f-d7ed-11ea-90e1-302432eba3ec,DOG,breed,zoetis
 Coonhound,ca56985b-8dc9-11ed-82da-302432eba3ec,DOG,breed,zoetis
 Coonhound Mix,ca584877-8dc9-11ed-8c56-302432eba3ec,DOG,breed,zoetis
 Coton de TulÃ©ar,1ddc1b51-d7ed-11ea-b6e3-302432eba3ec,DOG,breed,zoetis
@@ -4332,7 +4330,7 @@ Estrela Mountain Dog,1ddc1b7c-d7ed-11ea-af52-302432eba3ec,DOG,breed,zoetis
 Estrela Mountain Dog Mix,1ddc90f8-d7ed-11ea-af1a-302432eba3ec,DOG,breed,zoetis
 Eurasian,1ddc1b7d-d7ed-11ea-9438-302432eba3ec,DOG,breed,zoetis
 Eurasian Mix,1ddc90f9-d7ed-11ea-bce8-302432eba3ec,DOG,breed,zoetis
-Landseer Mix,European Continental type,1ddcb7de-d7ed-11ea-bd2b-302432eba3ec,DOG,breed,zoetis
+Landseer Mix European Continental type,1ddcb7de-d7ed-11ea-bd2b-302432eba3ec,DOG,breed,zoetis
 European German Shepherd Dog,1ddbf44b-d7ed-11ea-a302-302432eba3ec,DOG,breed,zoetis
 European German Shepherd Dog Mix,1ddc909d-d7ed-11ea-a1e4-302432eba3ec,DOG,breed,zoetis
 Fawn Brittany Basset,1ddc1b7e-d7ed-11ea-892a-302432eba3ec,DOG,breed,zoetis
@@ -4360,13 +4358,13 @@ French Bulldog Mix,1ddc9104-d7ed-11ea-a432-302432eba3ec,DOG,breed,zoetis
 French Hound Mix Tricolour,1ddc9109-d7ed-11ea-a51b-302432eba3ec,DOG,breed,zoetis
 French Hound Mix White and Black,1ddc910a-d7ed-11ea-99db-302432eba3ec,DOG,breed,zoetis
 French Hound Mix White and Orange,1ddc910b-d7ed-11ea-ac0d-302432eba3ec,DOG,breed,zoetis
-French Hound,Tricolour,1ddc1b8d-d7ed-11ea-b836-302432eba3ec,DOG,breed,zoetis
-French Hound,White and Black,1ddc1b8e-d7ed-11ea-bb6b-302432eba3ec,DOG,breed,zoetis
-French Hound,White and Orange,1ddc1b8f-d7ed-11ea-bb22-302432eba3ec,DOG,breed,zoetis
+French Hound Tricolour,1ddc1b8d-d7ed-11ea-b836-302432eba3ec,DOG,breed,zoetis
+French Hound White and Black,1ddc1b8e-d7ed-11ea-bb6b-302432eba3ec,DOG,breed,zoetis
+French Hound White and Orange,1ddc1b8f-d7ed-11ea-bb22-302432eba3ec,DOG,breed,zoetis
 French Pointing Dog,1ddc1b89-d7ed-11ea-bc49-302432eba3ec,DOG,breed,zoetis
-French Pointing Dog,Gascogne,1ddc1b8a-d7ed-11ea-b7b0-302432eba3ec,DOG,breed,zoetis
+French Pointing Dog Gascogne,1ddc1b8a-d7ed-11ea-b7b0-302432eba3ec,DOG,breed,zoetis
 French Pointing Dog Mix,1ddc9105-d7ed-11ea-a81d-302432eba3ec,DOG,breed,zoetis
-French Pointing Dog,Pyrenean,1ddc1b8b-d7ed-11ea-85db-302432eba3ec,DOG,breed,zoetis
+French Pointing Dog Pyrenean,1ddc1b8b-d7ed-11ea-85db-302432eba3ec,DOG,breed,zoetis
 French Spaniel,1ddc1b8c-d7ed-11ea-aea2-302432eba3ec,DOG,breed,zoetis
 French Spaniel Mix,1ddc9108-d7ed-11ea-8a6e-302432eba3ec,DOG,breed,zoetis
 French Wire-haired Korthals Pointing Griffon,1ddc1b90-d7ed-11ea-af9a-302432eba3ec,DOG,breed,zoetis
@@ -4375,7 +4373,7 @@ Galician Shepherd Dog,1ddc69a2-d7ed-11ea-aaa8-302432eba3ec,DOG,breed,zoetis
 Galician Shepherd Dog Mix,1ddcdf29-d7ed-11ea-8c86-302432eba3ec,DOG,breed,zoetis
 Garafian Shepherd,1ddc69a3-d7ed-11ea-bf6e-302432eba3ec,DOG,breed,zoetis
 Garafian Shepherd Mix,1ddcdf2a-d7ed-11ea-bfce-302432eba3ec,DOG,breed,zoetis
-French Pointing Dog Mix,Gascogne,1ddc9106-d7ed-11ea-8c2b-302432eba3ec,DOG,breed,zoetis
+French Pointing Dog Mix Gascogne,1ddc9106-d7ed-11ea-8c2b-302432eba3ec,DOG,breed,zoetis
 Gascon Saintongeois,1ddc1b91-d7ed-11ea-aae1-302432eba3ec,DOG,breed,zoetis
 Gascon Saintongeois Mix,1ddc910d-d7ed-11ea-bbed-302432eba3ec,DOG,breed,zoetis
 Georgian Shepherd,1ddc69a4-d7ed-11ea-a97e-302432eba3ec,DOG,breed,zoetis
@@ -4390,20 +4388,20 @@ German Pinscher,1ddc1b95-d7ed-11ea-abc9-302432eba3ec,DOG,breed,zoetis
 German Pinscher Mix,1ddc9111-d7ed-11ea-be99-302432eba3ec,DOG,breed,zoetis
 German Shepherd Dog,1ddc1b3e-d7ed-11ea-a4cd-302432eba3ec,DOG,breed,zoetis
 German Shepherd Dog Mix,1ddc90ba-d7ed-11ea-881a-302432eba3ec,DOG,breed,zoetis
-German Shepherd Dog Mix,Short-haired,1ddcdf01-d7ed-11ea-a8b7-302432eba3ec,DOG,breed,zoetis
+German Shepherd Dog Mix Short-haired,1ddcdf01-d7ed-11ea-a8b7-302432eba3ec,DOG,breed,zoetis
 German Short-haired Pointer,1ddc1b9a-d7ed-11ea-8144-302432eba3ec,DOG,breed,zoetis
 German Short-haired Pointer Mix,1ddcb795-d7ed-11ea-b9cd-302432eba3ec,DOG,breed,zoetis
 German Spaniel,1ddc1b9b-d7ed-11ea-a8f4-302432eba3ec,DOG,breed,zoetis
 German Spaniel Mix,1ddcb796-d7ed-11ea-8c2e-302432eba3ec,DOG,breed,zoetis
 German Spitz,1ddc1b9c-d7ed-11ea-86cd-302432eba3ec,DOG,breed,zoetis
-German Spitz,Gross,1ddc1b9d-d7ed-11ea-ad0d-302432eba3ec,DOG,breed,zoetis
+German Spitz Gross,1ddc1b9d-d7ed-11ea-ad0d-302432eba3ec,DOG,breed,zoetis
 German Spitz Mix,1ddcb797-d7ed-11ea-b1da-302432eba3ec,DOG,breed,zoetis
 German Spitz Mix Pomeranian,1ddcb79a-d7ed-11ea-a6c8-302432eba3ec,DOG,breed,zoetis
 German Spitz Mix Gross,1ddcb798-d7ed-11ea-9c42-302432eba3ec,DOG,breed,zoetis
 German Spitz Mix Miniature,1ddcb799-d7ed-11ea-ae4b-302432eba3ec,DOG,breed,zoetis
 German Spitz Mix Mittel,1ddd05c2-d7ed-11ea-a055-302432eba3ec,DOG,breed,zoetis
-German Spitz,Pomeranian,1ddc1b9f-d7ed-11ea-b60f-302432eba3ec,DOG,breed,zoetis
-German Spitz,Miniature,1ddc1b9e-d7ed-11ea-befd-302432eba3ec,DOG,breed,zoetis
+German Spitz Pomeranian,1ddc1b9f-d7ed-11ea-b60f-302432eba3ec,DOG,breed,zoetis
+German Spitz Miniature,1ddc1b9e-d7ed-11ea-befd-302432eba3ec,DOG,breed,zoetis
 German Wire-Haired Pointer,1ddc1ba0-d7ed-11ea-9c88-302432eba3ec,DOG,breed,zoetis
 German Wire-Haired Pointer Mix,1ddcb79b-d7ed-11ea-a048-302432eba3ec,DOG,breed,zoetis
 Ghadrejani Dog,0d290cc6-63f8-11ec-9c73-7085c2a1b8e0,DOG,breed,zoetis
@@ -4444,7 +4442,6 @@ Greyhound Mix,1ddcb7a9-d7ed-11ea-9ded-302432eba3ec,DOG,breed,zoetis
 Griffon Nivernais,1ddc1baf-d7ed-11ea-a870-302432eba3ec,DOG,breed,zoetis
 Griffon Nivernais Mix,1ddcb7aa-d7ed-11ea-8c94-302432eba3ec,DOG,breed,zoetis
 Belgian Shepherd Dog Mix Groenendael,1ddc90bc-d7ed-11ea-acc3-302432eba3ec,DOG,breed,zoetis
-Belgian Shepherd Dog Mix Groenendael,7f71a626-7bc2-11eb-930c-302432eba3ec,DOG,breed,zoetis
 Gull Terrier,1ddc69b0-d7ed-11ea-a93c-302432eba3ec,DOG,breed,zoetis
 Gull Terrier Mix,1ddcdf37-d7ed-11ea-a0c0-302432eba3ec,DOG,breed,zoetis
 Chinese Crested Mix Hairless,1ddc90c3-d7ed-11ea-94f6-302432eba3ec,DOG,breed,zoetis
@@ -4478,8 +4475,8 @@ HÃ¤lleforshund,1ddc1bb1-d7ed-11ea-9b75-302432eba3ec,DOG,breed,zoetis
 HÃ¤lleforshund Mix,1ddcb7ac-d7ed-11ea-8998-302432eba3ec,DOG,breed,zoetis
 Ibizan Hound,1ddc1bbe-d7ed-11ea-bdd7-302432eba3ec,DOG,breed,zoetis
 Ibizan Hound Mix,1ddcb7b9-d7ed-11ea-b9d7-302432eba3ec,DOG,breed,zoetis
-Ibizan Hound,rough-haired,1ddc1bbf-d7ed-11ea-ac76-302432eba3ec,DOG,breed,zoetis
-Ibizan Hound,smooth-haired,1ddc1bc0-d7ed-11ea-a675-302432eba3ec,DOG,breed,zoetis
+Ibizan Hound rough-haired,1ddc1bbf-d7ed-11ea-ac76-302432eba3ec,DOG,breed,zoetis
+Ibizan Hound smooth-haired,1ddc1bc0-d7ed-11ea-a675-302432eba3ec,DOG,breed,zoetis
 Icelandic Sheepdog,1ddc1bc1-d7ed-11ea-9ecd-302432eba3ec,DOG,breed,zoetis
 Icelandic Sheepdog Mix,1ddcb7bc-d7ed-11ea-ad3c-302432eba3ec,DOG,breed,zoetis
 Indian Spitz,1ddc69ce-d7ed-11ea-8db4-302432eba3ec,DOG,breed,zoetis
@@ -4504,10 +4501,10 @@ Istrian Shorthaired Hound,ca6fdc9e-8dc9-11ed-acce-302432eba3ec,DOG,breed,zoetis
 Istrian Shorthaired Hound Mix,ca7101f4-8dc9-11ed-8546-302432eba3ec,DOG,breed,zoetis
 Italian Greyhound,1ddc4243-d7ed-11ea-9b9f-302432eba3ec,DOG,breed,zoetis
 Italian Greyhound Mix,1ddcb7c4-d7ed-11ea-af8f-302432eba3ec,DOG,breed,zoetis
-Italian Hound,Coarse-haired,1ddc4245-d7ed-11ea-8a08-302432eba3ec,DOG,breed,zoetis
+Italian Hound Coarse-haired,1ddc4245-d7ed-11ea-8a08-302432eba3ec,DOG,breed,zoetis
 Italian Hound Mix Coarse-haired,1ddcb7c6-d7ed-11ea-a799-302432eba3ec,DOG,breed,zoetis
 Italian Hound Mix Short-haired,1ddcb7c5-d7ed-11ea-9649-302432eba3ec,DOG,breed,zoetis
-Italian Hound,Short-haired,1ddc4246-d7ed-11ea-878f-302432eba3ec,DOG,breed,zoetis
+Italian Hound Short-haired,1ddc4246-d7ed-11ea-878f-302432eba3ec,DOG,breed,zoetis
 Italian Spinone,1ddc4247-d7ed-11ea-81a9-302432eba3ec,DOG,breed,zoetis
 Italian Spinone Mix,1ddcb7c7-d7ed-11ea-8dbf-302432eba3ec,DOG,breed,zoetis
 Jack Russell Terrier,1ddc1bc2-d7ed-11ea-aee5-302432eba3ec,DOG,breed,zoetis
@@ -4566,37 +4563,37 @@ Lakeland Terrier,1ddc4248-d7ed-11ea-acbb-302432eba3ec,DOG,breed,zoetis
 Lakeland Terrier Mix,1ddcb7c8-d7ed-11ea-aa89-302432eba3ec,DOG,breed,zoetis
 Lancashire Heeler,1ddc425d-d7ed-11ea-83ab-302432eba3ec,DOG,breed,zoetis
 Lancashire Heeler Mix,1ddcb7dd-d7ed-11ea-a3f9-302432eba3ec,DOG,breed,zoetis
-Landseer,European Continental type,1ddc425e-d7ed-11ea-b00b-302432eba3ec,DOG,breed,zoetis
+Landseer European Continental type,1ddc425e-d7ed-11ea-b00b-302432eba3ec,DOG,breed,zoetis
 Lapponian Herder,ca6a8522-8dc9-11ed-9e69-302432eba3ec,DOG,breed,zoetis
 Lapponian Herder Mix,ca6be4b9-8dc9-11ed-8c89-302432eba3ec,DOG,breed,zoetis
 Large MÃ¼nsterlander,1ddc4260-d7ed-11ea-af86-302432eba3ec,DOG,breed,zoetis
 Large MÃ¼nsterlander Mix,1ddcb7e0-d7ed-11ea-9a7b-302432eba3ec,DOG,breed,zoetis
-Peruvian Hairless Dog Mix,Large,1ddcb80a-d7ed-11ea-b4bc-302432eba3ec,DOG,breed,zoetis
+Peruvian Hairless Dog Mix Large,1ddcb80a-d7ed-11ea-b4bc-302432eba3ec,DOG,breed,zoetis
 Leonberger,1ddc4261-d7ed-11ea-9b43-302432eba3ec,DOG,breed,zoetis
 Leonberger Mix,1ddcb7e1-d7ed-11ea-967c-302432eba3ec,DOG,breed,zoetis
 Lhasa Apso,1ddc4262-d7ed-11ea-b52b-302432eba3ec,DOG,breed,zoetis
 Lhasa Apso Mix,1ddcb7e2-d7ed-11ea-9c08-302432eba3ec,DOG,breed,zoetis
-Majorcan Shepherd Dog,long haired,1ddc1b70-d7ed-11ea-b8a0-302432eba3ec,DOG,breed,zoetis
-Majorcan Shepherd Dog Mix,long haired,1ddc90ec-d7ed-11ea-a8bf-302432eba3ec,DOG,breed,zoetis
-Chihuahua,Long-haired,1ddc1b45-d7ed-11ea-8310-302432eba3ec,DOG,breed,zoetis
-Chihuahua Mix,Long-haired,1ddc90c1-d7ed-11ea-96d5-302432eba3ec,DOG,breed,zoetis
-Dutch Shepherd Dog,Long-haired,1ddc1b97-d7ed-11ea-923a-302432eba3ec,DOG,breed,zoetis
-Dutch Shepherd Dog Mix,Long-haired,1ddcb792-d7ed-11ea-a1bf-302432eba3ec,DOG,breed,zoetis
-German Shepherd Dog,Long-haired,1ddc1b98-d7ed-11ea-a88c-302432eba3ec,DOG,breed,zoetis
-German Shepherd Dog Mix,Long-haired,1ddcb793-d7ed-11ea-9be3-302432eba3ec,DOG,breed,zoetis
+Majorcan Shepherd Dog long haired,1ddc1b70-d7ed-11ea-b8a0-302432eba3ec,DOG,breed,zoetis
+Majorcan Shepherd Dog Mix long haired,1ddc90ec-d7ed-11ea-a8bf-302432eba3ec,DOG,breed,zoetis
+Chihuahua Long-haired,1ddc1b45-d7ed-11ea-8310-302432eba3ec,DOG,breed,zoetis
+Chihuahua Mix Long-haired,1ddc90c1-d7ed-11ea-96d5-302432eba3ec,DOG,breed,zoetis
+Dutch Shepherd Dog Long-haired,1ddc1b97-d7ed-11ea-923a-302432eba3ec,DOG,breed,zoetis
+Dutch Shepherd Dog Mix Long-haired,1ddcb792-d7ed-11ea-a1bf-302432eba3ec,DOG,breed,zoetis
+German Shepherd Dog Long-haired,1ddc1b98-d7ed-11ea-a88c-302432eba3ec,DOG,breed,zoetis
+German Shepherd Dog Mix Long-haired,1ddcb793-d7ed-11ea-9be3-302432eba3ec,DOG,breed,zoetis
 Dachshund Mix Long-haired Miniature,1ddc90d9-d7ed-11ea-a19e-302432eba3ec,DOG,breed,zoetis
-Pyrenean Sheepdog,Long-haired,1ddc42ad-d7ed-11ea-af23-302432eba3ec,DOG,breed,zoetis
-Pyrenean Sheepdog Mix,Long-haired,1ddcdec0-d7ed-11ea-b737-302432eba3ec,DOG,breed,zoetis
+Pyrenean Sheepdog Long-haired,1ddc42ad-d7ed-11ea-af23-302432eba3ec,DOG,breed,zoetis
+Pyrenean Sheepdog Mix Long-haired,1ddcdec0-d7ed-11ea-b737-302432eba3ec,DOG,breed,zoetis
 Dachshund Long-haired Rabbit Hunting,1ddc1b59-d7ed-11ea-a01d-302432eba3ec,DOG,breed,zoetis
 Dachshund Mix Long-haired Rabbit Hunting,1ddc90d5-d7ed-11ea-af5d-302432eba3ec,DOG,breed,zoetis
-Russian Toy,Long-haired,1ddc42b7-d7ed-11ea-b67f-302432eba3ec,DOG,breed,zoetis
-Russian Toy Mix,Long-haired,1ddcdeca-d7ed-11ea-afce-302432eba3ec,DOG,breed,zoetis
-Saint Bernard Dog,Long-haired,1ddc42bc-d7ed-11ea-97d4-302432eba3ec,DOG,breed,zoetis
-Saint Bernard Dog Mix,Long-haired,1ddcdecf-d7ed-11ea-a094-302432eba3ec,DOG,breed,zoetis
+Russian Toy Long-haired,1ddc42b7-d7ed-11ea-b67f-302432eba3ec,DOG,breed,zoetis
+Russian Toy Mix Long-haired,1ddcdeca-d7ed-11ea-afce-302432eba3ec,DOG,breed,zoetis
+Saint Bernard Dog Long-haired,1ddc42bc-d7ed-11ea-97d4-302432eba3ec,DOG,breed,zoetis
+Saint Bernard Dog Mix Long-haired,1ddcdecf-d7ed-11ea-a094-302432eba3ec,DOG,breed,zoetis
 Dachshund Long-haired Standard,1ddc1b5c-d7ed-11ea-b8b8-302432eba3ec,DOG,breed,zoetis
 Dachshund Mix Long-haired Standard,1ddc90d8-d7ed-11ea-8bc8-302432eba3ec,DOG,breed,zoetis
-Weimaraner,Long-haired,1ddc6988-d7ed-11ea-bbc7-302432eba3ec,DOG,breed,zoetis
-Weimaraner Mix,Long-haired,1ddcdf0e-d7ed-11ea-8282-302432eba3ec,DOG,breed,zoetis
+Weimaraner Long-haired,1ddc6988-d7ed-11ea-bbc7-302432eba3ec,DOG,breed,zoetis
+Weimaraner Mix Long-haired,1ddcdf0e-d7ed-11ea-8282-302432eba3ec,DOG,breed,zoetis
 LÃ¶wchen,1ddc4263-d7ed-11ea-b800-302432eba3ec,DOG,breed,zoetis
 LÃ¶wchen Mix,1ddcb7e3-d7ed-11ea-a278-302432eba3ec,DOG,breed,zoetis
 Majorca Mastiff,1ddc4277-d7ed-11ea-a05e-302432eba3ec,DOG,breed,zoetis
@@ -4617,14 +4614,14 @@ Mastiff Mix,1ddcdebe-d7ed-11ea-bb62-302432eba3ec,DOG,breed,zoetis
 Medium Griffon Vendeen,1ddc426c-d7ed-11ea-915c-302432eba3ec,DOG,breed,zoetis
 Medium Griffon Vendeen Mix,1ddcb7ec-d7ed-11ea-8c5b-302432eba3ec,DOG,breed,zoetis
 Medium-Sized Anglo-French Hound,1ddc426d-d7ed-11ea-bfb7-302432eba3ec,DOG,breed,zoetis
-Mexican Hairless Dog Mix,Medium-Sized,1ddcb7ee-d7ed-11ea-8f7c-302432eba3ec,DOG,breed,zoetis
+Mexican Hairless Dog Mix Medium-Sized,1ddcb7ee-d7ed-11ea-8f7c-302432eba3ec,DOG,breed,zoetis
 Medium-Sized Anglo-French Hound Mix,1ddcb7ed-d7ed-11ea-816b-302432eba3ec,DOG,breed,zoetis
 Mexican Hairless Dog,1ddc69d3-d7ed-11ea-8341-302432eba3ec,DOG,breed,zoetis
-Mexican Hairless Dog,Medium-Sized,1ddc426e-d7ed-11ea-b3ae-302432eba3ec,DOG,breed,zoetis
-Mexican Hairless Dog,Miniature,1ddc426f-d7ed-11ea-9c8b-302432eba3ec,DOG,breed,zoetis
+Mexican Hairless Dog Medium-Sized,1ddc426e-d7ed-11ea-b3ae-302432eba3ec,DOG,breed,zoetis
+Mexican Hairless Dog Miniature,1ddc426f-d7ed-11ea-9c8b-302432eba3ec,DOG,breed,zoetis
 Mexican Hairless Dog Mix,1ddd05c6-d7ed-11ea-b796-302432eba3ec,DOG,breed,zoetis
-Mexican Hairless Dog Mix,Miniature,1ddcb7ef-d7ed-11ea-86ca-302432eba3ec,DOG,breed,zoetis
-Mexican Hairless Dog,Standard,1ddc4270-d7ed-11ea-a58a-302432eba3ec,DOG,breed,zoetis
+Mexican Hairless Dog Mix Miniature,1ddcb7ef-d7ed-11ea-86ca-302432eba3ec,DOG,breed,zoetis
+Mexican Hairless Dog Standard,1ddc4270-d7ed-11ea-a58a-302432eba3ec,DOG,breed,zoetis
 Miniature American Shepherd,1ddc4265-d7ed-11ea-b0d8-302432eba3ec,DOG,breed,zoetis
 Miniature American Shepherd Mix,1ddcb7e5-d7ed-11ea-b653-302432eba3ec,DOG,breed,zoetis
 Miniature Bull Terrier,1ddc4251-d7ed-11ea-81e8-302432eba3ec,DOG,breed,zoetis
@@ -4635,10 +4632,10 @@ Miniature Fox Terrier,1ddc69b2-d7ed-11ea-84e9-302432eba3ec,DOG,breed,zoetis
 Miniature Fox Terrier Mix,1ddcdf39-d7ed-11ea-9c42-302432eba3ec,DOG,breed,zoetis
 Miniature Pinscher,1ddc4273-d7ed-11ea-8094-302432eba3ec,DOG,breed,zoetis
 Miniature Pinscher Mix,1ddcb7f3-d7ed-11ea-8b10-302432eba3ec,DOG,breed,zoetis
-Portuguese Podengo,Miniature,e452cd9c-7bc1-11eb-8966-302432eba3ec,DOG,breed,zoetis
-Shar Pei,Miniature,1ddc69db-d7ed-11ea-810b-302432eba3ec,DOG,breed,zoetis
-Shar Pei Mix,Miniature,1ddd05ce-d7ed-11ea-b8a8-302432eba3ec,DOG,breed,zoetis
-German Spitz,Mittel,1ddc69cf-d7ed-11ea-8891-302432eba3ec,DOG,breed,zoetis
+Portuguese Podengo Miniature,e452cd9c-7bc1-11eb-8966-302432eba3ec,DOG,breed,zoetis
+Shar Pei Miniature,1ddc69db-d7ed-11ea-810b-302432eba3ec,DOG,breed,zoetis
+Shar Pei Mix Miniature,1ddd05ce-d7ed-11ea-b8a8-302432eba3ec,DOG,breed,zoetis
+German Spitz Mittel,1ddc69cf-d7ed-11ea-8891-302432eba3ec,DOG,breed,zoetis
 Mixed Breed Dog,f689dbd6-9964-11eb-9f44-7085c2a1b8e0,DOG,breed,zoetis
 Montenegrin Mountain Hound,1ddc4275-d7ed-11ea-a1db-302432eba3ec,DOG,breed,zoetis
 Montenegrin Mountain Hound Mix,1ddcb7f5-d7ed-11ea-a26f-302432eba3ec,DOG,breed,zoetis
@@ -4662,8 +4659,8 @@ Norwegian Buhund,1ddc427c-d7ed-11ea-9a91-302432eba3ec,DOG,breed,zoetis
 Norwegian Buhund Mix,1ddcb7fc-d7ed-11ea-913d-302432eba3ec,DOG,breed,zoetis
 Norwegian Elkhound,1ddc427d-d7ed-11ea-a14c-302432eba3ec,DOG,breed,zoetis
 Norwegian Elkhound Mix,1ddcb7fd-d7ed-11ea-99e6-302432eba3ec,DOG,breed,zoetis
-Norwegian Elkhound,black,1ddc427e-d7ed-11ea-b413-302432eba3ec,DOG,breed,zoetis
-Norwegian Elkhound,grey,1ddc427f-d7ed-11ea-a23d-302432eba3ec,DOG,breed,zoetis
+Norwegian Elkhound black,1ddc427e-d7ed-11ea-b413-302432eba3ec,DOG,breed,zoetis
+Norwegian Elkhound grey,1ddc427f-d7ed-11ea-a23d-302432eba3ec,DOG,breed,zoetis
 Norwegian Lundehund,1ddc4280-d7ed-11ea-8461-302432eba3ec,DOG,breed,zoetis
 Norwegian Lundehund Mix,1ddcb800-d7ed-11ea-930d-302432eba3ec,DOG,breed,zoetis
 Norwich Terrier,1ddc4269-d7ed-11ea-8292-302432eba3ec,DOG,breed,zoetis
@@ -4690,11 +4687,11 @@ Peekapoo Mix,1ddd05cd-d7ed-11ea-8635-302432eba3ec,DOG,breed,zoetis
 Pekingese Dog,1ddc4288-d7ed-11ea-8b6b-302432eba3ec,DOG,breed,zoetis
 Pekingese Mix,1ddcb809-d7ed-11ea-ae9e-302432eba3ec,DOG,breed,zoetis
 Welsh Corgi Mix Pembroke,1ddcdf11-d7ed-11ea-a114-302432eba3ec,DOG,breed,zoetis
-Peruvian Hairless Dog,Large,1ddc4289-d7ed-11ea-89bc-302432eba3ec,DOG,breed,zoetis
-Peruvian Hairless Dog Mix,medium-sized,1ddcb80b-d7ed-11ea-988e-302432eba3ec,DOG,breed,zoetis
-Peruvian Hairless Dog Mix,miniature,1ddcb80c-d7ed-11ea-9d9e-302432eba3ec,DOG,breed,zoetis
-Peruvian Hairless Dog,medium-sized,1ddc428a-d7ed-11ea-a4b9-302432eba3ec,DOG,breed,zoetis
-Peruvian Hairless Dog,miniature,1ddc428b-d7ed-11ea-80cb-302432eba3ec,DOG,breed,zoetis
+Peruvian Hairless Dog Large,1ddc4289-d7ed-11ea-89bc-302432eba3ec,DOG,breed,zoetis
+Peruvian Hairless Dog Mix medium-sized,1ddcb80b-d7ed-11ea-988e-302432eba3ec,DOG,breed,zoetis
+Peruvian Hairless Dog Mix miniature,1ddcb80c-d7ed-11ea-9d9e-302432eba3ec,DOG,breed,zoetis
+Peruvian Hairless Dog medium-sized,1ddc428a-d7ed-11ea-a4b9-302432eba3ec,DOG,breed,zoetis
+Peruvian Hairless Dog miniature,1ddc428b-d7ed-11ea-80cb-302432eba3ec,DOG,breed,zoetis
 Peruvian Inca Orchid,746a8486-edf2-11ed-a05b-0242ac120003,DOG,breed,zoetis
 Peruvian Inca Orchid Mix,746a85b2-edf2-11ed-a05b-0242ac120003,DOG,breed,zoetis
 Petit Basset Griffon Vendeen,1ddc428c-d7ed-11ea-ab1a-302432eba3ec,DOG,breed,zoetis
@@ -4726,14 +4723,14 @@ Polish Tatra Sheepdog Mix,1ddcdf4f-d7ed-11ea-a9f2-302432eba3ec,DOG,breed,zoetis
 Pont-Audemer Spaniel,1ddc6969-d7ed-11ea-ba1e-302432eba3ec,DOG,breed,zoetis
 Pont-Audemer Spaniel Mix,1ddcdef0-d7ed-11ea-ade4-302432eba3ec,DOG,breed,zoetis
 Poodle Dog,1ddc4295-d7ed-11ea-8d33-302432eba3ec,DOG,breed,zoetis
-Poodle,Medium,1ddc4296-d7ed-11ea-b8ad-302432eba3ec,DOG,breed,zoetis
-Poodle,Miniature,1ddc4297-d7ed-11ea-969c-302432eba3ec,DOG,breed,zoetis
+Poodle Medium,1ddc4296-d7ed-11ea-b8ad-302432eba3ec,DOG,breed,zoetis
+Poodle Miniature,1ddc4297-d7ed-11ea-969c-302432eba3ec,DOG,breed,zoetis
 Poodle Mix,1ddcb816-d7ed-11ea-9f4a-302432eba3ec,DOG,breed,zoetis
-Poodle Mix,Medium,1ddcb817-d7ed-11ea-93ea-302432eba3ec,DOG,breed,zoetis
-Poodle Mix,Miniature,1ddcb818-d7ed-11ea-b18c-302432eba3ec,DOG,breed,zoetis
-Poodle Mix,Standard,1ddcb819-d7ed-11ea-8cc5-302432eba3ec,DOG,breed,zoetis
-Poodle Mix,Toy,1ddcb81a-d7ed-11ea-bcb1-302432eba3ec,DOG,breed,zoetis
-Poodle,Toy,1ddc4299-d7ed-11ea-ae0b-302432eba3ec,DOG,breed,zoetis
+Poodle Mix Medium,1ddcb817-d7ed-11ea-93ea-302432eba3ec,DOG,breed,zoetis
+Poodle Mix Miniature,1ddcb818-d7ed-11ea-b18c-302432eba3ec,DOG,breed,zoetis
+Poodle Mix Standard,1ddcb819-d7ed-11ea-8cc5-302432eba3ec,DOG,breed,zoetis
+Poodle Mix Toy,1ddcb81a-d7ed-11ea-bcb1-302432eba3ec,DOG,breed,zoetis
+Poodle Toy,1ddc4299-d7ed-11ea-ae0b-302432eba3ec,DOG,breed,zoetis
 Porcelain,1ddc429a-d7ed-11ea-b20e-302432eba3ec,DOG,breed,zoetis
 Porcelain Mix,1ddcb81b-d7ed-11ea-b9e0-302432eba3ec,DOG,breed,zoetis
 Portuguese Podengo,1ddc429c-d7ed-11ea-878f-302432eba3ec,DOG,breed,zoetis
@@ -4757,7 +4754,7 @@ Puli Dog,1ddc42a9-d7ed-11ea-82f8-302432eba3ec,DOG,breed,zoetis
 Puli Mix,1ddcdebc-d7ed-11ea-b286-302432eba3ec,DOG,breed,zoetis
 Pumi Dog,1ddc42aa-d7ed-11ea-a83b-302432eba3ec,DOG,breed,zoetis
 Pumi Mix,1ddcdebd-d7ed-11ea-856b-302432eba3ec,DOG,breed,zoetis
-French Pointing Dog Mix,Pyrenean,1ddc9107-d7ed-11ea-9df8-302432eba3ec,DOG,breed,zoetis
+French Pointing Dog Mix Pyrenean,1ddc9107-d7ed-11ea-9df8-302432eba3ec,DOG,breed,zoetis
 Pyrenean Mastiff,1ddc697f-d7ed-11ea-9ca9-302432eba3ec,DOG,breed,zoetis
 Pyrenean Mastiff Mix,1ddcdf05-d7ed-11ea-b6e8-302432eba3ec,DOG,breed,zoetis
 Pyrenean Sheepdog,1ddc42ac-d7ed-11ea-bdfa-302432eba3ec,DOG,breed,zoetis
@@ -4784,11 +4781,11 @@ Romanian Mioritic Shepherd Dog,1ddc42b1-d7ed-11ea-950e-302432eba3ec,DOG,breed,zo
 Romanian Mioritic Shepherd Dog Mix,1ddcdec4-d7ed-11ea-88ab-302432eba3ec,DOG,breed,zoetis
 Rottweiler Dog,1ddc42b4-d7ed-11ea-93d8-302432eba3ec,DOG,breed,zoetis
 Rottweiler Mix,1ddcdec7-d7ed-11ea-bc61-302432eba3ec,DOG,breed,zoetis
-Collie,Rough-coated,1ddc1b4d-d7ed-11ea-ae6d-302432eba3ec,DOG,breed,zoetis
-Collie Mix,Rough-coated,1ddc90c9-d7ed-11ea-98dc-302432eba3ec,DOG,breed,zoetis
-Dutch Shepherd Dog,rough-haired,1ddc42b2-d7ed-11ea-a67e-302432eba3ec,DOG,breed,zoetis
-Dutch Shepherd Dog Mix,rough-haired,1ddcdec5-d7ed-11ea-82cb-302432eba3ec,DOG,breed,zoetis
-Ibizan Hound Mix,rough-haired,1ddcb7ba-d7ed-11ea-94f6-302432eba3ec,DOG,breed,zoetis
+Collie Rough-coated,1ddc1b4d-d7ed-11ea-ae6d-302432eba3ec,DOG,breed,zoetis
+Collie Mix Rough-coated,1ddc90c9-d7ed-11ea-98dc-302432eba3ec,DOG,breed,zoetis
+Dutch Shepherd Dog rough-haired,1ddc42b2-d7ed-11ea-a67e-302432eba3ec,DOG,breed,zoetis
+Dutch Shepherd Dog Mix rough-haired,1ddcdec5-d7ed-11ea-82cb-302432eba3ec,DOG,breed,zoetis
+Ibizan Hound Mix rough-haired,1ddcb7ba-d7ed-11ea-94f6-302432eba3ec,DOG,breed,zoetis
 Russian Black Terrier,1ddc427a-d7ed-11ea-bae5-302432eba3ec,DOG,breed,zoetis
 Russian Black Terrier Mix,1ddcb7fa-d7ed-11ea-8f84-302432eba3ec,DOG,breed,zoetis
 Russian Spaniel,1ddc69c0-d7ed-11ea-848e-302432eba3ec,DOG,breed,zoetis
@@ -4820,14 +4817,14 @@ Schiller Hound Mix,1ddcded5-d7ed-11ea-9fb2-302432eba3ec,DOG,breed,zoetis
 Schipperke,1ddc42c3-d7ed-11ea-aa5e-302432eba3ec,DOG,breed,zoetis
 Schipperke Mix,1ddcded6-d7ed-11ea-a51c-302432eba3ec,DOG,breed,zoetis
 Schnauzer Dog,1ddc42c5-d7ed-11ea-ab75-302432eba3ec,DOG,breed,zoetis
-Schnauzer,Giant,1ddc1ba1-d7ed-11ea-bb48-302432eba3ec,DOG,breed,zoetis
-Schnauzer,Miniature,1ddc4274-d7ed-11ea-9a40-302432eba3ec,DOG,breed,zoetis
+Schnauzer Giant,1ddc1ba1-d7ed-11ea-bb48-302432eba3ec,DOG,breed,zoetis
+Schnauzer Miniature,1ddc4274-d7ed-11ea-9a40-302432eba3ec,DOG,breed,zoetis
 Schnauzer Mix,1ddcded8-d7ed-11ea-bc36-302432eba3ec,DOG,breed,zoetis
-Schnauzer Mix,Giant,1ddcb79c-d7ed-11ea-851d-302432eba3ec,DOG,breed,zoetis
-Schnauzer Mix,Miniature,1ddcb7f4-d7ed-11ea-ae04-302432eba3ec,DOG,breed,zoetis
+Schnauzer Mix Giant,1ddcb79c-d7ed-11ea-851d-302432eba3ec,DOG,breed,zoetis
+Schnauzer Mix Miniature,1ddcb7f4-d7ed-11ea-ae04-302432eba3ec,DOG,breed,zoetis
 Schnoodle,1ddc69d7-d7ed-11ea-8978-302432eba3ec,DOG,breed,zoetis
 Schnoodle Mix,1ddd05ca-d7ed-11ea-bf04-302432eba3ec,DOG,breed,zoetis
-Swiss Hound,Schwyz,1ddc6979-d7ed-11ea-b24c-302432eba3ec,DOG,breed,zoetis
+Swiss Hound Schwyz,1ddc6979-d7ed-11ea-b24c-302432eba3ec,DOG,breed,zoetis
 Scottish Deerhound,1ddc42c6-d7ed-11ea-b0fd-302432eba3ec,DOG,breed,zoetis
 Scottish Deerhound Mix,1ddcded9-d7ed-11ea-a121-302432eba3ec,DOG,breed,zoetis
 Scottish Terrier,1ddc4281-d7ed-11ea-972a-302432eba3ec,DOG,breed,zoetis
@@ -4856,17 +4853,17 @@ Shikoku Dog,1ddc42d0-d7ed-11ea-9ccb-302432eba3ec,DOG,breed,zoetis
 Shikoku Mix,1ddcdee4-d7ed-11ea-9946-302432eba3ec,DOG,breed,zoetis
 Shiloh Shepherd,1ddc69a8-d7ed-11ea-b7f7-302432eba3ec,DOG,breed,zoetis
 Shiloh Shepherd Mix,1ddcdf2f-d7ed-11ea-9972-302432eba3ec,DOG,breed,zoetis
-Majorcan Shepherd Dog Mix,short haired,1ddcdec6-d7ed-11ea-a56a-302432eba3ec,DOG,breed,zoetis
-Dutch Shepherd Dog,Short-haired,1ddc6968-d7ed-11ea-8a5d-302432eba3ec,DOG,breed,zoetis
-Dutch Shepherd Dog Mix,Short-haired,1ddcdeef-d7ed-11ea-b9cf-302432eba3ec,DOG,breed,zoetis
-German Shepherd Dog,Short-haired,1ddc697b-d7ed-11ea-84d5-302432eba3ec,DOG,breed,zoetis
-Hungarian Vizsla,Short-haired,1ddc1bbb-d7ed-11ea-b0fe-302432eba3ec,DOG,breed,zoetis
-Hungarian Vizsla Mix,Short-haired,1ddcb7b6-d7ed-11ea-95b6-302432eba3ec,DOG,breed,zoetis
-Majorcan Shepherd Dog,short haired,1ddc42b3-d7ed-11ea-9a90-302432eba3ec,DOG,breed,zoetis
-Saint Bernard Dog,Short-haired,1ddc42bd-d7ed-11ea-8e0d-302432eba3ec,DOG,breed,zoetis
-Saint Bernard Dog Mix,Short-haired,1ddcded0-d7ed-11ea-8639-302432eba3ec,DOG,breed,zoetis
-Weimaraner,Short-haired,1ddc6989-d7ed-11ea-b877-302432eba3ec,DOG,breed,zoetis
-Weimaraner Mix,Short-haired,1ddcdf0f-d7ed-11ea-872e-302432eba3ec,DOG,breed,zoetis
+Majorcan Shepherd Dog Mix short haired,1ddcdec6-d7ed-11ea-a56a-302432eba3ec,DOG,breed,zoetis
+Dutch Shepherd Dog Short-haired,1ddc6968-d7ed-11ea-8a5d-302432eba3ec,DOG,breed,zoetis
+Dutch Shepherd Dog Mix Short-haired,1ddcdeef-d7ed-11ea-b9cf-302432eba3ec,DOG,breed,zoetis
+German Shepherd Dog Short-haired,1ddc697b-d7ed-11ea-84d5-302432eba3ec,DOG,breed,zoetis
+Hungarian Vizsla Short-haired,1ddc1bbb-d7ed-11ea-b0fe-302432eba3ec,DOG,breed,zoetis
+Hungarian Vizsla Mix Short-haired,1ddcb7b6-d7ed-11ea-95b6-302432eba3ec,DOG,breed,zoetis
+Majorcan Shepherd Dog short haired,1ddc42b3-d7ed-11ea-9a90-302432eba3ec,DOG,breed,zoetis
+Saint Bernard Dog Short-haired,1ddc42bd-d7ed-11ea-8e0d-302432eba3ec,DOG,breed,zoetis
+Saint Bernard Dog Mix Short-haired,1ddcded0-d7ed-11ea-8639-302432eba3ec,DOG,breed,zoetis
+Weimaraner Short-haired,1ddc6989-d7ed-11ea-b877-302432eba3ec,DOG,breed,zoetis
+Weimaraner Mix Short-haired,1ddcdf0f-d7ed-11ea-872e-302432eba3ec,DOG,breed,zoetis
 Siberian Husky,1ddc42d1-d7ed-11ea-b56e-302432eba3ec,DOG,breed,zoetis
 Siberian Husky Mix,1ddcdee5-d7ed-11ea-ab99-302432eba3ec,DOG,breed,zoetis
 Silky Terrier,1ddc69b8-d7ed-11ea-907d-302432eba3ec,DOG,breed,zoetis
@@ -4889,22 +4886,22 @@ Small Brabant Griffon,1ddc6966-d7ed-11ea-8b42-302432eba3ec,DOG,breed,zoetis
 Small Brabant Griffon Mix,1ddcdeed-d7ed-11ea-9ed1-302432eba3ec,DOG,breed,zoetis
 Small MÃ¼nsterlÃ¤nder,1ddc6967-d7ed-11ea-a315-302432eba3ec,DOG,breed,zoetis
 Small MÃ¼nsterlÃ¤nder Mix,1ddcdeee-d7ed-11ea-8f46-302432eba3ec,DOG,breed,zoetis
-Portuguese Podengo Mix,Small,f694d8b2-7bc1-11eb-bc05-302432eba3ec,DOG,breed,zoetis
-Portuguese Podengo Mix,Smooth-Haired Large,1ddcb81d-d7ed-11ea-87c9-302432eba3ec,DOG,breed,zoetis
-Portuguese Podengo,Smooth-Haired Medium-Sized,1ddc429e-d7ed-11ea-b0b8-302432eba3ec,DOG,breed,zoetis
-Portuguese Podengo Mix,Smooth-Haired Medium-Sized,1ddcb81e-d7ed-11ea-94c7-302432eba3ec,DOG,breed,zoetis
-Portuguese Podengo,Smooth-Haired Miniature,1ddc429f-d7ed-11ea-ac17-302432eba3ec,DOG,breed,zoetis
-Portuguese Podengo Mix,Smooth-Haired Miniature,1ddcb81f-d7ed-11ea-a50e-302432eba3ec,DOG,breed,zoetis
-Collie,Smooth-coated,1ddc1b4e-d7ed-11ea-a6fb-302432eba3ec,DOG,breed,zoetis
-Collie Mix,Smooth-coated,1ddc90ca-d7ed-11ea-9e92-302432eba3ec,DOG,breed,zoetis
-Pyrenean Sheepdog,Smooth-faced,1ddc42ae-d7ed-11ea-b997-302432eba3ec,DOG,breed,zoetis
-Pyrenean Sheepdog Mix,Smooth-faced,1ddcdec1-d7ed-11ea-8390-302432eba3ec,DOG,breed,zoetis
-Chihuahua,Smooth-haired,1ddc1b44-d7ed-11ea-aef7-302432eba3ec,DOG,breed,zoetis
-Chihuahua Mix,Smooth-haired,1ddc90c0-d7ed-11ea-ab9a-302432eba3ec,DOG,breed,zoetis
-Fox Terrier,smooth,1ddc42c7-d7ed-11ea-bbe4-302432eba3ec,DOG,breed,zoetis
-Fox Terrier Mix,smooth,1ddcdeda-d7ed-11ea-a577-302432eba3ec,DOG,breed,zoetis
-Ibizan Hound Mix,smooth-haired,1ddcb7bb-d7ed-11ea-9f54-302432eba3ec,DOG,breed,zoetis
-Portuguese Podengo,Smooth-Haired Large,1ddc429d-d7ed-11ea-bd2b-302432eba3ec,DOG,breed,zoetis
+Portuguese Podengo Mix Small,f694d8b2-7bc1-11eb-bc05-302432eba3ec,DOG,breed,zoetis
+Portuguese Podengo Mix Smooth-Haired Large,1ddcb81d-d7ed-11ea-87c9-302432eba3ec,DOG,breed,zoetis
+Portuguese Podengo Smooth-Haired Medium-Sized,1ddc429e-d7ed-11ea-b0b8-302432eba3ec,DOG,breed,zoetis
+Portuguese Podengo Mix Smooth-Haired Medium-Sized,1ddcb81e-d7ed-11ea-94c7-302432eba3ec,DOG,breed,zoetis
+Portuguese Podengo Smooth-Haired Miniature,1ddc429f-d7ed-11ea-ac17-302432eba3ec,DOG,breed,zoetis
+Portuguese Podengo Mix Smooth-Haired Miniature,1ddcb81f-d7ed-11ea-a50e-302432eba3ec,DOG,breed,zoetis
+Collie Smooth-coated,1ddc1b4e-d7ed-11ea-a6fb-302432eba3ec,DOG,breed,zoetis
+Collie Mix Smooth-coated,1ddc90ca-d7ed-11ea-9e92-302432eba3ec,DOG,breed,zoetis
+Pyrenean Sheepdog Smooth-faced,1ddc42ae-d7ed-11ea-b997-302432eba3ec,DOG,breed,zoetis
+Pyrenean Sheepdog Mix Smooth-faced,1ddcdec1-d7ed-11ea-8390-302432eba3ec,DOG,breed,zoetis
+Chihuahua Smooth-haired,1ddc1b44-d7ed-11ea-aef7-302432eba3ec,DOG,breed,zoetis
+Chihuahua Mix Smooth-haired,1ddc90c0-d7ed-11ea-ab9a-302432eba3ec,DOG,breed,zoetis
+Fox Terrier smooth,1ddc42c7-d7ed-11ea-bbe4-302432eba3ec,DOG,breed,zoetis
+Fox Terrier Mix smooth,1ddcdeda-d7ed-11ea-a577-302432eba3ec,DOG,breed,zoetis
+Ibizan Hound Mix smooth-haired,1ddcb7bb-d7ed-11ea-9f54-302432eba3ec,DOG,breed,zoetis
+Portuguese Podengo Smooth-Haired Large,1ddc429d-d7ed-11ea-bd2b-302432eba3ec,DOG,breed,zoetis
 Dachshund Smooth-Haired Miniature,1ddc1b5e-d7ed-11ea-8beb-302432eba3ec,DOG,breed,zoetis
 Dachshund Mix Smooth-Haired Miniature,1ddc90da-d7ed-11ea-8bd8-302432eba3ec,DOG,breed,zoetis
 Dachshund Smooth-haired Rabbit Hunting,1ddc1b5a-d7ed-11ea-bce5-302432eba3ec,DOG,breed,zoetis
@@ -4956,7 +4953,7 @@ Swedish Vallhund Mix,1ddcdefc-d7ed-11ea-8d6d-302432eba3ec,DOG,breed,zoetis
 Swedish White Elkhound,1ddc6976-d7ed-11ea-afe5-302432eba3ec,DOG,breed,zoetis
 Swedish White Elkhound Mix,1ddcdefd-d7ed-11ea-b9a4-302432eba3ec,DOG,breed,zoetis
 Swiss Hound,1ddc6977-d7ed-11ea-8be9-302432eba3ec,DOG,breed,zoetis
-Swiss Hound,Lucerne,1ddc6978-d7ed-11ea-9f4b-302432eba3ec,DOG,breed,zoetis
+Swiss Hound Lucerne,1ddc6978-d7ed-11ea-9f4b-302432eba3ec,DOG,breed,zoetis
 Swiss Hound Lucerne Hound Mix,1ddcdefe-d7ed-11ea-92ce-302432eba3ec,DOG,breed,zoetis
 Swiss Hound Mix,ad67768a-71c0-11ed-88d8-302432eba3ec,DOG,breed,zoetis
 Swiss Hound Schwyz Hound Mix,1ddcdeff-d7ed-11ea-8be6-302432eba3ec,DOG,breed,zoetis
@@ -5008,9 +5005,9 @@ Valencian rat hunting dog Mix,38a5b9cc-4d26-11ee-96f0-106fd9dd20e8,DOG,breed,zoe
 Volpino Italiano,1ddc6987-d7ed-11ea-872b-302432eba3ec,DOG,breed,zoetis
 Volpino Italiano Mix,1ddcdf0d-d7ed-11ea-a338-302432eba3ec,DOG,breed,zoetis
 Welsh Corgi,1ddc69d4-d7ed-11ea-9f47-302432eba3ec,DOG,breed,zoetis
-Welsh Corgi,Cardigan,1ddc698a-d7ed-11ea-907b-302432eba3ec,DOG,breed,zoetis
+Welsh Corgi Cardigan,1ddc698a-d7ed-11ea-907b-302432eba3ec,DOG,breed,zoetis
 Welsh Corgi Mix,1ddd05c7-d7ed-11ea-8482-302432eba3ec,DOG,breed,zoetis
-Welsh Corgi,Pembroke,1ddc698b-d7ed-11ea-9282-302432eba3ec,DOG,breed,zoetis
+Welsh Corgi Pembroke,1ddc698b-d7ed-11ea-9282-302432eba3ec,DOG,breed,zoetis
 Welsh Sheepdog,1ddc69c9-d7ed-11ea-9c4e-302432eba3ec,DOG,breed,zoetis
 Welsh Sheepdog Mix,1ddcdf50-d7ed-11ea-8546-302432eba3ec,DOG,breed,zoetis
 Welsh Springer Spaniel,1ddc698c-d7ed-11ea-9cc0-302432eba3ec,DOG,breed,zoetis
@@ -5031,16 +5028,16 @@ White Shepherd,1ddc69a9-d7ed-11ea-a296-302432eba3ec,DOG,breed,zoetis
 White Shepherd Mix,1ddcdf30-d7ed-11ea-8842-302432eba3ec,DOG,breed,zoetis
 White Swiss Shepherd Dog,1ddc6999-d7ed-11ea-9fd8-302432eba3ec,DOG,breed,zoetis
 White Swiss Shepherd Dog Mix,1ddcdf20-d7ed-11ea-81ac-302432eba3ec,DOG,breed,zoetis
-Fox Terrier,wire,1ddc6995-d7ed-11ea-9edb-302432eba3ec,DOG,breed,zoetis
-Fox Terrier Mix,wire,1ddcdf1c-d7ed-11ea-88e7-302432eba3ec,DOG,breed,zoetis
-Portuguese Podengo,Wire-Haired Large,1ddc42a0-d7ed-11ea-90bc-302432eba3ec,DOG,breed,zoetis
-Portuguese Podengo Mix,Wire-Haired Large,1ddcb820-d7ed-11ea-9ef2-302432eba3ec,DOG,breed,zoetis
-Portuguese Podengo,Wire-Haired Medium-Sized,1ddc42a1-d7ed-11ea-bafc-302432eba3ec,DOG,breed,zoetis
-Portuguese Podengo Mix,Wire-Haired Medium-Sized,1ddcb821-d7ed-11ea-bd5c-302432eba3ec,DOG,breed,zoetis
-Portuguese Podengo,Wire-Haired Miniature,1ddc42a2-d7ed-11ea-93cf-302432eba3ec,DOG,breed,zoetis
-Portuguese Podengo Mix,Wire-Haired Miniature,1ddcb822-d7ed-11ea-b244-302432eba3ec,DOG,breed,zoetis
-Hungarian Vizsla,Wire-haired,1ddc1bbc-d7ed-11ea-b799-302432eba3ec,DOG,breed,zoetis
-Hungarian Vizsla Mix,Wire-haired,1ddcb7b7-d7ed-11ea-956c-302432eba3ec,DOG,breed,zoetis
+Fox Terrier wire,1ddc6995-d7ed-11ea-9edb-302432eba3ec,DOG,breed,zoetis
+Fox Terrier Mix wire,1ddcdf1c-d7ed-11ea-88e7-302432eba3ec,DOG,breed,zoetis
+Portuguese Podengo Wire-Haired Large,1ddc42a0-d7ed-11ea-90bc-302432eba3ec,DOG,breed,zoetis
+Portuguese Podengo Mix Wire-Haired Large,1ddcb820-d7ed-11ea-9ef2-302432eba3ec,DOG,breed,zoetis
+Portuguese Podengo Wire-Haired Medium-Sized,1ddc42a1-d7ed-11ea-bafc-302432eba3ec,DOG,breed,zoetis
+Portuguese Podengo Mix Wire-Haired Medium-Sized,1ddcb821-d7ed-11ea-bd5c-302432eba3ec,DOG,breed,zoetis
+Portuguese Podengo Wire-Haired Miniature,1ddc42a2-d7ed-11ea-93cf-302432eba3ec,DOG,breed,zoetis
+Portuguese Podengo Mix Wire-Haired Miniature,1ddcb822-d7ed-11ea-b244-302432eba3ec,DOG,breed,zoetis
+Hungarian Vizsla Wire-haired,1ddc1bbc-d7ed-11ea-b799-302432eba3ec,DOG,breed,zoetis
+Hungarian Vizsla Mix Wire-haired,1ddcb7b7-d7ed-11ea-956c-302432eba3ec,DOG,breed,zoetis
 Dachshund Wire-Haired Miniature,1ddc1b5f-d7ed-11ea-b5d7-302432eba3ec,DOG,breed,zoetis
 Dachshund Mix Wire-Haired Miniature,1ddc90db-d7ed-11ea-bcab-302432eba3ec,DOG,breed,zoetis
 Dachshund Wire-haired Rabbit Hunting,1ddc1b5b-d7ed-11ea-abd5-302432eba3ec,DOG,breed,zoetis
@@ -5069,12 +5066,12 @@ American Curl,1ddd05d7-d7ed-11ea-a2e4-302432eba3ec,CAT,breed,zoetis
 American Curl Mix,1ddd2ce1-d7ed-11ea-b493-302432eba3ec,CAT,breed,zoetis
 American Bobtail Longhair,1ddd05d5-d7ed-11ea-8e87-302432eba3ec,CAT,breed,zoetis
 American Bobtail Longhair Mix,1ddd2cdf-d7ed-11ea-8fde-302432eba3ec,CAT,breed,zoetis
-American Curl,Longhair,1ddd05d8-d7ed-11ea-9de2-302432eba3ec,CAT,breed,zoetis
+American Curl Longhair,1ddd05d8-d7ed-11ea-9de2-302432eba3ec,CAT,breed,zoetis
 American Long-haired Purebred cat,1ddd05da-d7ed-11ea-b4a4-302432eba3ec,CAT,breed,zoetis
 American Medium-haired Purebred cat,862eab3c-8dd1-11ed-b123-302432eba3ec,CAT,breed,zoetis
 American Bobtail Shorthair,1ddd05d6-d7ed-11ea-b8df-302432eba3ec,CAT,breed,zoetis
-American Curl,Shorthair,1ddd05d9-d7ed-11ea-ab8c-302432eba3ec,CAT,breed,zoetis
-American Curl,Shorthair Mix,1ddd2ce3-d7ed-11ea-8bd1-302432eba3ec,CAT,breed,zoetis
+American Curl Shorthair,1ddd05d9-d7ed-11ea-ab8c-302432eba3ec,CAT,breed,zoetis
+American Curl Shorthair Mix,1ddd2ce3-d7ed-11ea-8bd1-302432eba3ec,CAT,breed,zoetis
 American Short-haired Purebred cat,1ddd05db-d7ed-11ea-84f4-302432eba3ec,CAT,breed,zoetis
 American Wire-haired,1ddd05dc-d7ed-11ea-9e1e-302432eba3ec,CAT,breed,zoetis
 American Wire-haired Mix,1ddd2ce4-d7ed-11ea-a874-302432eba3ec,CAT,breed,zoetis
@@ -5084,12 +5081,12 @@ Arabian Mau,1ddd05de-d7ed-11ea-9ff1-302432eba3ec,CAT,breed,zoetis
 Arabian Mau Mix,1ddd2ce6-d7ed-11ea-a4f6-302432eba3ec,CAT,breed,zoetis
 Asian Cat,1ddd05df-d7ed-11ea-9363-302432eba3ec,CAT,breed,zoetis
 Asian Cat Mix,1ddd2ce7-d7ed-11ea-9189-302432eba3ec,CAT,breed,zoetis
-Asian Cat,Long-haired,1ddd05e0-d7ed-11ea-a96b-302432eba3ec,CAT,breed,zoetis
-Asian Cat,Long-haired Mix,1ddd2ce8-d7ed-11ea-8e1b-302432eba3ec,CAT,breed,zoetis
-Asian Cat,Semi-Long-hair,1ddd05e1-d7ed-11ea-b83f-302432eba3ec,CAT,breed,zoetis
-Asian Cat,Shorthair,1ddd05e2-d7ed-11ea-b49b-302432eba3ec,CAT,breed,zoetis
-Asian Cat,Semi-Long-hair Mix,1ddd2ce9-d7ed-11ea-a80b-302432eba3ec,CAT,breed,zoetis
-Asian Cat,Shorthair Mix,1ddd2cea-d7ed-11ea-8589-302432eba3ec,CAT,breed,zoetis
+Asian Cat Long-haired,1ddd05e0-d7ed-11ea-a96b-302432eba3ec,CAT,breed,zoetis
+Asian Cat Long-haired Mix,1ddd2ce8-d7ed-11ea-8e1b-302432eba3ec,CAT,breed,zoetis
+Asian Cat Semi-Long-hair,1ddd05e1-d7ed-11ea-b83f-302432eba3ec,CAT,breed,zoetis
+Asian Cat Shorthair,1ddd05e2-d7ed-11ea-b49b-302432eba3ec,CAT,breed,zoetis
+Asian Cat Semi-Long-hair Mix,1ddd2ce9-d7ed-11ea-a80b-302432eba3ec,CAT,breed,zoetis
+Asian Cat Shorthair Mix,1ddd2cea-d7ed-11ea-8589-302432eba3ec,CAT,breed,zoetis
 Australian Mist,1ddd05e3-d7ed-11ea-ae8b-302432eba3ec,CAT,breed,zoetis
 Australian Mist Mix,1ddd2ceb-d7ed-11ea-845b-302432eba3ec,CAT,breed,zoetis
 Balinese Cat,1ddd05e4-d7ed-11ea-b040-302432eba3ec,CAT,breed,zoetis
@@ -5190,7 +5187,7 @@ LaPerm Cat Mix,1ddd2d16-d7ed-11ea-8aba-302432eba3ec,CAT,breed,zoetis
 LaPerm Shorthair,1ddd0613-d7ed-11ea-8a33-302432eba3ec,CAT,breed,zoetis
 LaPerm Shorthair Mix,1ddd2d18-d7ed-11ea-90fe-302432eba3ec,CAT,breed,zoetis
 Modern Siamese Cat,1ddd061b-d7ed-11ea-8580-302432eba3ec,CAT,breed,zoetis
-American Curl,Longhair Mix,1ddd2ce2-d7ed-11ea-9053-302432eba3ec,CAT,breed,zoetis
+American Curl Longhair Mix,1ddd2ce2-d7ed-11ea-9053-302432eba3ec,CAT,breed,zoetis
 Cymric Long-haired,1ddd05f9-d7ed-11ea-89d9-302432eba3ec,CAT,breed,zoetis
 Kurilean Bobtail Long-haired,1ddd060e-d7ed-11ea-b946-302432eba3ec,CAT,breed,zoetis
 Kurilean Bobtail Long-haired Mix,1ddd2d13-d7ed-11ea-98ec-302432eba3ec,CAT,breed,zoetis

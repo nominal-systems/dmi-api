@@ -162,16 +162,17 @@ export class MapRef1695218566420 implements MigrationInterface {
         }
 
         const lines = fileContents.split('\n')
+        const uniqueCodes = new Set<string>()
 
         for (const line of lines) {
-            const uniqueCodes = new Array<string>()
             const [name, code, species, type, provider] = line.split(',')
             const trimmedProvider = provider.replace(/\n/g, '').trim()
-            if (!uniqueCodes.includes(code)) {
-                uniqueCodes.push(code)
+            const createdCode = `${name.replace(/ /g, '_').toUpperCase()}`
+            if (!uniqueCodes.has(createdCode)) {
+                uniqueCodes.add(createdCode)
                 const formattedRef = {
                     name: name,
-                    code: `${name.replace(/ /g, '_').toUpperCase()}_${species}`,
+                    code: createdCode,
                     species: mapSpecies(species),
                     type: 'breed',
                 }
@@ -179,11 +180,9 @@ export class MapRef1695218566420 implements MigrationInterface {
                   VALUES (?, ?, ?, ?)`, [formattedRef.name, formattedRef.code, formattedRef.species, formattedRef.type])
                 ref = newBreed.insertId
             } else {
-                const existingBreed = await queryRunner.query(`
-              SELECT "id" FROM "ref" WHERE "name" = $1;
-            `, [name])
-                console.log('existingBreed', existingBreed)
-                ref = existingBreed.insertId
+                const existingBreed = await queryRunner.query('SELECT `id` FROM `ref` WHERE `code` = ?',
+                [createdCode])
+                ref = existingBreed[0].id
             }
             await queryRunner.query(`
             INSERT INTO provider_ref (name, code, species, type, provider, refId)
