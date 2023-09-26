@@ -17,6 +17,9 @@ async function bootstrap (): Promise<void> {
     new FastifyAdapter()
   )
 
+  // CORS
+  app.enableCors()
+
   const configService = app.get<ConfigService<AppConfig>>(ConfigService)
 
   app.connectMicroservice<MicroserviceOptions>({
@@ -59,9 +62,6 @@ async function bootstrap (): Promise<void> {
     const integrationsService = app.get(IntegrationsService)
     await integrationsService.ensureStatusAll()
   }
-
-  // CORS
-  app.enableCors()
 
   // Start application
   const PORT = configService.get<number>('port', 3000)
