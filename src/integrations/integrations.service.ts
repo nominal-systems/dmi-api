@@ -301,11 +301,12 @@ export class IntegrationsService {
     createIntegrationDto: CreateIntegrationDto
   ): Promise<void> {
     const providerConfiguration = await this.providerConfigurationRepository.findOne({ id: createIntegrationDto.providerConfigurationId })
-    const provider = await this.providerRepository.findOne(<string>providerConfiguration?.providerId)
-
+    const provider = await this.providerRepository.findOne(<string>providerConfiguration?.providerId, { relations: ['options'] })
     if (provider == null) {
       throw new BadRequestException('The provider doesn\'t exist')
     }
+    provider.integrationOptions = provider.options.filter((option) => option.providerOptionType === 'integration')
+    provider.configurationOptions = provider.options.filter((option) => option.providerOptionType === 'configuration')
 
     const validatorOptions = {
       required: true,
