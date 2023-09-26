@@ -46,7 +46,7 @@ export class CreateOrderDtoPatient {
   @IsNotEmpty()
   species: string
 
-  @IsNotEmpty()
+  @IsOptional()
   breed: string
 
   @IsNotEmpty()

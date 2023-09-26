@@ -23,6 +23,7 @@ import { FindManyOptions, Repository } from 'typeorm'
 import { UpdateProviderDto } from '../dtos/update-provider.dto'
 import { ProviderOption } from '../entities/provider-option.entity'
 import { ProviderOptionDto } from '../dtos/provider-option.dto'
+import { nestKeys } from '../../common/utils/nest-keys'
 
 @Injectable()
 export class ProvidersService {
@@ -255,7 +256,7 @@ export class ProvidersService {
       status,
       method,
       url,
-      body
+      body: nestKeys(body) // Nest keys to ensure MongoDB safety
     }
 
     if (payload !== undefined) {
