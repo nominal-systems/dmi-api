@@ -6,7 +6,6 @@ import { Ref } from './entities/ref.entity'
 import { ProviderRef } from './entities/providerRef.entity'
 import { CreateRefsDTO } from './dtos/create-refs.dto'
 import { Provider } from '../providers/entities/provider.entity'
-import { FindOneOptions } from 'typeorm/find-options/FindOneOptions'
 
 @Injectable()
 export class RefsService {
@@ -14,10 +13,8 @@ export class RefsService {
 
   constructor (
     private readonly providersService: ProvidersService,
-    @InjectRepository(ProviderRef)
-    private readonly providerRefRepository: Repository<ProviderRef>,
-    @InjectRepository(Ref)
-    private readonly refRepository: Repository<Ref>
+    @InjectRepository(ProviderRef) private readonly providerRefRepository: Repository<ProviderRef>,
+    @InjectRepository(Ref) private readonly refRepository: Repository<Ref>
   ) {
   }
 
@@ -27,7 +24,13 @@ export class RefsService {
       let newRefsCount = 0
       let existingRefsCount = 0
       for (const item of mapList.items) {
-        const existingItem = await this.providerRefRepository.findOne({ where: { code: item.code, type: type, provider: provider } })
+        const existingItem = await this.providerRefRepository.findOne({
+          where: {
+            code: item.code,
+            type: type,
+            provider: provider
+          }
+        })
 
         if (existingItem === undefined) {
           const newItem = this.providerRefRepository.create({

@@ -13,7 +13,10 @@ import {
   Sex,
   Species
 } from '@nominal-systems/dmi-engine-common'
-import { ProviderExternalRequestDocument, ProviderExternalRequests } from '../entities/provider-external-requests.entity'
+import {
+  ProviderExternalRequestDocument,
+  ProviderExternalRequests
+} from '../entities/provider-external-requests.entity'
 import { Model } from 'mongoose'
 import { InjectModel } from '@nestjs/mongoose'
 import { ProviderRawDataDto } from '../dtos/provider-raw-data.dto'
@@ -33,15 +36,15 @@ export class ProvidersService {
     @InjectRepository(Provider)
     private readonly providerRepository: Repository<Provider>,
     private readonly integrationsService: IntegrationsService,
-    @InjectModel(ProviderExternalRequests.name)
-    private readonly providerExternalRequestsModel: Model<ProviderExternalRequestDocument>,
+    @InjectModel(ProviderExternalRequests.name) private readonly providerExternalRequestsModel: Model<ProviderExternalRequestDocument>,
     @Inject('ACTIVEMQ') private readonly client: ClientProxy,
-    @InjectRepository(ProviderOption)
-    private readonly providerOptionRepository: Repository<ProviderOption>
+    @InjectRepository(ProviderOption) private readonly providerOptionRepository: Repository<ProviderOption>
   ) {
   }
 
-  async findAll (options?: FindManyOptions<Provider>): Promise<Provider[]> {
+  async findAll (
+    options?: FindManyOptions<Provider>
+  ): Promise<Provider[]> {
     const providers = await this.providerRepository.find(options)
     for (const provider of providers) {
       provider.integrationOptions = provider.options.filter((option) => option.providerOptionType === 'integration')
@@ -51,10 +54,12 @@ export class ProvidersService {
     return providers
   }
 
-  async findOneById (providerId: string): Promise<Provider> {
+  async findOneById (
+    providerId: string
+  ): Promise<Provider> {
     const provider = await this.providerRepository.findOne(providerId, { relations: ['options'] })
     if (provider == null) {
-      throw new NotFoundException("The provider doesn't exist")
+      throw new NotFoundException('The provider doesn\'t exist')
     }
     provider.integrationOptions = provider.options.filter((option) => option.providerOptionType === 'integration')
     provider.configurationOptions = provider.options.filter((option) => option.providerOptionType === 'configuration')
