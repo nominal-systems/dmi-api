@@ -1225,219 +1225,219 @@ describe('ReportsService', () => {
       const updated = await reportsService.updateReportResults(report, results)
       expect(updated).toEqual(true)
       expect(reportsRepositoryMock.save).toBeCalledWith(expect.objectContaining({
-          testResultsSet: [
-            expect.objectContaining({
-              code: 'Hematology',
-              observations: [
-                expect.objectContaining({
-                  code: '3011',
-                  name: 'RBC'
-                }),
-                expect.objectContaining({
-                  code: '3013',
-                  name: 'Hematocrit'
-                }),
-                expect.objectContaining({
-                  code: '3012',
-                  name: 'Hemoglobin'
-                }),
-                expect.objectContaining({
-                  code: '3014',
-                  name: 'MCV'
-                }),
-                expect.objectContaining({
-                  code: '3015',
-                  name: 'MCH'
-                }),
-                expect.objectContaining({
-                  code: '3016',
-                  name: 'MCHC'
-                }),
-                expect.objectContaining({
-                  code: '313',
-                  name: '% Reticulocyte'
-                }),
-                expect.objectContaining({
-                  code: '318',
-                  name: 'Reticulocytes'
-                }),
-                expect.objectContaining({
-                  code: '7004',
-                  name: 'Reticulocyte Hemoglobin'
-                }),
-                expect.objectContaining({
-                  code: '3010',
-                  name: 'WBC'
-                }),
-                expect.objectContaining({
-                  code: '3018',
-                  name: '% Neutrophils'
-                }),
-                expect.objectContaining({
-                  code: '3020',
-                  name: '% Lymphocytes'
-                }),
-                expect.objectContaining({
-                  code: '3021',
-                  name: '% Monocytes'
-                }),
-                expect.objectContaining({
-                  code: '3022',
-                  name: '% Eosinophils'
-                }),
-                expect.objectContaining({
-                  code: '3023',
-                  name: '% Basophils'
-                }),
-                expect.objectContaining({
-                  code: '30180',
-                  name: 'Neutrophils'
-                }),
-                expect.objectContaining({
-                  code: '30200',
-                  name: 'Lymphocytes'
-                }),
-                expect.objectContaining({
-                  code: '30210',
-                  name: 'Monocytes'
-                }),
-                expect.objectContaining({
-                  code: '30220',
-                  name: 'Eosinophils'
-                }),
-                expect.objectContaining({
-                  code: '30230',
-                  name: 'Basophils'
-                }),
-                expect.objectContaining({
-                  code: '3028',
-                  name: 'Platelets'
-                }),
-                expect.objectContaining({
-                  code: '3034',
-                  name: 'Remarks'
-                })
-              ]
-            }),
-            expect.objectContaining({
-              code: 'Chemistry',
-              observations: [
-                expect.objectContaining({
-                  code: '216',
-                  name: 'Glucose'
-                }),
-                expect.objectContaining({
-                  code: '3638',
-                  name: 'IDEXX SDMA'
-                }),
-                expect.objectContaining({
-                  code: '213',
-                  name: 'Creatinine'
-                }),
-                expect.objectContaining({
-                  code: '207',
-                  name: 'BUN'
-                }),
-                expect.objectContaining({
-                  code: '232',
-                  name: 'BUN: Creatinine Ratio'
-                }),
-                expect.objectContaining({
-                  code: '221',
-                  name: 'Phosphorus'
-                }),
-                expect.objectContaining({
-                  code: '208',
-                  name: 'Calcium'
-                }),
-                expect.objectContaining({
-                  code: '226',
-                  name: 'Sodium'
-                }),
-                expect.objectContaining({
-                  code: '229',
-                  name: 'Potassium'
-                }),
-                expect.objectContaining({
-                  code: '270',
-                  name: 'Na: K Ratio'
-                }),
-                expect.objectContaining({
-                  code: '210',
-                  name: 'Chloride'
-                }),
-                expect.objectContaining({
-                  code: '209',
-                  name: 'TCO2 (Bicarbonate)'
-                }),
-                expect.objectContaining({
-                  code: '246',
-                  name: 'Anion Gap'
-                }),
-                expect.objectContaining({
-                  code: '222',
-                  name: 'Total Protein'
-                }),
-                expect.objectContaining({
-                  code: '200',
-                  name: 'Albumin'
-                }),
-                expect.objectContaining({
-                  code: '234',
-                  name: 'Globulin'
-                }),
-                expect.objectContaining({
-                  code: '231',
-                  name: 'Albumin: Globulin Ratio'
-                }),
-                expect.objectContaining({
-                  code: '225',
-                  name: 'ALT'
-                }),
-                expect.objectContaining({
-                  code: '224',
-                  name: 'AST'
-                }),
-                expect.objectContaining({
-                  code: '201',
-                  name: 'ALP'
-                }),
-                expect.objectContaining({
-                  code: '214',
-                  name: 'GGT'
-                }),
-                expect.objectContaining({
-                  code: '204',
-                  name: 'Bilirubin - Total'
-                }),
-                expect.objectContaining({
-                  code: '233',
-                  name: 'Bilirubin - Unconjugated'
-                }),
-                expect.objectContaining({
-                  code: '205',
-                  name: 'Bilirubin - Conjugated'
-                }),
-                expect.objectContaining({
-                  code: '211',
-                  name: 'Cholesterol'
-                }),
-                expect.objectContaining({
-                  code: '212',
-                  name: 'Creatine Kinase'
-                }),
-                expect.objectContaining({
-                  code: '281',
-                  name: 'Hemolysis Index'
-                }),
-                expect.objectContaining({
-                  code: '282',
-                  name: 'Lipemia Index'
-                })
-              ]
-            })
-          ]
-        })
+        testResultsSet: [
+          expect.objectContaining({
+            code: 'Hematology',
+            observations: [
+              expect.objectContaining({
+                code: '3011',
+                name: 'RBC'
+              }),
+              expect.objectContaining({
+                code: '3013',
+                name: 'Hematocrit'
+              }),
+              expect.objectContaining({
+                code: '3012',
+                name: 'Hemoglobin'
+              }),
+              expect.objectContaining({
+                code: '3014',
+                name: 'MCV'
+              }),
+              expect.objectContaining({
+                code: '3015',
+                name: 'MCH'
+              }),
+              expect.objectContaining({
+                code: '3016',
+                name: 'MCHC'
+              }),
+              expect.objectContaining({
+                code: '313',
+                name: '% Reticulocyte'
+              }),
+              expect.objectContaining({
+                code: '318',
+                name: 'Reticulocytes'
+              }),
+              expect.objectContaining({
+                code: '7004',
+                name: 'Reticulocyte Hemoglobin'
+              }),
+              expect.objectContaining({
+                code: '3010',
+                name: 'WBC'
+              }),
+              expect.objectContaining({
+                code: '3018',
+                name: '% Neutrophils'
+              }),
+              expect.objectContaining({
+                code: '3020',
+                name: '% Lymphocytes'
+              }),
+              expect.objectContaining({
+                code: '3021',
+                name: '% Monocytes'
+              }),
+              expect.objectContaining({
+                code: '3022',
+                name: '% Eosinophils'
+              }),
+              expect.objectContaining({
+                code: '3023',
+                name: '% Basophils'
+              }),
+              expect.objectContaining({
+                code: '30180',
+                name: 'Neutrophils'
+              }),
+              expect.objectContaining({
+                code: '30200',
+                name: 'Lymphocytes'
+              }),
+              expect.objectContaining({
+                code: '30210',
+                name: 'Monocytes'
+              }),
+              expect.objectContaining({
+                code: '30220',
+                name: 'Eosinophils'
+              }),
+              expect.objectContaining({
+                code: '30230',
+                name: 'Basophils'
+              }),
+              expect.objectContaining({
+                code: '3028',
+                name: 'Platelets'
+              }),
+              expect.objectContaining({
+                code: '3034',
+                name: 'Remarks'
+              })
+            ]
+          }),
+          expect.objectContaining({
+            code: 'Chemistry',
+            observations: [
+              expect.objectContaining({
+                code: '216',
+                name: 'Glucose'
+              }),
+              expect.objectContaining({
+                code: '3638',
+                name: 'IDEXX SDMA'
+              }),
+              expect.objectContaining({
+                code: '213',
+                name: 'Creatinine'
+              }),
+              expect.objectContaining({
+                code: '207',
+                name: 'BUN'
+              }),
+              expect.objectContaining({
+                code: '232',
+                name: 'BUN: Creatinine Ratio'
+              }),
+              expect.objectContaining({
+                code: '221',
+                name: 'Phosphorus'
+              }),
+              expect.objectContaining({
+                code: '208',
+                name: 'Calcium'
+              }),
+              expect.objectContaining({
+                code: '226',
+                name: 'Sodium'
+              }),
+              expect.objectContaining({
+                code: '229',
+                name: 'Potassium'
+              }),
+              expect.objectContaining({
+                code: '270',
+                name: 'Na: K Ratio'
+              }),
+              expect.objectContaining({
+                code: '210',
+                name: 'Chloride'
+              }),
+              expect.objectContaining({
+                code: '209',
+                name: 'TCO2 (Bicarbonate)'
+              }),
+              expect.objectContaining({
+                code: '246',
+                name: 'Anion Gap'
+              }),
+              expect.objectContaining({
+                code: '222',
+                name: 'Total Protein'
+              }),
+              expect.objectContaining({
+                code: '200',
+                name: 'Albumin'
+              }),
+              expect.objectContaining({
+                code: '234',
+                name: 'Globulin'
+              }),
+              expect.objectContaining({
+                code: '231',
+                name: 'Albumin: Globulin Ratio'
+              }),
+              expect.objectContaining({
+                code: '225',
+                name: 'ALT'
+              }),
+              expect.objectContaining({
+                code: '224',
+                name: 'AST'
+              }),
+              expect.objectContaining({
+                code: '201',
+                name: 'ALP'
+              }),
+              expect.objectContaining({
+                code: '214',
+                name: 'GGT'
+              }),
+              expect.objectContaining({
+                code: '204',
+                name: 'Bilirubin - Total'
+              }),
+              expect.objectContaining({
+                code: '233',
+                name: 'Bilirubin - Unconjugated'
+              }),
+              expect.objectContaining({
+                code: '205',
+                name: 'Bilirubin - Conjugated'
+              }),
+              expect.objectContaining({
+                code: '211',
+                name: 'Cholesterol'
+              }),
+              expect.objectContaining({
+                code: '212',
+                name: 'Creatine Kinase'
+              }),
+              expect.objectContaining({
+                code: '281',
+                name: 'Hemolysis Index'
+              }),
+              expect.objectContaining({
+                code: '282',
+                name: 'Lipemia Index'
+              })
+            ]
+          })
+        ]
+      })
       )
     })
   })
@@ -1783,6 +1783,43 @@ describe('ReportsService', () => {
         })
 
         expect(eventsServiceMock.addEvent).toHaveBeenCalledTimes(resultsMissing01.length)
+      })
+      it('should create order with patient, client and vet names', async () => {
+        const unknownResults: ProviderResult[] = FileUtils.loadFile('test/antech/results_unknown_unknown.json')
+        jest.spyOn(reportsService, 'findReportsByExternalOrderIds').mockResolvedValueOnce([])
+        jest.spyOn(ordersServiceMock, 'getOrderFromProvider').mockResolvedValue(null)
+        await reportsService.handleExternalResults({
+          integrationId: 'antech',
+          results: unknownResults
+        })
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
+          namespace: EventNamespace.ORDERS,
+          type: EventType.ORDER_CREATED,
+          data: expect.objectContaining({
+            order: expect.objectContaining({
+              integrationId: 'antech',
+              status: 'COMPLETED',
+              tests: [{ code: '2340' }],
+              patient: { name: 'STONE', sex: 'M', species: 'Canine' },
+              client: { firstName: 'Manon', lastName: 'Galloway' },
+              veterinarian: { lastName: 'Banfield,Staff' }
+            })
+          })
+        }))
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
+          namespace: EventNamespace.ORDERS,
+          type: EventType.ORDER_CREATED,
+          data: expect.objectContaining({
+            order: expect.objectContaining({
+              integrationId: 'antech',
+              status: 'COMPLETED',
+              tests: [{ code: '2340' }],
+              patient: { name: 'JEFFERY', sex: 'M', species: 'Canine' },
+              client: { firstName: 'Emily', lastName: 'Marshall' },
+              veterinarian: { lastName: 'Banfield,Staff' }
+            })
+          })
+        }))
       })
     })
     describe('Heska', () => {
