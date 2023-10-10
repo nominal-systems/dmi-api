@@ -14,6 +14,8 @@ import { EventNamespace } from '../events/constants/event-namespace.enum'
 import { EventType } from '../events/constants/event-type.enum'
 import { FileUtils } from '../common/utils/file-utils'
 import { Order } from '../orders/entities/order.entity'
+import { ExternalResultEventData } from '../common/typings/external-result-event-data.interface'
+import { HttpException, HttpStatus } from '@nestjs/common'
 
 const repositoryMockFactory: () => MockUtils<Repository<any>> = jest.fn(() => ({
   findOne: jest.fn(entity => entity),
@@ -1820,6 +1822,13 @@ describe('ReportsService', () => {
             })
           })
         }))
+      })
+      it('should handle non-existing orders', async () => {
+        const resultBatch: ExternalResultEventData = FileUtils.loadFile('test/idexx/anicura-batchResults.json')
+        jest.spyOn(ordersServiceMock, 'getOrderFromProvider').mockImplementation(async () => {
+          throw new HttpException('Order not found', HttpStatus.NOT_FOUND)
+        })
+        await reportsService.handleExternalResults(resultBatch)
       })
     })
     describe('Heska', () => {

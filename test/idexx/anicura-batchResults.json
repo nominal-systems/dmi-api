@@ -1,0 +1,102 @@
+{
+  "batchId": "NzMyODA4LTUxMTg2MDc1MDEwNjYyNDA",
+  "hasMoreResults": true,
+  "results": [
+    {
+      "id": "vcp.RMjAyMzEwMDQwMDE1ODk2NTkwMjE",
+      "orderId": "12802591",
+      "status": "COMPLETED",
+      "testResults": [
+        {
+          "seq": 1,
+          "code": "Molecular Diagnostics",
+          "name": "Diagnóstico molecular",
+          "items": [
+            {
+              "seq": 1,
+              "code": "MOQP",
+              "name": "Virus del moquillo canino RealPCR",
+              "status": "DONE",
+              "valueString": "NEGATIVO",
+              "notes": "NEGATIVO"
+            },
+            {
+              "seq": 2,
+              "code": "BARTSP",
+              "name": "Bartonella spp. RealPCR",
+              "status": "DONE",
+              "valueString": "NEGATIVO",
+              "notes": "NEGATIVO"
+            },
+            {
+              "seq": 3,
+              "code": "LEISQ",
+              "name": "Leishmania spp. RealPCR",
+              "status": "DONE",
+              "notes": "No se detectan parásitos / ml de líquido cefalorraquídeo\nUn resultado NEGATIVO a Leishmania spp. por PCR indica que no se ha detectado DNA de Leishmania en la muestra remitida y que se deberían buscar otras etiologías como causantes de la enfermedad clínica, incluyendo otras infecciones transmitidas por vectores.\nSin embargo, un resultado NEGATIVO puede ser causado por un número de parásitos más bajo que el límite de detección de la técnica (LDD: 1 parásito), disminución del número de organismos debido al tratamiento o a un estado de portador crónico, también por la existencia de nuevas variantes del parásito.\nNEGATIVO"
+            },
+            {
+              "seq": 4,
+              "code": "CRYPNP",
+              "name": "Cryptococcus neoformans / C. gatti RealPCR",
+              "status": "DONE",
+              "valueString": "NEGATIVO",
+              "notes": "NEGATIVO"
+            },
+            {
+              "seq": 5,
+              "code": "NEOSP",
+              "name": "Neospora spp. RealPCR",
+              "status": "DONE",
+              "valueString": "NEGATIVO",
+              "notes": "NEGATIVO"
+            },
+            {
+              "seq": 6,
+              "code": "TOXP",
+              "name": "Toxoplasma gondii RealPCR",
+              "status": "DONE",
+              "valueString": "NEGATIVO",
+              "notes": "NEGATIVO"
+            }
+          ]
+        },
+        {
+          "seq": 2,
+          "code": "Pathology",
+          "name": "Patología",
+          "items": [
+            {
+              "seq": 1,
+              "code": "LCR",
+              "name": "Líquido cefalorraquídeo (LCR)",
+              "status": "DONE",
+              "notes": "Historia clínica:\nRous, Bretón macho de 12 años de edad con nistagmo y pérdida de equilibrio desde hace tres meses, positivo a leishmaniosis con analítica general correcta. Se toman muestras de LCR para estudio\nDescripción del líquido:\nSe recibe un tubo de EDTA con 0.3 ml de líquido incoloro. El recuento automático del líquido indica una concentración de  3 células nucleadas/microlitro. El índice proteico del líquido es de 26 mg/dL. Se realiza una concentración del líquido para su examen microscópico.\nDescripción microscópica:\nSe examina una preparación de escasa celularidad con moderada conservación de la morfología celular. El fondo es claro, raramente con núcleos rotos. Raramente se detectan células mononucleares pequeñas y células epiteliales sugestivas de células del plexo coroideo. No se visualizan agentes infecciosos.\nDiagnóstico:\nSin alteraciones clínico-patológicas \nComentarios:\nLa poca celularidad del líquido y la baja concentración de proteínas son consistentes con un líquido cefalorraquídeo dentro de la normalidad. Estos hallazgos deberían correlacionarse con el cuadro clínico del paciente. Pese a la presencia de signos neurológicos, ciertas patologías estructurales (hidrocéfalo congénito…), alteraciones metabólicas, desórdenes funcionales, daño isquémico/vascular o idiopático, pueden presentarse con un LCR dentro de la normalidad. Aunque es poco habitual, en ocasiones infecciones por moquillo, neoplasias y meningitis granulomatosas, también pueden cursar con un líquido cefalorraquídeo sin alteraciones.\nEsther Torrent Galindo. LV, MS, Dipl. ECVCP.\n."
+            },
+            {
+              "seq": 2,
+              "code": "CPT5",
+              "name": "Proteínas totales en LCR",
+              "status": "DONE",
+              "valueQuantity": {
+                "value": 26,
+                "units": "mg/dl"
+              }
+            },
+            {
+              "seq": 3,
+              "code": "CEL5",
+              "name": "Recuento de células nucleadas - LCR",
+              "status": "DONE",
+              "valueQuantity": {
+                "value": 3,
+                "units": "Cels/µl"
+              },
+              "notes": "."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
