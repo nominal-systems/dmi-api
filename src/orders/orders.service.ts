@@ -31,6 +31,7 @@ import { ExternalOrderMapper } from './mappers/external-order.mapper'
 import { ExternalResultEventData } from '../common/typings/external-result-event-data.interface'
 import { ProviderResultUtils } from '../common/utils/provider-result-utils'
 import { ProviderConfiguration } from '../providers/entities/provider-configuration.entity'
+import { RefsService } from '../refs/refs.service'
 
 interface OrderTestCancelOrAddParams {
   orderId: string
@@ -50,6 +51,7 @@ export class OrdersService {
     @Inject(ReportsService) private readonly reportsService: ReportsService,
     @Inject(IntegrationsService) private readonly integrationsService: IntegrationsService,
     @Inject(EventsService) private readonly eventsService: EventsService,
+    @Inject(RefsService) private readonly refsService: RefsService,
     @Inject('ACTIVEMQ') private readonly client: ClientProxy
   ) {
     this.nodeEnv = this.configService.get('nodeEnv')
@@ -211,7 +213,9 @@ export class OrdersService {
         relations: ['providerConfiguration', 'practice', 'practice.identifier']
       }
     })
-
+    const { providerConfiguration, integrationOptions } = integration
+    const { configurationOptions, providerId } = providerConfiguration
+    createOrderDto.patient = await this.refsService.mapPatientRefs(providerId, createOrderDto.patient)
     // Accept order
     const order = this.ordersRepository.create(createOrderDto)
     order.status = OrderStatus.ACCEPTED
@@ -234,9 +238,6 @@ export class OrdersService {
         order: newOrder
       }
     })
-
-    const { providerConfiguration, integrationOptions } = integration
-    const { configurationOptions, providerId } = providerConfiguration
 
     if (this.nodeEnv === 'seed') return order
 
