@@ -6,6 +6,7 @@ import { Ref } from './entities/ref.entity'
 import { ProviderRef } from './entities/providerRef.entity'
 import { CreateRefsDTO } from './dtos/create-refs.dto'
 import { Provider } from '../providers/entities/provider.entity'
+import { CreateOrderDtoPatient } from '../orders/dtos/create-order.dto'
 
 @Injectable()
 export class RefsService {
@@ -151,6 +152,15 @@ export class RefsService {
     return ref
   }
 
+  async findOneByCodeAndProvider (code: string, provider?: string): Promise<Ref | undefined> {
+    return await this.refRepository.createQueryBuilder('ref')
+      .leftJoin('ref.providerRef', 'providerRef')
+      .leftJoin('providerRef.provider', 'provider', 'provider.id = providerRef.provider')
+      .select(['ref', 'providerRef', 'provider.id'])
+      .where('ref.code = :code AND providerRef.provider = :provider', { code, provider: provider })
+      .getOne()
+  }
+
   async findProvidersMappedRefs (): Promise<any> {
     const refs = await this.providerRefRepository.createQueryBuilder('providerRefs')
       .leftJoin('providerRefs.ref', 'ref', 'ref.id = providerRefs.ref')
@@ -168,5 +178,39 @@ export class RefsService {
     }, { mappedRefs: [] as ProviderRef[], unmappedRefs: [] as ProviderRef[] })
 
     return { mappedRefs, unmappedRefs }
+  }
+
+  async mapPatientRefs (providerId: string, patient: CreateOrderDtoPatient): Promise<CreateOrderDtoPatient> {
+    let sex = await this.findOneByCodeAndProvider(patient.sex, providerId)
+    console.log('🚀 ~ file: refs.service.ts:185 ~ RefsService ~ mapPatientRefs ~ sex:', sex)
+    if (sex === undefined) {
+      const defaultSex = await this.providersService.getProviderDefaults(providerId, 'sex')
+      if (defaultSex === undefined) {
+        throw new NotFoundException('Sex not found')
+      }
+      sex = defaultSex
+      console.log('🚀 ~ file: refs.service.ts:188 ~ RefsService ~ mapPatientRefs ~ sex:', sex)
+    }
+    const species = await this.findOneByCodeAndProvider(patient.species, providerId)
+    console.log('🚀 ~ file: refs.service.ts:192 ~ RefsService ~ mapPatientRefs ~ species:', species)
+    if (species === undefined) {
+      throw new NotFoundException('Species not found')
+    }
+    let breed = await this.findOneByCodeAndProvider(patient.breed, providerId)
+    console.log('🚀 ~ file: refs.service.ts:196 ~ RefsService ~ mapPatientRefs ~ breed:', breed)
+    if (breed === undefined) {
+      const defaultBreed = await this.providersService.getProviderDefaults(providerId, 'breed')
+      if (defaultBreed === undefined) {
+        throw new NotFoundException('Breed not found')
+      }
+      breed = defaultBreed
+    }
+
+    return {
+      ...patient,
+      sex: sex !== undefined ? sex.code : '',
+      species: species.code,
+      breed: breed !== undefined ? breed.code : ''
+    }
   }
 }

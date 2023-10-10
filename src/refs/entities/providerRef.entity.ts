@@ -1,8 +1,9 @@
 import { Provider } from '../../providers/entities/provider.entity'
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm'
+import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm'
 import { Ref } from './ref.entity'
 
 @Entity()
+@Index('idx_provider_ref_code', ['code'])
 export class ProviderRef {
   @PrimaryGeneratedColumn()
   id: number
