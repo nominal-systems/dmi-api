@@ -118,137 +118,141 @@ export class ReportsService {
     integrationId,
     results
   }: ExternalResultEventData): Promise<void> {
-    const integration = await this.integrationsService.findById(integrationId)
-    const externalOrderIds = [...new Set(
-      results
-        .filter(result => !isNullOrEmpty(result.orderId) && isNullOrEmpty(result.order))
-        .map(result => result.orderId)
-    )]
-    const orphanResults = results
-      .filter(result => isNullOrEmpty(result.orderId) || !isNullOrEmpty(result.order))
-    const createdReports: Report[] = []
-    const updatedReports: Report[] = []
-    const createdOrders: Order[] = []
+    try {
+      const integration = await this.integrationsService.findById(integrationId)
+      const externalOrderIds = [...new Set(
+        results
+          .filter(result => !isNullOrEmpty(result.orderId) && isNullOrEmpty(result.order))
+          .map(result => result.orderId)
+      )]
+      const orphanResults = results
+        .filter(result => isNullOrEmpty(result.orderId) || !isNullOrEmpty(result.order))
+      const createdReports: Report[] = []
+      const updatedReports: Report[] = []
+      const createdOrders: Order[] = []
 
-    // Update existing reports with new results
-    const existingReports = await this.findReportsByExternalOrderIds(externalOrderIds)
-    for (const report of existingReports) {
-      const resultsForReport = results.filter(result => result.orderId === report.order.externalId)
-      const updated = await this.updateReportResults(report, resultsForReport)
-      if (updated) {
-        updatedReports.push(report)
-      }
-    }
-
-    // Create external orders
-    const externalOrders: ExternalOrder[] = []
-    const nonExistingReportExternalOrderIds = arrayDiff(externalOrderIds, existingReports.map(report => report.order.externalId))
-    const nonExistingReportOrders = await this.ordersService.findOrdersByExternalIds(nonExistingReportExternalOrderIds)
-    const nonExistingOrderExternalIds = arrayDiff(nonExistingReportExternalOrderIds, nonExistingReportOrders.map(order => order.externalId))
-    for (const externalOrderId of nonExistingOrderExternalIds) {
-      const externalOrder = await this.ordersService.getOrderFromProvider(externalOrderId, integration.providerConfiguration, integration.integrationOptions)
-      if (externalOrder == null) {
-        this.logger.warn(`Order from provider not found -> External ID: ${externalOrderId}`)
-        continue
-      }
-      this.logger.debug(`Getting order from provider -> External ID: ${externalOrderId}`)
-      const order = await this.ordersService.createExternalOrder(integrationId, externalOrder)
-      createdOrders.push(order)
-      const resultForOrder = results.filter(result => result.orderId === order.externalId)
-      await this.ordersService.updateOrderStatusFromResults(order, resultForOrder[0])
-      externalOrders.push(externalOrder)
-    }
-
-    // Create orders for orphan results
-    const dummyOrders: Order[] = []
-    for (const orphanResult of orphanResults) {
-      const extractedOrder: Order = ProviderResultUtils.extractOrderFromOrphanResult(orphanResult, integrationId)
-
-      // Finding if order exists and saving order are done in parallel to improve performance.
-      let order: Order | null
-      try {
-        order = await this.ordersService.findOneByExternalId(extractedOrder.externalId)
-      } catch (err) {
-        order = null
-      }
-
-      if (order == null) {
-        order = await this.ordersService.saveOrder(extractedOrder)
-        dummyOrders.push(order)
-      }
-
-      let report = await this.findReportByExternalOrderId(order.externalId)
-      if (report == null) {
-        report = new Report()
-        report.order = order
-        report.testResultsSet = []
-        if (order.patient !== undefined) {
-          report.patient = order.patient
+      // Update existing reports with new results
+      const existingReports = await this.findReportsByExternalOrderIds(externalOrderIds)
+      for (const report of existingReports) {
+        const resultsForReport = results.filter(result => result.orderId === report.order.externalId)
+        const updated = await this.updateReportResults(report, resultsForReport)
+        if (updated) {
+          updatedReports.push(report)
         }
-        await this.updateReportResults(report, [orphanResult])
+      }
+
+      // Create external orders
+      const externalOrders: ExternalOrder[] = []
+      const nonExistingReportExternalOrderIds = arrayDiff(externalOrderIds, existingReports.map(report => report.order.externalId))
+      const nonExistingReportOrders = await this.ordersService.findOrdersByExternalIds(nonExistingReportExternalOrderIds)
+      const nonExistingOrderExternalIds = arrayDiff(nonExistingReportExternalOrderIds, nonExistingReportOrders.map(order => order.externalId))
+      for (const externalOrderId of nonExistingOrderExternalIds) {
+        const externalOrder = await this.ordersService.getOrderFromProvider(externalOrderId, integration.providerConfiguration, integration.integrationOptions)
+        if (externalOrder == null) {
+          this.logger.warn(`Order from provider not found -> External ID: ${externalOrderId}`)
+          continue
+        }
+        this.logger.debug(`Getting order from provider -> External ID: ${externalOrderId}`)
+        const order = await this.ordersService.createExternalOrder(integrationId, externalOrder)
+        createdOrders.push(order)
+        const resultForOrder = results.filter(result => result.orderId === order.externalId)
+        await this.ordersService.updateOrderStatusFromResults(order, resultForOrder[0])
+        externalOrders.push(externalOrder)
+      }
+
+      // Create orders for orphan results
+      const dummyOrders: Order[] = []
+      for (const orphanResult of orphanResults) {
+        const extractedOrder: Order = ProviderResultUtils.extractOrderFromOrphanResult(orphanResult, integrationId)
+
+        // Finding if order exists and saving order are done in parallel to improve performance.
+        let order: Order | null
+        try {
+          order = await this.ordersService.findOneByExternalId(extractedOrder.externalId)
+        } catch (err) {
+          order = null
+        }
+
+        if (order == null) {
+          order = await this.ordersService.saveOrder(extractedOrder)
+          dummyOrders.push(order)
+        }
+
+        let report = await this.findReportByExternalOrderId(order.externalId)
+        if (report == null) {
+          report = new Report()
+          report.order = order
+          report.testResultsSet = []
+          if (order.patient !== undefined) {
+            report.patient = order.patient
+          }
+          await this.updateReportResults(report, [orphanResult])
+          createdReports.push(report)
+        } else {
+          if (order.patient !== undefined) {
+            report.patient = order.patient
+          }
+          await this.updateReportResults(report, [orphanResult])
+          updatedReports.push(report)
+        }
+      }
+
+      // Notify about new orders
+      for (const order of [...createdOrders, ...dummyOrders]) {
+        await this.eventsService.addEvent({
+          namespace: EventNamespace.ORDERS,
+          type: EventType.ORDER_CREATED,
+          integrationId: integrationId,
+          data: {
+            practice: integration.practice,
+            orderId: order.id,
+            order: order
+          }
+        })
+      }
+
+      // Create new reports with unmatched results
+      for (const order of [...nonExistingReportOrders, ...createdOrders]) {
+        const report = this.buildRegisteredReport(order)
+        const resultsForReport = results.filter(result => result.orderId === order.externalId)
+        await this.updateReportResults(report, resultsForReport)
         createdReports.push(report)
-      } else {
-        if (order.patient !== undefined) {
-          report.patient = order.patient
-        }
-        await this.updateReportResults(report, [orphanResult])
-        updatedReports.push(report)
       }
-    }
 
-    // Notify about new orders
-    for (const order of [...createdOrders, ...dummyOrders]) {
-      await this.eventsService.addEvent({
-        namespace: EventNamespace.ORDERS,
-        type: EventType.ORDER_CREATED,
-        integrationId: integrationId,
-        data: {
-          practice: integration.practice,
-          orderId: order.id,
-          order: order
-        }
-      })
-    }
+      // Notify about new reports
+      for (const report of createdReports) {
+        await this.eventsService.addEvent({
+          namespace: EventNamespace.REPORTS,
+          type: EventType.REPORT_CREATED,
+          integrationId: integrationId,
+          data: {
+            practice: integration.practice,
+            orderId: report.orderId,
+            reportId: report.id,
+            report: report
+          }
+        })
+      }
 
-    // Create new reports with unmatched results
-    for (const order of [...nonExistingReportOrders, ...createdOrders]) {
-      const report = this.buildRegisteredReport(order)
-      const resultsForReport = results.filter(result => result.orderId === order.externalId)
-      await this.updateReportResults(report, resultsForReport)
-      createdReports.push(report)
-    }
+      // Notify about updated reports
+      for (const report of updatedReports) {
+        await this.eventsService.addEvent({
+          namespace: EventNamespace.REPORTS,
+          type: EventType.REPORT_UPDATED,
+          integrationId: integrationId,
+          data: {
+            practice: integration.practice,
+            orderId: report.orderId,
+            reportId: report.id,
+            report: report
+          }
+        })
+      }
 
-    // Notify about new reports
-    for (const report of createdReports) {
-      await this.eventsService.addEvent({
-        namespace: EventNamespace.REPORTS,
-        type: EventType.REPORT_CREATED,
-        integrationId: integrationId,
-        data: {
-          practice: integration.practice,
-          orderId: report.orderId,
-          reportId: report.id,
-          report: report
-        }
-      })
+      this.logger.log(`external_results -> Got ${results.length} results from ${integration.providerConfiguration.providerId}: ${createdReports.length} reports created, ${updatedReports.length} reports updated, orders ${[...createdOrders, ...dummyOrders].length} orders created`)
+    } catch (error) {
+      this.logger.log(`external_results -> No order found for ${integrationId} nor created`)
     }
-
-    // Notify about updated reports
-    for (const report of updatedReports) {
-      await this.eventsService.addEvent({
-        namespace: EventNamespace.REPORTS,
-        type: EventType.REPORT_UPDATED,
-        integrationId: integrationId,
-        data: {
-          practice: integration.practice,
-          orderId: report.orderId,
-          reportId: report.id,
-          report: report
-        }
-      })
-    }
-
-    this.logger.log(`external_results -> Got ${results.length} results from ${integration.providerConfiguration.providerId}: ${createdReports.length} reports created, ${updatedReports.length} reports updated, orders ${[...createdOrders, ...dummyOrders].length} orders created`)
   }
 
   async findReportsByExternalOrderIds (
