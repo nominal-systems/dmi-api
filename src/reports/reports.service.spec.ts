@@ -1226,7 +1226,8 @@ describe('ReportsService', () => {
     it('should save report with results in sequence', async () => {
       const updated = await reportsService.updateReportResults(report, results)
       expect(updated).toEqual(true)
-      expect(reportsRepositoryMock.save).toBeCalledWith(expect.objectContaining({
+      expect(reportsRepositoryMock.save).toBeCalledWith(expect.objectContaining(
+        {
           testResultsSet: [
             expect.objectContaining({
               code: 'Hematology',
@@ -1768,6 +1769,7 @@ describe('ReportsService', () => {
         })
         expect(async () => {
           await reportsService.handleExternalResults(resultBatch)
+          jest.clearAllMocks()
         }).not.toThrow()
       })
     })
