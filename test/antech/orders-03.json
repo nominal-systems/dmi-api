@@ -1,0 +1,16 @@
+[
+    {
+        "externalId": "125603216",
+        "status": "SUBMITTED",
+        "tests": [
+            {
+                "code": "T805"
+            }
+        ],
+        "manifest": {
+            "uri": "https://pims-onboard.antechdiagnostics.com/LabOrders/PDFPIMS?accessToken=&ClinicAccessionID=125603216&IsView=1"
+        },
+        "submissionUri": "https://pims-onboard.antechdiagnostics.com/views/order.html?accessToken=&ClinicAccessionID=125603216",
+        "editable": false
+    }
+]

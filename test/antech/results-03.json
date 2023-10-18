@@ -1,0 +1,52 @@
+[
+    {
+        "id": "63489b91-292e-4f93-ba4f-ba10a9648a64",
+        "orderId": "125603216",
+        "accession": "IROP00907047",
+        "status": "COMPLETED",
+        "testResults": [
+            {
+                "seq": 1,
+                "code": "BANT805",
+                "name": "Banfield Ova and Parasite",
+                "items": [
+                    {
+                        "seq": 1,
+                        "code": "2340",
+                        "name": "Ova & Parasite",
+                        "status": "DONE",
+                        "valueString": "NONE SEEN"
+                    }
+                ]
+            }
+        ],
+        "order": {
+            "externalId": "125603216",
+            "status": "COMPLETED",
+            "patient": {
+                "name": "ZEUS",
+                "sex": "CM",
+                "species": "Canine",
+                "breed": "Pomeranian"
+            },
+            "client": {
+                "lastName": "Romero",
+                "firstName": "Graciela"
+            },
+            "tests": [
+                {
+                    "code": "BANT805"
+                }
+            ],
+            "veterinarian": {
+                "firstName": "Banfield",
+                "lastName": "Staff"
+            },
+            "manifest": {
+                "uri": "https://onlineapi-onboard.antechdiagnostics.com/api/v1.1/LabOrders/PDFPIMS?isView=1&ClinicAccessionID=125603216&accessToken=07D4862455230074E0630A8001D40074",
+                "contentType": "application/pdf",
+                "data": ""
+            }
+        }
+    }
+]

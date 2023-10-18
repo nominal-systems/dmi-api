@@ -168,5 +168,25 @@ describe('OrdersService', () => {
         expect(eventsServiceMock.addEvent).not.toHaveBeenCalled()
       })
     })
+    describe('Antech', () => {
+      it('should update order with result order info', async () => {
+        const order = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'test', 'antech', 'orders-03.json'), 'utf8'))
+        const result = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'test', 'antech', 'results-03.json'), 'utf8'))
+        const updatedOrder = await ordersService.updateOrderFromResult(order[0], result[0])
+        expect(updatedOrder).toEqual({
+          externalId: '125603216',
+          status: 'COMPLETED',
+          tests: [{ code: 'T805' }],
+          manifest: {
+            uri: 'https://pims-onboard.antechdiagnostics.com/LabOrders/PDFPIMS?accessToken=&ClinicAccessionID=125603216&IsView=1'
+          },
+          submissionUri: 'https://pims-onboard.antechdiagnostics.com/views/order.html?accessToken=&ClinicAccessionID=125603216',
+          editable: false,
+          patient: { name: 'ZEUS', sex: 'CM', species: 'Canine', breed: 'Pomeranian' },
+          client: { lastName: 'Romero', firstName: 'Graciela' },
+          veterinarian: { firstName: 'Banfield', lastName: 'Staff' }
+        })
+      })
+    })
   })
 })

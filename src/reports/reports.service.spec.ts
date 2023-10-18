@@ -36,7 +36,8 @@ describe('ReportsService', () => {
     }),
     saveOrder: jest.fn().mockImplementation((order) => order),
     createExternalOrder: jest.fn().mockImplementation((integrationId, order) => order),
-    updateOrderStatusFromResults: jest.fn().mockImplementation((order, results) => order)
+    updateOrderStatusFromResults: jest.fn().mockImplementation((order, results) => order),
+    updateOrderFromResult: jest.fn().mockImplementation((order, result) => order)
   }
   const integrationsServiceMock = {
     findById: jest.fn().mockImplementation((integrationId) => {
@@ -1834,6 +1835,60 @@ describe('ReportsService', () => {
           })
         }))
       })
+      it('should update order with patient, client and vet names', async () => {
+        const order = FileUtils.loadFile('test/antech/orders-03.json')
+        const results = FileUtils.loadFile('test/antech/results-03.json')
+        jest.spyOn(reportsService, 'findReportsByExternalOrderIds').mockResolvedValueOnce([])
+        jest.spyOn(ordersServiceMock, 'findOrdersByExternalIds').mockResolvedValue(order)
+        jest.spyOn(ordersServiceMock, 'getOrderFromProvider').mockResolvedValue(null)
+        jest.spyOn(ordersServiceMock, 'createExternalOrder').mockResolvedValue(null)
+        jest.spyOn(ordersServiceMock, 'updateOrderFromResult').mockResolvedValue({
+          externalId: '125603216',
+          status: 'COMPLETED',
+          tests: [{ code: 'T805' }],
+          manifest: {
+            uri: 'https://pims-onboard.antechdiagnostics.com/LabOrders/PDFPIMS?accessToken=&ClinicAccessionID=125603216&IsView=1'
+          },
+          submissionUri: 'https://pims-onboard.antechdiagnostics.com/views/order.html?accessToken=&ClinicAccessionID=125603216',
+          editable: false,
+          patient: { name: 'ZEUS', sex: 'CM', species: 'Canine', breed: 'Pomeranian' },
+          client: { lastName: 'Romero', firstName: 'Graciela' },
+          veterinarian: { firstName: 'Banfield', lastName: 'Staff' }
+        })
+        await reportsService.handleExternalResults({
+          integrationId: 'antech',
+          results: results
+        })
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledTimes(3)
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
+          namespace: EventNamespace.REPORTS,
+          type: EventType.REPORT_CREATED
+        }))
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
+          namespace: EventNamespace.REPORTS,
+          type: EventType.REPORT_CREATED
+        }))
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
+          namespace: EventNamespace.ORDERS,
+          type: EventType.ORDER_UPDATED,
+          data: expect.objectContaining({
+            order: expect.objectContaining({
+              externalId: '125603216',
+              status: 'COMPLETED',
+              tests: [{ code: 'T805' }],
+              manifest: {
+                uri: 'https://pims-onboard.antechdiagnostics.com/LabOrders/PDFPIMS?accessToken=&ClinicAccessionID=125603216&IsView=1'
+              },
+              submissionUri: 'https://pims-onboard.antechdiagnostics.com/views/order.html?accessToken=&ClinicAccessionID=125603216',
+              editable: false,
+              patient: { name: 'ZEUS', sex: 'CM', species: 'Canine', breed: 'Pomeranian' },
+              client: { lastName: 'Romero', firstName: 'Graciela' },
+              veterinarian: { firstName: 'Banfield', lastName: 'Staff' }
+            })
+          })
+        }))
+        eventsServiceMock.addEvent.mockReset()
+      })
     })
     describe('Heska', () => {
       it('should correctly match results for an order with a result batch', async () => {
@@ -1843,6 +1898,40 @@ describe('ReportsService', () => {
         jest.spyOn(ordersServiceMock, 'getOrderFromProvider').mockResolvedValue({
           externalId: 'DMI-DR94877',
           status: 'COMPLETED'
+        } as unknown as Order)
+        jest.spyOn(ordersServiceMock, 'createExternalOrder').mockResolvedValue({
+          id: '05993706-908a-4b01-a580-40e91b0e10f1',
+          externalId: '94654511',
+          integrationId: '7ccddb41-e991-4264-8050-6e95d35855d2',
+          status: 'COMPLETED',
+          createdAt: '2023-09-19T16:54:06.638Z',
+          updatedAt: '2023-10-18T23:46:07.000Z',
+          patient: {
+            name: 'Loki',
+            sex: 'M',
+            species: 'Feline',
+            breed: 'Domestic Shorthair',
+            id: '9a687da3-496b-46b0-b9a9-00e044f2f4e1'
+          },
+          client: {
+            lastName: 'Viglianco',
+            firstName: 'Juan',
+            id: '7e3af721-cf38-4e02-9388-ba994f98ba9d',
+            isStaff: false
+          },
+          tests: [
+            {
+              code: 'SA804'
+            },
+            {
+              code: 'T615'
+            }
+          ],
+          veterinarian: {
+            firstName: 'Test',
+            lastName: 'Doc',
+            id: '550b7d39-ea68-4e75-ba60-988f13b96877'
+          }
         } as unknown as Order)
         await reportsService.handleExternalResults({
           integrationId: 'heska',

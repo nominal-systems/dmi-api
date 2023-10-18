@@ -677,6 +677,18 @@ export class OrdersService {
     return updated
   }
 
+  async updateOrderFromResult (
+    order: Order,
+    result: ProviderResult
+  ): Promise<Order> {
+    if (result.order !== undefined) {
+      if (updateOrder(order, result.order)) {
+        await this.ordersRepository.save(order)
+      }
+    }
+    return order
+  }
+
   extractOrderFromResult (
     result: ProviderResult
   ): Order {
