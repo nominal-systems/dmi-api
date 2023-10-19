@@ -47,6 +47,12 @@ import { Ref } from '../refs/entities/ref.entity'
 import { Provider } from '../providers/entities/provider.entity'
 import { ProviderRef } from '../refs/entities/providerRef.entity'
 import { ProviderRefService } from '../refs/providerRef.service'
+import {
+  ProviderExternalRequestDocument,
+  ProviderExternalRequests
+} from '../providers/entities/provider-external-requests.entity'
+import { ExternalRequestsQueryparams } from '../providers/dtos/external-requests-queryparams.dto'
+import { FilterQuery } from 'mongoose'
 
 @Controller('admin')
 export class AdminController {
@@ -437,5 +443,14 @@ export class AdminController {
       providerId,
       providerOptionId
     )
+  }
+
+  @Get('/external-requests')
+  @UseGuards(AdminGuard)
+  async getExternalRequests (
+    @Query() queryparams: ExternalRequestsQueryparams
+  ): Promise<ProviderExternalRequests[]> {
+    const options: FilterQuery<ProviderExternalRequestDocument> = {}
+    return await this.providersService.findExternalRequests(options)
   }
 }

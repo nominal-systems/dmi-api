@@ -17,7 +17,7 @@ import {
   ProviderExternalRequestDocument,
   ProviderExternalRequests
 } from '../entities/provider-external-requests.entity'
-import { Model } from 'mongoose'
+import { FilterQuery, Model } from 'mongoose'
 import { InjectModel } from '@nestjs/mongoose'
 import { ProviderRawDataDto } from '../dtos/provider-raw-data.dto'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -27,6 +27,7 @@ import { UpdateProviderDto } from '../dtos/update-provider.dto'
 import { ProviderOption } from '../entities/provider-option.entity'
 import { ProviderOptionDto } from '../dtos/provider-option.dto'
 import { nestKeys } from '../../common/utils/nest-keys'
+import { EventDocument } from '../../events/entities/event.entity'
 
 @Injectable()
 export class ProvidersService {
@@ -269,6 +270,16 @@ export class ProvidersService {
     }
 
     await this.providerExternalRequestsModel.create(rawData)
+  }
+
+  async findExternalRequests (
+    options: FilterQuery<ProviderExternalRequestDocument> = {},
+    page = 1
+  ): Promise<ProviderExternalRequests[]> {
+    return await this.providerExternalRequestsModel.find(options, { __v: 0, _id: 0, body: 0, payload: 0 })
+      .limit(10)
+      .sort({ createdAt: -1 })
+      .lean()
   }
 
   async update (provider: UpdateProviderDto): Promise<void> {
