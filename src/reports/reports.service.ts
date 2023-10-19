@@ -218,20 +218,6 @@ export class ReportsService {
     for (const order of [...nonExistingReportOrders, ...createdOrders]) {
       const report = this.buildRegisteredReport(order)
       const resultsForReport = results.filter(result => result.orderId === order.externalId)
-      for (const result of resultsForReport) {
-        const updatedOrder = await this.ordersService.updateOrderFromResult(order, result)
-        await this.eventsService.addEvent({
-          namespace: EventNamespace.ORDERS,
-          type: EventType.ORDER_UPDATED,
-          integrationId: integrationId,
-          data: {
-            practice: integration.practice,
-            orderId: updatedOrder.id,
-            status: updatedOrder.status,
-            order: updatedOrder
-          }
-        })
-      }
       await this.updateReportResults(report, resultsForReport)
       createdReports.push(report)
     }

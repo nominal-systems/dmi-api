@@ -566,8 +566,9 @@ export class OrdersService {
       try {
         const order = await this.findOneByExternalId(externalOrderId)
         const updated = await this.updateOrderStatusFromResults(order, result)
+        const updatedOrder = await this.updateOrderFromResult(order, result)
         if (updated) {
-          updatedOrders.push(order)
+          updatedOrders.push(updatedOrder)
           this.logger.debug(`Updated Order/${order.id} status to ${order.status}`)
         }
       } catch (error) {

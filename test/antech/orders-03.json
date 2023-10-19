@@ -8,9 +8,9 @@
             }
         ],
         "manifest": {
-            "uri": "https://pims-onboard.antechdiagnostics.com/LabOrders/PDFPIMS?accessToken=&ClinicAccessionID=125603216&IsView=1"
+            "uri": "https://URL/LabOrders/PDFPIMS?accessToken=1234567890&ClinicAccessionID=125603216&IsView=1"
         },
-        "submissionUri": "https://pims-onboard.antechdiagnostics.com/views/order.html?accessToken=&ClinicAccessionID=125603216",
+        "submissionUri": "https://URL/views/order.html?accessToken=1234567890&ClinicAccessionID=125603216",
         "editable": false
     }
 ]

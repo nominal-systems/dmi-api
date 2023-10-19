@@ -1,6 +1,6 @@
 [
     {
-        "id": "63489b91-292e-4f93-ba4f-ba10a9648a64",
+        "id": "803096a6-cc91-4ccf-9c4f-acf2ce03d8c5",
         "orderId": "125603216",
         "accession": "IROP00907047",
         "status": "COMPLETED",
@@ -43,7 +43,7 @@
                 "lastName": "Staff"
             },
             "manifest": {
-                "uri": "https://onlineapi-onboard.antechdiagnostics.com/api/v1.1/LabOrders/PDFPIMS?isView=1&ClinicAccessionID=125603216&accessToken=07D4862455230074E0630A8001D40074",
+                "uri": "https://API_URL/api/v1.1/LabOrders/PDFPIMS?isView=1&ClinicAccessionID=125603216&accessToken=08142816831E0070E0630A8001D40070",
                 "contentType": "application/pdf",
                 "data": ""
             }
