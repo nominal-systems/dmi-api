@@ -1,0 +1,30 @@
+[
+  {
+    "externalId": "125603216",
+    "tests": [
+      {
+        "code": "T805"
+      }
+    ],
+    "manifest": {
+      "uri": "https://URL/LabOrders/PDFPIMS?accessToken=1234567890&ClinicAccessionID=125603216&IsView=1"
+    },
+    "submissionUri": "https://URL/views/order.html?accessToken=1234567890&ClinicAccessionID=125603216",
+    "editable": false,
+    "client": {
+      "firstName": "Graciela",
+      "lastName": "Romero"
+    },
+    "patient": {
+      "breed": "Pomeranian",
+      "name": "ZEUS",
+      "sex": "CM",
+      "species": "Canine"
+    },
+    "status": "COMPLETED",
+    "veterinarian": {
+      "firstName": "Banfield",
+      "lastName": "Staff"
+    }
+  }
+]

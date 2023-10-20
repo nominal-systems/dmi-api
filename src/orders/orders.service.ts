@@ -565,10 +565,9 @@ export class OrdersService {
 
       try {
         const order = await this.findOneByExternalId(externalOrderId)
-        const updated = await this.updateOrderStatusFromResults(order, result)
-        const updatedOrder = await this.updateOrderFromResult(order, result)
+        const updated = await this.updateOrderFromResults(order, result)
         if (updated) {
-          updatedOrders.push(updatedOrder)
+          updatedOrders.push(order)
           this.logger.debug(`Updated Order/${order.id} status to ${order.status}`)
         }
       } catch (error) {
@@ -610,7 +609,8 @@ export class OrdersService {
       options: {
         where: {
           externalId: externalId
-        }
+        },
+        relations: ['patient', 'patient.identifier', 'client', 'veterinarian', 'tests']
       }
     })
   }
@@ -659,7 +659,7 @@ export class OrdersService {
     return await this.ordersRepository.save(createdOrders)
   }
 
-  async updateOrderStatusFromResults (
+  async updateOrderFromResults (
     order: Order,
     result: ProviderResult
   ): Promise<boolean> {
@@ -667,27 +667,18 @@ export class OrdersService {
     ProviderResultUtils.setOrderStatusFromResult(result, order)
 
     let updated = false
+    if (result.order !== undefined) {
+      updated = updateOrder(order, result.order)
+    }
     if (orderStatus !== order.status) {
       this.logger.debug(`updateOrderStatusFromResults: Order/${order.externalId} status changed from ${orderStatus} to ${order.status}`)
-      await this.ordersRepository.save(order)
       updated = true
     } else {
       this.logger.debug(`updateOrderStatusFromResults: Order/${order.externalId} status not changed. Current status: ${order.status}, result status: ${result.status}`)
     }
 
+    await this.ordersRepository.save(order)
     return updated
-  }
-
-  async updateOrderFromResult (
-    order: Order,
-    result: ProviderResult
-  ): Promise<Order> {
-    if (result.order !== undefined) {
-      if (updateOrder(order, result.order)) {
-        await this.ordersRepository.save(order)
-      }
-    }
-    return order
   }
 
   extractOrderFromResult (

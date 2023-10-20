@@ -1834,6 +1834,27 @@ describe('ReportsService', () => {
           })
         }))
       })
+      it('should map report with patient correctly', async () => {
+        const order: ProviderResult[] = FileUtils.loadFile('test/antech/orders-03-completed.json')
+        const results: ProviderResult[] = FileUtils.loadFile('test/antech/results-03.json')
+        jest.spyOn(reportsService, 'findReportsByExternalOrderIds').mockResolvedValueOnce([])
+        jest.spyOn(ordersServiceMock, 'findOrdersByExternalIds').mockResolvedValue(order)
+        jest.spyOn(ordersServiceMock, 'getOrderFromProvider').mockResolvedValue(null)
+        await reportsService.handleExternalResults({
+          integrationId: 'antech',
+          results: results
+        })
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
+          namespace: EventNamespace.REPORTS,
+          type: EventType.REPORT_CREATED,
+          data: expect.objectContaining({
+            report: expect.objectContaining({
+              patient: expect.objectContaining({ breed: 'Pomeranian', name: 'ZEUS', sex: 'CM', species: 'Canine' })
+            })
+          })
+        }))
+        jest.clearAllMocks()
+      })
     })
     describe('Heska', () => {
       it('should correctly match results for an order with a result batch', async () => {

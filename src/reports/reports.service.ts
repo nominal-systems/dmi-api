@@ -156,7 +156,7 @@ export class ReportsService {
         const order = await this.ordersService.createExternalOrder(integrationId, externalOrder)
         createdOrders.push(order)
         const resultForOrder = results.filter(result => result.orderId === order.externalId)
-        await this.ordersService.updateOrderStatusFromResults(order, resultForOrder[0])
+        await this.ordersService.updateOrderFromResults(order, resultForOrder[0])
         externalOrders.push(externalOrder)
       } catch (error) {
         this.logger.warn(`Order from provider not found -> External ID: ${externalOrderId}`)
@@ -180,24 +180,19 @@ export class ReportsService {
         order = await this.ordersService.saveOrder(extractedOrder)
         dummyOrders.push(order)
       }
-
+      const patient = order.patient !== null ? order.patient : extractedOrder.patient
       let report = await this.findReportByExternalOrderId(order.externalId)
       if (report == null) {
         report = new Report()
         report.order = order
         report.testResultsSet = []
-        if (order.patient !== undefined) {
-          report.patient = order.patient
-        }
-        await this.updateReportResults(report, [orphanResult])
+        report.patient = patient
         createdReports.push(report)
       } else {
-        if (order.patient !== undefined) {
-          report.patient = order.patient
-        }
-        await this.updateReportResults(report, [orphanResult])
+        report.patient = patient
         updatedReports.push(report)
       }
+      await this.updateReportResults(report, [orphanResult])
     }
 
     // Notify about new orders
@@ -262,7 +257,8 @@ export class ReportsService {
     return await this.reportsRepository.createQueryBuilder('report')
       .leftJoinAndSelect('report.order', 'order')
       .leftJoinAndSelect('order.veterinarian', 'veterinarian')
-      .leftJoinAndSelect('report.patient', 'patient')
+      .leftJoinAndSelect('order.patient', 'patient')
+      .leftJoinAndSelect('order.client', 'client')
       .leftJoinAndSelect('patient.identifier', 'identifier')
       .leftJoinAndSelect('report.testResultsSet', 'testResult')
       .leftJoinAndSelect('testResult.observations', 'observation')
