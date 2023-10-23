@@ -197,6 +197,7 @@ export class ReportsService {
 
     // Notify about new orders
     for (const order of [...createdOrders, ...dummyOrders]) {
+      this.logger.verbose(`handleExternalResults() -> order[CREATED]= ${JSON.stringify(order, null, 2)}`)
       await this.eventsService.addEvent({
         namespace: EventNamespace.ORDERS,
         type: EventType.ORDER_CREATED,
@@ -219,6 +220,7 @@ export class ReportsService {
 
     // Notify about new reports
     for (const report of createdReports) {
+      this.logger.verbose(`handleExternalResults() -> report[CREATED]= ${JSON.stringify(report, null, 2)}`)
       await this.eventsService.addEvent({
         namespace: EventNamespace.REPORTS,
         type: EventType.REPORT_CREATED,
@@ -234,6 +236,7 @@ export class ReportsService {
 
     // Notify about updated reports
     for (const report of updatedReports) {
+      this.logger.verbose(`handleExternalResults() -> report[UPDATED]= ${JSON.stringify(report, null, 2)}`)
       await this.eventsService.addEvent({
         namespace: EventNamespace.REPORTS,
         type: EventType.REPORT_UPDATED,

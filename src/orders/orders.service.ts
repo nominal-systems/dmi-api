@@ -518,6 +518,7 @@ export class OrdersService {
     for (const order of newOrders) {
       // TODO(gb): make this more efficient by saving in batch
       const newOrder = await this.ordersRepository.save(order)
+      this.logger.verbose(`handleExternalOrders() -> order[CREATED]= ${JSON.stringify(newOrder, null, 2)}`)
       await this.eventsService.addEvent({
         namespace: EventNamespace.ORDERS,
         type: EventType.ORDER_CREATED,
@@ -534,6 +535,7 @@ export class OrdersService {
     for (const order of updatedOrders) {
       // TODO(gb): make this more efficient by saving in batch
       const updatedOrder = await this.ordersRepository.save(order)
+      this.logger.verbose(`handleExternalOrders() -> order[UPDATED]= ${JSON.stringify(updatedOrder, null, 2)}`)
       await this.eventsService.addEvent({
         namespace: EventNamespace.ORDERS,
         type: EventType.ORDER_UPDATED,
@@ -579,6 +581,7 @@ export class OrdersService {
 
     // Notify about updated orders
     for (const updatedOrder of updatedOrders) {
+      this.logger.verbose(`handleExternalOrderResults() -> order[UPDATED]= ${JSON.stringify(updatedOrder, null, 2)}`)
       await this.eventsService.addEvent({
         namespace: EventNamespace.ORDERS,
         type: EventType.ORDER_UPDATED,
