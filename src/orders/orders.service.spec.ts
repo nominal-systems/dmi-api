@@ -168,5 +168,48 @@ describe('OrdersService', () => {
         expect(eventsServiceMock.addEvent).not.toHaveBeenCalled()
       })
     })
+    describe('Antech', () => {
+      const order = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'test', 'antech', 'orders-03.json'), 'utf8'))
+      const result = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'test', 'antech', 'results-03.json'), 'utf8'))
+      it('should update order with result order info', async () => {
+        jest.spyOn(ordersRepositoryMock, 'findOne').mockResolvedValueOnce(order[0])
+        await ordersService.handleExternalOrderResults({
+          integrationId: 'idexx',
+          results: result
+        })
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
+          namespace: EventNamespace.ORDERS,
+          type: EventType.ORDER_UPDATED,
+          data: expect.objectContaining({
+            order: expect.objectContaining({
+              client: {
+                firstName: 'Graciela',
+                lastName: 'Romero'
+              },
+              editable: false,
+              externalId: '125603216',
+              manifest: {
+                uri: 'https://URL/LabOrders/PDFPIMS?accessToken=1234567890&ClinicAccessionID=125603216&IsView=1'
+              },
+              patient: {
+                breed: 'Pomeranian',
+                name: 'ZEUS',
+                sex: 'CM',
+                species: 'Canine'
+              },
+              status: 'COMPLETED',
+              submissionUri: 'https://URL/views/order.html?accessToken=1234567890&ClinicAccessionID=125603216',
+              tests: [{
+                code: 'T805'
+              }],
+              veterinarian: {
+                firstName: 'Banfield',
+                lastName: 'Staff'
+              }
+            })
+          })
+        }))
+      })
+    })
   })
 })

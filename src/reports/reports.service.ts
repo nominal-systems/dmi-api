@@ -146,17 +146,21 @@ export class ReportsService {
     const nonExistingReportOrders = await this.ordersService.findOrdersByExternalIds(nonExistingReportExternalOrderIds)
     const nonExistingOrderExternalIds = arrayDiff(nonExistingReportExternalOrderIds, nonExistingReportOrders.map(order => order.externalId))
     for (const externalOrderId of nonExistingOrderExternalIds) {
-      const externalOrder = await this.ordersService.getOrderFromProvider(externalOrderId, integration.providerConfiguration, integration.integrationOptions)
-      if (externalOrder == null) {
+      try {
+        const externalOrder = await this.ordersService.getOrderFromProvider(externalOrderId, integration.providerConfiguration, integration.integrationOptions)
+        if (externalOrder == null) {
+          this.logger.warn(`Order from provider not found -> External ID: ${externalOrderId}`)
+          continue
+        }
+        this.logger.debug(`Getting order from provider -> External ID: ${externalOrderId}`)
+        const order = await this.ordersService.createExternalOrder(integrationId, externalOrder)
+        createdOrders.push(order)
+        const resultForOrder = results.filter(result => result.orderId === order.externalId)
+        await this.ordersService.updateOrderFromResults(order, resultForOrder[0])
+        externalOrders.push(externalOrder)
+      } catch (error) {
         this.logger.warn(`Order from provider not found -> External ID: ${externalOrderId}`)
-        continue
       }
-      this.logger.debug(`Getting order from provider -> External ID: ${externalOrderId}`)
-      const order = await this.ordersService.createExternalOrder(integrationId, externalOrder)
-      createdOrders.push(order)
-      const resultForOrder = results.filter(result => result.orderId === order.externalId)
-      await this.ordersService.updateOrderStatusFromResults(order, resultForOrder[0])
-      externalOrders.push(externalOrder)
     }
 
     // Create orders for orphan results
@@ -176,28 +180,24 @@ export class ReportsService {
         order = await this.ordersService.saveOrder(extractedOrder)
         dummyOrders.push(order)
       }
-
+      const patient = order.patient !== null ? order.patient : extractedOrder.patient
       let report = await this.findReportByExternalOrderId(order.externalId)
       if (report == null) {
         report = new Report()
         report.order = order
         report.testResultsSet = []
-        if (order.patient !== undefined) {
-          report.patient = order.patient
-        }
-        await this.updateReportResults(report, [orphanResult])
+        report.patient = patient
         createdReports.push(report)
       } else {
-        if (order.patient !== undefined) {
-          report.patient = order.patient
-        }
-        await this.updateReportResults(report, [orphanResult])
+        report.patient = patient
         updatedReports.push(report)
       }
+      await this.updateReportResults(report, [orphanResult])
     }
 
     // Notify about new orders
     for (const order of [...createdOrders, ...dummyOrders]) {
+      this.logger.verbose(`handleExternalResults() -> order[CREATED]= ${JSON.stringify(order, null, 2)}`)
       await this.eventsService.addEvent({
         namespace: EventNamespace.ORDERS,
         type: EventType.ORDER_CREATED,
@@ -220,6 +220,7 @@ export class ReportsService {
 
     // Notify about new reports
     for (const report of createdReports) {
+      this.logger.verbose(`handleExternalResults() -> report[CREATED]= ${JSON.stringify(report, null, 2)}`)
       await this.eventsService.addEvent({
         namespace: EventNamespace.REPORTS,
         type: EventType.REPORT_CREATED,
@@ -235,6 +236,7 @@ export class ReportsService {
 
     // Notify about updated reports
     for (const report of updatedReports) {
+      this.logger.verbose(`handleExternalResults() -> report[UPDATED]= ${JSON.stringify(report, null, 2)}`)
       await this.eventsService.addEvent({
         namespace: EventNamespace.REPORTS,
         type: EventType.REPORT_UPDATED,
@@ -258,7 +260,8 @@ export class ReportsService {
     return await this.reportsRepository.createQueryBuilder('report')
       .leftJoinAndSelect('report.order', 'order')
       .leftJoinAndSelect('order.veterinarian', 'veterinarian')
-      .leftJoinAndSelect('report.patient', 'patient')
+      .leftJoinAndSelect('order.patient', 'patient')
+      .leftJoinAndSelect('order.client', 'client')
       .leftJoinAndSelect('patient.identifier', 'identifier')
       .leftJoinAndSelect('report.testResultsSet', 'testResult')
       .leftJoinAndSelect('testResult.observations', 'observation')
