@@ -14,6 +14,8 @@ import { EventNamespace } from '../events/constants/event-namespace.enum'
 import { EventType } from '../events/constants/event-type.enum'
 import { FileUtils } from '../common/utils/file-utils'
 import { Order } from '../orders/entities/order.entity'
+import { ExternalResultEventData } from '../common/typings/external-result-event-data.interface'
+import { HttpException, HttpStatus } from '@nestjs/common'
 
 const repositoryMockFactory: () => MockUtils<Repository<any>> = jest.fn(() => ({
   findOne: jest.fn(entity => entity),
@@ -1224,7 +1226,8 @@ describe('ReportsService', () => {
     it('should save report with results in sequence', async () => {
       const updated = await reportsService.updateReportResults(report, results)
       expect(updated).toEqual(true)
-      expect(reportsRepositoryMock.save).toBeCalledWith(expect.objectContaining({
+      expect(reportsRepositoryMock.save).toBeCalledWith(expect.objectContaining(
+        {
           testResultsSet: [
             expect.objectContaining({
               code: 'Hematology',
@@ -1759,6 +1762,16 @@ describe('ReportsService', () => {
         }))
         jest.clearAllMocks()
       })
+      it('should handle non-existing orders', async () => {
+        const resultBatch: ExternalResultEventData = FileUtils.loadFile('test/idexx/anicura-batchResults.json')
+        jest.spyOn(ordersServiceMock, 'getOrderFromProvider').mockImplementation(async () => {
+          throw new HttpException('Order not found', HttpStatus.NOT_FOUND)
+        })
+        expect(async () => {
+          await reportsService.handleExternalResults(resultBatch)
+          jest.clearAllMocks()
+        }).not.toThrow()
+      })
     })
     describe('Antech', () => {
       it('should create orders/reports', async () => {
@@ -1783,6 +1796,64 @@ describe('ReportsService', () => {
         })
 
         expect(eventsServiceMock.addEvent).toHaveBeenCalledTimes(resultsMissing01.length)
+      })
+      it('should create order with patient, client and vet names', async () => {
+        const unknownResults: ProviderResult[] = FileUtils.loadFile('test/antech/results_unknown_unknown.json')
+        jest.spyOn(reportsService, 'findReportsByExternalOrderIds').mockResolvedValueOnce([])
+        jest.spyOn(ordersServiceMock, 'getOrderFromProvider').mockResolvedValue(null)
+        await reportsService.handleExternalResults({
+          integrationId: 'antech',
+          results: unknownResults
+        })
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
+          namespace: EventNamespace.ORDERS,
+          type: EventType.ORDER_CREATED,
+          data: expect.objectContaining({
+            order: expect.objectContaining({
+              integrationId: 'antech',
+              status: 'COMPLETED',
+              tests: [{ code: '2340' }],
+              patient: { name: 'STONE', sex: 'M', species: 'Canine' },
+              client: { firstName: 'Manon', lastName: 'Galloway' },
+              veterinarian: { lastName: 'Banfield,Staff' }
+            })
+          })
+        }))
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
+          namespace: EventNamespace.ORDERS,
+          type: EventType.ORDER_CREATED,
+          data: expect.objectContaining({
+            order: expect.objectContaining({
+              integrationId: 'antech',
+              status: 'COMPLETED',
+              tests: [{ code: '2340' }],
+              patient: { name: 'JEFFERY', sex: 'M', species: 'Canine' },
+              client: { firstName: 'Emily', lastName: 'Marshall' },
+              veterinarian: { lastName: 'Banfield,Staff' }
+            })
+          })
+        }))
+      })
+      it('should map report with patient correctly', async () => {
+        const order: ProviderResult[] = FileUtils.loadFile('test/antech/orders-03-completed.json')
+        const results: ProviderResult[] = FileUtils.loadFile('test/antech/results-03.json')
+        jest.spyOn(reportsService, 'findReportsByExternalOrderIds').mockResolvedValueOnce([])
+        jest.spyOn(ordersServiceMock, 'findOrdersByExternalIds').mockResolvedValue(order)
+        jest.spyOn(ordersServiceMock, 'getOrderFromProvider').mockResolvedValue(null)
+        await reportsService.handleExternalResults({
+          integrationId: 'antech',
+          results: results
+        })
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
+          namespace: EventNamespace.REPORTS,
+          type: EventType.REPORT_CREATED,
+          data: expect.objectContaining({
+            report: expect.objectContaining({
+              patient: expect.objectContaining({ breed: 'Pomeranian', name: 'ZEUS', sex: 'CM', species: 'Canine' })
+            })
+          })
+        }))
+        jest.clearAllMocks()
       })
     })
     describe('Heska', () => {

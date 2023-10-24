@@ -14,7 +14,10 @@ const { version } = require('../package.json')
 async function bootstrap (): Promise<void> {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    new FastifyAdapter()
+    new FastifyAdapter(),
+    {
+      logger: process.env.DEBUG !== null ? ['error', 'warn', 'log', 'debug', 'verbose'] : ['error', 'warn', 'log', 'debug']
+    }
   )
 
   // CORS

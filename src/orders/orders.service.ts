@@ -518,6 +518,7 @@ export class OrdersService {
     for (const order of newOrders) {
       // TODO(gb): make this more efficient by saving in batch
       const newOrder = await this.ordersRepository.save(order)
+      this.logger.verbose(`handleExternalOrders() -> order[CREATED]= ${JSON.stringify(newOrder, null, 2)}`)
       await this.eventsService.addEvent({
         namespace: EventNamespace.ORDERS,
         type: EventType.ORDER_CREATED,
@@ -534,6 +535,7 @@ export class OrdersService {
     for (const order of updatedOrders) {
       // TODO(gb): make this more efficient by saving in batch
       const updatedOrder = await this.ordersRepository.save(order)
+      this.logger.verbose(`handleExternalOrders() -> order[UPDATED]= ${JSON.stringify(updatedOrder, null, 2)}`)
       await this.eventsService.addEvent({
         namespace: EventNamespace.ORDERS,
         type: EventType.ORDER_UPDATED,
@@ -565,7 +567,7 @@ export class OrdersService {
 
       try {
         const order = await this.findOneByExternalId(externalOrderId)
-        const updated = await this.updateOrderStatusFromResults(order, result)
+        const updated = await this.updateOrderFromResults(order, result)
         if (updated) {
           updatedOrders.push(order)
           this.logger.debug(`Updated Order/${order.id} status to ${order.status}`)
@@ -579,6 +581,7 @@ export class OrdersService {
 
     // Notify about updated orders
     for (const updatedOrder of updatedOrders) {
+      this.logger.verbose(`handleExternalOrderResults() -> order[UPDATED]= ${JSON.stringify(updatedOrder, null, 2)}`)
       await this.eventsService.addEvent({
         namespace: EventNamespace.ORDERS,
         type: EventType.ORDER_UPDATED,
@@ -609,7 +612,8 @@ export class OrdersService {
       options: {
         where: {
           externalId: externalId
-        }
+        },
+        relations: ['patient', 'patient.identifier', 'client', 'veterinarian', 'tests']
       }
     })
   }
@@ -658,7 +662,7 @@ export class OrdersService {
     return await this.ordersRepository.save(createdOrders)
   }
 
-  async updateOrderStatusFromResults (
+  async updateOrderFromResults (
     order: Order,
     result: ProviderResult
   ): Promise<boolean> {
@@ -666,14 +670,17 @@ export class OrdersService {
     ProviderResultUtils.setOrderStatusFromResult(result, order)
 
     let updated = false
+    if (result.order !== undefined) {
+      updated = updateOrder(order, result.order)
+    }
     if (orderStatus !== order.status) {
       this.logger.debug(`updateOrderStatusFromResults: Order/${order.externalId} status changed from ${orderStatus} to ${order.status}`)
-      await this.ordersRepository.save(order)
       updated = true
     } else {
       this.logger.debug(`updateOrderStatusFromResults: Order/${order.externalId} status not changed. Current status: ${order.status}, result status: ${result.status}`)
     }
 
+    await this.ordersRepository.save(order)
     return updated
   }
 

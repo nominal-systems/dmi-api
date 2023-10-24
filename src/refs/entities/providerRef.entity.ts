@@ -7,7 +7,7 @@ export class ProviderRef {
   @PrimaryGeneratedColumn()
   id: number
 
-  @Column()
+  @Column({ default: null })
   code: string
 
   @Column()
