@@ -52,7 +52,7 @@ export class ProvidersService {
   }
 
   async findOneById (providerId: string): Promise<Provider> {
-    const provider = await this.providerRepository.findOne(providerId, { relations: ['options', 'defaultBreed', 'defaultSex'] })
+    const provider = await this.providerRepository.findOne(providerId, { relations: ['options'] })
     if (provider == null) {
       throw new NotFoundException("The provider doesn't exist")
     }
@@ -268,32 +268,5 @@ export class ProvidersService {
 
   async update (provider: UpdateProviderDto): Promise<void> {
     await this.providerRepository.save(provider)
-  }
-
-  async getProviderDefaults (providerId: string, type?: 'breed' | 'sex'): Promise<any> {
-    const provider = await this.findOneById(providerId)
-    console.log('🚀 ~ file: providers.service.ts:275 ~ ProvidersService ~ getProviderDefaults ~ provider:', provider)
-    if (provider === undefined) {
-      throw new NotFoundException('Provider not found')
-    }
-    if (type === 'breed') {
-      return provider.defaultBreed
-    } else if (type === 'sex') {
-      return provider.defaultSex
-    }
-    return {
-      breed: provider.defaultBreed,
-      sex: provider.defaultSex
-    }
-  }
-
-  // --------------CAMBIAR ANY POR EL TIPO DE DATO QUE CORRESPONDA----------------
-  async setProviderDefaults (providerId: string, defaults: any): Promise<void> {
-    const provider = await this.findOneById(providerId)
-    if (provider === undefined) {
-      throw new NotFoundException('Provider not found')
-    }
-    provider.defaultBreed = defaults.breed
-    provider.defaultSex = defaults.sex
   }
 }
