@@ -13,6 +13,7 @@ import * as fs from 'fs'
 import * as path from 'path'
 import { EventNamespace } from '../events/constants/event-namespace.enum'
 import { EventType } from '../events/constants/event-type.enum'
+import { RefsService } from '../refs/refs.service'
 
 export const repositoryMockFactory: () => MockUtils<Repository<any>> = jest.fn(() => ({
   find: jest.fn(entity => entity),
@@ -40,6 +41,9 @@ describe('OrdersService', () => {
     findOne: jest.fn().mockReturnValue({
       practice: {}
     })
+  }
+  const refsServiceMock = {
+    mapPatientRefs: jest.fn()
   }
   let ordersRepositoryMock: Partial<Repository<Order>>
   const eventsServiceMock = {
@@ -72,6 +76,10 @@ describe('OrdersService', () => {
           useValue: integrationsServiceMock
         },
         {
+          provide: RefsService,
+          useValue: refsServiceMock
+        },
+        {
           provide: EventsService,
           useValue: eventsServiceMock
         },
@@ -88,6 +96,81 @@ describe('OrdersService', () => {
 
   it('should be defined', () => {
     expect(ordersService).toBeDefined()
+  })
+
+  describe('should create orders', () => {
+    describe('IDEXX', () => {
+      it('should create orders', async () => {
+        const order = {
+          requisitionId: '{{$randomBankAccountBic}}',
+          integrationId: 'idexx',
+          patient: {
+            name: 'Medicalnotes_author_test',
+            sex: 'UNKNOWN',
+            species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
+            breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec',
+            birthdate: '2022-08-15',
+            id: '668cfb3a-7d6e-42c8-995f-9b24c65217ef'
+          },
+          client: {
+            firstName: 'Srikanth',
+            lastName: 'M',
+            id: 'f89d4994-9b2d-4bdb-b9ef-a761777fb365'
+          },
+          veterinarian: {
+            firstName: 'Amity',
+            lastName: 'Messick',
+            id: '668cfb3a-7d6e-42c8-995f-9b24c65217ef'
+          },
+          testCodes: [
+            {
+              code: '1'
+            },
+            {
+              code: '804'
+            }
+          ]
+        }
+        jest.spyOn(integrationsServiceMock, 'findById').mockResolvedValueOnce({
+          id: '99ee5046-b76f-4858-8cbf-e1de9bfbcd39',
+          practiceId: 'f5355841-44cd-4f5b-b177-6ed9f01878be',
+          providerConfigurationId: 'ba37e6f1-590d-4df3-9789-b3499558f1e4',
+          status: 'RUNNING',
+          integrationOptions: { username: 'woofware_us', password: '9^dx^d#F&Dd$t9CH' },
+          createdAt: '2023-10-24T20:53:02.691Z',
+          updatedAt: '2023-10-24T20:53:52.000Z',
+          deletedAt: null,
+          providerConfiguration: {
+            id: 'ba37e6f1-590d-4df3-9789-b3499558f1e4',
+            providerId: 'idexx',
+            configurationOptions: {
+              orderingBaseUrl: 'https://integration.vetconnectplus.com',
+              resultBaseUrl: 'https://partner.vetconnectplus.com',
+              'X-Pims-Id': 'fae1e5f0-7556-43f4-be0a-15c9afefaaef',
+              'X-Pims-Version': '1'
+            },
+            organizationId: '3777d7a6-a723-4419-9edd-beadc6f84f16',
+            createdAt: '2023-10-24T20:45:26.103Z',
+            updatedAt: '2023-10-24T20:45:26.103Z',
+            deletedAt: null
+          },
+          practice: {
+            id: 'f5355841-44cd-4f5b-b177-6ed9f01878be',
+            name: 'Ward, Durgan and Heaney',
+            organizationId: '3777d7a6-a723-4419-9edd-beadc6f84f16',
+            createdAt: '2023-10-24T20:45:00.527Z',
+            updatedAt: '2023-10-24T20:45:00.527Z',
+            deletedAt: null,
+            identifier: []
+          }
+        })
+        // finish this test ////////////////
+        jest.spyOn(refsServiceMock, 'mapPatientRefs').mockResolvedValueOnce([])
+
+        const orderDto = await ordersService.createOrder(order)
+        console.log('🚀 ~ file: orders.service.spec.ts:172 ~ it ~ orderDto:', orderDto)
+      })
+    })
   })
 
   describe('handleExternalOrders()', () => {

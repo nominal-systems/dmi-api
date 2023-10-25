@@ -156,7 +156,7 @@ export class RefsService {
     return await this.refRepository.createQueryBuilder('ref')
       .leftJoin('ref.providerRef', 'providerRef')
       .leftJoin('providerRef.provider', 'provider', 'provider.id = providerRef.provider')
-      .select(['ref', 'providerRef', 'provider.id'])
+      .select(['ref', 'providerRef.code', 'provider.id'])
       .where('ref.code = :code AND providerRef.provider = :provider', { code, provider: provider })
       .getOne()
   }
@@ -181,36 +181,18 @@ export class RefsService {
   }
 
   async mapPatientRefs (providerId: string, patient: CreateOrderDtoPatient): Promise<CreateOrderDtoPatient> {
-    let sex = await this.findOneByCodeAndProvider(patient.sex, providerId)
-    console.log('🚀 ~ file: refs.service.ts:185 ~ RefsService ~ mapPatientRefs ~ sex:', sex)
-    if (sex === undefined) {
-      const defaultSex = await this.providersService.getProviderDefaults(providerId, 'sex')
-      if (defaultSex === undefined) {
-        throw new NotFoundException('Sex not found')
-      }
-      sex = defaultSex
-      console.log('🚀 ~ file: refs.service.ts:188 ~ RefsService ~ mapPatientRefs ~ sex:', sex)
-    }
+    const sex = await this.findOneByCodeAndProvider(patient.sex, providerId)
+
     const species = await this.findOneByCodeAndProvider(patient.species, providerId)
-    console.log('🚀 ~ file: refs.service.ts:192 ~ RefsService ~ mapPatientRefs ~ species:', species)
     if (species === undefined) {
       throw new NotFoundException('Species not found')
     }
-    let breed = await this.findOneByCodeAndProvider(patient.breed, providerId)
-    console.log('🚀 ~ file: refs.service.ts:196 ~ RefsService ~ mapPatientRefs ~ breed:', breed)
-    if (breed === undefined) {
-      const defaultBreed = await this.providersService.getProviderDefaults(providerId, 'breed')
-      if (defaultBreed === undefined) {
-        throw new NotFoundException('Breed not found')
-      }
-      breed = defaultBreed
-    }
-
+    const breed = await this.findOneByCodeAndProvider(patient.breed, providerId)
     return {
       ...patient,
-      sex: sex !== undefined ? sex.code : '',
-      species: species.code,
-      breed: breed !== undefined ? breed.code : ''
+      sex: sex?.providerRef !== undefined && sex.providerRef.length > 0 ? sex.providerRef[0].code : '',
+      species: species?.providerRef !== undefined && species.providerRef.length > 0 ? species.providerRef[0].code : '',
+      breed: breed?.providerRef !== undefined && breed.providerRef.length > 0 ? breed.providerRef[0].code : ''
     }
   }
 }
