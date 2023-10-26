@@ -6,6 +6,7 @@ import { Repository } from 'typeorm'
 import { Ref } from './entities/ref.entity'
 import { ProviderRef } from './entities/providerRef.entity'
 import { CreateRefsDTO } from './dtos/create-refs.dto'
+import { CreateOrderDtoPatient } from '../orders/dtos/create-order.dto'
 
 describe('RefsService', () => {
   let refsService: RefsService
@@ -33,6 +34,8 @@ describe('RefsService', () => {
     // mock your methods here
   }
 
+  const findOneByCodeAndProviderMock = jest.fn()
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -54,6 +57,7 @@ describe('RefsService', () => {
 
     refsService = module.get<RefsService>(RefsService)
     refsRepository = module.get<Repository<Ref>>(getRepositoryToken(Ref))
+    refsService.findOneByCodeAndProvider = findOneByCodeAndProviderMock
   })
 
   it('should be defined', () => {
@@ -63,10 +67,10 @@ describe('RefsService', () => {
   describe('createRefs', () => {
     it('should create a new Refs entity', async () => {
       const createDto: CreateRefsDTO = {
-            name: 'Male',
-            code: 'MALE',
-            type: 'sex',
-            providerRefIds: [1, 2]
+        name: 'Male',
+        code: 'MALE',
+        type: 'sex',
+        providerRefIds: [1, 2]
       }
 
       const mockNewRef = {
@@ -74,22 +78,22 @@ describe('RefsService', () => {
         code: 'MALE',
         type: 'sex',
         species: undefined
-    }
-
-    mockRefsRepository.findOne.mockResolvedValue(undefined)
-    mockProviderRefsRepository.findOne.mockResolvedValue({
-      id: 1,
-      code: 'DACHSHUND',
-      name: 'Dachshund',
-      species: 'CANINE',
-      type: 'breed',
-      provider: {
-          id: 'idexx'
       }
-  })
-    const result = await refsService.createRefs(createDto)
-    mockRefsRepository.create.mockResolvedValue(mockNewRef)
-    mockRefsRepository.save.mockResolvedValue(mockNewRef)
+
+      mockRefsRepository.findOne.mockResolvedValue(undefined)
+      mockProviderRefsRepository.findOne.mockResolvedValue({
+        id: 1,
+        code: 'DACHSHUND',
+        name: 'Dachshund',
+        species: 'CANINE',
+        type: 'breed',
+        provider: {
+          id: 'idexx'
+        }
+      })
+      const result = await refsService.createRefs(createDto)
+      mockRefsRepository.create.mockResolvedValue(mockNewRef)
+      mockRefsRepository.save.mockResolvedValue(mockNewRef)
 
       expect(result).toEqual(mockNewRef)
       expect(refsRepository.create).toHaveBeenCalledWith(mockNewRef)
@@ -105,7 +109,7 @@ describe('RefsService', () => {
         code: 'SALCHICHA',
         type: 'breed',
         providerRefIds: [430]
-  }
+      }
       const existingRef = {
         id: 2,
         name: 'Salchicha',
@@ -113,21 +117,21 @@ describe('RefsService', () => {
         species: 'DOG',
         type: 'breed',
         refsMap: [
-            {
-                id: 24,
-                providerRef: {
-                    id: 430,
-                    code: 'DACHSHUND',
-                    name: 'Dachshund',
-                    species: 'CANINE',
-                    type: 'breed',
-                    provider: {
-                        id: 'idexx'
-                    }
-                }
+          {
+            id: 24,
+            providerRef: {
+              id: 430,
+              code: 'DACHSHUND',
+              name: 'Dachshund',
+              species: 'CANINE',
+              type: 'breed',
+              provider: {
+                id: 'idexx'
+              }
             }
+          }
         ]
-    }
+      }
 
       refsService.findOneById = jest.fn().mockResolvedValue(existingRef)
       refsRepository.merge = jest.fn()
@@ -138,6 +142,49 @@ describe('RefsService', () => {
       expect(result).toEqual(existingRef)
       expect(refsService.findOneById).toHaveBeenCalledWith(refId)
       // assert other expected method calls
+    })
+  })
+
+  describe('mapPatientRefs', () => {
+    describe('Antech', () => {
+      it('should map patient refs', async () => {
+        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'U' })
+        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: '41' })
+        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: '163' })
+
+        const mappedRef = await refsService.mapPatientRefs('antech', {
+          name: 'Medicalnotes_author_test',
+          sex: 'UNKNOWN',
+          species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
+          breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec',
+          birthdate: '2022-08-15'
+        } as CreateOrderDtoPatient)
+        expect(mappedRef).toEqual(expect.objectContaining({
+          sex: 'U',
+          species: '41',
+          breed: '163'
+        }))
+      })
+    })
+    describe('Idexx', () => {
+      it('should map patient refs', async () => {
+        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'UNKNOWN' })
+        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'CANINE' })
+        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'SCHIPPERKE' })
+
+        const mappedRef = await refsService.mapPatientRefs('antech', {
+          name: 'Medicalnotes_author_test',
+          sex: 'UNKNOWN',
+          species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
+          breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec',
+          birthdate: '2022-08-15'
+        } as CreateOrderDtoPatient)
+        expect(mappedRef).toEqual(expect.objectContaining({
+          sex: 'UNKNOWN',
+          species: 'CANINE',
+          breed: 'SCHIPPERKE'
+        }))
+      })
     })
   })
 })

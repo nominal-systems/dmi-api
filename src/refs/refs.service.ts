@@ -152,9 +152,9 @@ export class RefsService {
     return ref
   }
 
-  async findOneByCodeAndProvider (code: string, provider?: string): Promise<Ref | undefined> {
-    return await this.refRepository.createQueryBuilder('ref')
-      .leftJoin('ref.providerRef', 'providerRef')
+  async findOneByCodeAndProvider (code: string, provider?: string): Promise<ProviderRef | undefined> {
+    return await this.providerRefRepository.createQueryBuilder('providerRef')
+      .leftJoin('providerRef.ref', 'ref', 'ref.id = providerRef.ref')
       .leftJoin('providerRef.provider', 'provider', 'provider.id = providerRef.provider')
       .select(['ref', 'providerRef.code', 'provider.id'])
       .where('ref.code = :code AND providerRef.provider = :provider', { code, provider: provider })
@@ -190,9 +190,9 @@ export class RefsService {
     const breed = await this.findOneByCodeAndProvider(patient.breed, providerId)
     return {
       ...patient,
-      sex: sex?.providerRef !== undefined && sex.providerRef.length > 0 ? sex.providerRef[0].code : '',
-      species: species?.providerRef !== undefined && species.providerRef.length > 0 ? species.providerRef[0].code : '',
-      breed: breed?.providerRef !== undefined && breed.providerRef.length > 0 ? breed.providerRef[0].code : ''
+      sex: sex !== undefined ? sex.code : '',
+      species: species !== undefined ? species.code : '',
+      breed: breed !== undefined ? breed.code : ''
     }
   }
 }
