@@ -20,7 +20,6 @@ export class Provider {
   @Exclude()
   hashes: Hashes
 
-
   configurationOptions: ProviderOption[]
 
   integrationOptions: ProviderOption[]
