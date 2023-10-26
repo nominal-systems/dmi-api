@@ -212,14 +212,11 @@ export class OrdersService {
         relations: ['providerConfiguration', 'practice', 'practice.identifier']
       }
     })
-    console.log('🚀 ~ file: orders.service.ts:215 ~ OrdersService ~ integration:', integration)
     const { providerConfiguration, integrationOptions } = integration
     const { configurationOptions, providerId } = providerConfiguration
     createOrderDto.patient = await this.refsService.mapPatientRefs(providerId, createOrderDto.patient)
-    console.log('🚀 ~ file: orders.service.ts:219 ~ OrdersService ~ createOrderDto.patient:', createOrderDto.patient)
     // Accept order
     const order = this.ordersRepository.create(createOrderDto)
-    console.log('🚀 ~ file: orders.service.ts:222 ~ OrdersService ~ order:', order)
     order.status = OrderStatus.ACCEPTED
 
     // Create tests
@@ -230,7 +227,6 @@ export class OrdersService {
 
     // Save order
     const newOrder = await this.ordersRepository.save(order)
-    console.log('🚀 ~ file: orders.service.ts:233 ~ OrdersService ~ newOrder:', newOrder)
     await this.eventsService.addEvent({
       namespace: EventNamespace.ORDERS,
       type: EventType.ORDER_CREATED,
