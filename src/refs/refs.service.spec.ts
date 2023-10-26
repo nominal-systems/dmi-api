@@ -186,5 +186,25 @@ describe('RefsService', () => {
         }))
       })
     })
+    describe('Zoetis', () => {
+      it('should map patient refs', async () => {
+        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: '' })
+        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'DOG' })
+        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: '' })
+
+        const mappedRef = await refsService.mapPatientRefs('zoetis', {
+          name: 'Medicalnotes_author_test',
+          sex: 'UNKNOWN',
+          species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
+          breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec',
+          birthdate: '2022-08-15'
+        } as CreateOrderDtoPatient)
+        expect(mappedRef).toEqual(expect.objectContaining({
+          sex: '',
+          species: 'DOG',
+          breed: ''
+        }))
+      })
+    })
   })
 })
