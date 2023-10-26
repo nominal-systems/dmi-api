@@ -11,6 +11,7 @@ import { ProvidersService } from '../providers/services/providers.service'
 import { EventsService } from '../events/services/events.service'
 import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
+import { ProviderRefService } from '../refs/providerRef.service'
 
 describe('AdminController', () => {
   let controller: AdminController
@@ -64,6 +65,10 @@ describe('AdminController', () => {
         },
         {
           provide: JwtService,
+          useValue: {}
+        },
+        {
+          provide: ProviderRefService,
           useValue: {}
         }
       ]

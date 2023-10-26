@@ -27,7 +27,8 @@ import { UpdateProviderDto } from '../dtos/update-provider.dto'
 import { ProviderOption } from '../entities/provider-option.entity'
 import { ProviderOptionDto } from '../dtos/provider-option.dto'
 import { nestKeys } from '../../common/utils/nest-keys'
-import { EventDocument } from '../../events/entities/event.entity'
+import { PaginationDto } from '../../common/dtos/pagination.dto'
+import { PAGINATION_PAGE_LIMIT } from '../../common/constants/pagination.constant'
 
 @Injectable()
 export class ProvidersService {
@@ -273,13 +274,24 @@ export class ProvidersService {
   }
 
   async findExternalRequests (
-    options: FilterQuery<ProviderExternalRequestDocument> = {},
-    page = 1
+    query: FilterQuery<ProviderExternalRequestDocument>,
+    paginationDto: PaginationDto
   ): Promise<ProviderExternalRequests[]> {
-    return await this.providerExternalRequestsModel.find(options, { __v: 0, _id: 0, body: 0, payload: 0 })
-      .limit(10)
-      .sort({ createdAt: -1 })
-      .lean()
+    const limit = paginationDto.limit !== undefined ? paginationDto.limit : PAGINATION_PAGE_LIMIT
+    const skip = (paginationDto.page - 1) * limit
+
+    return await this.providerExternalRequestsModel.find(query, { __v: 0, _id: 0, body: 0, payload: 0 }, {
+      limit: limit,
+      skip: skip,
+      sort: { createdAt: -1 },
+      lean: true
+    })
+  }
+
+  async countExternalRequests (
+    options: FilterQuery<ProviderExternalRequestDocument>
+  ): Promise<number> {
+    return await this.providerExternalRequestsModel.countDocuments(options)
   }
 
   async update (provider: UpdateProviderDto): Promise<void> {

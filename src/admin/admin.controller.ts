@@ -53,6 +53,7 @@ import {
 } from '../providers/entities/provider-external-requests.entity'
 import { ExternalRequestsQueryparams } from '../providers/dtos/external-requests-queryparams.dto'
 import { FilterQuery } from 'mongoose'
+import { PaginationResult } from '../common/classes/pagination-result'
 
 @Controller('admin')
 export class AdminController {
@@ -448,9 +449,19 @@ export class AdminController {
   @Get('/external-requests')
   @UseGuards(AdminGuard)
   async getExternalRequests (
-    @Query() queryparams: ExternalRequestsQueryparams
-  ): Promise<ProviderExternalRequests[]> {
+    @Query() params: ExternalRequestsQueryparams
+  ): Promise<PaginationResult<ProviderExternalRequests>> {
     const options: FilterQuery<ProviderExternalRequestDocument> = {}
-    return await this.providersService.findExternalRequests(options)
+    if (params.provider !== undefined) {
+      options.provider = params.provider
+    }
+    const { page, limit } = params
+    const data = await this.providersService.findExternalRequests(options, { page, limit })
+    return {
+      total: await this.providersService.countExternalRequests(options),
+      page,
+      limit,
+      data
+    }
   }
 }

@@ -22,9 +22,7 @@ import { ProviderOption } from './entities/provider-option.entity'
       {
         name: ProviderExternalRequests.name,
         useFactory: () => {
-          const schema = ProviderExternalRequestsSchema
-
-          return schema
+          return ProviderExternalRequestsSchema
         },
         inject: [getConnectionToken()]
       }
@@ -40,4 +38,4 @@ import { ProviderOption } from './entities/provider-option.entity'
   providers: [ProvidersService, ProviderConfigurationsService],
   exports: [ProvidersService, ProviderConfigurationsService]
 })
-export class ProvidersModule { }
+export class ProvidersModule {}

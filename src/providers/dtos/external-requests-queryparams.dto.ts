@@ -1,7 +1,8 @@
-import { IsNumber, IsOptional } from 'class-validator'
+import { PaginationDto } from '../../common/dtos/pagination.dto'
+import { IsOptional, IsString } from 'class-validator'
 
-export class ExternalRequestsQueryparams {
+export class ExternalRequestsQueryparams extends PaginationDto {
   @IsOptional()
-  @IsNumber()
-  page?: number
+  @IsString()
+  provider: string
 }
