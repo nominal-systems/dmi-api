@@ -46,7 +46,8 @@ describe('OrdersService', () => {
     })
   }
   const refsServiceMock = {
-    mapPatientRefs: jest.fn()
+    mapPatientRefs: jest.fn(),
+    findOneByCodeAndProvider: jest.fn()
   }
   let ordersRepositoryMock: Partial<Repository<Order>>
   const eventsServiceMock = {
@@ -120,12 +121,12 @@ describe('OrdersService', () => {
             configurationOptions: { url: 'https://test.com' }
           }
         })
-        jest.spyOn(refsServiceMock, 'mapPatientRefs').mockResolvedValueOnce({
-          name: 'Medicalnotes_author_test',
-          sex: 'UNKNOWN',
-          species: 'CANINE',
-          breed: 'SCHIPPERKE',
-          birthdate: '2022-08-15'
+        jest.spyOn(refsServiceMock, 'mapPatientRefs').mockImplementationOnce(() => {
+          Object.assign(orderDto.patient, {
+            breed: 'SCHIPPERKE',
+            sex: 'UNKNOWN',
+            species: 'CANINE'
+          })
         })
         jest.spyOn(clientMock, 'send').mockReturnValue(customPromise)
         customPromise.toPromise.mockResolvedValueOnce({ status: 'COMPLETED' })
@@ -156,12 +157,12 @@ describe('OrdersService', () => {
             configurationOptions: { url: 'https://test.com' }
           }
         })
-        jest.spyOn(refsServiceMock, 'mapPatientRefs').mockResolvedValueOnce({
-          name: 'Medicalnotes_author_test',
-          sex: 'U',
-          species: '41',
-          breed: '163',
-          birthdate: '2022-08-15'
+        jest.spyOn(refsServiceMock, 'mapPatientRefs').mockImplementationOnce(() => {
+          Object.assign(orderDto.patient, {
+            breed: '163',
+            sex: 'U',
+            species: '41'
+          })
         })
         jest.spyOn(clientMock, 'send').mockReturnValue(customPromise)
         customPromise.toPromise.mockResolvedValueOnce({ status: 'COMPLETED' })
@@ -175,6 +176,42 @@ describe('OrdersService', () => {
             name: 'Medicalnotes_author_test',
             sex: 'U',
             species: '41'
+          }
+        }))
+        eventsServiceMock.addEvent.mockClear()
+      })
+    })
+    describe('Zoetis', () => {
+      it('should create order and map ref correctly even though sex and breed does not exists', async () => {
+        const orderDto = {
+          integrationId: 'zoetis',
+          ...exampleOrder
+        } as CreateOrderDto
+        jest.spyOn(integrationsServiceMock, 'findOne').mockResolvedValueOnce({
+          providerConfiguration: {
+            providerId: 'zoetis',
+            configurationOptions: { url: 'https://test.com' }
+          }
+        })
+        jest.spyOn(refsServiceMock, 'mapPatientRefs').mockImplementationOnce(() => {
+          Object.assign(orderDto.patient, {
+            breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec',
+            sex: 'UNKNOWN',
+            species: 'DOG'
+          })
+        })
+        jest.spyOn(clientMock, 'send').mockReturnValue(customPromise)
+        customPromise.toPromise.mockResolvedValueOnce({ status: 'COMPLETED' })
+        jest.spyOn(reportsServiceMock, 'registerForOrder').mockReturnValue({ id: '1' })
+        const order = await ordersService.createOrder(orderDto)
+        expect(order).toEqual(expect.objectContaining({
+          integrationId: 'zoetis',
+          patient: {
+            birthdate: '2022-08-15',
+            breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec',
+            name: 'Medicalnotes_author_test',
+            sex: 'UNKNOWN',
+            species: 'DOG'
           }
         }))
         eventsServiceMock.addEvent.mockClear()
