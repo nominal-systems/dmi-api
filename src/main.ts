@@ -14,10 +14,7 @@ const { version } = require('../package.json')
 async function bootstrap (): Promise<void> {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    new FastifyAdapter(),
-    {
-      logger: process.env.DEBUG !== null ? ['error', 'warn', 'log', 'debug', 'verbose'] : ['error', 'warn', 'log', 'debug']
-    }
+    new FastifyAdapter()
   )
 
   const configService = app.get<ConfigService<AppConfig>>(ConfigService)
