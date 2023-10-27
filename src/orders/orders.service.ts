@@ -214,8 +214,9 @@ export class OrdersService {
     })
     const { providerConfiguration, integrationOptions } = integration
     const { configurationOptions, providerId } = providerConfiguration
-    createOrderDto.patient = await this.refsService.mapPatientRefs(providerId, createOrderDto.patient)
+
     // Accept order
+    await this.refsService.mapPatientRefs(providerId, createOrderDto.patient)
     const order = this.ordersRepository.create(createOrderDto)
     order.status = OrderStatus.ACCEPTED
 

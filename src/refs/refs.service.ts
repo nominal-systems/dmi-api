@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { BadRequestException, ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { ProvidersService } from '../providers/services/providers.service'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
@@ -180,19 +180,25 @@ export class RefsService {
     return { mappedRefs, unmappedRefs }
   }
 
-  async mapPatientRefs (providerId: string, patient: CreateOrderDtoPatient): Promise<CreateOrderDtoPatient> {
-    const sex = await this.findOneByCodeAndProvider(patient.sex, providerId)
+  async mapPatientRefs (providerId: string, patient: CreateOrderDtoPatient): Promise<void> {
+    const attributesToMap = ['sex', 'species', 'breed']
 
-    const species = await this.findOneByCodeAndProvider(patient.species, providerId)
-    if (species === undefined) {
-      throw new NotFoundException('Species not found')
+    const mappedPatient: Partial<CreateOrderDtoPatient> = {}
+
+    for (const attribute of attributesToMap) {
+      const result = await this.findOneByCodeAndProvider(patient[attribute], providerId)
+
+      if (attribute === 'species' && result === undefined) {
+        throw new BadRequestException(`${attribute} not found`)
+      }
+
+      if (result !== undefined) {
+        mappedPatient[attribute] = result.code
+      } else {
+        mappedPatient[attribute] = patient[attribute]
+      }
     }
-    const breed = await this.findOneByCodeAndProvider(patient.breed, providerId)
-    return {
-      ...patient,
-      sex: sex !== undefined ? sex.code : '',
-      species: species !== undefined ? species.code : '',
-      breed: breed !== undefined ? breed.code : ''
-    }
+
+    Object.assign(patient, mappedPatient)
   }
 }
