@@ -13,8 +13,8 @@ const integrationOptions = {
     required: true
 }
 
-export class antechProviderOptions1698359876899 implements MigrationInterface {
-    name = 'antechProviderOptions1698359876899'
+export class AntechProviderOptions1698359876899 implements MigrationInterface {
+    name = 'AntechProviderOptions1698359876899'
 
     public async up (queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`
