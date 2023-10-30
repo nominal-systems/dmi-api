@@ -189,7 +189,7 @@ export class RefsService {
       const result = await this.findOneByCodeAndProvider(patient[attribute], providerId)
 
       if (attribute === 'species' && result === undefined) {
-        throw new BadRequestException(`${attribute} not found`)
+        throw new BadRequestException(`Code '${patient[attribute]}' for ${attribute} not found`)
       }
 
       if (result !== undefined) {
