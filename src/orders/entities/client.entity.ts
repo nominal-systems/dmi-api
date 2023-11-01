@@ -1,6 +1,4 @@
-import { Type } from 'class-transformer'
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm'
-import { Identifier } from './identifier.entity'
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm'
 
 @Entity()
 export class Client {
@@ -16,14 +14,6 @@ export class Client {
   // TODO(gb): Add contact
   // TODO(gb): Add address
   // TODO(gb): Add isDoctor
-
-  @OneToMany(
-    () => Identifier,
-    identifier => identifier.client,
-    { cascade: true }
-  )
-  @Type(() => Identifier)
-  identifier: Identifier[]
 
   @Column({ default: false })
   isStaff: boolean
