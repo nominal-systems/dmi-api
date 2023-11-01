@@ -15,6 +15,9 @@ import { EventNamespace } from '../events/constants/event-namespace.enum'
 import { EventType } from '../events/constants/event-type.enum'
 import { RefsService } from '../refs/refs.service'
 import { CreateOrderDto } from './dtos/create-order.dto'
+import { HttpException } from '@nestjs/common'
+import { Client } from './entities/client.entity'
+import { Patient } from './entities/patient.entity'
 
 export const repositoryMockFactory: () => MockUtils<Repository<any>> = jest.fn(() => ({
   find: jest.fn(entity => entity),
@@ -74,6 +77,14 @@ describe('OrdersService', () => {
         },
         {
           provide: getRepositoryToken(Test),
+          useFactory: repositoryMockFactory
+        },
+        {
+          provide: getRepositoryToken(Client),
+          useFactory: repositoryMockFactory
+        },
+        {
+          provide: getRepositoryToken(Patient),
           useFactory: repositoryMockFactory
         },
         {
@@ -144,6 +155,65 @@ describe('OrdersService', () => {
         }))
         eventsServiceMock.addEvent.mockClear()
       })
+      it('should throw an HttpException with a specific error message', async () => {
+        const orderDto = {
+          integrationId: 'idexx',
+          sex: 'UNKN',
+          ...exampleOrder
+        } as CreateOrderDto
+        jest.spyOn(integrationsServiceMock, 'findOne').mockResolvedValueOnce({
+          providerConfiguration: {
+            providerId: 'idexx',
+            configurationOptions: { url: 'https://test.com' }
+          }
+        })
+        jest.spyOn(refsServiceMock, 'mapPatientRefs').mockImplementationOnce(() => {
+          Object.assign(orderDto.patient, {
+            breed: 'SCHIPPERKE',
+            sex: 'UNKN',
+            species: 'CANINE'
+          })
+        })
+        try {
+          jest.spyOn(clientMock, 'send').mockReturnValue(customPromise)
+          customPromise.toPromise.mockRejectedValueOnce({
+            response: [
+              {
+                provider: 'idexx',
+                message: 'Invalid order, see data for field level details',
+                code: 400,
+                error: 'INVALID_ORDER'
+              },
+              {
+                provider: 'idexx',
+                message: 'Patient reproductive category is invalid',
+                code: 400,
+                error: 'INVALID_PATIENT_GENDER'
+              }
+            ],
+            status: 400
+          })
+          jest.spyOn(reportsServiceMock, 'registerForOrder').mockReturnValue({ id: '1' })
+          await ordersService.createOrder(orderDto)
+        } catch (error) {
+          expect(error).toBeInstanceOf(HttpException)
+          expect(error.getStatus()).toBe(400)
+          expect(error.response).toEqual([
+            {
+              provider: 'idexx',
+              message: 'Invalid order, see data for field level details',
+              code: 400,
+              error: 'INVALID_ORDER'
+            },
+            {
+              provider: 'idexx',
+              message: 'Patient reproductive category is invalid',
+              code: 400,
+              error: 'INVALID_PATIENT_GENDER'
+            }
+          ])
+        }
+      })
     })
     describe('Antech', () => {
       it('should create order and map ref correctly', async () => {
@@ -179,6 +249,58 @@ describe('OrdersService', () => {
           }
         }))
         eventsServiceMock.addEvent.mockClear()
+      })
+      it('should throw an HttpException with a specific error message', async () => {
+        const orderDto = {
+          integrationId: 'antech',
+          sex: 'UNKN',
+          ...exampleOrder
+        } as CreateOrderDto
+        jest.spyOn(integrationsServiceMock, 'findOne').mockResolvedValueOnce({
+          providerConfiguration: {
+            providerId: 'antech',
+            configurationOptions: { url: 'https://test.com' }
+          }
+        })
+        jest.spyOn(refsServiceMock, 'mapPatientRefs').mockImplementationOnce(() => {
+          Object.assign(orderDto.patient, {
+            breed: 'SCHIPPERKE',
+            sex: 'UNKN',
+            species: 'CANINE'
+          })
+        })
+        try {
+          jest.spyOn(clientMock, 'send').mockReturnValue(customPromise)
+          customPromise.toPromise.mockRejectedValueOnce({
+            response: {
+              provider: 'antech',
+              message: 'The request is invalid.',
+              code: 400,
+              error: {
+                'order.PetSex': ['The PetSex cannot be longer than 2 characters.'],
+                request: ['Order Code invalid 1 please confirm you sent a valid Order code ']
+              }
+            },
+            status: 400,
+            message: 'The request is invalid.'
+          })
+          jest.spyOn(reportsServiceMock, 'registerForOrder').mockReturnValue({ id: '1' })
+          await ordersService.createOrder(orderDto)
+          // If the code reaches here, the test will fail
+        } catch (error) {
+          // Ensure that the error message and status code match the expected error
+          expect(error).toBeInstanceOf(HttpException)
+          expect(error.getStatus()).toBe(400)
+          expect(error.response).toEqual({
+            provider: 'antech',
+            message: 'The request is invalid.',
+            code: 400,
+            error: {
+              'order.PetSex': ['The PetSex cannot be longer than 2 characters.'],
+              request: ['Order Code invalid 1 please confirm you sent a valid Order code ']
+            }
+          })
+        }
       })
     })
     describe('Zoetis', () => {

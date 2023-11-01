@@ -32,6 +32,8 @@ import { ExternalResultEventData } from '../common/typings/external-result-event
 import { ProviderResultUtils } from '../common/utils/provider-result-utils'
 import { ProviderConfiguration } from '../providers/entities/provider-configuration.entity'
 import { RefsService } from '../refs/refs.service'
+import { Client } from './entities/client.entity'
+import { Patient } from './entities/patient.entity'
 
 interface OrderTestCancelOrAddParams {
   orderId: string
@@ -48,6 +50,8 @@ export class OrdersService {
     private readonly configService: ConfigService,
     @InjectRepository(Order) private readonly ordersRepository: Repository<Order>,
     @InjectRepository(Test) private readonly testsRepository: Repository<Test>,
+    @InjectRepository(Client) private readonly clientRepository: Repository<Client>,
+    @InjectRepository(Patient) private readonly patientRepository: Repository<Patient>,
     @Inject(ReportsService) private readonly reportsService: ReportsService,
     @Inject(IntegrationsService) private readonly integrationsService: IntegrationsService,
     @Inject(EventsService) private readonly eventsService: EventsService,
@@ -216,7 +220,18 @@ export class OrdersService {
     const { configurationOptions, providerId } = providerConfiguration
 
     // Accept order
+    const client = this.clientRepository.create(createOrderDto.client)
+    const patient = this.patientRepository.create(createOrderDto.patient)
+
+    // Set client and patient ids
+    await this.clientRepository.save(client)
+    await this.patientRepository.save(patient)
+
+    createOrderDto.client = client
+    createOrderDto.patient = patient
+
     await this.refsService.mapPatientRefs(providerId, createOrderDto.patient)
+
     const order = this.ordersRepository.create(createOrderDto)
     order.status = OrderStatus.ACCEPTED
 
@@ -226,44 +241,44 @@ export class OrdersService {
       order.tests.push(await this.testsRepository.create(test))
     }
 
-    // Save order
-    const newOrder = await this.ordersRepository.save(order)
-    await this.eventsService.addEvent({
-      namespace: EventNamespace.ORDERS,
-      type: EventType.ORDER_CREATED,
-      integrationId: integration.id,
-      data: {
-        practice: integration.practice,
-        orderId: order.id,
-        order: newOrder
-      }
-    })
-
-    if (this.nodeEnv === 'seed') return order
-
-    // Send order to Engine
-    const { message, messagePattern } = ieMessageBuilder(
-      providerId,
-      {
-        resource: 'orders',
-        operation: 'create',
-        data: {
-          payload: order,
-          integrationOptions,
-          providerConfiguration: configurationOptions
-        }
-      }
-    )
-
     try {
+      if (this.nodeEnv === 'seed') return order
+
+      // Send order to Engine
+      const { message, messagePattern } = ieMessageBuilder(
+        providerId,
+        {
+          resource: 'orders',
+          operation: 'create',
+          data: {
+            payload: order,
+            integrationOptions,
+            providerConfiguration: configurationOptions
+          }
+        }
+      )
       this.logger.log(`Sending '${messagePattern}' to '${providerId}' provider`)
       const response: OrderCreatedResponse = await this.client
         .send(messagePattern, message)
         .toPromise()
       Object.assign(order, response)
       order.status = response.status
+
+      // Save order
+      const newOrder = await this.ordersRepository.save(order)
+      await this.eventsService.addEvent({
+        namespace: EventNamespace.ORDERS,
+        type: EventType.ORDER_CREATED,
+        integrationId: integration.id,
+        data: {
+          practice: integration.practice,
+          orderId: order.id,
+          order: newOrder
+        }
+      })
     } catch (error: any) {
       this.logger.error(`Error sending order to ${providerId} provider`)
+      console.log('🚀 ~ file: orders.service.ts:282 ~ OrdersService ~ new HttpException(error.response, error.status):', JSON.stringify(new HttpException(error.response, error.status)))
       throw new HttpException(error.response, error.status)
     }
 
