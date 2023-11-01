@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { ProvidersService } from '../providers/services/providers.service'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
