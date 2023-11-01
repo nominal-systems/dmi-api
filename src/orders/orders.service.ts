@@ -1,4 +1,4 @@
-import { ForbiddenException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { ForbiddenException, HttpException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { ClientProxy } from '@nestjs/microservices'
 import { InjectRepository } from '@nestjs/typeorm'
 import { FindManyOptions, In, Repository, SelectQueryBuilder } from 'typeorm'
@@ -265,24 +265,8 @@ export class OrdersService {
       Object.assign(order, response)
       order.status = response.status
     } catch (error: any) {
-      // TODO(gb): change response status?
-      // TODO(gb): log error messages
-      // const messages = error.response.errors.map((e: any) => e.errorCode).join(', ')
-      order.status = OrderStatus.ERROR
-      await this.ordersRepository.save(order)
-      await this.eventsService.addEvent({
-        namespace: EventNamespace.ORDERS,
-        type: EventType.ORDER_UPDATED,
-        integrationId: integration.id,
-        data: {
-          practice: integration.practice,
-          orderId: order.id,
-          status: order.status,
-          order: order
-        }
-      })
-
-      return order
+      this.logger.error(`Error sending order to ${providerId} provider`)
+      throw new HttpException(error.response, error.status)
     }
 
     // Update order
