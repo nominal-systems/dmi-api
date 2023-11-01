@@ -188,10 +188,6 @@ export class RefsService {
     for (const attribute of attributesToMap) {
       const result = await this.findOneByCodeAndProvider(patient[attribute], providerId)
 
-      if (attribute === 'species' && result === undefined) {
-        throw new BadRequestException(`Code '${patient[attribute]}' for ${attribute} not found`)
-      }
-
       if (result !== undefined) {
         mappedPatient[attribute] = result.code
       } else {
