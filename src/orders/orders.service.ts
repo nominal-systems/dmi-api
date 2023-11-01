@@ -278,7 +278,6 @@ export class OrdersService {
       })
     } catch (error: any) {
       this.logger.error(`Error sending order to ${providerId} provider`)
-      console.log('🚀 ~ file: orders.service.ts:282 ~ OrdersService ~ new HttpException(error.response, error.status):', JSON.stringify(new HttpException(error.response, error.status)))
       throw new HttpException(error.response, error.status)
     }
 
