@@ -286,9 +286,7 @@ describe('OrdersService', () => {
           })
           jest.spyOn(reportsServiceMock, 'registerForOrder').mockReturnValue({ id: '1' })
           await ordersService.createOrder(orderDto)
-          // If the code reaches here, the test will fail
         } catch (error) {
-          // Ensure that the error message and status code match the expected error
           expect(error).toBeInstanceOf(HttpException)
           expect(error.getStatus()).toBe(400)
           expect(error.response).toEqual({
