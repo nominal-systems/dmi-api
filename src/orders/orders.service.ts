@@ -20,7 +20,8 @@ import {
   OrderCreatedResponse,
   OrderStatus,
   ProviderResult,
-  Resource
+  Resource,
+  ProviderError
 } from '@nominal-systems/dmi-engine-common'
 import { updateOrder } from '../common/utils/order-status.helper'
 import { EventNamespace } from '../events/constants/event-namespace.enum'
@@ -290,9 +291,10 @@ export class OrdersService {
           order: newOrder
         }
       })
-    } catch (error: any) {
+    } catch (error) {
       this.logger.error(`Error sending order to ${providerId} provider`)
-      throw new HttpException(error.response, error.status)
+      const providerError: ProviderError = error
+      throw new HttpException(providerError, error.status)
     }
 
     // Update order
@@ -323,6 +325,7 @@ export class OrdersService {
       }
     })
 
+    console.log('🚀 ~ file: orders.service.ts:313 ~ OrdersService ~ order:', order)
     return order
   }
 
