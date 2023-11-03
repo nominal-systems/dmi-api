@@ -220,17 +220,6 @@ export class OrdersService {
     const { providerConfiguration, integrationOptions } = integration
     const { configurationOptions, providerId } = providerConfiguration
 
-    // Accept order
-    const client = this.clientRepository.create(createOrderDto.client)
-    const patient = this.patientRepository.create(createOrderDto.patient)
-
-    // Set client and patient ids
-    await this.clientRepository.save(client)
-    await this.patientRepository.save(patient)
-
-    createOrderDto.client = client
-    createOrderDto.patient = patient
-
     await this.refsService.mapPatientRefs(providerId, createOrderDto.patient)
 
     const order = this.ordersRepository.create(createOrderDto)
@@ -279,8 +268,11 @@ export class OrdersService {
       })
     } catch (error) {
       this.logger.error(`Error sending order to ${providerId} provider`)
-      const providerError: ProviderError = error
-      throw new HttpException(providerError, error.status)
+      if (error.name === ProviderError.name) {
+        throw new HttpException(error.response.error, error.response.code)
+      } else {
+        throw new HttpException(error.response, error.status)
+      }
     }
 
     // Update order
@@ -311,7 +303,6 @@ export class OrdersService {
       }
     })
 
-    console.log('🚀 ~ file: orders.service.ts:313 ~ OrdersService ~ order:', order)
     return order
   }
 
