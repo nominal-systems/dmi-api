@@ -1882,5 +1882,90 @@ describe('ReportsService', () => {
         eventsServiceMock.addEvent.mockReset()
       })
     })
+    describe('Zoetis', () => {
+      it('should correctly map report with patient on update', async () => {
+        const existingReport = {
+          id: '3bf510b9-8284-4af0-bd3f-4efc913c8331',
+          orderId: 'fcb1e0ec-c005-4778-8a42-e4b9a7e70813',
+          status: 'REGISTERED',
+          createdAt: '2023-10-26T22:03:37.303Z',
+          updatedAt: '2023-10-26T22:03:37.303Z',
+          order: {
+            id: 'fcb1e0ec-c005-4778-8a42-e4b9a7e70813',
+            requisitionId: 'WDYIATM1',
+            externalId: 'WDYIATM1',
+            integrationId: '9da2c985-6452-40b9-84e1-84c2d3c14037',
+            submissionUri: null,
+            status: 'SUBMITTED',
+            devices: null,
+            technician: null,
+            notes: null,
+            editable: false,
+            createdAt: '2023-10-26T22:03:36.461Z',
+            updatedAt: '2023-10-26T22:03:37.000Z',
+            veterinarian: {
+              id: '237ae9b6-9c3c-4329-949f-0a9393904531',
+              lastName: 'Anderson',
+              firstName: 'Alyssa'
+            },
+            patient: {
+              id: '2e624209-06ef-4ded-bfc9-c56e0971d5fc',
+              name: 'Medicalnotes_author_test',
+              sex: 'UNKNOWN',
+              species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
+              breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec',
+              birthdate: '2022-08-15',
+              weightMeasurement: null,
+              weightUnits: null
+            },
+            client: {
+              id: 'bab9e89c-cd52-4d3e-9301-48486db61c22',
+              lastName: 'M',
+              firstName: 'Srikanth',
+              isStaff: false
+            }
+          },
+          testResultsSet: [],
+          patient: {
+            id: '2e624209-06ef-4ded-bfc9-c56e0971d5fc',
+            name: 'Medicalnotes_author_test',
+            sex: 'UNKNOWN',
+            species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
+            breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec',
+            birthdate: '2022-08-15',
+            weightMeasurement: null,
+            weightUnits: null
+          }
+        } as unknown as Report
+        const results: ProviderResult[] = FileUtils.loadFile('test/zoetis/results-01.json')
+        jest.spyOn(reportsService, 'findReportsByExternalOrderIds').mockResolvedValueOnce([existingReport])
+        jest.spyOn(ordersServiceMock, 'findOrdersByExternalIds').mockResolvedValue([])
+        jest.spyOn(ordersServiceMock, 'getOrderFromProvider').mockResolvedValue(null)
+        await reportsService.handleExternalResults({
+          integrationId: 'zoetis',
+          results: results
+        })
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledTimes(1)
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
+          namespace: EventNamespace.REPORTS,
+          type: EventType.REPORT_UPDATED,
+          data: expect.objectContaining({
+            report: expect.objectContaining({
+              patient: {
+                id: '2e624209-06ef-4ded-bfc9-c56e0971d5fc',
+                name: 'Medicalnotes_author_test',
+                sex: 'UNKNOWN',
+                species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
+                breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec',
+                birthdate: '2022-08-15',
+                weightMeasurement: null,
+                weightUnits: null
+              }
+            })
+          })
+        }))
+        eventsServiceMock.addEvent.mockReset()
+      })
+    })
   })
 })
