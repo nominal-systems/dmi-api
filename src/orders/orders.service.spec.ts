@@ -272,17 +272,16 @@ describe('OrdersService', () => {
         try {
           jest.spyOn(clientMock, 'send').mockReturnValue(customPromise)
           customPromise.toPromise.mockRejectedValueOnce({
+            name: 'ProviderError',
             response: {
               provider: 'antech',
-              message: 'The request is invalid.',
               code: 400,
+              message: 'The request is invalid.',
               error: {
                 'order.PetSex': ['The PetSex cannot be longer than 2 characters.'],
                 request: ['Order Code invalid 1 please confirm you sent a valid Order code ']
               }
-            },
-            status: 400,
-            message: 'The request is invalid.'
+            }
           })
           jest.spyOn(reportsServiceMock, 'registerForOrder').mockReturnValue({ id: '1' })
           await ordersService.createOrder(orderDto)
@@ -290,13 +289,12 @@ describe('OrdersService', () => {
           expect(error).toBeInstanceOf(HttpException)
           expect(error.getStatus()).toBe(400)
           expect(error.response).toEqual({
-            provider: 'antech',
-            message: 'The request is invalid.',
-            code: 400,
-            error: {
-              'order.PetSex': ['The PetSex cannot be longer than 2 characters.'],
-              request: ['Order Code invalid 1 please confirm you sent a valid Order code ']
-            }
+            'order.PetSex': [
+              'The PetSex cannot be longer than 2 characters.'
+            ],
+            request: [
+              'Order Code invalid 1 please confirm you sent a valid Order code '
+            ]
           })
         }
       })
