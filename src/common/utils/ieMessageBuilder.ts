@@ -5,7 +5,7 @@ interface IntergrationEngineOutgoingMessageData {
   providerConfiguration?: any
   integrationOptions?: any
   payload?: any
-  autoSubmit?: boolean
+  autoSubmitOrder?: boolean
 }
 
 interface IntegrationEngineResultsData {

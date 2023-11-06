@@ -205,7 +205,7 @@ export class OrdersService {
 
   async createOrder (
     createOrderDto: CreateOrderDto,
-    autoSubmit = false
+    autoSubmitOrder = false
   ): Promise<Order> {
     // Find integration
     const integration = await this.integrationsService.findOne({
@@ -251,7 +251,8 @@ export class OrdersService {
           data: {
             payload: order,
             integrationOptions,
-            providerConfiguration: configurationOptions
+            providerConfiguration: configurationOptions,
+            autoSubmitOrder
           }
         }
       )
