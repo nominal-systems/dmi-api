@@ -103,8 +103,8 @@ export class OrdersController {
   }
 
   @Post()
-  async createOrder (@Body() createOrderDto: CreateOrderDto): Promise<Order> {
-    return await this.ordersService.createOrder(createOrderDto)
+  async createOrder (@Body() createOrderDto: CreateOrderDto, @Query('autoSubmit') autoSubmit: boolean): Promise<Order> {
+    return await this.ordersService.createOrder(createOrderDto, autoSubmit)
   }
 
   @Delete(':id')
