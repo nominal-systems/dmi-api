@@ -269,7 +269,7 @@ export class OrdersService {
     } catch (error) {
       this.logger.error(`Error sending order to ${providerId} provider`)
       if (error.name === ProviderError.name) {
-        throw new HttpException(error.response.error, error.response.code)
+        throw error
       } else {
         throw new HttpException(error.response, error.status)
       }

@@ -10,6 +10,7 @@ import {
 import { RpcException } from '@nestjs/microservices'
 import { Observable, throwError } from 'rxjs'
 import { catchError } from 'rxjs/operators'
+import { ProviderError } from '@nominal-systems/dmi-engine-common'
 
 @Injectable()
 export class RpcExceptionInterceptor implements NestInterceptor {
@@ -33,6 +34,11 @@ export class RpcExceptionInterceptor implements NestInterceptor {
           return throwError(
             new InternalServerErrorException(err)
           )
+        } else if (err.name !== null && err.name === ProviderError.name) {
+          const { error, code, message, provider } = err.response
+          const log = `Provider ${JSON.stringify(provider)} failed with status ${JSON.stringify(code)}: Exception: ${JSON.stringify(message)}`
+          this.logger.error(log)
+          return throwError(new HttpException(error, code))
         } else if (err.status != null && err.message != null) {
           const { status, message, response } = err
           let messageString = response.error != null ? response.error : message
