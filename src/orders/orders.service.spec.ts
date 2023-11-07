@@ -8,7 +8,7 @@ import { Repository } from 'typeorm'
 import { ReportsService } from '../reports/reports.service'
 import { IntegrationsService } from '../integrations/integrations.service'
 import { EventsService } from '../events/services/events.service'
-import { ProviderResult } from '@nominal-systems/dmi-engine-common'
+import { ProviderError, ProviderResult } from '@nominal-systems/dmi-engine-common'
 import * as fs from 'fs'
 import * as path from 'path'
 import { EventNamespace } from '../events/constants/event-namespace.enum'
@@ -286,16 +286,15 @@ describe('OrdersService', () => {
           jest.spyOn(reportsServiceMock, 'registerForOrder').mockReturnValue({ id: '1' })
           await ordersService.createOrder(orderDto)
         } catch (error) {
-          expect(error).toBeInstanceOf(HttpException)
-          expect(error.getStatus()).toBe(400)
-          expect(error.response).toEqual({
+          expect(error.name).toEqual(ProviderError.name)
+          expect(error.response.error).toEqual(expect.objectContaining({
             'order.PetSex': [
               'The PetSex cannot be longer than 2 characters.'
             ],
             request: [
               'Order Code invalid 1 please confirm you sent a valid Order code '
             ]
-          })
+          }))
         }
       })
     })
