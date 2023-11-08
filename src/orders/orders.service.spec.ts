@@ -16,8 +16,6 @@ import { EventType } from '../events/constants/event-type.enum'
 import { RefsService } from '../refs/refs.service'
 import { CreateOrderDto } from './dtos/create-order.dto'
 import { HttpException } from '@nestjs/common'
-import { Client } from './entities/client.entity'
-import { Patient } from './entities/patient.entity'
 
 export const repositoryMockFactory: () => MockUtils<Repository<any>> = jest.fn(() => ({
   find: jest.fn(entity => entity),
@@ -80,14 +78,6 @@ describe('OrdersService', () => {
           useFactory: repositoryMockFactory
         },
         {
-          provide: getRepositoryToken(Client),
-          useFactory: repositoryMockFactory
-        },
-        {
-          provide: getRepositoryToken(Patient),
-          useFactory: repositoryMockFactory
-        },
-        {
           provide: ReportsService,
           useValue: reportsServiceMock
         },
@@ -118,7 +108,7 @@ describe('OrdersService', () => {
     expect(ordersService).toBeDefined()
   })
 
-  describe('should create orders', () => {
+  describe('createOrder()', () => {
     const exampleOrder = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'test', 'orders', 'order.json'), 'utf8'))
     describe('IDEXX', () => {
       it('should create order and map ref correctly', async () => {
