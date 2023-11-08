@@ -33,8 +33,6 @@ import { ExternalResultEventData } from '../common/typings/external-result-event
 import { ProviderResultUtils } from '../common/utils/provider-result-utils'
 import { ProviderConfiguration } from '../providers/entities/provider-configuration.entity'
 import { RefsService } from '../refs/refs.service'
-import { Client } from './entities/client.entity'
-import { Patient } from './entities/patient.entity'
 
 interface OrderTestCancelOrAddParams {
   orderId: string
@@ -51,8 +49,6 @@ export class OrdersService {
     private readonly configService: ConfigService,
     @InjectRepository(Order) private readonly ordersRepository: Repository<Order>,
     @InjectRepository(Test) private readonly testsRepository: Repository<Test>,
-    @InjectRepository(Client) private readonly clientRepository: Repository<Client>,
-    @InjectRepository(Patient) private readonly patientRepository: Repository<Patient>,
     @Inject(ReportsService) private readonly reportsService: ReportsService,
     @Inject(IntegrationsService) private readonly integrationsService: IntegrationsService,
     @Inject(EventsService) private readonly eventsService: EventsService,
