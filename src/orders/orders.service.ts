@@ -227,7 +227,6 @@ export class OrdersService {
     for (const test of createOrderDto.testCodes) {
       order.tests.push(await this.testsRepository.create(test))
     }
-
     // Save order
     const newOrder = await this.ordersRepository.save(order)
     await this.eventsService.addEvent({
@@ -240,7 +239,6 @@ export class OrdersService {
         order: newOrder
       }
     })
-
     try {
       if (this.nodeEnv === 'seed') return order
 
@@ -263,21 +261,21 @@ export class OrdersService {
         .toPromise()
       Object.assign(order, response)
       order.status = response.status
-
-      // Save order
-      const newOrder = await this.ordersRepository.save(order)
+    } catch (error) {
+      this.logger.error(`Error sending order to ${providerId} provider`)
+      order.status = OrderStatus.ERROR
+      await this.ordersRepository.save(order)
       await this.eventsService.addEvent({
         namespace: EventNamespace.ORDERS,
-        type: EventType.ORDER_CREATED,
+        type: EventType.ORDER_UPDATED,
         integrationId: integration.id,
         data: {
           practice: integration.practice,
           orderId: order.id,
-          order: newOrder
+          status: order.status,
+          order: order
         }
       })
-    } catch (error) {
-      this.logger.error(`Error sending order to ${providerId} provider`)
       if (error.name === ProviderError.name) {
         throw error
       } else {
