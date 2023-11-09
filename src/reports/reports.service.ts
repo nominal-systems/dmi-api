@@ -262,6 +262,7 @@ export class ReportsService {
       .leftJoinAndSelect('patient.identifier', 'identifier')
       .leftJoinAndSelect('report.testResultsSet', 'testResult')
       .leftJoinAndSelect('report.patient', 'reportPatient')
+      .leftJoinAndSelect('reportPatient.identifier', 'reportPatientIdentifier')
       .leftJoinAndSelect('testResult.observations', 'observation')
       .where('order.externalId IN (:...externalOrderIds)', { externalOrderIds })
       .orderBy('testResult.seq', 'ASC')
