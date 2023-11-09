@@ -11,6 +11,9 @@ export class CreateOrderDtoClient {
   @IsNotEmpty()
   firstName: string
 
+  @IsOptional()
+  identifier?: CreateIdentifierDto[]
+
   // TODO(gb): Add contact
   // TODO(gb): Add address
   // TODO(gb): Add isDoctor
