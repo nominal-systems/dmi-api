@@ -186,12 +186,14 @@ export class RefsService {
     const mappedPatient: Partial<CreateOrderDtoPatient> = {}
 
     for (const attribute of attributesToMap) {
-      const result = await this.findOneByCodeAndProvider(patient[attribute], providerId)
+      if (patient[attribute] !== undefined) {
+        const result = await this.findOneByCodeAndProvider(patient[attribute], providerId)
 
-      if (result !== undefined) {
-        mappedPatient[attribute] = result.code
-      } else {
-        mappedPatient[attribute] = patient[attribute]
+        if (result !== undefined) {
+          mappedPatient[attribute] = result.code
+        } else {
+          mappedPatient[attribute] = patient[attribute]
+        }
       }
     }
 
