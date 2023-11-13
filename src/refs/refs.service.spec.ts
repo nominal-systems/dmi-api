@@ -166,6 +166,21 @@ describe('RefsService', () => {
           breed: '163'
         }))
       })
+      it('should map existing patient refs only', async () => {
+        const patient = {
+          name: 'Medicalnotes_author_test',
+          sex: 'UNKNOWN',
+          species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
+          birthdate: '2022-08-15'
+        } as CreateOrderDtoPatient
+        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'U' })
+        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: '41' })
+        await refsService.mapPatientRefs('antech', patient)
+        expect(patient).toEqual(expect.objectContaining({
+          sex: 'U',
+          species: '41'
+        }))
+      })
     })
     describe('Idexx', () => {
       const patient = {
@@ -180,11 +195,26 @@ describe('RefsService', () => {
         findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'CANINE' })
         findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'SCHIPPERKE' })
 
-        await refsService.mapPatientRefs('antech', patient)
+        await refsService.mapPatientRefs('idexx', patient)
         expect(patient).toEqual(expect.objectContaining({
           sex: 'UNKNOWN',
           species: 'CANINE',
           breed: 'SCHIPPERKE'
+        }))
+      })
+      it('should map existing patient refs only', async () => {
+        const patient = {
+          name: 'Medicalnotes_author_test',
+          sex: 'UNKNOWN',
+          species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
+          birthdate: '2022-08-15'
+        } as CreateOrderDtoPatient
+        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'UNKNOWN' })
+        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'CANINE' })
+        await refsService.mapPatientRefs('idexx', patient)
+        expect(patient).toEqual(expect.objectContaining({
+          sex: 'UNKNOWN',
+          species: 'CANINE'
         }))
       })
     })
@@ -206,6 +236,21 @@ describe('RefsService', () => {
           sex: 'UNKNOWN',
           species: 'DOG',
           breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec'
+        }))
+      })
+      it('should map existing patient refs only', async () => {
+        const patient = {
+          name: 'Medicalnotes_author_test',
+          sex: 'UNKNOWN',
+          species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
+          birthdate: '2022-08-15'
+        } as CreateOrderDtoPatient
+        findOneByCodeAndProviderMock.mockResolvedValueOnce(undefined)
+        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'DOG' })
+        await refsService.mapPatientRefs('zoetis', patient)
+        expect(patient).toEqual(expect.objectContaining({
+          sex: 'UNKNOWN',
+          species: 'DOG'
         }))
       })
     })
