@@ -8,11 +8,14 @@ import { Repository } from 'typeorm'
 import { ReportsService } from '../reports/reports.service'
 import { IntegrationsService } from '../integrations/integrations.service'
 import { EventsService } from '../events/services/events.service'
-import { ProviderResult } from '@nominal-systems/dmi-engine-common'
+import { ProviderError, ProviderResult } from '@nominal-systems/dmi-engine-common'
 import * as fs from 'fs'
 import * as path from 'path'
 import { EventNamespace } from '../events/constants/event-namespace.enum'
 import { EventType } from '../events/constants/event-type.enum'
+import { RefsService } from '../refs/refs.service'
+import { CreateOrderDto } from './dtos/create-order.dto'
+import { HttpException } from '@nestjs/common'
 
 export const repositoryMockFactory: () => MockUtils<Repository<any>> = jest.fn(() => ({
   find: jest.fn(entity => entity),
@@ -27,7 +30,9 @@ describe('OrdersService', () => {
   const configServiceMock = {
     get: jest.fn()
   }
-  const reportsServiceMock = {}
+  const reportsServiceMock = {
+    registerForOrder: jest.fn()
+  }
   const integrationsServiceMock = {
     findById: jest.fn().mockImplementation((integrationId) => {
       return {
@@ -41,11 +46,20 @@ describe('OrdersService', () => {
       practice: {}
     })
   }
+  const refsServiceMock = {
+    mapPatientRefs: jest.fn(),
+    findOneByCodeAndProvider: jest.fn()
+  }
   let ordersRepositoryMock: Partial<Repository<Order>>
   const eventsServiceMock = {
     addEvent: jest.fn()
   }
-  const clientMock = {}
+  const clientMock = {
+    send: jest.fn()
+  }
+  const customPromise = {
+    toPromise: jest.fn()
+  }
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -72,6 +86,10 @@ describe('OrdersService', () => {
           useValue: integrationsServiceMock
         },
         {
+          provide: RefsService,
+          useValue: refsServiceMock
+        },
+        {
           provide: EventsService,
           useValue: eventsServiceMock
         },
@@ -88,6 +106,224 @@ describe('OrdersService', () => {
 
   it('should be defined', () => {
     expect(ordersService).toBeDefined()
+  })
+
+  describe('createOrder()', () => {
+    const exampleOrder = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'test', 'orders', 'order.json'), 'utf8'))
+    describe('IDEXX', () => {
+      it('should create order and map ref correctly', async () => {
+        const orderDto = {
+          integrationId: 'idexx',
+          ...exampleOrder
+        } as CreateOrderDto
+        jest.spyOn(integrationsServiceMock, 'findOne').mockResolvedValueOnce({
+          providerConfiguration: {
+            providerId: 'idexx',
+            configurationOptions: { url: 'https://test.com' }
+          }
+        })
+        jest.spyOn(refsServiceMock, 'mapPatientRefs').mockImplementationOnce(() => {
+          Object.assign(orderDto.patient, {
+            breed: 'SCHIPPERKE',
+            sex: 'UNKNOWN',
+            species: 'CANINE'
+          })
+        })
+        jest.spyOn(clientMock, 'send').mockReturnValue(customPromise)
+        customPromise.toPromise.mockResolvedValueOnce({ status: 'COMPLETED' })
+        jest.spyOn(reportsServiceMock, 'registerForOrder').mockReturnValue({ id: '1' })
+        const order = await ordersService.createOrder(orderDto)
+        expect(order).toEqual(expect.objectContaining({
+          integrationId: 'idexx',
+          patient: {
+            birthdate: '2022-08-15',
+            breed: 'SCHIPPERKE',
+            name: 'Medicalnotes_author_test',
+            sex: 'UNKNOWN',
+            species: 'CANINE'
+          }
+        }))
+        eventsServiceMock.addEvent.mockClear()
+      })
+      it('should throw an HttpException with a specific error message', async () => {
+        const orderDto = {
+          integrationId: 'idexx',
+          sex: 'UNKN',
+          ...exampleOrder
+        } as CreateOrderDto
+        jest.spyOn(integrationsServiceMock, 'findOne').mockResolvedValueOnce({
+          providerConfiguration: {
+            providerId: 'idexx',
+            configurationOptions: { url: 'https://test.com' }
+          }
+        })
+        jest.spyOn(refsServiceMock, 'mapPatientRefs').mockImplementationOnce(() => {
+          Object.assign(orderDto.patient, {
+            breed: 'SCHIPPERKE',
+            sex: 'UNKN',
+            species: 'CANINE'
+          })
+        })
+        try {
+          jest.spyOn(clientMock, 'send').mockReturnValue(customPromise)
+          customPromise.toPromise.mockRejectedValueOnce({
+            response: [
+              {
+                provider: 'idexx',
+                message: 'Invalid order, see data for field level details',
+                code: 400,
+                error: 'INVALID_ORDER'
+              },
+              {
+                provider: 'idexx',
+                message: 'Patient reproductive category is invalid',
+                code: 400,
+                error: 'INVALID_PATIENT_GENDER'
+              }
+            ],
+            status: 400
+          })
+          jest.spyOn(reportsServiceMock, 'registerForOrder').mockReturnValue({ id: '1' })
+          await ordersService.createOrder(orderDto)
+        } catch (error) {
+          expect(error).toBeInstanceOf(HttpException)
+          expect(error.getStatus()).toBe(400)
+          expect(error.response).toEqual([
+            {
+              provider: 'idexx',
+              message: 'Invalid order, see data for field level details',
+              code: 400,
+              error: 'INVALID_ORDER'
+            },
+            {
+              provider: 'idexx',
+              message: 'Patient reproductive category is invalid',
+              code: 400,
+              error: 'INVALID_PATIENT_GENDER'
+            }
+          ])
+        }
+      })
+    })
+    describe('Antech', () => {
+      it('should create order and map ref correctly', async () => {
+        const orderDto = {
+          integrationId: 'antech',
+          ...exampleOrder
+        } as CreateOrderDto
+        jest.spyOn(integrationsServiceMock, 'findOne').mockResolvedValueOnce({
+          providerConfiguration: {
+            providerId: 'antech',
+            configurationOptions: { url: 'https://test.com' }
+          }
+        })
+        jest.spyOn(refsServiceMock, 'mapPatientRefs').mockImplementationOnce(() => {
+          Object.assign(orderDto.patient, {
+            breed: '163',
+            sex: 'U',
+            species: '41'
+          })
+        })
+        jest.spyOn(clientMock, 'send').mockReturnValue(customPromise)
+        customPromise.toPromise.mockResolvedValueOnce({ status: 'COMPLETED' })
+        jest.spyOn(reportsServiceMock, 'registerForOrder').mockReturnValue({ id: '1' })
+        const order = await ordersService.createOrder(orderDto)
+        expect(order).toEqual(expect.objectContaining({
+          integrationId: 'antech',
+          patient: {
+            birthdate: '2022-08-15',
+            breed: '163',
+            name: 'Medicalnotes_author_test',
+            sex: 'U',
+            species: '41'
+          }
+        }))
+        eventsServiceMock.addEvent.mockClear()
+      })
+      it('should throw an HttpException with a specific error message', async () => {
+        const orderDto = {
+          integrationId: 'antech',
+          sex: 'UNKN',
+          ...exampleOrder
+        } as CreateOrderDto
+        jest.spyOn(integrationsServiceMock, 'findOne').mockResolvedValueOnce({
+          providerConfiguration: {
+            providerId: 'antech',
+            configurationOptions: { url: 'https://test.com' }
+          }
+        })
+        jest.spyOn(refsServiceMock, 'mapPatientRefs').mockImplementationOnce(() => {
+          Object.assign(orderDto.patient, {
+            breed: 'SCHIPPERKE',
+            sex: 'UNKN',
+            species: 'CANINE'
+          })
+        })
+        try {
+          jest.spyOn(clientMock, 'send').mockReturnValue(customPromise)
+          customPromise.toPromise.mockRejectedValueOnce({
+            name: 'ProviderError',
+            response: {
+              provider: 'antech',
+              code: 400,
+              message: 'The request is invalid.',
+              error: {
+                'order.PetSex': ['The PetSex cannot be longer than 2 characters.'],
+                request: ['Order Code invalid 1 please confirm you sent a valid Order code ']
+              }
+            }
+          })
+          jest.spyOn(reportsServiceMock, 'registerForOrder').mockReturnValue({ id: '1' })
+          await ordersService.createOrder(orderDto)
+        } catch (error) {
+          expect(error.name).toEqual(ProviderError.name)
+          expect(error.response.error).toEqual(expect.objectContaining({
+            'order.PetSex': [
+              'The PetSex cannot be longer than 2 characters.'
+            ],
+            request: [
+              'Order Code invalid 1 please confirm you sent a valid Order code '
+            ]
+          }))
+        }
+      })
+    })
+    describe('Zoetis', () => {
+      it('should create order and map ref correctly even though sex and breed does not exists', async () => {
+        const orderDto = {
+          integrationId: 'zoetis',
+          ...exampleOrder
+        } as CreateOrderDto
+        jest.spyOn(integrationsServiceMock, 'findOne').mockResolvedValueOnce({
+          providerConfiguration: {
+            providerId: 'zoetis',
+            configurationOptions: { url: 'https://test.com' }
+          }
+        })
+        jest.spyOn(refsServiceMock, 'mapPatientRefs').mockImplementationOnce(() => {
+          Object.assign(orderDto.patient, {
+            breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec',
+            sex: 'UNKNOWN',
+            species: 'DOG'
+          })
+        })
+        jest.spyOn(clientMock, 'send').mockReturnValue(customPromise)
+        customPromise.toPromise.mockResolvedValueOnce({ status: 'COMPLETED' })
+        jest.spyOn(reportsServiceMock, 'registerForOrder').mockReturnValue({ id: '1' })
+        const order = await ordersService.createOrder(orderDto)
+        expect(order).toEqual(expect.objectContaining({
+          integrationId: 'zoetis',
+          patient: {
+            birthdate: '2022-08-15',
+            breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec',
+            name: 'Medicalnotes_author_test',
+            sex: 'UNKNOWN',
+            species: 'DOG'
+          }
+        }))
+        eventsServiceMock.addEvent.mockClear()
+      })
+    })
   })
 
   describe('handleExternalOrders()', () => {

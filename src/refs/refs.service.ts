@@ -6,6 +6,7 @@ import { Ref } from './entities/ref.entity'
 import { ProviderRef } from './entities/providerRef.entity'
 import { CreateRefsDTO } from './dtos/create-refs.dto'
 import { Provider } from '../providers/entities/provider.entity'
+import { CreateOrderDtoPatient } from '../orders/dtos/create-order.dto'
 
 @Injectable()
 export class RefsService {
@@ -164,6 +165,15 @@ export class RefsService {
     return ref
   }
 
+  async findOneByCodeAndProvider (code: string, provider?: string): Promise<ProviderRef | undefined> {
+    return await this.providerRefRepository.createQueryBuilder('providerRef')
+      .leftJoin('providerRef.ref', 'ref', 'ref.id = providerRef.ref')
+      .leftJoin('providerRef.provider', 'provider', 'provider.id = providerRef.provider')
+      .select(['ref', 'providerRef.code', 'provider.id'])
+      .where('ref.code = :code AND providerRef.provider = :provider', { code, provider: provider })
+      .getOne()
+  }
+
   async findProvidersMappedRefs (): Promise<any> {
     const refs = await this.providerRefRepository.createQueryBuilder('providerRefs')
       .leftJoin('providerRefs.ref', 'ref', 'ref.id = providerRefs.ref')
@@ -181,5 +191,23 @@ export class RefsService {
     }, { mappedRefs: [] as ProviderRef[], unmappedRefs: [] as ProviderRef[] })
 
     return { mappedRefs, unmappedRefs }
+  }
+
+  async mapPatientRefs (providerId: string, patient: CreateOrderDtoPatient): Promise<void> {
+    const attributesToMap = ['sex', 'species', 'breed']
+
+    const mappedPatient: Partial<CreateOrderDtoPatient> = {}
+
+    for (const attribute of attributesToMap) {
+      const result = await this.findOneByCodeAndProvider(patient[attribute], providerId)
+
+      if (result !== undefined) {
+        mappedPatient[attribute] = result.code
+      } else {
+        mappedPatient[attribute] = patient[attribute]
+      }
+    }
+
+    Object.assign(patient, mappedPatient)
   }
 }

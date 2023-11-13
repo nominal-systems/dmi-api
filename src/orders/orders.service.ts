@@ -1,4 +1,4 @@
-import { ForbiddenException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { ForbiddenException, HttpException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { ClientProxy } from '@nestjs/microservices'
 import { InjectRepository } from '@nestjs/typeorm'
 import { FindManyOptions, In, Repository, SelectQueryBuilder } from 'typeorm'
@@ -20,7 +20,8 @@ import {
   OrderCreatedResponse,
   OrderStatus,
   ProviderResult,
-  Resource
+  Resource,
+  ProviderError
 } from '@nominal-systems/dmi-engine-common'
 import { updateOrder } from '../common/utils/order-status.helper'
 import { EventNamespace } from '../events/constants/event-namespace.enum'
@@ -31,6 +32,7 @@ import { ExternalOrderMapper } from './mappers/external-order.mapper'
 import { ExternalResultEventData } from '../common/typings/external-result-event-data.interface'
 import { ProviderResultUtils } from '../common/utils/provider-result-utils'
 import { ProviderConfiguration } from '../providers/entities/provider-configuration.entity'
+import { RefsService } from '../refs/refs.service'
 
 interface OrderTestCancelOrAddParams {
   orderId: string
@@ -50,6 +52,7 @@ export class OrdersService {
     @Inject(ReportsService) private readonly reportsService: ReportsService,
     @Inject(IntegrationsService) private readonly integrationsService: IntegrationsService,
     @Inject(EventsService) private readonly eventsService: EventsService,
+    @Inject(RefsService) private readonly refsService: RefsService,
     @Inject('ACTIVEMQ') private readonly client: ClientProxy
   ) {
     this.nodeEnv = this.configService.get('nodeEnv')
@@ -201,7 +204,8 @@ export class OrdersService {
   }
 
   async createOrder (
-    createOrderDto: CreateOrderDto
+    createOrderDto: CreateOrderDto,
+    autoSubmitOrder = false
   ): Promise<Order> {
     // Find integration
     const integration = await this.integrationsService.findOne({
@@ -210,8 +214,11 @@ export class OrdersService {
         relations: ['providerConfiguration', 'practice', 'practice.identifier']
       }
     })
+    const { providerConfiguration, integrationOptions } = integration
+    const { configurationOptions, providerId } = providerConfiguration
 
-    // Accept order
+    await this.refsService.mapPatientRefs(providerId, createOrderDto.patient)
+
     const order = this.ordersRepository.create(createOrderDto)
     order.status = OrderStatus.ACCEPTED
 
@@ -220,7 +227,6 @@ export class OrdersService {
     for (const test of createOrderDto.testCodes) {
       order.tests.push(await this.testsRepository.create(test))
     }
-
     // Save order
     const newOrder = await this.ordersRepository.save(order)
     await this.eventsService.addEvent({
@@ -233,37 +239,31 @@ export class OrdersService {
         order: newOrder
       }
     })
-
-    const { providerConfiguration, integrationOptions } = integration
-    const { configurationOptions, providerId } = providerConfiguration
-
-    if (this.nodeEnv === 'seed') return order
-
-    // Send order to Engine
-    const { message, messagePattern } = ieMessageBuilder(
-      providerId,
-      {
-        resource: 'orders',
-        operation: 'create',
-        data: {
-          payload: order,
-          integrationOptions,
-          providerConfiguration: configurationOptions
-        }
-      }
-    )
-
     try {
+      if (this.nodeEnv === 'seed') return order
+
+      // Send order to Engine
+      const { message, messagePattern } = ieMessageBuilder(
+        providerId,
+        {
+          resource: 'orders',
+          operation: 'create',
+          data: {
+            payload: order,
+            integrationOptions,
+            providerConfiguration: configurationOptions,
+            autoSubmitOrder
+          }
+        }
+      )
       this.logger.log(`Sending '${messagePattern}' to '${providerId}' provider`)
       const response: OrderCreatedResponse = await this.client
         .send(messagePattern, message)
         .toPromise()
       Object.assign(order, response)
       order.status = response.status
-    } catch (error: any) {
-      // TODO(gb): change response status?
-      // TODO(gb): log error messages
-      // const messages = error.response.errors.map((e: any) => e.errorCode).join(', ')
+    } catch (error) {
+      this.logger.error(`Error sending order to ${providerId} provider`)
       order.status = OrderStatus.ERROR
       await this.ordersRepository.save(order)
       await this.eventsService.addEvent({
@@ -277,8 +277,11 @@ export class OrdersService {
           order: order
         }
       })
-
-      return order
+      if (error.name === ProviderError.name) {
+        throw error
+      } else {
+        throw new HttpException(error.response, error.status)
+      }
     }
 
     // Update order

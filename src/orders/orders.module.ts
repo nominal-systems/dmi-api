@@ -13,12 +13,14 @@ import { EventsModule } from '../events/events.module'
 import activeMQClientProvider from '../common/providers/activemq-client.provider'
 import { Test } from './entities/test.entity'
 import { ReportsModule } from '../reports/reports.module'
+import { RefsModule } from '../refs/refs.module'
 
 @Module({
   imports: [
     OrganizationsModule,
     IntegrationsModule,
     EventsModule,
+    RefsModule,
     forwardRef(() => ReportsModule),
     TypeOrmModule.forFeature([Order, Patient, Client, Veterinarian, Test]),
     ClientsModule.registerAsync([activeMQClientProvider])
@@ -27,4 +29,4 @@ import { ReportsModule } from '../reports/reports.module'
   providers: [OrdersService],
   exports: [OrdersService]
 })
-export class OrdersModule {}
+export class OrdersModule { }
