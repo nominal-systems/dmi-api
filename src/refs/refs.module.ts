@@ -7,6 +7,7 @@ import { IntegrationsModule } from '../integrations/integrations.module'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { Ref } from './entities/ref.entity'
 import { ProviderRef } from './entities/providerRef.entity'
+import { ProviderRefService } from './providerRef.service'
 
 @Module({
   imports: [
@@ -16,7 +17,7 @@ import { ProviderRef } from './entities/providerRef.entity'
     TypeOrmModule.forFeature([ProviderRef, Ref])
   ],
   controllers: [RefController],
-  providers: [RefsService],
-  exports: [RefsService]
+  providers: [RefsService, ProviderRefService],
+  exports: [RefsService, ProviderRefService]
 })
 export class RefsModule {}

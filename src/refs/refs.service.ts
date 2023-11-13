@@ -14,10 +14,8 @@ export class RefsService {
 
   constructor (
     private readonly providersService: ProvidersService,
-    @InjectRepository(ProviderRef)
-    private readonly providerRefRepository: Repository<ProviderRef>,
-    @InjectRepository(Ref)
-    private readonly refRepository: Repository<Ref>
+    @InjectRepository(ProviderRef) private readonly providerRefRepository: Repository<ProviderRef>,
+    @InjectRepository(Ref) private readonly refRepository: Repository<Ref>
   ) {
   }
 
@@ -27,7 +25,13 @@ export class RefsService {
       let newRefsCount = 0
       let existingRefsCount = 0
       for (const item of mapList.items) {
-        const existingItem = await this.providerRefRepository.findOne({ where: { code: item.code, type: type, provider: provider } })
+        const existingItem = await this.providerRefRepository.findOne({
+          where: {
+            code: item.code,
+            type: type,
+            provider: provider
+          }
+        })
 
         if (existingItem === undefined) {
           const newItem = this.providerRefRepository.create({
@@ -78,16 +82,25 @@ export class RefsService {
     await this.syncProviderRefs(provider, sexes, 'sex')
   }
 
-  async getSpecies (): Promise<Ref[]> {
-    return await this.refRepository.find({ where: { type: 'species' }, select: ['code', 'name'] })
+  async getSpecies (
+    select: Array<(keyof Ref)> = ['code', 'name'],
+    relations: string[] = []
+  ): Promise<Ref[]> {
+    return await this.refRepository.find({ where: { type: 'species' }, select, relations })
   }
 
-  async getBreeds (): Promise<Ref[]> {
-    return await this.refRepository.find({ where: { type: 'breed' }, select: ['code', 'name', 'species'] })
+  async getBreeds (
+    select: Array<(keyof Ref)> = ['code', 'name', 'species'],
+    relations: string[] = []
+  ): Promise<Ref[]> {
+    return await this.refRepository.find({ where: { type: 'breed' }, select, relations })
   }
 
-  async getSexes (): Promise<Ref[]> {
-    return await this.refRepository.find({ where: { type: 'sex' }, select: ['code', 'name'] })
+  async getSexes (
+    select: Array<(keyof Ref)> = ['code', 'name'],
+    relations: string[] = []
+  ): Promise<Ref[]> {
+    return await this.refRepository.find({ where: { type: 'sex' }, select, relations })
   }
 
   async createRefs (refDto: CreateRefsDTO): Promise<Ref> {

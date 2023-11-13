@@ -29,7 +29,7 @@ import { OrganizationsService } from '../organizations/services/organizations.se
 import { Organization } from '../organizations/entities/organization.entity'
 import { IntegrationStatus } from '../integrations/constants/integration-status.enum'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { FindManyOptions, Repository } from 'typeorm'
 import { CreateIntegrationDto } from '../integrations/dtos/create-integration.dto'
 import { ReferenceDataQueryParams } from '../providers/dtos/reference-data-queryparams.dto'
 import { RefsService } from '../refs/refs.service'
@@ -44,6 +44,16 @@ import { Event } from '../events/entities/event.entity'
 import { ReferenceDataList } from '../refs/interfaces/reference-data-list.interface'
 import { hash } from '../common/utils/crypto.utils'
 import { Ref } from '../refs/entities/ref.entity'
+import { Provider } from '../providers/entities/provider.entity'
+import { ProviderRef } from '../refs/entities/providerRef.entity'
+import { ProviderRefService } from '../refs/providerRef.service'
+import {
+  ProviderExternalRequestDocument,
+  ProviderExternalRequests
+} from '../providers/entities/provider-external-requests.entity'
+import { ExternalRequestsQueryparams } from '../providers/dtos/external-requests-queryparams.dto'
+import { FilterQuery } from 'mongoose'
+import { PaginationResult } from '../common/classes/pagination-result'
 
 @Controller('admin')
 export class AdminController {
@@ -57,7 +67,8 @@ export class AdminController {
     private readonly refsService: RefsService,
     private readonly providersService: ProvidersService,
     private readonly configService: ConfigService,
-    private readonly jwtService: JwtService
+    private readonly jwtService: JwtService,
+    private readonly providerRefService: ProviderRefService
   ) {
   }
 
@@ -139,13 +150,26 @@ export class AdminController {
 
   @Get('integrations')
   @UseGuards(AdminGuard)
-  async getIntegrations (): Promise<Integration[]> {
-    return await this.integrationsService.findAll({
+  async getIntegrations (
+    @Query('providerId') providerId?: string
+  ): Promise<Integration[]> {
+    let where = {}
+    if (providerId !== undefined) {
+      where = {
+        providerConfiguration: {
+          providerId: providerId
+        }
+      }
+    }
+    const options: FindManyOptions<Integration> = {
       relations: ['practice', 'practice.organization', 'providerConfiguration'],
       order: {
         status: 'ASC'
-      }
-    })
+      },
+      where
+    }
+
+    return await this.integrationsService.findAll(options)
   }
 
   @Get('integrations/:id')
@@ -289,19 +313,19 @@ export class AdminController {
     let items: Ref[] = []
     switch (type) {
       case 'sexes':
-        items = await this.refsService.getSexes()
+        items = await this.refsService.getSexes(['id', 'name', 'code', 'type', 'providerRef'], ['providerRef', 'providerRef.provider'])
         return {
           items: items,
           hash: hash(items)
         }
       case 'species':
-        items = await this.refsService.getSpecies()
+        items = await this.refsService.getSpecies(['id', 'name', 'code', 'type'], ['providerRef', 'providerRef.provider'])
         return {
           items: items,
           hash: hash(items)
         }
       case 'breeds':
-        items = await this.refsService.getBreeds()
+        items = await this.refsService.getBreeds(['id', 'name', 'code', 'species', 'type'], ['providerRef', 'providerRef.provider'])
         return {
           items: items,
           hash: hash(items)
@@ -337,7 +361,7 @@ export class AdminController {
     @Param('providerId') providerId: string,
     @Param('type') type: string,
     @Query() { integrationId }: ReferenceDataQueryParams
-  ): Promise<void> {
+  ): Promise<any> {
     const provider = await this.providersService.findOneById(providerId)
 
     if (provider === undefined) {
@@ -360,6 +384,40 @@ export class AdminController {
     } catch (error) {
       throw new BadRequestException(error.message)
     }
+
+    return { status: 'OK' }
+  }
+
+  @Get('providers')
+  @UseGuards(AdminGuard)
+  async getProviders (): Promise<Provider[]> {
+    return await this.providersService.findAll({
+      relations: ['options']
+    })
+  }
+
+  @Get('providers/:providerId')
+  @UseGuards(AdminGuard)
+  async getProvider (
+    @Param('providerId') providerId: string
+  ): Promise<Provider> {
+    return await this.providersService.findOneById(providerId)
+  }
+
+  @Get('providers/:providerId/refs/:type')
+  async getProviderRefs (
+    @Param('providerId') providerId: string,
+    @Param('type') type: string
+  ): Promise<ProviderRef[]> {
+    return await this.providerRefService.findAll({
+      where: {
+        type: type,
+        provider: {
+          id: providerId
+        }
+      },
+      relations: ['provider', 'ref']
+    })
   }
 
   @Post('providers/:providerId/options/create')
@@ -386,5 +444,32 @@ export class AdminController {
       providerId,
       providerOptionId
     )
+  }
+
+  @Get('/external-requests')
+  @UseGuards(AdminGuard)
+  async getExternalRequests (
+    @Query() params: ExternalRequestsQueryparams
+  ): Promise<PaginationResult<ProviderExternalRequests>> {
+    const options: FilterQuery<ProviderExternalRequestDocument> = {}
+    if (params.provider !== undefined) {
+      options.provider = params.provider
+    }
+    const { page, limit } = params
+    const data = await this.providersService.findExternalRequests(options, { page, limit })
+    return {
+      total: await this.providersService.countExternalRequests(options),
+      page,
+      limit,
+      data
+    }
+  }
+
+  @Get('/external-requests/:id')
+  @UseGuards(AdminGuard)
+  async getExternalRequest (
+    @Param('id') id: string
+  ): Promise<ProviderExternalRequests> {
+    return await this.providersService.findExternalRequestById(id)
   }
 }

@@ -13,8 +13,11 @@ import {
   Sex,
   Species
 } from '@nominal-systems/dmi-engine-common'
-import { ProviderExternalRequestDocument, ProviderExternalRequests } from '../entities/provider-external-requests.entity'
-import { Model } from 'mongoose'
+import {
+  ProviderExternalRequestDocument,
+  ProviderExternalRequests
+} from '../entities/provider-external-requests.entity'
+import { FilterQuery, Model } from 'mongoose'
 import { InjectModel } from '@nestjs/mongoose'
 import { ProviderRawDataDto } from '../dtos/provider-raw-data.dto'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -24,6 +27,8 @@ import { UpdateProviderDto } from '../dtos/update-provider.dto'
 import { ProviderOption } from '../entities/provider-option.entity'
 import { ProviderOptionDto } from '../dtos/provider-option.dto'
 import { nestKeys } from '../../common/utils/nest-keys'
+import { PaginationDto } from '../../common/dtos/pagination.dto'
+import { PAGINATION_PAGE_LIMIT } from '../../common/constants/pagination.constant'
 
 @Injectable()
 export class ProvidersService {
@@ -33,15 +38,15 @@ export class ProvidersService {
     @InjectRepository(Provider)
     private readonly providerRepository: Repository<Provider>,
     private readonly integrationsService: IntegrationsService,
-    @InjectModel(ProviderExternalRequests.name)
-    private readonly providerExternalRequestsModel: Model<ProviderExternalRequestDocument>,
+    @InjectModel(ProviderExternalRequests.name) private readonly providerExternalRequestsModel: Model<ProviderExternalRequestDocument>,
     @Inject('ACTIVEMQ') private readonly client: ClientProxy,
-    @InjectRepository(ProviderOption)
-    private readonly providerOptionRepository: Repository<ProviderOption>
+    @InjectRepository(ProviderOption) private readonly providerOptionRepository: Repository<ProviderOption>
   ) {
   }
 
-  async findAll (options?: FindManyOptions<Provider>): Promise<Provider[]> {
+  async findAll (
+    options?: FindManyOptions<Provider>
+  ): Promise<Provider[]> {
     const providers = await this.providerRepository.find(options)
     for (const provider of providers) {
       provider.integrationOptions = provider.options.filter((option) => option.providerOptionType === 'integration')
@@ -51,10 +56,12 @@ export class ProvidersService {
     return providers
   }
 
-  async findOneById (providerId: string): Promise<Provider> {
+  async findOneById (
+    providerId: string
+  ): Promise<Provider> {
     const provider = await this.providerRepository.findOne(providerId, { relations: ['options'] })
     if (provider == null) {
-      throw new NotFoundException("The provider doesn't exist")
+      throw new NotFoundException('The provider doesn\'t exist')
     }
     provider.integrationOptions = provider.options.filter((option) => option.providerOptionType === 'integration')
     provider.configurationOptions = provider.options.filter((option) => option.providerOptionType === 'configuration')
@@ -264,6 +271,38 @@ export class ProvidersService {
     }
 
     await this.providerExternalRequestsModel.create(rawData)
+  }
+
+  async findExternalRequests (
+    query: FilterQuery<ProviderExternalRequestDocument>,
+    paginationDto: PaginationDto
+  ): Promise<ProviderExternalRequests[]> {
+    const limit = paginationDto.limit !== undefined ? paginationDto.limit : PAGINATION_PAGE_LIMIT
+    const skip = (paginationDto.page - 1) * limit
+
+    return await this.providerExternalRequestsModel.find(query, { __v: 0, body: 0, payload: 0 }, {
+      limit: limit,
+      skip: skip,
+      sort: { createdAt: -1 },
+      lean: true
+    })
+  }
+
+  async findExternalRequestById (
+    id: string
+  ): Promise<ProviderExternalRequestDocument> {
+    const doc = await this.providerExternalRequestsModel.findById(id, { __v: 0 }, { lean: true }).exec()
+    if (doc === null) {
+      throw new NotFoundException(`The external request ${id} doesn't exist`)
+    } else {
+      return doc
+    }
+  }
+
+  async countExternalRequests (
+    options: FilterQuery<ProviderExternalRequestDocument>
+  ): Promise<number> {
+    return await this.providerExternalRequestsModel.countDocuments(options)
   }
 
   async update (provider: UpdateProviderDto): Promise<void> {
