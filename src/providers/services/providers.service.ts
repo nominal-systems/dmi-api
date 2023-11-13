@@ -280,12 +280,23 @@ export class ProvidersService {
     const limit = paginationDto.limit !== undefined ? paginationDto.limit : PAGINATION_PAGE_LIMIT
     const skip = (paginationDto.page - 1) * limit
 
-    return await this.providerExternalRequestsModel.find(query, { __v: 0, _id: 0, body: 0, payload: 0 }, {
+    return await this.providerExternalRequestsModel.find(query, { __v: 0, body: 0, payload: 0 }, {
       limit: limit,
       skip: skip,
       sort: { createdAt: -1 },
       lean: true
     })
+  }
+
+  async findExternalRequestById (
+    id: string
+  ): Promise<ProviderExternalRequestDocument> {
+    const doc = await this.providerExternalRequestsModel.findById(id, { __v: 0 }, { lean: true }).exec()
+    if (doc === null) {
+      throw new NotFoundException(`The external request ${id} doesn't exist`)
+    } else {
+      return doc
+    }
   }
 
   async countExternalRequests (

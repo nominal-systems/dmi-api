@@ -464,4 +464,12 @@ export class AdminController {
       data
     }
   }
+
+  @Get('/external-requests/:id')
+  @UseGuards(AdminGuard)
+  async getExternalRequest (
+    @Param('id') id: string
+  ): Promise<ProviderExternalRequests> {
+    return await this.providersService.findExternalRequestById(id)
+  }
 }
