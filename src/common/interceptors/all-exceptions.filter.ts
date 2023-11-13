@@ -1,6 +1,7 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus, Logger } from '@nestjs/common'
 import { Request } from 'express'
 import { HttpAdapterHost } from '@nestjs/core'
+import { ProviderError } from '@nominal-systems/dmi-engine-common'
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -14,14 +15,19 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const ctx = host.switchToHttp()
     const request = ctx.getRequest<Request>()
 
-    const httpStatus =
+    let httpStatus =
       exception instanceof HttpException
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR
 
     let errorMessage = 'Internal Server Error'
+    let errors: string[] = []
     if (exception instanceof HttpException) {
       errorMessage = exception.getResponse() as string
+    } else if (exception instanceof ProviderError) {
+      errorMessage = exception.response.message
+      errors = exception.response.error
+      httpStatus = exception.response.code
     } else if (exception instanceof Error) {
       errorMessage = exception.message
     }
@@ -29,6 +35,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const responseBody = {
       statusCode: httpStatus,
       message: errorMessage,
+      ...(errors.length > 0 && { errors }),
       path: httpAdapter.getRequestUrl(ctx.getRequest()),
       timestamp: new Date().toISOString()
     }
