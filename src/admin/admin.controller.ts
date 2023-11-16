@@ -41,8 +41,6 @@ import { JwtService } from '@nestjs/jwt'
 import { AdminGuard } from '../common/guards/admin.guard'
 import { EventsService } from '../events/services/events.service'
 import { Event } from '../events/entities/event.entity'
-import { ReferenceDataList } from '../refs/interfaces/reference-data-list.interface'
-import { hash } from '../common/utils/crypto.utils'
 import { Ref } from '../refs/entities/ref.entity'
 import { Provider } from '../providers/entities/provider.entity'
 import { ProviderRef } from '../refs/entities/providerRef.entity'
@@ -54,6 +52,7 @@ import {
 import { ExternalRequestsQueryparams } from '../providers/dtos/external-requests-queryparams.dto'
 import { FilterQuery } from 'mongoose'
 import { PaginationResult } from '../common/classes/pagination-result'
+import { PaginationDto } from '../common/dtos/pagination.dto'
 
 @Controller('admin')
 export class AdminController {
@@ -308,30 +307,17 @@ export class AdminController {
   @Get('refs/:type')
   @UseGuards(AdminGuard)
   async getRefs (
-    @Param('type') type: 'sexes' | 'species' | 'breeds'
-  ): Promise<ReferenceDataList> {
-    let items: Ref[] = []
-    switch (type) {
-      case 'sexes':
-        items = await this.refsService.getSexes(['id', 'name', 'code', 'type', 'providerRef'], ['providerRef', 'providerRef.provider'])
-        return {
-          items: items,
-          hash: hash(items)
-        }
-      case 'species':
-        items = await this.refsService.getSpecies(['id', 'name', 'code', 'type'], ['providerRef', 'providerRef.provider'])
-        return {
-          items: items,
-          hash: hash(items)
-        }
-      case 'breeds':
-        items = await this.refsService.getBreeds(['id', 'name', 'code', 'species', 'type'], ['providerRef', 'providerRef.provider'])
-        return {
-          items: items,
-          hash: hash(items)
-        }
-      default:
-        throw new BadRequestException('Invalid type')
+    @Param('type') type: 'sexes' | 'species' | 'breeds',
+    @Query() params: PaginationDto
+  ): Promise<PaginationResult<Ref>> {
+    const { page, limit } = params
+    const data = await this.refsService.getRefs(type, { page, limit })
+
+    return {
+      total: await this.refsService.countRefs(type),
+      page,
+      limit,
+      data
     }
   }
 
