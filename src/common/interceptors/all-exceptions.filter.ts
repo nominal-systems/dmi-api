@@ -27,7 +27,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
     } else if (exception instanceof ProviderError) {
       errorMessage = exception.response.message
       errors = exception.response.error
-      httpStatus = exception.response.code
+      if (typeof errors !== 'string') {
+        httpStatus = HttpStatus.BAD_REQUEST
+      }
     } else if (exception instanceof Error) {
       errorMessage = exception.message
     }
