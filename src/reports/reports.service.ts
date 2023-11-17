@@ -339,27 +339,30 @@ export class ReportsService {
     testResult: TestResult,
     items: ProviderTestResultItem[]
   ): void {
-    const testResultObservationCodes = testResult.observations.map(observation => observation.code)
-    const providerTestResultItemCodes = items.map(item => item.code)
-    const newObservationCodes = arrayDiff(providerTestResultItemCodes, testResultObservationCodes)
-    const existingObservationCodes = arrayDiff(providerTestResultItemCodes, newObservationCodes)
+    const processedItems = new Set()
 
     // Update existing observations
-    for (const existingObservationCode of existingObservationCodes) {
-      const existingObservation = testResult.observations.find(observation => observation.code === existingObservationCode)
-      const providerItem = items.find(item => item.code === existingObservationCode)
-      if (existingObservation === undefined || providerItem === undefined) continue
-      this.updateObservationValue(existingObservation, providerItem)
+    for (const existingObservation of testResult.observations) {
+      const existingObservationCode = existingObservation.code
+
+      if (!processedItems.has(existingObservationCode)) {
+        const matchingItems = items.filter((item) => item.code === existingObservationCode)
+
+        for (const providerItem of matchingItems) {
+          this.updateObservationValue(existingObservation, providerItem)
+
+          processedItems.add(existingObservationCode)
+        }
+      }
     }
 
     // Create new observations
     const newObservations: Observation[] = []
-    for (const newObservationCode of newObservationCodes) {
-      const item = items.find(item => item.code === newObservationCode)
-      if (item === undefined) continue
+    for (const item of items) {
+      const newObservationCode = item.code
 
       const observation = new Observation()
-      observation.code = item.code
+      observation.code = newObservationCode
       observation.name = item.name
       this.updateObservationValue(observation, item)
 
