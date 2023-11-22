@@ -262,9 +262,6 @@ export class OrdersService {
         .toPromise()
       Object.assign(order, response)
       order.status = response.status
-      if (order.requisitionId === null && response.requisitionId !== null) {
-        order.requisitionId = response.requisitionId
-      }
     } catch (error) {
       this.logger.error(`Error sending order to ${providerId} provider`)
       order.status = OrderStatus.ERROR
