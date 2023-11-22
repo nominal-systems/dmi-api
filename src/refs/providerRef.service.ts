@@ -15,4 +15,10 @@ export class ProviderRefService {
   ): Promise<ProviderRef[]> {
     return await this.providerRefRepository.find(options)
   }
+
+  async count (
+    options?: FindManyOptions<ProviderRef>
+  ): Promise<number> {
+    return await this.providerRefRepository.count(options)
+  }
 }

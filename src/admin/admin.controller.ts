@@ -53,6 +53,7 @@ import { ExternalRequestsQueryparams } from '../providers/dtos/external-requests
 import { FilterQuery } from 'mongoose'
 import { PaginationResult } from '../common/classes/pagination-result'
 import { PaginationDto } from '../common/dtos/pagination.dto'
+import { PAGINATION_PAGE_LIMIT } from '../common/constants/pagination.constant'
 
 @Controller('admin')
 export class AdminController {
@@ -393,17 +394,32 @@ export class AdminController {
   @Get('providers/:providerId/refs/:type')
   async getProviderRefs (
     @Param('providerId') providerId: string,
-    @Param('type') type: string
-  ): Promise<ProviderRef[]> {
-    return await this.providerRefService.findAll({
-      where: {
-        type: type,
-        provider: {
-          id: providerId
-        }
-      },
-      relations: ['provider', 'ref']
+    @Param('type') type: string,
+    @Query() params: PaginationDto
+  ): Promise<PaginationResult<ProviderRef>> {
+    const take = params.limit !== undefined ? params.limit : PAGINATION_PAGE_LIMIT
+    const skip = (params.page - 1) * take
+    const where = {
+      type: type,
+      provider: {
+        id: providerId
+      }
+    }
+    const relations = ['provider', 'ref']
+
+    const data = await this.providerRefService.findAll({
+      where,
+      relations,
+      skip,
+      take
     })
+    const total = await this.providerRefService.count({ where: where })
+    return {
+      total,
+      page: params.page,
+      limit: params.limit,
+      data
+    }
   }
 
   @Post('providers/:providerId/options/create')
