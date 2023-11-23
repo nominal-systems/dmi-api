@@ -144,8 +144,22 @@ export class AdminController {
 
   @Get('events')
   @UseGuards(AdminGuard)
-  async getEvents (): Promise<Event[]> {
-    return await this.eventsService.findAll()
+  async getEvents (
+    @Query() paginationDto: PaginationDto
+  ): Promise<PaginationResult<Event>> {
+    const query = {}
+    const limit = paginationDto.limit !== undefined ? paginationDto.limit : PAGINATION_PAGE_LIMIT
+    const skip = (paginationDto.page - 1) * limit
+    const options = { sort: { seq: -1 }, skip, limit, lean: true }
+    const total = await this.eventsService.count(query)
+    const data = await this.eventsService.findAll(query, options)
+
+    return {
+      total,
+      page: paginationDto.page,
+      limit: Math.min(limit, total),
+      data
+    }
   }
 
   @Get('integrations')
