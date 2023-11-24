@@ -347,9 +347,11 @@ export class ReportsService {
     // Update existing observations
     for (const existingObservationCode of observationMap.keys()) {
       const existingObservation = observationMap.get(existingObservationCode)
-      const providerItem = items.find(item => item.code === existingObservationCode)
-      if (existingObservation === undefined || providerItem === undefined) continue
-      this.updateObservationValue(existingObservation, providerItem)
+      const providerItems = items.filter(item => item.code === existingObservationCode)
+      if (existingObservation === undefined || providerItems.length === 0) continue
+      for (const providerItem of providerItems) {
+        this.updateObservationValue(existingObservation, providerItem)
+      }
     }
 
     // Create new observations
