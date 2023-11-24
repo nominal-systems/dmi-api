@@ -341,29 +341,38 @@ export class ReportsService {
     testResult: TestResult,
     items: ProviderTestResultItem[]
   ): void {
-    const testResultObservationCodes = testResult.observations.map(observation => observation.code)
-    const providerTestResultItemCodes = items.map(item => item.code)
-    const newObservationCodes = arrayDiff(providerTestResultItemCodes, testResultObservationCodes)
-    const existingObservationCodes = arrayDiff(providerTestResultItemCodes, newObservationCodes)
+    const observationMap: Map<string, Observation> = new Map(
+      testResult.observations.map(observation => [observation.code, observation])
+    )
+    const newObservationCodes = arrayDiff(items.map(item => item.code), Array.from(observationMap.keys()))
 
     // Update existing observations
-    for (const existingObservationCode of existingObservationCodes) {
-      const existingObservation = testResult.observations.find(observation => observation.code === existingObservationCode)
-      const providerItem = items.find(item => item.code === existingObservationCode)
-      if (existingObservation === undefined || providerItem === undefined) continue
-      this.updateObservationValue(existingObservation, providerItem)
+    for (const existingObservationCode of observationMap.keys()) {
+      const existingObservation = observationMap.get(existingObservationCode)
+      const providerItems = items.filter(item => item.code === existingObservationCode)
+      if (existingObservation === undefined || providerItems.length === 0) continue
+      for (const providerItem of providerItems) {
+        this.updateObservationValue(existingObservation, providerItem)
+      }
     }
 
     // Create new observations
     const newObservations: Observation[] = []
+    const newObservationCodesSet: Set<string> = new Set()
     for (const newObservationCode of newObservationCodes) {
-      const item = items.find(item => item.code === newObservationCode)
-      if (item === undefined) continue
+      if (newObservationCodesSet.has(newObservationCode)) continue
+
+      const filteredItems = items.filter(item => item.code === newObservationCode)
+
+      if (filteredItems.length === 0) continue
 
       const observation = new Observation()
-      observation.code = item.code
-      observation.name = item.name
-      this.updateObservationValue(observation, item)
+      for (const item of filteredItems) {
+        observation.code = item.code
+        observation.name = item.name
+        this.updateObservationValue(observation, item)
+        newObservationCodesSet.add(observation.code)
+      }
 
       newObservations.push(observation)
     }
