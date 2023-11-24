@@ -7,6 +7,8 @@ import { ProviderRef } from './entities/providerRef.entity'
 import { CreateRefsDTO } from './dtos/create-refs.dto'
 import { Provider } from '../providers/entities/provider.entity'
 import { CreateOrderDtoPatient } from '../orders/dtos/create-order.dto'
+import { PaginationDto } from '../common/dtos/pagination.dto'
+import { PAGINATION_PAGE_LIMIT } from '../common/constants/pagination.constant'
 
 @Injectable()
 export class RefsService {
@@ -101,6 +103,22 @@ export class RefsService {
     relations: string[] = []
   ): Promise<Ref[]> {
     return await this.refRepository.find({ where: { type: 'sex' }, select, relations })
+  }
+
+  async getRefs (
+    type: 'sexes' | 'species' | 'breeds',
+    paginationDto: PaginationDto
+  ): Promise<Ref[]> {
+    const take = paginationDto.limit !== undefined ? paginationDto.limit : PAGINATION_PAGE_LIMIT
+    const skip = (paginationDto.page - 1) * take
+
+    return await this.refRepository.find({ where: { type: type }, select: ['id', 'name', 'code', 'type', 'providerRef'], relations: ['providerRef', 'providerRef.provider'], skip, take })
+  }
+
+  async countRefs (
+    type: 'sexes' | 'species' | 'breeds'
+  ): Promise<number> {
+    return await this.refRepository.count({ where: { type: type } })
   }
 
   async createRefs (refDto: CreateRefsDTO): Promise<Ref> {

@@ -1,7 +1,7 @@
-/* eslint-disable camelcase */
 import { IsNotEmpty, IsNumber, Min } from 'class-validator'
+import { PaginationDto } from '../../common/dtos/pagination.dto'
 
-export class GetEventsQueryParams {
+export class GetEventsQueryParams extends PaginationDto {
   @IsNotEmpty({ message: 'The "start_seq" query parameter is required' })
   @IsNumber(
     {},
@@ -14,6 +14,4 @@ export class GetEventsQueryParams {
       'The "start_seq" query parameter must be greater than or equal to 0'
   })
   start_seq: number
-
-  practice_id: string
 }

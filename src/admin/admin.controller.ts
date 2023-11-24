@@ -41,8 +41,6 @@ import { JwtService } from '@nestjs/jwt'
 import { AdminGuard } from '../common/guards/admin.guard'
 import { EventsService } from '../events/services/events.service'
 import { Event } from '../events/entities/event.entity'
-import { ReferenceDataList } from '../refs/interfaces/reference-data-list.interface'
-import { hash } from '../common/utils/crypto.utils'
 import { Ref } from '../refs/entities/ref.entity'
 import { Provider } from '../providers/entities/provider.entity'
 import { ProviderRef } from '../refs/entities/providerRef.entity'
@@ -54,6 +52,8 @@ import {
 import { ExternalRequestsQueryparams } from '../providers/dtos/external-requests-queryparams.dto'
 import { FilterQuery } from 'mongoose'
 import { PaginationResult } from '../common/classes/pagination-result'
+import { PaginationDto } from '../common/dtos/pagination.dto'
+import { PAGINATION_PAGE_LIMIT } from '../common/constants/pagination.constant'
 
 @Controller('admin')
 export class AdminController {
@@ -144,8 +144,22 @@ export class AdminController {
 
   @Get('events')
   @UseGuards(AdminGuard)
-  async getEvents (): Promise<Event[]> {
-    return await this.eventsService.findAll()
+  async getEvents (
+    @Query() paginationDto: PaginationDto
+  ): Promise<PaginationResult<Event>> {
+    const query = {}
+    const limit = paginationDto.limit !== undefined ? paginationDto.limit : PAGINATION_PAGE_LIMIT
+    const skip = (paginationDto.page - 1) * limit
+    const options = { sort: { seq: -1 }, skip, limit, lean: true }
+    const total = await this.eventsService.count(query)
+    const data = await this.eventsService.findAll(query, options)
+
+    return {
+      total,
+      page: paginationDto.page,
+      limit: Math.min(limit, total),
+      data
+    }
   }
 
   @Get('integrations')
@@ -308,30 +322,17 @@ export class AdminController {
   @Get('refs/:type')
   @UseGuards(AdminGuard)
   async getRefs (
-    @Param('type') type: 'sexes' | 'species' | 'breeds'
-  ): Promise<ReferenceDataList> {
-    let items: Ref[] = []
-    switch (type) {
-      case 'sexes':
-        items = await this.refsService.getSexes(['id', 'name', 'code', 'type', 'providerRef'], ['providerRef', 'providerRef.provider'])
-        return {
-          items: items,
-          hash: hash(items)
-        }
-      case 'species':
-        items = await this.refsService.getSpecies(['id', 'name', 'code', 'type'], ['providerRef', 'providerRef.provider'])
-        return {
-          items: items,
-          hash: hash(items)
-        }
-      case 'breeds':
-        items = await this.refsService.getBreeds(['id', 'name', 'code', 'species', 'type'], ['providerRef', 'providerRef.provider'])
-        return {
-          items: items,
-          hash: hash(items)
-        }
-      default:
-        throw new BadRequestException('Invalid type')
+    @Param('type') type: 'sexes' | 'species' | 'breeds',
+    @Query() params: PaginationDto
+  ): Promise<PaginationResult<Ref>> {
+    const { page, limit } = params
+    const data = await this.refsService.getRefs(type, { page, limit })
+
+    return {
+      total: await this.refsService.countRefs(type),
+      page,
+      limit,
+      data
     }
   }
 
@@ -407,17 +408,32 @@ export class AdminController {
   @Get('providers/:providerId/refs/:type')
   async getProviderRefs (
     @Param('providerId') providerId: string,
-    @Param('type') type: string
-  ): Promise<ProviderRef[]> {
-    return await this.providerRefService.findAll({
-      where: {
-        type: type,
-        provider: {
-          id: providerId
-        }
-      },
-      relations: ['provider', 'ref']
+    @Param('type') type: string,
+    @Query() params: PaginationDto
+  ): Promise<PaginationResult<ProviderRef>> {
+    const take = params.limit !== undefined ? params.limit : PAGINATION_PAGE_LIMIT
+    const skip = (params.page - 1) * take
+    const where = {
+      type: type,
+      provider: {
+        id: providerId
+      }
+    }
+    const relations = ['provider', 'ref']
+
+    const data = await this.providerRefService.findAll({
+      where,
+      relations,
+      skip,
+      take
     })
+    const total = await this.providerRefService.count({ where: where })
+    return {
+      total,
+      page: params.page,
+      limit: params.limit,
+      data
+    }
   }
 
   @Post('providers/:providerId/options/create')
