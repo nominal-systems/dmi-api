@@ -23,7 +23,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
     let errorMessage = 'Internal Server Error'
     let errors: string[] = []
     if (exception instanceof HttpException) {
-      errorMessage = exception.getResponse() as string
+      const errorResponse = exception.getResponse() as Record<string, any>
+      errorMessage = errorResponse.message
     } else if (exception instanceof ProviderError) {
       errorMessage = exception.response.message
       errors = exception.response.error
