@@ -278,6 +278,7 @@ export class OrdersService {
         }
       })
       if (error.name === ProviderError.name) {
+        error.response.message = `Error while trying to place an order with ${providerId}`
         throw error
       } else {
         throw new HttpException(error.response, error.status)
