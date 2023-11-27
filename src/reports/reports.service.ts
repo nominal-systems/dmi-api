@@ -132,7 +132,6 @@ export class ReportsService {
 
     // Update existing reports with new results
     const existingReports = await this.findReportsByExternalOrderIds(externalOrderIds)
-    console.log(`existingReports= ${JSON.stringify(existingReports, null, 2)}`) // TODO(gb): remove trace
     for (const report of existingReports) {
       const resultsForReport = results.filter(result => result.orderId === report.order.externalId)
       const updated = await this.updateReportResults(report, resultsForReport)
@@ -235,7 +234,6 @@ export class ReportsService {
 
     // Notify about updated reports
     for (const report of updatedReports) {
-      console.log(`patient of report[UPDATED]= ${JSON.stringify(report.patient, null, 2)}`) // TODO(gb): remove trace
       await this.eventsService.addEvent({
         namespace: EventNamespace.REPORTS,
         type: EventType.REPORT_UPDATED,
