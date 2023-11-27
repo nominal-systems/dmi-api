@@ -214,6 +214,176 @@ describe('ReportsService', () => {
         ]
       })
     })
+    it('should update 1 test result with 2 equal items', () => {
+      const testResult = new TestResult()
+      testResult.observations = []
+      const items = [
+        {
+          code: 'TP',
+          name: 'Total Protein',
+          status: TestResultItemStatus.DONE,
+          valueQuantity: {
+            value: 6.4,
+            units: 'g/dL'
+          },
+          referenceRange: [
+            {
+              type: 'NORMAL',
+              low: 5.2,
+              high: 8.2,
+              text: '5.2 - 8.2 g/dL'
+            },
+            {
+              type: 'CRITICAL',
+              low: 1,
+              high: 5.2
+            },
+            {
+              type: 'CRITICAL',
+              low: 8.2,
+              high: 15
+            }
+          ]
+        },
+        {
+          code: 'TP',
+          name: 'Total Protein',
+          status: TestResultItemStatus.DONE,
+          valueQuantity: {
+            value: 10.2,
+            units: 'g/dL'
+          },
+          referenceRange: [
+            {
+              type: 'NORMAL',
+              low: 5.2,
+              high: 8.2,
+              text: '5.2 - 8.2 g/dL'
+            },
+            {
+              type: 'CRITICAL',
+              low: 1,
+              high: 5.2
+            },
+            {
+              type: 'CRITICAL',
+              low: 8.2,
+              high: 15
+            }
+          ]
+        },
+        {
+          code: 'ALB',
+          name: 'Albumin',
+          status: TestResultItemStatus.DONE,
+          valueQuantity: {
+            value: 3.1,
+            units: 'g/dL'
+          },
+          referenceRange: [
+            {
+              type: 'NORMAL',
+              low: 2.3,
+              high: 4,
+              text: '2.3 - 4.0 g/dL'
+            },
+            {
+              type: 'CRITICAL',
+              low: 0.5,
+              high: 2.3
+            },
+            {
+              type: 'CRITICAL',
+              low: 4,
+              high: 4.5
+            }
+          ]
+        },
+        {
+          code: 'ALB',
+          name: 'Albumin',
+          status: TestResultItemStatus.DONE,
+          valueQuantity: {
+            value: 5.3,
+            units: 'g/dL'
+          },
+          referenceRange: [
+            {
+              type: 'NORMAL',
+              low: 2.3,
+              high: 4,
+              text: '2.3 - 4.0 g/dL'
+            },
+            {
+              type: 'CRITICAL',
+              low: 0.5,
+              high: 2.3
+            },
+            {
+              type: 'CRITICAL',
+              low: 4,
+              high: 4.5
+            }
+          ]
+        }
+      ]
+      reportsService.updateTestResultObservations(testResult, items)
+      expect(testResult.observations).toHaveLength(2)
+      expect(testResult.observations[0]).toEqual({
+        code: 'TP',
+        name: 'Total Protein',
+        status: 'DONE',
+        valueQuantity: {
+          value: 10.2,
+          units: 'g/dL'
+        },
+        referenceRange: [
+          {
+            type: 'NORMAL',
+            low: 5.2,
+            high: 8.2,
+            text: '5.2 - 8.2 g/dL'
+          },
+          {
+            type: 'CRITICAL',
+            low: 1,
+            high: 5.2
+          },
+          {
+            type: 'CRITICAL',
+            low: 8.2,
+            high: 15
+          }
+        ]
+      })
+      expect(testResult.observations[1]).toEqual({
+        code: 'ALB',
+        name: 'Albumin',
+        status: 'DONE',
+        valueQuantity: {
+          value: 5.3,
+          units: 'g/dL'
+        },
+        referenceRange: [
+          {
+            type: 'NORMAL',
+            low: 2.3,
+            high: 4,
+            text: '2.3 - 4.0 g/dL'
+          },
+          {
+            type: 'CRITICAL',
+            low: 0.5,
+            high: 2.3
+          },
+          {
+            type: 'CRITICAL',
+            low: 4,
+            high: 4.5
+          }
+        ]
+      })
+    })
   })
 
   describe('updateReportResults()', () => {
