@@ -389,6 +389,27 @@ export class AdminController {
     return { status: 'OK' }
   }
 
+  @Put('refs/default/:providerId/:species/:breed')
+  // @UseGuards(AdminGuard)
+  async defaultBreed (
+    @Param('providerId') providerId: string,
+    @Param('species') species: string,
+    @Param('breed') breed: string
+  ): Promise<any> {
+    const provider = await this.providersService.findOneById(providerId)
+
+    if (provider === undefined) {
+      throw new BadRequestException(`The provider ${providerId} doesn't exist`)
+    }
+    try {
+      await this.refsService.setDefaultBreed(providerId, species, breed)
+    } catch (error) {
+      throw new BadRequestException(error.message)
+    }
+
+    return await this.refsService.findDefaultBreedBySpecies(species, providerId)
+  }
+
   @Get('providers')
   @UseGuards(AdminGuard)
   async getProviders (): Promise<Provider[]> {

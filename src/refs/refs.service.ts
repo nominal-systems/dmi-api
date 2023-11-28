@@ -9,6 +9,7 @@ import { Provider } from '../providers/entities/provider.entity'
 import { CreateOrderDtoPatient } from '../orders/dtos/create-order.dto'
 import { PaginationDto } from '../common/dtos/pagination.dto'
 import { PAGINATION_PAGE_LIMIT } from '../common/constants/pagination.constant'
+import { ProviderDefaultBreed } from './entities/providerDefaultBreed.entity'
 
 @Injectable()
 export class RefsService {
@@ -17,7 +18,8 @@ export class RefsService {
   constructor (
     private readonly providersService: ProvidersService,
     @InjectRepository(ProviderRef) private readonly providerRefRepository: Repository<ProviderRef>,
-    @InjectRepository(Ref) private readonly refRepository: Repository<Ref>
+    @InjectRepository(Ref) private readonly refRepository: Repository<Ref>,
+    @InjectRepository(ProviderDefaultBreed) private readonly providerDefaultBreedRepository: Repository<ProviderDefaultBreed>
   ) {
   }
 
@@ -211,6 +213,14 @@ export class RefsService {
     return { mappedRefs, unmappedRefs }
   }
 
+  async findDefaultBreedBySpecies (species: string, providerId: string): Promise<ProviderDefaultBreed | undefined> {
+    return await this.providerDefaultBreedRepository.createQueryBuilder('providerDefaultBreed')
+      .leftJoin('providerDefaultBreed.provider', 'provider', 'provider.id = providerDefaultBreed.provider')
+      .select(['providerDefaultBreed', 'provider.id'])
+      .where('providerDefaultBreed.species = :species AND provider.id = :providerId', { species, providerId })
+      .getOne()
+  }
+
   async mapPatientRefs (providerId: string, patient: CreateOrderDtoPatient): Promise<void> {
     const attributesToMap = ['sex', 'species', 'breed']
 
@@ -225,9 +235,32 @@ export class RefsService {
         } else {
           mappedPatient[attribute] = patient[attribute]
         }
+      } else if (attribute === 'breed') {
+        const defaultBreed = await this.findDefaultBreedBySpecies(mappedPatient.species as string, providerId)
+        if (defaultBreed !== undefined) {
+          mappedPatient[attribute] = defaultBreed.defaultBreed
+        }
       }
     }
 
     Object.assign(patient, mappedPatient)
+  }
+
+  async setDefaultBreed (providerId: string, species: string, defaultBreed: string): Promise<ProviderDefaultBreed> {
+    const existingDefaultBreed = await this.findDefaultBreedBySpecies(species, providerId)
+
+    if (existingDefaultBreed !== undefined) {
+      existingDefaultBreed.defaultBreed = defaultBreed
+      await this.providerDefaultBreedRepository.save(existingDefaultBreed)
+      return existingDefaultBreed
+    } else {
+      const newDefaultBreed = this.providerDefaultBreedRepository.create({
+        species,
+        defaultBreed,
+        provider: { id: providerId }
+      })
+      await this.providerDefaultBreedRepository.save(newDefaultBreed)
+      return newDefaultBreed
+    }
   }
 }

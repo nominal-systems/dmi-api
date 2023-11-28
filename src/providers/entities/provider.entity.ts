@@ -3,6 +3,7 @@ import { Column, Entity, OneToMany, PrimaryColumn } from 'typeorm'
 import { Hashes } from '../interfaces/hash.interface'
 import { Exclude } from 'class-transformer'
 import { ProviderOption } from './provider-option.entity'
+import { ProviderDefaultBreed } from '../../refs/entities/providerDefaultBreed.entity'
 
 @Entity()
 export class Provider {
@@ -23,4 +24,7 @@ export class Provider {
   configurationOptions: ProviderOption[]
 
   integrationOptions: ProviderOption[]
+
+  @OneToMany(() => ProviderDefaultBreed, defaultBreed => defaultBreed.provider)
+  defaultBreeds: ProviderDefaultBreed[]
 }
