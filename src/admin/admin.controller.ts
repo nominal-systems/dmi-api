@@ -407,7 +407,7 @@ export class AdminController {
       throw new BadRequestException(error.message)
     }
 
-    return await this.refsService.findDefaultBreedBySpecies(species, providerId)
+    return { status: 'OK' }
   }
 
   @Get('providers')
