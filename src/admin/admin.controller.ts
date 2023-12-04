@@ -389,12 +389,12 @@ export class AdminController {
     return { status: 'OK' }
   }
 
-  @Put('refs/default/:providerId/:species/:breed')
-  // @UseGuards(AdminGuard)
+  @Put('providers/:providerId/defaultBreed')
+  @UseGuards(AdminGuard)
   async defaultBreed (
     @Param('providerId') providerId: string,
-    @Param('species') species: string,
-    @Param('breed') breed: string
+    @Query('species') species: string,
+    @Query('breed') breed: string
   ): Promise<any> {
     const provider = await this.providersService.findOneById(providerId)
 

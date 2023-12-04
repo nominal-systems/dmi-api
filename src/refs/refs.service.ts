@@ -194,6 +194,14 @@ export class RefsService {
       .getOne()
   }
 
+  async findOneProviderRefByCodeAndProvider (code: string, provider?: string): Promise<ProviderRef | undefined> {
+    return await this.providerRefRepository.createQueryBuilder('providerRef')
+      .leftJoin('providerRef.provider', 'provider', 'provider.id = providerRef.provider')
+      .select(['providerRef', 'provider.id'])
+      .where('providerRef.code = :code AND providerRef.provider = :provider', { code, provider: provider })
+      .getOne()
+  }
+
   async findProvidersMappedRefs (): Promise<any> {
     const refs = await this.providerRefRepository.createQueryBuilder('providerRefs')
       .leftJoin('providerRefs.ref', 'ref', 'ref.id = providerRefs.ref')
@@ -249,6 +257,14 @@ export class RefsService {
   async setDefaultBreed (providerId: string, species: string, defaultBreed: string): Promise<ProviderDefaultBreed> {
     const existingDefaultBreed = await this.findDefaultBreedBySpecies(species, providerId)
 
+    const speciesExists = await this.findOneProviderRefByCodeAndProvider(species, providerId)
+    if (speciesExists === undefined) {
+      throw new NotFoundException('Species not found')
+    }
+    const breedExists = await this.findOneProviderRefByCodeAndProvider(defaultBreed, providerId)
+    if (breedExists === undefined) {
+      throw new NotFoundException('Breed not found')
+    }
     if (existingDefaultBreed !== undefined) {
       existingDefaultBreed.defaultBreed = defaultBreed
       await this.providerDefaultBreedRepository.save(existingDefaultBreed)
