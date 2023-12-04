@@ -124,9 +124,9 @@ describe('OrdersService', () => {
         })
         jest.spyOn(refsServiceMock, 'mapPatientRefs').mockImplementationOnce(() => {
           Object.assign(orderDto.patient, {
-            breed: 'SCHIPPERKE',
-            sex: 'UNKNOWN',
-            species: 'CANINE'
+            sex: 'bc93eac2-886a-47da-89b7-30e8e2d83e75',
+            species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
+            breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec'
           })
         })
         jest.spyOn(clientMock, 'send').mockReturnValue(customPromise)
@@ -137,10 +137,10 @@ describe('OrdersService', () => {
           integrationId: 'idexx',
           patient: {
             birthdate: '2022-08-15',
-            breed: 'SCHIPPERKE',
+            breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec',
             name: 'Medicalnotes_author_test',
-            sex: 'UNKNOWN',
-            species: 'CANINE'
+            sex: 'bc93eac2-886a-47da-89b7-30e8e2d83e75',
+            species: '36c3cde0-bd6b-11eb-9610-302432eba3e9'
           }
         }))
         eventsServiceMock.addEvent.mockClear()
@@ -219,9 +219,9 @@ describe('OrdersService', () => {
         })
         jest.spyOn(refsServiceMock, 'mapPatientRefs').mockImplementationOnce(() => {
           Object.assign(orderDto.patient, {
-            breed: '163',
-            sex: 'U',
-            species: '41'
+            sex: 'bc93eac2-886a-47da-89b7-30e8e2d83e75',
+            species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
+            breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec'
           })
         })
         jest.spyOn(clientMock, 'send').mockReturnValue(customPromise)
@@ -232,10 +232,10 @@ describe('OrdersService', () => {
           integrationId: 'antech',
           patient: {
             birthdate: '2022-08-15',
-            breed: '163',
+            breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec',
             name: 'Medicalnotes_author_test',
-            sex: 'U',
-            species: '41'
+            sex: 'bc93eac2-886a-47da-89b7-30e8e2d83e75',
+            species: '36c3cde0-bd6b-11eb-9610-302432eba3e9'
           }
         }))
         eventsServiceMock.addEvent.mockClear()
@@ -302,9 +302,9 @@ describe('OrdersService', () => {
         })
         jest.spyOn(refsServiceMock, 'mapPatientRefs').mockImplementationOnce(() => {
           Object.assign(orderDto.patient, {
-            breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec',
-            sex: 'UNKNOWN',
-            species: 'DOG'
+            sex: 'bc93eac2-886a-47da-89b7-30e8e2d83e75',
+            species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
+            breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec'
           })
         })
         jest.spyOn(clientMock, 'send').mockReturnValue(customPromise)
@@ -317,8 +317,8 @@ describe('OrdersService', () => {
             birthdate: '2022-08-15',
             breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec',
             name: 'Medicalnotes_author_test',
-            sex: 'UNKNOWN',
-            species: 'DOG'
+            sex: 'bc93eac2-886a-47da-89b7-30e8e2d83e75',
+            species: '36c3cde0-bd6b-11eb-9610-302432eba3e9'
           }
         }))
         eventsServiceMock.addEvent.mockClear()

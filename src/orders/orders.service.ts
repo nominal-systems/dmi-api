@@ -217,8 +217,6 @@ export class OrdersService {
     const { providerConfiguration, integrationOptions } = integration
     const { configurationOptions, providerId } = providerConfiguration
 
-    await this.refsService.mapPatientRefs(providerId, createOrderDto.patient)
-
     const order = this.ordersRepository.create(createOrderDto)
     order.status = OrderStatus.ACCEPTED
 
@@ -241,7 +239,8 @@ export class OrdersService {
     })
     try {
       if (this.nodeEnv === 'seed') return order
-
+      const engineOrderPatient = { ...newOrder.patient }
+      await this.refsService.mapPatientRefs(providerId, engineOrderPatient)
       // Send order to Engine
       const { message, messagePattern } = ieMessageBuilder(
         providerId,
@@ -249,7 +248,7 @@ export class OrdersService {
           resource: 'orders',
           operation: 'create',
           data: {
-            payload: order,
+            payload: { ...newOrder, patient: engineOrderPatient },
             integrationOptions,
             providerConfiguration: configurationOptions,
             autoSubmitOrder
