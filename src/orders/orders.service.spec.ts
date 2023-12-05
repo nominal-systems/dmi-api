@@ -47,7 +47,7 @@ describe('OrdersService', () => {
     })
   }
   const refsServiceMock = {
-    mapPatientRefs: jest.fn(),
+    mapPatientReferences: jest.fn(),
     findOneByCodeAndProvider: jest.fn()
   }
   let ordersRepositoryMock: Partial<Repository<Order>>
@@ -122,7 +122,7 @@ describe('OrdersService', () => {
             configurationOptions: { url: 'https://test.com' }
           }
         })
-        jest.spyOn(refsServiceMock, 'mapPatientRefs').mockImplementationOnce(() => {
+        jest.spyOn(refsServiceMock, 'mapPatientReferences').mockImplementationOnce(() => {
           Object.assign(orderDto.patient, {
             sex: 'bc93eac2-886a-47da-89b7-30e8e2d83e75',
             species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
@@ -157,7 +157,7 @@ describe('OrdersService', () => {
             configurationOptions: { url: 'https://test.com' }
           }
         })
-        jest.spyOn(refsServiceMock, 'mapPatientRefs').mockImplementationOnce(() => {
+        jest.spyOn(refsServiceMock, 'mapPatientReferences').mockImplementationOnce(() => {
           Object.assign(orderDto.patient, {
             breed: 'SCHIPPERKE',
             sex: 'UNKN',
@@ -217,7 +217,7 @@ describe('OrdersService', () => {
             configurationOptions: { url: 'https://test.com' }
           }
         })
-        jest.spyOn(refsServiceMock, 'mapPatientRefs').mockImplementationOnce(() => {
+        jest.spyOn(refsServiceMock, 'mapPatientReferences').mockImplementationOnce(() => {
           Object.assign(orderDto.patient, {
             sex: 'bc93eac2-886a-47da-89b7-30e8e2d83e75',
             species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
@@ -252,7 +252,7 @@ describe('OrdersService', () => {
             configurationOptions: { url: 'https://test.com' }
           }
         })
-        jest.spyOn(refsServiceMock, 'mapPatientRefs').mockImplementationOnce(() => {
+        jest.spyOn(refsServiceMock, 'mapPatientReferences').mockImplementationOnce(() => {
           Object.assign(orderDto.patient, {
             breed: 'SCHIPPERKE',
             sex: 'UNKN',
@@ -300,7 +300,7 @@ describe('OrdersService', () => {
             configurationOptions: { url: 'https://test.com' }
           }
         })
-        jest.spyOn(refsServiceMock, 'mapPatientRefs').mockImplementationOnce(() => {
+        jest.spyOn(refsServiceMock, 'mapPatientReferences').mockImplementationOnce(() => {
           Object.assign(orderDto.patient, {
             sex: 'bc93eac2-886a-47da-89b7-30e8e2d83e75',
             species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
