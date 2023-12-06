@@ -192,7 +192,7 @@ export class RefsService {
       .where('ref.code = :code OR providerRef.code = :code', { code })
       .getOne()
     if (providerRef) {
-      return result?.providerRef[0] ?? undefined
+      return result?.providerRef[0]
     } else {
       return result
     }

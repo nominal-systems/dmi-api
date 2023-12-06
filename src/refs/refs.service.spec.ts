@@ -494,51 +494,50 @@ describe('RefsService', () => {
           species: 'DOG',
           breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec'
         }))
-        describe('findDefaultBreedBySpecies', () => {
-          describe('Antech', () => {
-            it('should find default breed', async () => {
-              const mockData = { defaultBreed: '163', species: '41', provider: { id: 'antech' } }
-              mockProviderDefaultBreedRepository.createQueryBuilder.mockReturnValue({
-                leftJoin: jest.fn().mockReturnThis(),
-                select: jest.fn().mockReturnThis(),
-                where: jest.fn().mockReturnThis(),
-                getOne: jest.fn().mockResolvedValueOnce(mockData)
-              })
-              const defaultBreed = await refsService.findDefaultBreedBySpecies('36c3cde0-bd6b-11eb-9610-302432eba3e9', 'antech')
-              expect(defaultBreed?.defaultBreed).toEqual('163')
-            })
-          })
-          describe('Idexx', () => {
-            it('should find default breed', async () => {
-              const mockData = { defaultBreed: 'SCHIPPERKE', species: 'DOG', provider: { id: 'idexx' } }
-              mockProviderDefaultBreedRepository.createQueryBuilder.mockReturnValue({
-                leftJoin: jest.fn().mockReturnThis(),
-                select: jest.fn().mockReturnThis(),
-                where: jest.fn().mockReturnThis(),
-                getOne: jest.fn().mockResolvedValueOnce(mockData)
-              })
-
-              const defaultBreed = await refsService.findDefaultBreedBySpecies('36c3cde0-bd6b-11eb-9610-302432eba3e9', 'idexx')
-              expect(defaultBreed?.defaultBreed).toEqual('SCHIPPERKE')
-            })
-          })
-        })
       })
     })
-    describe('findOneProviderRefByCodeAndProvider', () => {
-      describe('Idexx', () => {
-        it('should find provider ref', async () => {
-          const mockData = { code: 'SCHIPPERKE', species: 'DOG', provider: { id: 'idexx' }, type: 'breed' }
-          mockProviderRefsRepository.createQueryBuilder.mockReturnValue({
-            leftJoin: jest.fn().mockReturnThis(),
-            select: jest.fn().mockReturnThis(),
-            where: jest.fn().mockReturnThis(),
-            getOne: jest.fn().mockResolvedValueOnce(mockData)
-          })
-
-          const providerBreed = await refsService.findOneProviderRefByCodeAndProvider('SCHIPPERKE', 'idexx')
-          expect(providerBreed?.code).toEqual('SCHIPPERKE')
+  })
+  describe('findDefaultBreedBySpecies', () => {
+    describe('Antech', () => {
+      it('should find default breed', async () => {
+        const mockData = { defaultBreed: '163', species: '41', provider: { id: 'antech' } }
+        mockProviderDefaultBreedRepository.createQueryBuilder.mockReturnValue({
+          leftJoin: jest.fn().mockReturnThis(),
+          select: jest.fn().mockReturnThis(),
+          where: jest.fn().mockReturnThis(),
+          getOne: jest.fn().mockResolvedValueOnce(mockData)
         })
+        const defaultBreed = await refsService.findDefaultBreedBySpecies('36c3cde0-bd6b-11eb-9610-302432eba3e9', 'antech')
+        expect(defaultBreed?.defaultBreed).toEqual('163')
+      })
+    })
+    describe('Idexx', () => {
+      it('should find default breed', async () => {
+        const mockData = { defaultBreed: 'SCHIPPERKE', species: 'DOG', provider: { id: 'idexx' } }
+        mockProviderDefaultBreedRepository.createQueryBuilder.mockReturnValue({
+          leftJoin: jest.fn().mockReturnThis(),
+          select: jest.fn().mockReturnThis(),
+          where: jest.fn().mockReturnThis(),
+          getOne: jest.fn().mockResolvedValueOnce(mockData)
+        })
+
+        const defaultBreed = await refsService.findDefaultBreedBySpecies('36c3cde0-bd6b-11eb-9610-302432eba3e9', 'idexx')
+        expect(defaultBreed?.defaultBreed).toEqual('SCHIPPERKE')
+      })
+    })
+  })
+  describe('findOneProviderRefByCodeAndProvider', () => {
+    describe('Idexx', () => {
+      it('should find provider ref', async () => {
+        const mockData = { code: 'SCHIPPERKE', species: 'DOG', provider: { id: 'idexx' }, type: 'breed' }
+        mockProviderRefsRepository.createQueryBuilder.mockReturnValue({
+          leftJoin: jest.fn().mockReturnThis(),
+          select: jest.fn().mockReturnThis(),
+          where: jest.fn().mockReturnThis(),
+          getOne: jest.fn().mockResolvedValueOnce(mockData)
+        })
+        const providerBreed = await refsService.findOneProviderRefByCodeAndProvider('SCHIPPERKE', 'idexx')
+        expect(providerBreed?.code).toEqual('SCHIPPERKE')
       })
     })
   })
