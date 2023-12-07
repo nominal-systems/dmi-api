@@ -1,7 +1,7 @@
 import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { ProvidersService } from '../providers/services/providers.service'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { FindManyOptions, Repository } from 'typeorm'
 import { Ref } from './entities/ref.entity'
 import { ProviderRef } from './entities/providerRef.entity'
 import { CreateRefsDTO } from './dtos/create-refs.dto'
@@ -9,6 +9,7 @@ import { Provider } from '../providers/entities/provider.entity'
 import { CreateOrderDtoPatient } from '../orders/dtos/create-order.dto'
 import { PaginationDto } from '../common/dtos/pagination.dto'
 import { PAGINATION_PAGE_LIMIT } from '../common/constants/pagination.constant'
+import { ProviderDefaultBreed } from './entities/providerDefaultBreed.entity'
 
 @Injectable()
 export class RefsService {
@@ -17,7 +18,8 @@ export class RefsService {
   constructor (
     private readonly providersService: ProvidersService,
     @InjectRepository(ProviderRef) private readonly providerRefRepository: Repository<ProviderRef>,
-    @InjectRepository(Ref) private readonly refRepository: Repository<Ref>
+    @InjectRepository(Ref) private readonly refRepository: Repository<Ref>,
+    @InjectRepository(ProviderDefaultBreed) private readonly providerDefaultBreedRepository: Repository<ProviderDefaultBreed>
   ) {
   }
 
@@ -112,7 +114,13 @@ export class RefsService {
     const take = paginationDto.limit !== undefined ? paginationDto.limit : PAGINATION_PAGE_LIMIT
     const skip = (paginationDto.page - 1) * take
 
-    return await this.refRepository.find({ where: { type: type }, select: ['id', 'name', 'code', 'type', 'providerRef'], relations: ['providerRef', 'providerRef.provider'], skip, take })
+    return await this.refRepository.find({
+      where: { type: type },
+      select: ['id', 'name', 'code', 'type', 'providerRef'],
+      relations: ['providerRef', 'providerRef.provider'],
+      skip,
+      take
+    })
   }
 
   async countRefs (
@@ -192,6 +200,14 @@ export class RefsService {
       .getOne()
   }
 
+  async findOneProviderRefByCodeAndProvider (code: string, provider?: string): Promise<ProviderRef | undefined> {
+    return await this.providerRefRepository.createQueryBuilder('providerRef')
+      .leftJoin('providerRef.provider', 'provider', 'provider.id = providerRef.provider')
+      .select(['providerRef', 'provider.id'])
+      .where('providerRef.code = :code AND providerRef.provider = :provider', { code, provider: provider })
+      .getOne()
+  }
+
   async findProvidersMappedRefs (): Promise<any> {
     const refs = await this.providerRefRepository.createQueryBuilder('providerRefs')
       .leftJoin('providerRefs.ref', 'ref', 'ref.id = providerRefs.ref')
@@ -211,6 +227,20 @@ export class RefsService {
     return { mappedRefs, unmappedRefs }
   }
 
+  async findDefaultBreedBySpecies (species: string, providerId: string): Promise<ProviderDefaultBreed | undefined> {
+    return await this.providerDefaultBreedRepository.createQueryBuilder('providerDefaultBreed')
+      .leftJoin('providerDefaultBreed.provider', 'provider', 'provider.id = providerDefaultBreed.provider')
+      .select(['providerDefaultBreed', 'provider.id'])
+      .where('providerDefaultBreed.species = :species AND provider.id = :providerId', { species, providerId })
+      .getOne()
+  }
+
+  async findAllDefaultBreeds (
+    options?: FindManyOptions<ProviderDefaultBreed>
+  ): Promise<ProviderDefaultBreed[]> {
+    return await this.providerDefaultBreedRepository.find(options)
+  }
+
   async mapPatientRefs (providerId: string, patient: CreateOrderDtoPatient): Promise<void> {
     const attributesToMap = ['sex', 'species', 'breed']
 
@@ -225,9 +255,40 @@ export class RefsService {
         } else {
           mappedPatient[attribute] = patient[attribute]
         }
+      } else if (attribute === 'breed') {
+        const defaultBreed = await this.findDefaultBreedBySpecies(mappedPatient.species as string, providerId)
+        if (defaultBreed !== undefined) {
+          mappedPatient[attribute] = defaultBreed.defaultBreed
+        }
       }
     }
 
     Object.assign(patient, mappedPatient)
+  }
+
+  async setDefaultBreed (providerId: string, species: string, defaultBreed: string): Promise<ProviderDefaultBreed> {
+    const existingDefaultBreed = await this.findDefaultBreedBySpecies(species, providerId)
+
+    const speciesExists = await this.findOneProviderRefByCodeAndProvider(species, providerId)
+    if (speciesExists === undefined) {
+      throw new NotFoundException('Species not found')
+    }
+    const breedExists = await this.findOneProviderRefByCodeAndProvider(defaultBreed, providerId)
+    if (breedExists === undefined) {
+      throw new NotFoundException('Breed not found')
+    }
+    if (existingDefaultBreed !== undefined) {
+      existingDefaultBreed.defaultBreed = defaultBreed
+      await this.providerDefaultBreedRepository.save(existingDefaultBreed)
+      return existingDefaultBreed
+    } else {
+      const newDefaultBreed = this.providerDefaultBreedRepository.create({
+        species,
+        defaultBreed,
+        provider: { id: providerId }
+      })
+      await this.providerDefaultBreedRepository.save(newDefaultBreed)
+      return newDefaultBreed
+    }
   }
 }

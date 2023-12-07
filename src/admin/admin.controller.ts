@@ -29,7 +29,7 @@ import { OrganizationsService } from '../organizations/services/organizations.se
 import { Organization } from '../organizations/entities/organization.entity'
 import { IntegrationStatus } from '../integrations/constants/integration-status.enum'
 import { InjectRepository } from '@nestjs/typeorm'
-import { FindManyOptions, Repository } from 'typeorm'
+import { FindManyOptions, In, Repository } from 'typeorm'
 import { CreateIntegrationDto } from '../integrations/dtos/create-integration.dto'
 import { ReferenceDataQueryParams } from '../providers/dtos/reference-data-queryparams.dto'
 import { RefsService } from '../refs/refs.service'
@@ -54,6 +54,7 @@ import { FilterQuery } from 'mongoose'
 import { PaginationResult } from '../common/classes/pagination-result'
 import { PaginationDto } from '../common/dtos/pagination.dto'
 import { PAGINATION_PAGE_LIMIT } from '../common/constants/pagination.constant'
+import { ProviderDefaultBreed } from '../refs/entities/providerDefaultBreed.entity'
 
 @Controller('admin')
 export class AdminController {
@@ -434,6 +435,42 @@ export class AdminController {
       limit: params.limit,
       data
     }
+  }
+
+  @Get('providers/:providerId/defaultBreed')
+  @UseGuards(AdminGuard)
+  async getDefaultBreeds (
+    @Param('providerId') providerId: string,
+    @Query('speciesCodes') speciesCodes: string
+  ): Promise<ProviderDefaultBreed[]> {
+    const codes = speciesCodes.split(',')
+    return await this.refsService.findAllDefaultBreeds({
+      where: {
+        provider: providerId,
+        species: In(codes)
+      }
+    })
+  }
+
+  @Put('providers/:providerId/defaultBreed')
+  @UseGuards(AdminGuard)
+  async setDefaultBreed (
+    @Param('providerId') providerId: string,
+    @Query('species') species: string,
+    @Query('breed') breed: string
+  ): Promise<any> {
+    const provider = await this.providersService.findOneById(providerId)
+
+    if (provider === undefined) {
+      throw new BadRequestException(`The provider ${providerId} doesn't exist`)
+    }
+    try {
+      await this.refsService.setDefaultBreed(providerId, species, breed)
+    } catch (error) {
+      throw new BadRequestException(error.message)
+    }
+
+    return { status: 'OK' }
   }
 
   @Post('providers/:providerId/options/create')

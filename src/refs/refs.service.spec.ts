@@ -7,6 +7,7 @@ import { Ref } from './entities/ref.entity'
 import { ProviderRef } from './entities/providerRef.entity'
 import { CreateRefsDTO } from './dtos/create-refs.dto'
 import { CreateOrderDtoPatient } from '../orders/dtos/create-order.dto'
+import { ProviderDefaultBreed } from './entities/providerDefaultBreed.entity'
 
 describe('RefsService', () => {
   let refsService: RefsService
@@ -25,13 +26,30 @@ describe('RefsService', () => {
     create: jest.fn(entity => entity),
     save: jest.fn(entity => entity),
     delete: jest.fn(entity => entity),
-    findByIds: jest.fn(entity => entity)
+    findByIds: jest.fn(entity => entity),
+    createQueryBuilder: jest.fn(() => ({
+      leftJoin: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      getOne: jest.fn().mockResolvedValue({})
+    }))
   }
 
   const mockProvidersService = {
     findOneById: jest.fn(entity => entity),
     update: jest.fn(entity => entity)
     // mock your methods here
+  }
+
+  const mockProviderDefaultBreedRepository = {
+    create: jest.fn(entity => entity),
+    save: jest.fn(entity => entity),
+    createQueryBuilder: jest.fn(() => ({
+      leftJoin: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      getOne: jest.fn().mockResolvedValue({})
+    }))
   }
 
   const findOneByCodeAndProviderMock = jest.fn()
@@ -51,6 +69,10 @@ describe('RefsService', () => {
         {
           provide: getRepositoryToken(ProviderRef),
           useValue: mockProviderRefsRepository
+        },
+        {
+          provide: getRepositoryToken(ProviderDefaultBreed),
+          useValue: mockProviderDefaultBreedRepository
         }
       ]
     }).compile()
@@ -252,6 +274,51 @@ describe('RefsService', () => {
           sex: 'UNKNOWN',
           species: 'DOG'
         }))
+      })
+    })
+  })
+  describe('findDefaultBreedBySpecies', () => {
+    describe('Antech', () => {
+      it('should find default breed', async () => {
+        const mockData = { defaultBreed: '163', species: '41', provider: { id: 'antech' } }
+        mockProviderDefaultBreedRepository.createQueryBuilder.mockReturnValue({
+          leftJoin: jest.fn().mockReturnThis(),
+          select: jest.fn().mockReturnThis(),
+          where: jest.fn().mockReturnThis(),
+          getOne: jest.fn().mockResolvedValueOnce(mockData)
+        })
+        const defaultBreed = await refsService.findDefaultBreedBySpecies('36c3cde0-bd6b-11eb-9610-302432eba3e9', 'antech')
+        expect(defaultBreed?.defaultBreed).toEqual('163')
+      })
+    })
+    describe('Idexx', () => {
+      it('should find default breed', async () => {
+        const mockData = { defaultBreed: 'SCHIPPERKE', species: 'DOG', provider: { id: 'idexx' } }
+        mockProviderDefaultBreedRepository.createQueryBuilder.mockReturnValue({
+          leftJoin: jest.fn().mockReturnThis(),
+          select: jest.fn().mockReturnThis(),
+          where: jest.fn().mockReturnThis(),
+          getOne: jest.fn().mockResolvedValueOnce(mockData)
+        })
+
+        const defaultBreed = await refsService.findDefaultBreedBySpecies('36c3cde0-bd6b-11eb-9610-302432eba3e9', 'idexx')
+        expect(defaultBreed?.defaultBreed).toEqual('SCHIPPERKE')
+      })
+    })
+  })
+  describe('findOneProviderRefByCodeAndProvider', () => {
+    describe('Idexx', () => {
+      it('should find provider ref', async () => {
+        const mockData = { code: 'SCHIPPERKE', species: 'DOG', provider: { id: 'idexx' }, type: 'breed' }
+        mockProviderRefsRepository.createQueryBuilder.mockReturnValue({
+          leftJoin: jest.fn().mockReturnThis(),
+          select: jest.fn().mockReturnThis(),
+          where: jest.fn().mockReturnThis(),
+          getOne: jest.fn().mockResolvedValueOnce(mockData)
+        })
+
+        const providerBreed = await refsService.findOneProviderRefByCodeAndProvider('SCHIPPERKE', 'idexx')
+        expect(providerBreed?.code).toEqual('SCHIPPERKE')
       })
     })
   })
