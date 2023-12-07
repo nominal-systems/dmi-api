@@ -146,24 +146,10 @@ export class OrdersService {
       }
     })
 
-    const {
-      externalId,
-      manifest,
-      integration: { providerConfiguration, integrationOptions }
-    } = order
+    const { integration: { providerConfiguration } } = order
 
     if (providerConfiguration.organizationId !== organization.id) {
       throw new ForbiddenException('You don\'t have access to this resource')
-    }
-
-    if (manifest == null) {
-      const response = await this.getOrderFromProvider(externalId, providerConfiguration, integrationOptions)
-
-      if (response.manifest != null || response.status !== order.status) {
-        Object.assign(order, response)
-
-        await this.ordersRepository.save(order)
-      }
     }
     return order
   }
