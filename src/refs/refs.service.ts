@@ -1,7 +1,7 @@
 import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { ProvidersService } from '../providers/services/providers.service'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { FindManyOptions, Repository } from 'typeorm'
 import { Ref } from './entities/ref.entity'
 import { ProviderRef } from './entities/providerRef.entity'
 import { CreateRefsDTO } from './dtos/create-refs.dto'
@@ -115,7 +115,13 @@ export class RefsService {
     const take = paginationDto.limit !== undefined ? paginationDto.limit : PAGINATION_PAGE_LIMIT
     const skip = (paginationDto.page - 1) * take
 
-    return await this.refRepository.find({ where: { type: type }, select: ['id', 'name', 'code', 'type', 'providerRef'], relations: ['providerRef', 'providerRef.provider'], skip, take })
+    return await this.refRepository.find({
+      where: { type: type },
+      select: ['id', 'name', 'code', 'type', 'providerRef'],
+      relations: ['providerRef', 'providerRef.provider'],
+      skip,
+      take
+    })
   }
 
   async countRefs (
@@ -232,6 +238,12 @@ export class RefsService {
       .select(['providerDefaultBreed', 'provider.id'])
       .where('providerDefaultBreed.species = :species AND provider.id = :providerId', { species, providerId })
       .getOne()
+  }
+
+  async findAllDefaultBreeds (
+    options?: FindManyOptions<ProviderDefaultBreed>
+  ): Promise<ProviderDefaultBreed[]> {
+    return await this.providerDefaultBreedRepository.find(options)
   }
 
   async mapPatientRefs (providerId: string, patient: CreateOrderDtoPatient): Promise<void> {
