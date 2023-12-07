@@ -33,6 +33,7 @@ import { ExternalResultEventData } from '../common/typings/external-result-event
 import { ProviderResultUtils } from '../common/utils/provider-result-utils'
 import { ProviderConfiguration } from '../providers/entities/provider-configuration.entity'
 import { RefsService } from '../refs/refs.service'
+import { Patient } from './entities/patient.entity'
 
 interface OrderTestCancelOrAddParams {
   orderId: string
@@ -217,10 +218,13 @@ export class OrdersService {
     const { providerConfiguration, integrationOptions } = integration
     const { configurationOptions, providerId } = providerConfiguration
 
-    const providerPatient = createOrderDto.patient
-    await this.refsService.mapPatientReferences(createOrderDto, providerPatient, providerId)
-
     const order = this.ordersRepository.create(createOrderDto)
+
+    // Map patient references
+    const providerPatient = { ...order.patient } as Patient
+    const patient = await this.refsService.mapPatientReferences(order, providerPatient, providerId)
+    order.patient = patient
+
     order.status = OrderStatus.ACCEPTED
 
     // Create tests
@@ -242,6 +246,8 @@ export class OrdersService {
     })
     try {
       if (this.nodeEnv === 'seed') return order
+
+      const providerOrder = { ...order, patient: providerPatient } as Order
       // Send order to Engine
       const { message, messagePattern } = ieMessageBuilder(
         providerId,
@@ -249,7 +255,7 @@ export class OrdersService {
           resource: 'orders',
           operation: 'create',
           data: {
-            payload: { ...newOrder, patient: providerPatient },
+            payload: providerOrder,
             integrationOptions,
             providerConfiguration: configurationOptions,
             autoSubmitOrder

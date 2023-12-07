@@ -294,14 +294,14 @@ describe('RefsService', () => {
           species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
           breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec'
         } as Patient
-        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: '36c3cde0-bd6b-11eb-9610-302432eba3e9' })
-        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec' })
-        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'b81354c6-9dca-46d1-91cb-b41c03ee3184' })
         findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'U' })
         findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: '41' })
         findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: '163' })
-        await refsService.mapPatientReferences(createOrderDto, providerPatient, 'antech')
-        expect(createOrderDto.patient).toEqual(expect.objectContaining({
+        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: '36c3cde0-bd6b-11eb-9610-302432eba3e9' })
+        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec' })
+        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'b81354c6-9dca-46d1-91cb-b41c03ee3184' })
+        const patient = await refsService.mapPatientReferences(createOrderDto, providerPatient, 'antech')
+        expect(patient).toEqual(expect.objectContaining({
           name: 'Medicalnotes_author_test',
           birthdate: '2022-08-15',
           sex: 'b81354c6-9dca-46d1-91cb-b41c03ee3184',
@@ -329,14 +329,14 @@ describe('RefsService', () => {
           species: '41',
           breed: '163'
         } as Patient
-        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: '36c3cde0-bd6b-11eb-9610-302432eba3e9' })
-        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec' })
-        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'b81354c6-9dca-46d1-91cb-b41c03ee3184' })
         findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'U' })
         findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: '41' })
         findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: '163' })
-        await refsService.mapPatientReferences(createOrderDto, providerPatient, 'antech')
-        expect(createOrderDto.patient).toEqual(expect.objectContaining({
+        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: '36c3cde0-bd6b-11eb-9610-302432eba3e9' })
+        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec' })
+        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'b81354c6-9dca-46d1-91cb-b41c03ee3184' })
+        const patient = await refsService.mapPatientReferences(createOrderDto, providerPatient, 'antech')
+        expect(patient).toEqual(expect.objectContaining({
           name: 'Medicalnotes_author_test',
           birthdate: '2022-08-15',
           sex: 'b81354c6-9dca-46d1-91cb-b41c03ee3184',
@@ -366,15 +366,15 @@ describe('RefsService', () => {
           species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
           breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec'
         } as Patient
-        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: '36c3cde0-bd6b-11eb-9610-302432eba3e9' })
-        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec' })
-        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'b81354c6-9dca-46d1-91cb-b41c03ee3184' })
         findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'UNKNOWN' })
         findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'CANINE' })
         findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'SCHIPPERKE' })
+        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: '36c3cde0-bd6b-11eb-9610-302432eba3e9' })
+        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec' })
+        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'b81354c6-9dca-46d1-91cb-b41c03ee3184' })
 
-        await refsService.mapPatientReferences(createOrderDto, providerPatient, 'antech')
-        expect(createOrderDto.patient).toEqual(expect.objectContaining({
+        const patient = await refsService.mapPatientReferences(createOrderDto, providerPatient, 'antech')
+        expect(patient).toEqual(expect.objectContaining({
           name: 'Medicalnotes_author_test',
           birthdate: '2022-08-15',
           sex: 'b81354c6-9dca-46d1-91cb-b41c03ee3184',
@@ -402,14 +402,14 @@ describe('RefsService', () => {
           species: 'CANINE',
           breed: 'SCHIPPERKE'
         } as Patient
-        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: '36c3cde0-bd6b-11eb-9610-302432eba3e9' })
-        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec' })
-        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'b81354c6-9dca-46d1-91cb-b41c03ee3184' })
         findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'UNKNOWN' })
         findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'CANINE' })
         findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'SCHIPPERKE' })
-        await refsService.mapPatientReferences(createOrderDto, providerPatient, 'antech')
-        expect(createOrderDto.patient).toEqual(expect.objectContaining({
+        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: '36c3cde0-bd6b-11eb-9610-302432eba3e9' })
+        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec' })
+        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'b81354c6-9dca-46d1-91cb-b41c03ee3184' })
+        const patient = await refsService.mapPatientReferences(createOrderDto, providerPatient, 'antech')
+        expect(patient).toEqual(expect.objectContaining({
           name: 'Medicalnotes_author_test',
           birthdate: '2022-08-15',
           sex: 'b81354c6-9dca-46d1-91cb-b41c03ee3184',
@@ -439,15 +439,15 @@ describe('RefsService', () => {
           species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
           breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec'
         } as Patient
-        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: '36c3cde0-bd6b-11eb-9610-302432eba3e9' })
-        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec' })
-        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'b81354c6-9dca-46d1-91cb-b41c03ee3184' })
         findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'UNKNOWN' })
         findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'DOG' })
         findOneByCodeAndProviderMock.mockResolvedValueOnce(undefined)
+        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: '36c3cde0-bd6b-11eb-9610-302432eba3e9' })
+        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec' })
+        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'b81354c6-9dca-46d1-91cb-b41c03ee3184' })
 
-        await refsService.mapPatientReferences(createOrderDto, providerPatient, 'antech')
-        expect(createOrderDto.patient).toEqual(expect.objectContaining({
+        const patient = await refsService.mapPatientReferences(createOrderDto, providerPatient, 'antech')
+        expect(patient).toEqual(expect.objectContaining({
           name: 'Medicalnotes_author_test',
           birthdate: '2022-08-15',
           sex: 'b81354c6-9dca-46d1-91cb-b41c03ee3184',
@@ -475,14 +475,14 @@ describe('RefsService', () => {
           species: 'DOG',
           breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec'
         } as Patient
-        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: '36c3cde0-bd6b-11eb-9610-302432eba3e9' })
-        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec' })
-        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'b81354c6-9dca-46d1-91cb-b41c03ee3184' })
         findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'UNKNOWN' })
         findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'DOG' })
         findOneByCodeAndProviderMock.mockResolvedValueOnce(undefined)
-        await refsService.mapPatientReferences(createOrderDto, providerPatient, 'antech')
-        expect(createOrderDto.patient).toEqual(expect.objectContaining({
+        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: '36c3cde0-bd6b-11eb-9610-302432eba3e9' })
+        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec' })
+        findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'b81354c6-9dca-46d1-91cb-b41c03ee3184' })
+        const patient = await refsService.mapPatientReferences(createOrderDto, providerPatient, 'antech')
+        expect(patient).toEqual(expect.objectContaining({
           name: 'Medicalnotes_author_test',
           birthdate: '2022-08-15',
           sex: 'b81354c6-9dca-46d1-91cb-b41c03ee3184',

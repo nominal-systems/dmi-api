@@ -122,12 +122,12 @@ describe('OrdersService', () => {
             configurationOptions: { url: 'https://test.com' }
           }
         })
-        jest.spyOn(refsServiceMock, 'mapPatientReferences').mockImplementationOnce(() => {
-          Object.assign(orderDto.patient, {
-            sex: 'bc93eac2-886a-47da-89b7-30e8e2d83e75',
-            species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
-            breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec'
-          })
+        jest.spyOn(refsServiceMock, 'mapPatientReferences').mockResolvedValueOnce({
+          name: 'Medicalnotes_author_test',
+          birthdate: '2022-08-15',
+          sex: 'bc93eac2-886a-47da-89b7-30e8e2d83e75',
+          species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
+          breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec'
         })
         jest.spyOn(clientMock, 'send').mockReturnValue(customPromise)
         customPromise.toPromise.mockResolvedValueOnce({ status: 'COMPLETED' })
@@ -157,12 +157,12 @@ describe('OrdersService', () => {
             configurationOptions: { url: 'https://test.com' }
           }
         })
-        jest.spyOn(refsServiceMock, 'mapPatientReferences').mockImplementationOnce(() => {
-          Object.assign(orderDto.patient, {
-            breed: 'SCHIPPERKE',
-            sex: 'UNKN',
-            species: 'CANINE'
-          })
+        jest.spyOn(refsServiceMock, 'mapPatientReferences').mockResolvedValueOnce({
+          name: 'Medicalnotes_author_test',
+          birthdate: '2022-08-15',
+          sex: 'UNKN',
+          species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
+          breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec'
         })
         try {
           jest.spyOn(clientMock, 'send').mockReturnValue(customPromise)
@@ -217,12 +217,12 @@ describe('OrdersService', () => {
             configurationOptions: { url: 'https://test.com' }
           }
         })
-        jest.spyOn(refsServiceMock, 'mapPatientReferences').mockImplementationOnce(() => {
-          Object.assign(orderDto.patient, {
-            sex: 'bc93eac2-886a-47da-89b7-30e8e2d83e75',
-            species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
-            breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec'
-          })
+        jest.spyOn(refsServiceMock, 'mapPatientReferences').mockResolvedValueOnce({
+          name: 'Medicalnotes_author_test',
+          birthdate: '2022-08-15',
+          sex: 'bc93eac2-886a-47da-89b7-30e8e2d83e75',
+          species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
+          breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec'
         })
         jest.spyOn(clientMock, 'send').mockReturnValue(customPromise)
         customPromise.toPromise.mockResolvedValueOnce({ status: 'COMPLETED' })
@@ -252,12 +252,12 @@ describe('OrdersService', () => {
             configurationOptions: { url: 'https://test.com' }
           }
         })
-        jest.spyOn(refsServiceMock, 'mapPatientReferences').mockImplementationOnce(() => {
-          Object.assign(orderDto.patient, {
-            breed: 'SCHIPPERKE',
-            sex: 'UNKN',
-            species: 'CANINE'
-          })
+        jest.spyOn(refsServiceMock, 'mapPatientReferences').mockResolvedValueOnce({
+          name: 'Medicalnotes_author_test',
+          birthdate: '2022-08-15',
+          sex: 'UNKN',
+          species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
+          breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec'
         })
         try {
           jest.spyOn(clientMock, 'send').mockReturnValue(customPromise)
@@ -300,12 +300,12 @@ describe('OrdersService', () => {
             configurationOptions: { url: 'https://test.com' }
           }
         })
-        jest.spyOn(refsServiceMock, 'mapPatientReferences').mockImplementationOnce(() => {
-          Object.assign(orderDto.patient, {
-            sex: 'bc93eac2-886a-47da-89b7-30e8e2d83e75',
-            species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
-            breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec'
-          })
+        jest.spyOn(refsServiceMock, 'mapPatientReferences').mockResolvedValueOnce({
+          name: 'Medicalnotes_author_test',
+          birthdate: '2022-08-15',
+          sex: 'bc93eac2-886a-47da-89b7-30e8e2d83e75',
+          species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
+          breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec'
         })
         jest.spyOn(clientMock, 'send').mockReturnValue(customPromise)
         customPromise.toPromise.mockResolvedValueOnce({ status: 'COMPLETED' })

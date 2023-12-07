@@ -10,6 +10,7 @@ import { CreateOrderDtoPatient } from '../orders/dtos/create-order.dto'
 import { PaginationDto } from '../common/dtos/pagination.dto'
 import { PAGINATION_PAGE_LIMIT } from '../common/constants/pagination.constant'
 import { ProviderDefaultBreed } from './entities/providerDefaultBreed.entity'
+import { Patient } from '../orders/entities/patient.entity'
 
 @Injectable()
 export class RefsService {
@@ -239,7 +240,7 @@ export class RefsService {
     const mappedPatient: Partial<CreateOrderDtoPatient> = {}
 
     for (const attribute of attributesToMap) {
-      if (patient[attribute] !== undefined) {
+      if (patient[attribute] !== undefined && patient[attribute] !== null) {
         const result = await this.findOneByCodeAndProvider(patient[attribute], providerId, true)
 
         if (result !== undefined) {
@@ -258,23 +259,24 @@ export class RefsService {
     Object.assign(patient, mappedPatient)
   }
 
-  async mapPatientReferences (createOrderDto, providerPatient, providerId): Promise<void> {
-    const { species, breed, sex, ...patient } = createOrderDto.patient
-
+  async mapPatientReferences (order, providerPatient, providerId): Promise<Patient> {
+    let { species, breed, sex, ...patient } = order.patient
+    await this.mapPatientRefs(providerId, providerPatient)
+    if (breed === undefined) {
+      breed = providerPatient.breed
+    }
     const [speciesRef, breedRef, sexRef] = await Promise.all([
       this.findOneByCodeAndProvider(species, providerId),
       this.findOneByCodeAndProvider(breed, providerId),
       this.findOneByCodeAndProvider(sex, providerId)
     ])
 
-    createOrderDto.patient = {
+    return {
       ...patient,
       species: speciesRef?.code ?? species,
       breed: breedRef?.code ?? breed,
       sex: sexRef?.code ?? sex
     }
-
-    await this.mapPatientRefs(providerId, providerPatient)
   }
 
   async setDefaultBreed (providerId: string, species: string, defaultBreed: string): Promise<ProviderDefaultBreed> {
