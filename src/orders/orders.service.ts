@@ -33,7 +33,6 @@ import { ExternalResultEventData } from '../common/typings/external-result-event
 import { ProviderResultUtils } from '../common/utils/provider-result-utils'
 import { ProviderConfiguration } from '../providers/entities/provider-configuration.entity'
 import { RefsService } from '../refs/refs.service'
-import { Patient } from './entities/patient.entity'
 import { Attachment } from './entities/attachment.entity'
 
 interface OrderTestCancelOrAddParams {
@@ -208,9 +207,8 @@ export class OrdersService {
     const order = this.ordersRepository.create(createOrderDto)
 
     // Map patient references
-    const providerPatient = { ...order.patient } as Patient
-    const patient = await this.refsService.mapPatientReferences(order, providerPatient, providerId)
-    order.patient = patient
+    const providerPatient = order.patient
+    order.patient = await this.refsService.mapPatientReferences(order, providerPatient, providerId)
 
     order.status = OrderStatus.ACCEPTED
 
@@ -234,7 +232,7 @@ export class OrdersService {
     try {
       if (this.nodeEnv === 'seed') return order
 
-      const providerOrder = { ...order, patient: providerPatient } as Order
+      const providerOrder = { ...order, patient: { ...order.patient, ...providerPatient } } as Order
       // Send order to Engine
       const { message, messagePattern } = ieMessageBuilder(
         providerId,
