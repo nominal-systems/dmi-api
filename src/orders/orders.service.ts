@@ -209,6 +209,7 @@ export class OrdersService {
     // Map patient references
     const providerPatient = order.patient
     order.patient = await this.refsService.mapPatientReferences(order, providerPatient, providerId)
+    const { sex, species, breed } = providerPatient
 
     order.status = OrderStatus.ACCEPTED
 
@@ -232,7 +233,8 @@ export class OrdersService {
     try {
       if (this.nodeEnv === 'seed') return order
 
-      const providerOrder = { ...order, patient: { ...order.patient, ...providerPatient } } as Order
+      const providerOrder = { ...order, patient: { ...order.patient, sex, species, breed } }
+
       // Send order to Engine
       const { message, messagePattern } = ieMessageBuilder(
         providerId,
