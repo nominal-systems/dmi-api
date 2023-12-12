@@ -59,7 +59,7 @@ export class ProvidersService {
   async findOneById (
     providerId: string
   ): Promise<Provider> {
-    const provider = await this.providerRepository.findOne(providerId, { relations: ['options'] })
+    const provider = await this.providerRepository.findOne(providerId, { relations: ['options', 'labRequisitionParameters'] })
     if (provider == null) {
       throw new NotFoundException('The provider doesn\'t exist')
     }
@@ -222,6 +222,22 @@ export class ProvidersService {
     })
 
     return await this.client.send(messagePattern, message).toPromise()
+  }
+
+  async checkLabRequisitionParameters (providerId: string, labRequisitionInfo: any): Promise<void> {
+    const provider = await this.findOneById(providerId)
+    const { labRequisitionParameters } = provider
+    const missingParameters: string[] = []
+    for (const parameter of labRequisitionParameters) {
+      if (labRequisitionInfo[parameter.name] === undefined) {
+        if (parameter.required) {
+          missingParameters.push(parameter.name)
+        }
+      }
+    }
+    if (missingParameters.length > 0) {
+      throw new BadRequestException(`The following lab requisition parameters are missing: ${missingParameters.join(', ')}`)
+    }
   }
 
   async createProviderOptions (providerId: string, providerOptions: ProviderOptionDto[]): Promise<void> {

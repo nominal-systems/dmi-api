@@ -34,6 +34,7 @@ import { ProviderResultUtils } from '../common/utils/provider-result-utils'
 import { ProviderConfiguration } from '../providers/entities/provider-configuration.entity'
 import { RefsService } from '../refs/refs.service'
 import { Attachment } from './entities/attachment.entity'
+import { ProvidersService } from '../providers/services/providers.service'
 
 interface OrderTestCancelOrAddParams {
   orderId: string
@@ -54,6 +55,7 @@ export class OrdersService {
     @Inject(IntegrationsService) private readonly integrationsService: IntegrationsService,
     @Inject(EventsService) private readonly eventsService: EventsService,
     @Inject(RefsService) private readonly refsService: RefsService,
+    @Inject(ProvidersService) private readonly providersService: ProvidersService,
     @Inject('ACTIVEMQ') private readonly client: ClientProxy
   ) {
     this.nodeEnv = this.configService.get('nodeEnv')
@@ -205,6 +207,10 @@ export class OrdersService {
     const { configurationOptions, providerId } = providerConfiguration
 
     await this.refsService.mapPatientRefs(providerId, createOrderDto.patient)
+
+    if (createOrderDto.labRequisitionInfo !== null) {
+      await this.providersService.checkLabRequisitionParameters(providerId, createOrderDto.labRequisitionInfo)
+    }
 
     const order = this.ordersRepository.create(createOrderDto)
     order.status = OrderStatus.ACCEPTED

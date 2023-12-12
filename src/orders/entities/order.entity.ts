@@ -3,7 +3,6 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  JoinColumn,
   JoinTable,
   ManyToMany,
   ManyToOne,
@@ -11,7 +10,7 @@ import {
   UpdateDateColumn
 } from 'typeorm'
 import { Integration } from '../../integrations/entities/integration.entity'
-import { LabRequisitionInfo } from './labRequisitionInfo.entity'
+import { LabRequisitionInfo } from '../dtos/create-order.dto'
 import { Attachment } from './attachment.entity'
 import { Client } from './client.entity'
 import { Patient } from './patient.entity'
@@ -74,9 +73,8 @@ export class Order {
   @Column({ default: false })
   editable: boolean
 
-  @ManyToMany(() => LabRequisitionInfo, { cascade: true })
-  @JoinColumn()
-  labRequisitionInfo: LabRequisitionInfo
+  @Column('json', { nullable: true })
+  labRequisitionInfo?: LabRequisitionInfo
 
   @Type(() => Integration)
   @ManyToOne(() => Integration)
