@@ -228,6 +228,7 @@ export class ProvidersService {
     const provider = await this.findOneById(providerId)
     const { labRequisitionParameters } = provider
     const missingParameters: string[] = []
+    const unknownParameters: string[] = []
     for (const parameter of labRequisitionParameters) {
       if (labRequisitionInfo[parameter.name] === undefined) {
         if (parameter.required === true) {
@@ -235,8 +236,20 @@ export class ProvidersService {
         }
       }
     }
-    if (missingParameters.length > 0) {
-      throw new BadRequestException(`The following lab requisition parameters are missing: ${missingParameters.join(', ')}`)
+    for (const key in labRequisitionInfo) {
+      if (labRequisitionParameters.some(parameter => parameter.name === key) === false) {
+        unknownParameters.push(key)
+      }
+    }
+    if (missingParameters.length > 0 || unknownParameters.length > 0) {
+      let errorMessage = ''
+      if (missingParameters.length > 0) {
+        errorMessage += `The following lab requisition parameters are missing: ${missingParameters.join(', ')}.`
+      }
+      if (unknownParameters.length > 0) {
+        errorMessage += `The following unknown lab requisition parameters were found: ${unknownParameters.join(', ')}.`
+      }
+      throw new BadRequestException(errorMessage)
     }
   }
 
