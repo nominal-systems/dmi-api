@@ -10,7 +10,6 @@ import {
   UpdateDateColumn
 } from 'typeorm'
 import { Integration } from '../../integrations/entities/integration.entity'
-import { LabRequisitionInfo } from '../dtos/create-order.dto'
 import { Attachment } from './attachment.entity'
 import { Client } from './client.entity'
 import { Patient } from './patient.entity'
@@ -74,7 +73,7 @@ export class Order {
   editable: boolean
 
   @Column('json', { nullable: true })
-  labRequisitionInfo?: LabRequisitionInfo
+  labRequisitionInfo?: Record<string, any>
 
   @Type(() => Integration)
   @ManyToOne(() => Integration)

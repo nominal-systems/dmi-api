@@ -62,60 +62,6 @@ export class CreateOrderDtoPatient {
   weight?: PatientWeight
 }
 
-export class LabRequisitionInfo {
-  @IsNotEmpty()
-  @IsOptional()
-  DexSuppression?: string
-
-  @IsNotEmpty()
-  @IsOptional()
-  CollectionMethod?: string
-
-  @IsNotEmpty()
-  @IsOptional()
-  CultureSource?: string
-
-  @IsNotEmpty()
-  @IsOptional()
-  HistoSource?: string
-
-  @IsNotEmpty()
-  @IsOptional()
-  HistoPatientHistory?: string
-
-  @IsNotEmpty()
-  @IsOptional()
-  HistoPathologistName?: string
-
-  @IsNotEmpty()
-  @IsOptional()
-  HistoBiopsyType?: string
-
-  @IsNotEmpty()
-  @IsOptional()
-  HistoTissue?: string
-
-  @IsNotEmpty()
-  @IsOptional()
-  HistoContainerSize?: string
-
-  @IsNotEmpty()
-  @IsOptional()
-  HistoSpecimens?: string
-
-  @IsNotEmpty()
-  @IsOptional()
-  HistoAccessionID?: string
-
-  @IsNotEmpty()
-  @IsOptional()
-  IsSpecialStaining?: boolean
-
-  @IsNotEmpty()
-  @IsOptional()
-  HistoSpecialStaining?: string
-}
-
 export class CreateOrderDto {
   @IsOptional()
   requisitionId?: string
@@ -151,8 +97,6 @@ export class CreateOrderDto {
   editable?: boolean
   notes?: string
 
-  @Type(() => LabRequisitionInfo)
   @IsOptional()
-  @ValidateNested()
-  labRequisitionInfo?: LabRequisitionInfo
+  labRequisitionInfo?: any
 }
