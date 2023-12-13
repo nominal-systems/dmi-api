@@ -230,7 +230,7 @@ export class ProvidersService {
     const missingParameters: string[] = []
     for (const parameter of labRequisitionParameters) {
       if (labRequisitionInfo[parameter.name] === undefined) {
-        if (parameter.required) {
+        if (parameter.required === true) {
           missingParameters.push(parameter.name)
         }
       }
