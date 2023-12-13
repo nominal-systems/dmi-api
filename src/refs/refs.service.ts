@@ -10,6 +10,7 @@ import { CreateOrderDtoPatient } from '../orders/dtos/create-order.dto'
 import { PaginationDto } from '../common/dtos/pagination.dto'
 import { PAGINATION_PAGE_LIMIT } from '../common/constants/pagination.constant'
 import { ProviderDefaultBreed } from './entities/providerDefaultBreed.entity'
+import { Patient } from '../orders/entities/patient.entity'
 
 @Injectable()
 export class RefsService {
@@ -191,13 +192,17 @@ export class RefsService {
     return ref
   }
 
-  async findOneByCodeAndProvider (code: string, provider?: string): Promise<ProviderRef | undefined> {
-    return await this.providerRefRepository.createQueryBuilder('providerRef')
-      .leftJoin('providerRef.ref', 'ref', 'ref.id = providerRef.ref')
-      .leftJoin('providerRef.provider', 'provider', 'provider.id = providerRef.provider')
-      .select(['ref', 'providerRef.code', 'provider.id'])
-      .where('ref.code = :code AND providerRef.provider = :provider', { code, provider: provider })
+  async findOneByCodeAndProvider (code: string, provider?: string, providerRef = false): Promise<Ref | ProviderRef | undefined> {
+    const result = await this.refRepository.createQueryBuilder('ref')
+      .leftJoinAndSelect('ref.providerRef', 'providerRef', 'providerRef.ref = ref.id AND providerRef.provider = :provider', { provider })
+      .leftJoinAndSelect('providerRef.provider', 'provider')
+      .where('ref.code = :code OR providerRef.code = :code', { code })
       .getOne()
+    if (providerRef) {
+      return result?.providerRef[0]
+    } else {
+      return result
+    }
   }
 
   async findOneProviderRefByCodeAndProvider (code: string, provider?: string): Promise<ProviderRef | undefined> {
@@ -247,8 +252,8 @@ export class RefsService {
     const mappedPatient: Partial<CreateOrderDtoPatient> = {}
 
     for (const attribute of attributesToMap) {
-      if (patient[attribute] !== undefined) {
-        const result = await this.findOneByCodeAndProvider(patient[attribute], providerId)
+      if (patient[attribute] !== undefined && patient[attribute] !== null) {
+        const result = await this.findOneByCodeAndProvider(patient[attribute], providerId, true)
 
         if (result !== undefined) {
           mappedPatient[attribute] = result.code
@@ -264,6 +269,26 @@ export class RefsService {
     }
 
     Object.assign(patient, mappedPatient)
+  }
+
+  async mapPatientReferences (order, providerPatient, providerId): Promise<Patient> {
+    let { species, breed, sex, ...patient } = order.patient
+    await this.mapPatientRefs(providerId, providerPatient)
+    if (breed === undefined) {
+      breed = providerPatient.breed
+    }
+    const [speciesRef, breedRef, sexRef] = await Promise.all([
+      this.findOneByCodeAndProvider(species, providerId),
+      this.findOneByCodeAndProvider(breed, providerId),
+      this.findOneByCodeAndProvider(sex, providerId)
+    ])
+
+    return {
+      ...patient,
+      species: speciesRef?.code ?? species,
+      breed: breedRef?.code ?? breed,
+      sex: sexRef?.code ?? sex
+    }
   }
 
   async setDefaultBreed (providerId: string, species: string, defaultBreed: string): Promise<ProviderDefaultBreed> {

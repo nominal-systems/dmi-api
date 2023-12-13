@@ -213,6 +213,12 @@ export class OrdersService {
     }
 
     const order = this.ordersRepository.create(createOrderDto)
+
+    // Map patient references
+    const providerPatient = order.patient
+    order.patient = await this.refsService.mapPatientReferences(order, providerPatient, providerId)
+    const { sex, species, breed } = providerPatient
+
     order.status = OrderStatus.ACCEPTED
 
     // Create tests
@@ -235,6 +241,8 @@ export class OrdersService {
     try {
       if (this.nodeEnv === 'seed') return order
 
+      const providerOrder = { ...order, patient: { ...order.patient, sex, species, breed } }
+
       // Send order to Engine
       const { message, messagePattern } = ieMessageBuilder(
         providerId,
@@ -242,7 +250,7 @@ export class OrdersService {
           resource: 'orders',
           operation: 'create',
           data: {
-            payload: order,
+            payload: providerOrder,
             integrationOptions,
             providerConfiguration: configurationOptions,
             autoSubmitOrder
