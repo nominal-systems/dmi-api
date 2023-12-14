@@ -206,8 +206,6 @@ export class OrdersService {
     const { providerConfiguration, integrationOptions } = integration
     const { configurationOptions, providerId } = providerConfiguration
 
-    await this.refsService.mapPatientRefs(providerId, createOrderDto.patient)
-
     if (createOrderDto.labRequisitionInfo !== null) {
       await this.providersService.checkLabRequisitionParameters(providerId, createOrderDto.labRequisitionInfo)
     }

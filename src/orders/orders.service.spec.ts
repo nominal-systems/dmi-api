@@ -19,6 +19,7 @@ import { HttpException } from '@nestjs/common'
 import { v4 as uuidv4 } from 'uuid'
 import { Patient } from './entities/patient.entity'
 import any = jasmine.any
+import { ProvidersService } from '../providers/services/providers.service'
 
 export const repositoryMockFactory: () => MockUtils<Repository<any>> = jest.fn(() => ({
   find: jest.fn(entity => entity),
@@ -70,6 +71,10 @@ describe('OrdersService', () => {
     toPromise: jest.fn()
   }
 
+  const providerServiceMock = {
+    checkLabRequisitionParameters: jest.fn()
+  }
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -101,6 +106,10 @@ describe('OrdersService', () => {
         {
           provide: EventsService,
           useValue: eventsServiceMock
+        },
+        {
+          provide: ProvidersService,
+          useValue: providerServiceMock
         },
         {
           provide: 'ACTIVEMQ',
