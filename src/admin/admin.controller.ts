@@ -506,14 +506,17 @@ export class AdminController {
     @Query() params: ExternalRequestsSearch
   ): Promise<PaginationResult<ProviderExternalRequests>> {
 
+    // Build query options
     const options: FilterQuery<ProviderExternalRequestDocument> = {}
-    if (params.provider !== undefined) {
-      options.provider = params.provider
+    if (params.providers !== undefined) {
+      options.provider = { $in: params.providers.split(',') }
     }
     if (params.status !== undefined) {
-      const allowedStatuses = getStatusRanges(params.status.split(','))
-      options.status = { $or: [] }
-      console.log(`allowedStatuses= ${JSON.stringify(allowedStatuses, null, 2)}`) // TODO(gb): remove trace
+      options.$or = getStatusRanges(params.status.split(','))
+        .map(status => ({
+            status: { $gte: status[0], $lte: status[1] }
+          })
+        )
     }
 
     const { page, limit } = params

@@ -4,7 +4,7 @@ import { IsOptional, IsString } from 'class-validator'
 export class ExternalRequestsSearch extends PaginationDto {
   @IsOptional()
   @IsString()
-  provider: string
+  providers: string
 
   @IsOptional()
   status: string
