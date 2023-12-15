@@ -33,6 +33,7 @@ import { ExternalResultEventData } from '../common/typings/external-result-event
 import { ProviderResultUtils } from '../common/utils/provider-result-utils'
 import { ProviderConfiguration } from '../providers/entities/provider-configuration.entity'
 import { RefsService } from '../refs/refs.service'
+import { Attachment } from './entities/attachment.entity'
 
 interface OrderTestCancelOrAddParams {
   orderId: string
@@ -145,24 +146,10 @@ export class OrdersService {
       }
     })
 
-    const {
-      externalId,
-      manifest,
-      integration: { providerConfiguration, integrationOptions }
-    } = order
+    const { integration: { providerConfiguration } } = order
 
     if (providerConfiguration.organizationId !== organization.id) {
       throw new ForbiddenException('You don\'t have access to this resource')
-    }
-
-    if (manifest == null) {
-      const response = await this.getOrderFromProvider(externalId, providerConfiguration, integrationOptions)
-
-      if (response.manifest != null || response.status !== order.status) {
-        Object.assign(order, response)
-
-        await this.ordersRepository.save(order)
-      }
     }
     return order
   }
@@ -217,9 +204,13 @@ export class OrdersService {
     const { providerConfiguration, integrationOptions } = integration
     const { configurationOptions, providerId } = providerConfiguration
 
-    await this.refsService.mapPatientRefs(providerId, createOrderDto.patient)
-
     const order = this.ordersRepository.create(createOrderDto)
+
+    // Map patient references
+    const providerPatient = order.patient
+    order.patient = await this.refsService.mapPatientReferences(order, providerPatient, providerId)
+    const { sex, species, breed } = providerPatient
+
     order.status = OrderStatus.ACCEPTED
 
     // Create tests
@@ -242,6 +233,8 @@ export class OrdersService {
     try {
       if (this.nodeEnv === 'seed') return order
 
+      const providerOrder = { ...order, patient: { ...order.patient, sex, species, breed } }
+
       // Send order to Engine
       const { message, messagePattern } = ieMessageBuilder(
         providerId,
@@ -249,7 +242,7 @@ export class OrdersService {
           resource: 'orders',
           operation: 'create',
           data: {
-            payload: order,
+            payload: providerOrder,
             integrationOptions,
             providerConfiguration: configurationOptions,
             autoSubmitOrder
@@ -604,6 +597,59 @@ export class OrdersService {
     orderId: string
   ): Promise<Report> {
     return await this.reportsService.findForOrder(orderId)
+  }
+
+  async getOrderManifest (
+    organization: Organization,
+    orderId: string
+  ): Promise<Attachment> {
+    const order = await this.findOne({
+      id: orderId,
+      options: {
+        relations: [
+          'integration',
+          'integration.providerConfiguration',
+          'manifest'
+        ]
+      }
+    })
+    if (order == null) {
+      throw new NotFoundException('The order was not found')
+    }
+    let manifest = order.manifest
+    if (manifest == null) {
+      const {
+        externalId,
+        requisitionId,
+        integration: { providerConfiguration, integrationOptions }
+      } = order
+
+      if (providerConfiguration.organizationId !== organization.id) {
+        throw new ForbiddenException('You don\'t have access to this resource')
+      }
+
+      const { configurationOptions, providerId } = providerConfiguration
+      const { message, messagePattern } = ieMessageBuilder(
+        providerId,
+        {
+          resource: EventNamespace.ORDERS,
+          operation: Operation.Manifest,
+          data: {
+            providerConfiguration: configurationOptions,
+            integrationOptions,
+            payload: {
+              id: requisitionId,
+              externalId: externalId
+            }
+          }
+        }
+      )
+      this.logger.log(`Sending '${messagePattern}' to '${providerId}' provider`)
+      manifest = await this.client.send(messagePattern, message).toPromise()
+      order.manifest = manifest
+      await this.ordersRepository.save(order)
+    }
+    return manifest
   }
 
   async findOneByExternalId (

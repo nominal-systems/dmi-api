@@ -24,7 +24,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
     let errors: string[] = []
     if (exception instanceof HttpException) {
       const errorResponse = exception.getResponse() as Record<string, any>
-      errorMessage = errorResponse.message
+      errorMessage = exception.message
+      errors = errorResponse.message
     } else if (exception instanceof ProviderError) {
       errorMessage = exception.response.message
       errors = exception.response.error

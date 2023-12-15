@@ -26,6 +26,7 @@ import { OrdersService } from './orders.service'
 import { Report } from '../reports/entities/report.entity'
 import { ExternalResultEventData } from '../common/typings/external-result-event-data.interface'
 import { ApiParam } from '@nestjs/swagger'
+import { Attachment } from './entities/attachment.entity'
 
 @Controller('orders')
 @UseGuards(ApiGuard)
@@ -100,6 +101,14 @@ export class OrdersController {
     @Param('id') id: string
   ): Promise<Report> {
     return await this.ordersService.getOrderReport(organization, id)
+  }
+
+  @Get(':id/manifest')
+  async getOrderManifest (
+    @Organization() organization: OrganizationEntity,
+    @Param('id') id: string
+  ): Promise<Attachment> {
+    return await this.ordersService.getOrderManifest(organization, id)
   }
 
   @Post()
