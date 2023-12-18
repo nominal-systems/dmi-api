@@ -1,5 +1,4 @@
 import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { ProviderService } from '../../common/typings/provider-services.interface'
 import { ClientProxy } from '@nestjs/microservices'
 import { IntegrationsService } from '../../integrations/integrations.service'
 import ieMessageBuilder from '../../common/utils/ieMessageBuilder'
@@ -10,6 +9,7 @@ import {
   Operation,
   ReferenceDataResponse,
   Resource,
+  Service,
   Sex,
   Species
 } from '@nominal-systems/dmi-engine-common'
@@ -71,7 +71,7 @@ export class ProvidersService {
   async getProviderServices (
     providerId: string,
     integrationId: string
-  ): Promise<ProviderService[]> {
+  ): Promise<Service[]> {
     const {
       providerConfiguration: { configurationOptions },
       integrationOptions
@@ -82,12 +82,15 @@ export class ProvidersService {
       }
     })
 
+    const { labRequisitionParameters } = await this.findOneById(providerId)
+
     const { message, messagePattern } = ieMessageBuilder(providerId, {
       resource: 'services',
       operation: 'list',
       data: {
         integrationOptions,
-        providerConfiguration: configurationOptions
+        providerConfiguration: configurationOptions,
+        payload: labRequisitionParameters
       }
     })
 
@@ -231,13 +234,13 @@ export class ProvidersService {
     const unknownParameters: string[] = []
     for (const parameter of labRequisitionParameters) {
       if (labRequisitionInfo[parameter.name] === undefined) {
-        if (parameter.required === true) {
+        if (parameter.required) {
           missingParameters.push(parameter.name)
         }
       }
     }
     for (const key in labRequisitionInfo) {
-      if (labRequisitionParameters.some(parameter => parameter.name === key) === false) {
+      if (!labRequisitionParameters.some(parameter => parameter.name === key)) {
         unknownParameters.push(key)
       }
     }

@@ -14,14 +14,13 @@ import {
 } from '@nestjs/common'
 import { Organization } from '../common/decorators/organization.decorator'
 import { ApiGuard } from '../common/guards/api.guard'
-import { ProviderService } from '../common/typings/provider-services.interface'
 import { ReferenceDataStatus } from '../common/typings/reference-data-status.interface'
 import { Organization as OrganizationEntity } from '../organizations/entities/organization.entity'
 import { ReferenceDataQueryParams } from './dtos/reference-data-queryparams.dto'
 import { ProviderConfiguration } from './entities/provider-configuration.entity'
 import { ProviderConfigurationsService } from './services/provider-configurations.service'
 import { ProvidersService } from './services/providers.service'
-import { Device } from '@nominal-systems/dmi-engine-common'
+import { Device, Service } from '@nominal-systems/dmi-engine-common'
 import { EventPattern } from '@nestjs/microservices'
 import { DisableGuards } from '../common/decorators/disable-guards.decorator'
 import { ProviderRawDataDto } from './dtos/provider-raw-data.dto'
@@ -56,7 +55,7 @@ export class ProvidersController {
   async getProviderServices (
     @Param('id') providerId: string,
     @Query() { integrationId }: ReferenceDataQueryParams
-  ): Promise<ProviderService[]> {
+  ): Promise<Service[]> {
     return await this.providersService.getProviderServices(
       providerId,
       integrationId
