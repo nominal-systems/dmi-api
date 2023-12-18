@@ -85,7 +85,7 @@ export class LabRequisitionInfo1702391682687 implements MigrationInterface {
     name = 'LabRequisitionInfo1702391682687'
 
     public async up (queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`CREATE TABLE \`provider_lab_requisition_parameter\` (\`id\` int NOT NULL AUTO_INCREMENT, \`name\` varchar(255) NOT NULL, \`type\` varchar(255) NOT NULL, \`required\` tinyint NOT NULL, \`providerId\` varchar(255) NULL, PRIMARY KEY (\`id\`)) ENGINE=InnoDB`)
+        await queryRunner.query(`CREATE TABLE \`provider_lab_requisition_parameter\` (\`id\` int NOT NULL AUTO_INCREMENT, \`name\` varchar(255) NOT NULL, \`type\` enum ('string', 'number', 'boolean') NOT NULL, \`required\` tinyint NOT NULL, \`providerId\` varchar(255) NULL, PRIMARY KEY (\`id\`)) ENGINE=InnoDB`)
         await queryRunner.query(`ALTER TABLE \`order\` ADD \`labRequisitionInfo\` json NULL`)
         await queryRunner.query(`ALTER TABLE \`provider_lab_requisition_parameter\` ADD CONSTRAINT \`FK_0817ef6614a52f6a8c67f01e822\` FOREIGN KEY (\`providerId\`) REFERENCES \`provider\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`)
 

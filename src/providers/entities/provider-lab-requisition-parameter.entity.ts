@@ -11,8 +11,8 @@ export class ProviderLabRequisitionParameter {
     @Column()
     name: string
 
-    @Column()
-    type: string
+    @Column({ type: 'enum', enum: ['string', 'number', 'boolean'] })
+    type: ['string', 'number', 'boolean']
 
     @Column()
     required: boolean
