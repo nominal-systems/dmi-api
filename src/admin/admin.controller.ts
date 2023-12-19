@@ -505,7 +505,6 @@ export class AdminController {
   async getExternalRequests (
     @Query() params: ExternalRequestsSearch
   ): Promise<PaginationResult<ProviderExternalRequests>> {
-
     // Build query options
     const options: FilterQuery<ProviderExternalRequestDocument> = {}
     if (params.providers !== undefined) {
