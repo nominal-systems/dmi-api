@@ -49,12 +49,13 @@ import {
   ProviderExternalRequestDocument,
   ProviderExternalRequests
 } from '../providers/entities/provider-external-requests.entity'
-import { ExternalRequestsQueryparams } from '../providers/dtos/external-requests-queryparams.dto'
+import { ExternalRequestsSearch } from '../providers/dtos/external-requests-queryparams.dto'
 import { FilterQuery } from 'mongoose'
 import { PaginationResult } from '../common/classes/pagination-result'
 import { PaginationDto } from '../common/dtos/pagination.dto'
 import { PAGINATION_PAGE_LIMIT } from '../common/constants/pagination.constant'
 import { ProviderDefaultBreed } from '../refs/entities/providerDefaultBreed.entity'
+import { getStatusRanges } from './admin-utils'
 
 @Controller('admin')
 export class AdminController {
@@ -502,12 +503,22 @@ export class AdminController {
   @Get('/external-requests')
   @UseGuards(AdminGuard)
   async getExternalRequests (
-    @Query() params: ExternalRequestsQueryparams
+    @Query() params: ExternalRequestsSearch
   ): Promise<PaginationResult<ProviderExternalRequests>> {
+
+    // Build query options
     const options: FilterQuery<ProviderExternalRequestDocument> = {}
-    if (params.provider !== undefined) {
-      options.provider = params.provider
+    if (params.providers !== undefined) {
+      options.provider = { $in: params.providers.split(',') }
     }
+    if (params.status !== undefined) {
+      options.$or = getStatusRanges(params.status.split(','))
+        .map(status => ({
+            status: { $gte: status[0], $lte: status[1] }
+          })
+        )
+    }
+
     const { page, limit } = params
     const data = await this.providersService.findExternalRequests(options, { page, limit })
     return {
