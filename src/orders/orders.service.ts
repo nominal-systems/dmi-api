@@ -206,7 +206,7 @@ export class OrdersService {
     const { providerConfiguration, integrationOptions } = integration
     const { configurationOptions, providerId } = providerConfiguration
 
-    if (createOrderDto.labRequisitionInfo !== null) {
+    if (createOrderDto.labRequisitionInfo !== null && createOrderDto.labRequisitionInfo !== undefined) {
       await this.providersService.checkLabRequisitionParameters(providerId, createOrderDto.labRequisitionInfo)
     }
 
