@@ -73,7 +73,7 @@ export class AntechSexCodes1703078439393 implements MigrationInterface {
 
     public async down (queryRunner: QueryRunner): Promise<void> {
         for (const ref of providerRefs) {
-            await queryRunner.query(`DELETE FROM \`provider_ref\` WHERE \`code\` = ? AND \`provider\` = ?`, [ref.code, ref.provider])
+            await queryRunner.query(`DELETE FROM \`provider_ref\` WHERE \`code\` = ? AND \`provider\` = ? AND \`name\` = ?`, [ref.code, ref.provider, ref.name])
             await queryRunner.query(`DELETE FROM \`ref\` WHERE \`code\` = ? AND \`type\` = ?`, [ref.dmiCode, ref.type])
         }
     }
