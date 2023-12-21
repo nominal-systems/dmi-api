@@ -79,6 +79,54 @@ const providerRefs = [
         type: 'sex',
         provider: 'zoetis',
         dmiCode: '6c4ee828-0ae9-4ca6-bf97-d34b951ced36'
+    },
+    {
+        code: 'MALE',
+        name: 'Male',
+        species: null,
+        type: 'sex',
+        provider: 'zoetis',
+        dmiCode: 'a6de9d9e-e3b9-4cc5-bfb4-68e33a8684ba'
+    },
+    {
+        code: 'FEMALE',
+        name: 'Female',
+        species: null,
+        type: 'sex',
+        provider: 'zoetis',
+        dmiCode: 'bc93eac2-886a-47da-89b7-30e8e2d83e75'
+    },
+    {
+        code: 'UNKNOWN',
+        name: 'Unknown',
+        species: null,
+        type: 'sex',
+        provider: 'zoetis',
+        dmiCode: 'b81354c6-9dca-46d1-91cb-b41c03ee3184'
+    },
+    {
+        code: 'MALE_INTACT',
+        name: 'Male',
+        species: null,
+        type: 'sex',
+        provider: 'idexx',
+        dmiCode: 'a6de9d9e-e3b9-4cc5-bfb4-68e33a8684ba'
+    },
+    {
+        code: 'FEMALE_INTACT',
+        name: 'Female',
+        species: null,
+        type: 'sex',
+        provider: 'idexx',
+        dmiCode: 'bc93eac2-886a-47da-89b7-30e8e2d83e75'
+    },
+    {
+        code: 'UNKNOWN',
+        name: 'Unknown',
+        species: null,
+        type: 'sex',
+        provider: 'idexx',
+        dmiCode: 'b81354c6-9dca-46d1-91cb-b41c03ee3184'
     }
 ]
 
@@ -87,13 +135,8 @@ export class IdexxZoetisSexCodes1703182375566 implements MigrationInterface {
     public async up (queryRunner: QueryRunner): Promise<void> {
         for (const ref of providerRefs) {
             const result = await queryRunner.query(`SELECT id from ref WHERE code = ? AND type = ?`, [ref.dmiCode, ref.type])
-            const existingRecord = await queryRunner.query(`SELECT id FROM provider_ref WHERE code = ? AND type = ? AND provider = ?`, [ref.code, ref.type, ref.provider])
-            if (existingRecord.length > 0) {
-                await queryRunner.query(`UPDATE provider_ref SET refId = ? WHERE id = ?`, [result[0].id, existingRecord[0].id])
-            } else {
-                await queryRunner.query(`INSERT INTO \`provider_ref\` (\`id\`, \`code\`, \`name\`, \`species\`, \`type\`, \`provider\`, \`refId\`)
+            await queryRunner.query(`INSERT INTO \`provider_ref\` (\`id\`, \`code\`, \`name\`, \`species\`, \`type\`, \`provider\`, \`refId\`)
                   VALUES (DEFAULT, ?, ?, ?, ?, ?, ?)`, [ref.code, ref.name, ref.species, ref.type, ref.provider, result[0].id])
-            }
         }
     }
 
