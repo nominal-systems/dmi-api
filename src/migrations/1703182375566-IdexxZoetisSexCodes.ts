@@ -127,6 +127,38 @@ const providerRefs = [
         type: 'sex',
         provider: 'idexx',
         dmiCode: 'b81354c6-9dca-46d1-91cb-b41c03ee3184'
+    },
+    {
+        code: 'MALE_INTACT',
+        name: 'Male',
+        species: null,
+        type: 'sex',
+        provider: 'idexx',
+        dmiCode: '9c7adefe-a8ca-4eac-b14a-bcbfb914aa1b'
+    },
+    {
+        code: 'FEMALE_INTACT',
+        name: 'Female',
+        species: null,
+        type: 'sex',
+        provider: 'idexx',
+        dmiCode: '73d846d0-f24a-41ef-9d25-1119a66d7655'
+    },
+    {
+        code: 'MALE',
+        name: 'Male',
+        species: null,
+        type: 'sex',
+        provider: 'zoetis',
+        dmiCode: '9c7adefe-a8ca-4eac-b14a-bcbfb914aa1b'
+    },
+    {
+        code: 'FEMALE',
+        name: 'Female',
+        species: null,
+        type: 'sex',
+        provider: 'zoetis',
+        dmiCode: '73d846d0-f24a-41ef-9d25-1119a66d7655'
     }
 ]
 
