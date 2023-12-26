@@ -257,6 +257,11 @@ export class RefsService {
 
         if (result !== undefined) {
           mappedPatient[attribute] = result.code
+        } else if (attribute === 'breed') {
+          const defaultBreed = await this.findDefaultBreedBySpecies(mappedPatient.species as string, providerId)
+          if (defaultBreed !== undefined) {
+            mappedPatient[attribute] = defaultBreed.defaultBreed
+          }
         } else {
           mappedPatient[attribute] = patient[attribute]
         }
