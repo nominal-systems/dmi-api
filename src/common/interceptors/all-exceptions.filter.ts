@@ -22,6 +22,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     let errorMessage = 'Internal Server Error'
     let errors: string[] = []
+    let requestPayload: any = {}
     if (exception instanceof HttpException) {
       const errorResponse = exception.getResponse() as Record<string, any>
       errorMessage = exception.message
@@ -29,6 +30,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     } else if (exception instanceof ProviderError) {
       errorMessage = exception.response.message
       errors = exception.response.error
+      requestPayload = exception.response.requestPayload
       if (typeof errors !== 'string') {
         httpStatus = HttpStatus.BAD_REQUEST
       }
@@ -41,7 +43,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
       message: errorMessage,
       ...(errors.length > 0 && { errors }),
       path: httpAdapter.getRequestUrl(ctx.getRequest()),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      ...(Object.keys(requestPayload).length > 0 && { requestPayload })
     }
 
     const logFormat = `Request failed with status ${httpStatus}: ${request.method} ${request.url} - Exception: ${JSON.stringify(errorMessage)}`
