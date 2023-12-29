@@ -53,7 +53,8 @@ export class ResultsController {
       url: `${req.protocol}://${req.headers.host}${req.url}`,
       method: req.method,
       body: '',
-      payload: results
+      payload: results,
+      headers: req.headers
     }
 
     try {

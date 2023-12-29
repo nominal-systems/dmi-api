@@ -19,6 +19,9 @@ export class ProviderExternalRequests {
     url: string
 
     @Prop({ type: mongoose.Schema.Types.Mixed })
+    headers: any
+
+    @Prop({ type: mongoose.Schema.Types.Mixed })
     body: any
 
     @Prop({ type: mongoose.Schema.Types.Mixed })

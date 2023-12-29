@@ -19,6 +19,9 @@ export class ProviderRawDataDto {
   method: string
 
   @IsNotEmpty()
+  headers: any
+
+  @IsNotEmpty()
   @IsString()
   body: any
 

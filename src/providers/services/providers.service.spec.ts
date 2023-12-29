@@ -91,6 +91,7 @@ describe('ProvidersService', () => {
 
       expect(createSpy).toHaveBeenCalledWith({
         createdAt: expect.any(Date),
+        headers: data.headers,
         body: data.body,
         url: data.url,
         method: data.method,
@@ -109,6 +110,7 @@ describe('ProvidersService', () => {
 
       expect(createSpy).toHaveBeenCalledWith({
         createdAt: expect.any(Date),
+        headers: data.headers,
         body: data.body,
         url: data.url,
         method: data.method,
@@ -127,6 +129,7 @@ describe('ProvidersService', () => {
 
       expect(createSpy).toHaveBeenCalledWith({
         createdAt: expect.any(Date),
+        headers: data.headers,
         body: data.body,
         url: data.url,
         method: data.method,

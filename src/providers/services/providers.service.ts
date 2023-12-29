@@ -287,7 +287,7 @@ export class ProvidersService {
   }
 
   async saveProviderRawData (data: ProviderRawDataDto): Promise<void> {
-    const { body, url, method, provider, status, payload } = data
+    const { body, url, method, provider, status, payload, headers } = data
 
     const rawData: ProviderExternalRequests = {
       createdAt: new Date(),
@@ -295,6 +295,7 @@ export class ProvidersService {
       status,
       method,
       url,
+      headers: nestKeys(headers),
       body: nestKeys(body) // Nest keys to ensure MongoDB safety
     }
 
