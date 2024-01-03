@@ -7,10 +7,8 @@ import {
   Logger,
   Param,
   Post,
-  Req,
-  UseGuards
+  Req
 } from '@nestjs/common'
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard'
 import ieMessageBuilder from '../common/utils/ieMessageBuilder'
 import { ClientProxy } from '@nestjs/microservices'
 import { Operation, Resource } from '@nominal-systems/dmi-engine-common'
@@ -19,7 +17,6 @@ import { FastifyRequest } from 'fastify'
 import { ProviderRawDataDto } from '../providers/dtos/provider-raw-data.dto'
 
 @Controller('results')
-@UseGuards(JwtAuthGuard)
 export class ResultsController {
   private readonly logger = new Logger(ResultsController.name)
 
@@ -30,7 +27,7 @@ export class ResultsController {
   }
 
   // TODO(gb): assert that the user is allowed to post results
-  @Post('heska/:clientId/')
+  @Post('heska/:clientId')
   @HttpCode(201)
   async processHeskaResults (
     @Req() req: FastifyRequest,
