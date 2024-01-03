@@ -252,7 +252,12 @@ describe('RefsService', () => {
         findOneByCodeAndProviderMock.mockResolvedValueOnce(undefined)
         findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'DOG' })
         findOneByCodeAndProviderMock.mockResolvedValueOnce(undefined)
-
+        mockProviderDefaultBreedRepository.createQueryBuilder.mockReturnValue({
+          leftJoin: jest.fn().mockReturnThis(),
+          select: jest.fn().mockReturnThis(),
+          where: jest.fn().mockReturnThis(),
+          getOne: jest.fn().mockResolvedValueOnce(undefined)
+        })
         await refsService.mapPatientRefs('zoetis', patient)
         expect(patient).toEqual(expect.objectContaining({
           sex: 'UNKNOWN',
@@ -445,8 +450,13 @@ describe('RefsService', () => {
         findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: '36c3cde0-bd6b-11eb-9610-302432eba3e9' })
         findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec' })
         findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'b81354c6-9dca-46d1-91cb-b41c03ee3184' })
-
-        const patient = await refsService.mapPatientReferences(createOrderDto, providerPatient, 'antech')
+        mockProviderDefaultBreedRepository.createQueryBuilder.mockReturnValue({
+          leftJoin: jest.fn().mockReturnThis(),
+          select: jest.fn().mockReturnThis(),
+          where: jest.fn().mockReturnThis(),
+          getOne: jest.fn().mockResolvedValueOnce(undefined)
+        })
+        const patient = await refsService.mapPatientReferences(createOrderDto, providerPatient, 'zoetis')
         expect(patient).toEqual(expect.objectContaining({
           name: 'Medicalnotes_author_test',
           birthdate: '2022-08-15',
@@ -481,7 +491,13 @@ describe('RefsService', () => {
         findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: '36c3cde0-bd6b-11eb-9610-302432eba3e9' })
         findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec' })
         findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'b81354c6-9dca-46d1-91cb-b41c03ee3184' })
-        const patient = await refsService.mapPatientReferences(createOrderDto, providerPatient, 'antech')
+        mockProviderDefaultBreedRepository.createQueryBuilder.mockReturnValue({
+          leftJoin: jest.fn().mockReturnThis(),
+          select: jest.fn().mockReturnThis(),
+          where: jest.fn().mockReturnThis(),
+          getOne: jest.fn().mockResolvedValueOnce(undefined)
+        })
+        const patient = await refsService.mapPatientReferences(createOrderDto, providerPatient, 'zoetis')
         expect(patient).toEqual(expect.objectContaining({
           name: 'Medicalnotes_author_test',
           birthdate: '2022-08-15',
