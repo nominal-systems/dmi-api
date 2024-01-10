@@ -39,7 +39,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const responseBody = {
       statusCode: httpStatus,
       message: errorMessage,
-      ...(errors.length > 0 && { errors }),
+      ...(errors?.length > 0 && { errors }),
       path: httpAdapter.getRequestUrl(ctx.getRequest()),
       timestamp: new Date().toISOString()
     }

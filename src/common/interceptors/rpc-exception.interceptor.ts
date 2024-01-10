@@ -2,10 +2,12 @@ import {
   CallHandler,
   ExecutionContext,
   HttpException,
+  HttpStatus,
   Injectable,
   InternalServerErrorException,
   Logger,
-  NestInterceptor
+  NestInterceptor,
+  NotFoundException
 } from '@nestjs/common'
 import { RpcException } from '@nestjs/microservices'
 import { Observable, throwError } from 'rxjs'
@@ -50,8 +52,10 @@ export class RpcExceptionInterceptor implements NestInterceptor {
           const separator = path !== '' ? ' - ' : ' '
           const logFormat = `Engine failed with status ${JSON.stringify(status)}:${path}${separator}Exception: ${JSON.stringify(messageString)}`
           this.logger.error(logFormat)
+          if (status === HttpStatus.NOT_FOUND) {
+            return throwError(new NotFoundException(message))
+          }
         }
-
         return throwError(err)
       })
     )

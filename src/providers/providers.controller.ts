@@ -62,6 +62,19 @@ export class ProvidersController {
     )
   }
 
+  @Get(':id/services/:serviceId')
+  async getProviderServiceById (
+    @Param('id') providerId: string,
+    @Param('serviceId') serviceId: string,
+    @Query() { integrationId }: ReferenceDataQueryParams
+  ): Promise<Service[]> {
+    return await this.providersService.getProviderServiceByCode(
+      providerId,
+      integrationId,
+      serviceId
+    )
+  }
+
   @Get('configurations')
   async getAllConfigurations (
     @Organization() organization: OrganizationEntity
