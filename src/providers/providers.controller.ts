@@ -63,7 +63,7 @@ export class ProvidersController {
   }
 
   @Get(':id/services/:serviceId')
-  async getProviderServiceById (
+  async getProviderServiceByCode (
     @Param('id') providerId: string,
     @Param('serviceId') serviceId: string,
     @Query() { integrationId }: ReferenceDataQueryParams
