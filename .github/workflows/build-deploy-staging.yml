@@ -12,6 +12,11 @@ env:
   API_URL: ''
   UI_URL: '/ui'
 
+defaults:
+  run:
+    shell: bash
+    working-directory: ./workspace
+
 jobs:
   init:
     name: Initialize
@@ -21,6 +26,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@main
+      - run: |
+          cwd
+          ls -la
   bundle-frontend:
     name: Bundle Admin UI
     runs-on: ubuntu-latest
@@ -47,6 +55,9 @@ jobs:
         run: npm install
       - name: Build Admin UI
         run: API_URL=${{ env.API_URL }} UI_URL=${{ env.UI_URL }} npm run build
+      - run: |
+          cwd
+          ls -la
   build:
     name: Build Docker image
     runs-on: ubuntu-latest
@@ -71,6 +82,9 @@ jobs:
           login-server: ${{ env.REGISTRY_NAME }}.azurecr.io
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
+      - run: |
+          cwd
+          ls -la
       - run: |
           docker build . -t ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ steps.tag.outputs.tag }} --target production --build-arg GHP_TOKEN=${{ secrets.GHP_TOKEN }}
           docker push ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ steps.tag.outputs.tag }}
