@@ -1,0 +1,14 @@
+name: Bundle Admin UI
+
+on:
+  workflow_dispatch:
+
+jobs:
+  bundle:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out Admin UI code
+        uses: actions/checkout@main
+        with:
+          repository: nominal-systems/dmi-api-admin-ui
+          ref: issues/4
