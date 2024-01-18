@@ -22,7 +22,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@main
       - run: |
-          cwd
+          pwd
           ls -la
   bundle-frontend:
     name: Bundle Admin UI
@@ -51,7 +51,7 @@ jobs:
       - name: Build Admin UI
         run: API_URL=${{ env.API_URL }} UI_URL=${{ env.UI_URL }} npm run build
       - run: |
-          cwd
+          pwd
           ls -la
   build:
     name: Build Docker image
@@ -78,7 +78,7 @@ jobs:
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
       - run: |
-          cwd
+          pwd
           ls -la
       - run: |
           docker build . -t ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ steps.tag.outputs.tag }} --target production --build-arg GHP_TOKEN=${{ secrets.GHP_TOKEN }}
