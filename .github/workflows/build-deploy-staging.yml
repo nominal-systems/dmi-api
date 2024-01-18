@@ -9,15 +9,49 @@ on:
 env:
   REGISTRY_NAME: nominaldevacr
   APP_NAME: dmi-api
+  API_URL: ''
+  UI_URL: '/ui'
 
 jobs:
-  build:
+  init:
+    name: Initialize
     runs-on: ubuntu-latest
-    name: Build and push to ACR
     outputs:
       tag: ${{ steps.tag.outputs.tag }}
     steps:
-      - uses: actions/checkout@main
+      - name: Checkout code
+        uses: actions/checkout@main
+  bundle-frontend:
+    name: Bundle Admin UI
+    runs-on: ubuntu-latest
+    needs: init
+    steps:
+      - name: Generate a token
+        id: generate_token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.NOMINAL_AGENT_APP_ID }}
+          private-key: ${{ secrets.NOMINAL_AGENT_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+      - name: Check out Admin UI code
+        uses: actions/checkout@v4
+        with:
+          repository: nominal-systems/dmi-api-admin-ui
+          ref: issues/4
+          token: ${{ steps.generate_token.outputs.token }}
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+      - name: Install dependencies
+        run: npm install
+      - name: Build Admin UI
+        run: API_URL=${{ env.API_URL }} UI_URL=${{ env.UI_URL }} npm run build
+  build:
+    name: Build Docker image
+    runs-on: ubuntu-latest
+    needs: bundle-frontend
+    steps:
       - name: Set Docker tag
         id: tag
         shell: bash
@@ -29,7 +63,7 @@ jobs:
           if [[ "${GITHUB_REF}" == refs/tags* ]]; then
             tag=$(echo $GITHUB_REF | sed 's/refs\/tags\///g')
           fi
-          
+
           echo "::set-output name=tag::$tag"
       - name: Build Docker images
         uses: azure/docker-login@v1
@@ -40,16 +74,3 @@ jobs:
       - run: |
           docker build . -t ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ steps.tag.outputs.tag }} --target production --build-arg GHP_TOKEN=${{ secrets.GHP_TOKEN }}
           docker push ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ steps.tag.outputs.tag }}
-
-  dispatch-event:
-    runs-on: ubuntu-latest
-    name: Notify deploy workflow
-    needs: build
-    steps:
-      - name: Dispatch dmi-api-updated event to nominal-systems/dmi
-        uses: peter-evans/repository-dispatch@v1
-        with:
-          token: ${{ secrets.REPO_ACCESS_TOKEN }}
-          repository: nominal-systems/dmi
-          event-type: ${{ env.APP_NAME }}-updated
-          client-payload: '{ "image": "${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ needs.build.outputs.tag }}" }'
