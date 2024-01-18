@@ -8,8 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out Admin UI code
-        uses: actions/checkout@main
+        uses: actions/checkout@v4
         with:
           repository: nominal-systems/dmi-api-admin-ui
           ref: issues/4
-          token: ${{ secrets.ACCESS_TOKEN }}
