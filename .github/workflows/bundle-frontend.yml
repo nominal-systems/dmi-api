@@ -12,3 +12,4 @@ jobs:
         with:
           repository: nominal-systems/dmi-api-admin-ui
           ref: issues/4
+          token: ${{ secrets.GITHUB_TOKEN }}
