@@ -13,6 +13,7 @@ jobs:
         with:
           app-id: ${{ secrets.NOMINAL_AGENT_APP_ID }}
           private-key: ${{ secrets.NOMINAL_AGENT_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
       - name: Check out Admin UI code
         uses: actions/checkout@v4
         with:
