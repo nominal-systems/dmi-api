@@ -7,9 +7,15 @@ jobs:
   bundle:
     runs-on: ubuntu-latest
     steps:
+      - name: Generate a token
+        id: generate_token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.NOMINAL_AGENT_APP_ID }}
+          private-key: ${{ secrets.NOMINAL_AGENT_APP_PRIVATE_KEY }}
       - name: Check out Admin UI code
         uses: actions/checkout@v4
         with:
           repository: nominal-systems/dmi-api-admin-ui
           ref: issues/4
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ steps.generate_token.outputs.token }}
