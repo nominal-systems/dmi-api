@@ -8,6 +8,7 @@ import { AppModule } from './app.module'
 import { AppConfig, DocsConfig } from './config/config.interface'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 import { IntegrationsService } from './integrations/integrations.service'
+import { join } from 'path'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { version } = require('../package.json')
 
@@ -16,6 +17,13 @@ async function bootstrap (): Promise<void> {
     AppModule,
     new FastifyAdapter()
   )
+
+  // Admin UI
+  app.useStaticAssets({
+    root: join(__dirname, '..', 'public'),
+    prefix: '/ui',
+    prefixAvoidTrailingSlash: true
+  })
 
   // CORS
   app.enableCors()
