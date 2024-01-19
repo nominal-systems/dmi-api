@@ -54,14 +54,15 @@ jobs:
       - name: Build Admin UI
         working-directory: ${{ github.workspace }}/dmi-api-admin-ui
         run: API_URL=${{ env.API_URL }} UI_URL=${{ env.UI_URL }} npm run build
+      - name: Copy UI assets
+        run: |
+          mkdir -p public
+          cp -r ${{ github.workspace }}/dmi-api-admin-ui/dist/* public/
       - run: |
           echo GITHUB_WORKSPACE=$GITHUB_WORKSPACE
           pwd
           ls -la
-      - run: |
-          echo GITHUB_WORKSPACE=$GITHUB_WORKSPACE
-          pwd
-          ls -la
+          ls -la public
       - name: Set Docker tag
         id: tag
         shell: bash
