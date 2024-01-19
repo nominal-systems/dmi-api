@@ -42,13 +42,17 @@ jobs:
           repository: nominal-systems/dmi-api-admin-ui
           ref: issues/4
           token: ${{ steps.generate_token.outputs.token }}
+          path: ${{ github.workspace }}/dmi-api-admin-ui
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
+          working-directory: ${{ github.workspace }}/dmi-api-admin-ui
           node-version: '20.x'
       - name: Install dependencies
+        working-directory: ${{ github.workspace }}/dmi-api-admin-ui
         run: npm install
       - name: Build Admin UI
+        working-directory: ${{ github.workspace }}/dmi-api-admin-ui
         run: API_URL=${{ env.API_URL }} UI_URL=${{ env.UI_URL }} npm run build
       - run: |
           echo GITHUB_WORKSPACE=$GITHUB_WORKSPACE
