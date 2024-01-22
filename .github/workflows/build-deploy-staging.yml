@@ -19,16 +19,8 @@ jobs:
     outputs:
       tag: ${{ steps.tag.outputs.tag }}
     steps:
-      - run: |
-          echo GITHUB_WORKSPACE=$GITHUB_WORKSPACE
-          pwd
-          ls -la
       - name: Checkout API code
         uses: actions/checkout@main
-      - run: |
-          echo GITHUB_WORKSPACE=$GITHUB_WORKSPACE
-          pwd
-          ls -la
       - name: Generate an auth token
         id: generate_token
         uses: actions/create-github-app-token@v1
@@ -58,11 +50,6 @@ jobs:
         run: |
           mkdir -p public
           cp -r ${{ github.workspace }}/dmi-api-admin-ui/dist/* public/
-      - run: |
-          echo GITHUB_WORKSPACE=$GITHUB_WORKSPACE
-          pwd
-          ls -la
-          ls -la public
       - name: Set Docker tag
         id: tag
         shell: bash
@@ -82,10 +69,6 @@ jobs:
           login-server: ${{ env.REGISTRY_NAME }}.azurecr.io
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
-      - run: |
-          echo GITHUB_WORKSPACE=$GITHUB_WORKSPACE
-          pwd
-          ls -la
       - name: Push to ACR
         run: |
           docker build . -t ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ steps.tag.outputs.tag }} --target production --build-arg GHP_TOKEN=${{ secrets.GHP_TOKEN }}

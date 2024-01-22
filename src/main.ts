@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
-import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common'
+import { ClassSerializerInterceptor, Logger, ValidationPipe } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { NestFactory, Reflector } from '@nestjs/core'
 import { MicroserviceOptions, Transport } from '@nestjs/microservices'
@@ -19,11 +19,14 @@ async function bootstrap (): Promise<void> {
   )
 
   // Admin UI
+  const staticFilesDirectory = join(__dirname, '..', 'public')
+  const staticFilesPrefix = '/ui'
   app.useStaticAssets({
-    root: join(__dirname, '..', 'public'),
-    prefix: '/ui',
+    root: staticFilesDirectory,
+    prefix: staticFilesPrefix,
     prefixAvoidTrailingSlash: true
   })
+  Logger.log(`Serving static files from ${staticFilesDirectory} at ${staticFilesPrefix}`)
 
   // CORS
   app.enableCors()
