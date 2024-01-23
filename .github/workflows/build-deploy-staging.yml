@@ -9,7 +9,7 @@ on:
 env:
   REGISTRY_NAME: nominaldevacr
   APP_NAME: dmi-api
-  API_URL: ''
+  API_URL: '/dmi'
   UI_URL: '/dmi/ui'
 
 jobs:
