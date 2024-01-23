@@ -5,6 +5,11 @@ import { readFileSync } from 'node:fs'
 
 @Controller('ui')
 export class FrontendController {
+  @Get()
+  async index (@Res() res: FastifyReply): Promise<void> {
+    await this.sendFile(res, 'index.html')
+  }
+
   @Get('login')
   async login (@Res() res: FastifyReply): Promise<void> {
     await this.sendFile(res, 'login.html')

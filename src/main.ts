@@ -20,7 +20,7 @@ async function bootstrap (): Promise<void> {
 
   // Admin UI
   const staticFilesDirectory = join(__dirname, '..', 'public')
-  const staticFilesPrefix = '/ui'
+  const staticFilesPrefix = '/dmi/ui'
   app.useStaticAssets({
     root: staticFilesDirectory,
     prefix: staticFilesPrefix,
