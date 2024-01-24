@@ -46,7 +46,7 @@ jobs:
         run: npm install
       - name: Build Admin UI
         working-directory: ${{ github.workspace }}/dmi-api-admin-ui
-        run: API_URL=${{ env.API_URL }} UI_APP_URL=${{ env.UI_APP_URL }} npm run build
+        run: API_URL=${{ env.API_URL }} UI_URL=${{ env.UI_APP_URL }} npm run build
       - name: Copy UI assets
         run: |
           mkdir -p public
