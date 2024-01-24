@@ -10,7 +10,8 @@ env:
   REGISTRY_NAME: nominaldevacr
   APP_NAME: dmi-api
   API_URL: '/dmi'
-  UI_URL: '/dmi/ui'
+  UI_APP_URL: '/dmi/ui'
+  UI_APP_VERSION: 0.2.0
 
 jobs:
   publish:
@@ -32,7 +33,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: nominal-systems/dmi-api-admin-ui
-          ref: issues/4
+          ref: ${{ env.UI_APP_VERSION }}
           token: ${{ steps.generate_token.outputs.token }}
           path: ${{ github.workspace }}/dmi-api-admin-ui
       - name: Setup Node
@@ -45,7 +46,7 @@ jobs:
         run: npm install
       - name: Build Admin UI
         working-directory: ${{ github.workspace }}/dmi-api-admin-ui
-        run: API_URL=${{ env.API_URL }} UI_URL=${{ env.UI_URL }} npm run build
+        run: API_URL=${{ env.API_URL }} UI_APP_URL=${{ env.UI_APP_URL }} npm run build
       - name: Copy UI assets
         run: |
           mkdir -p public
