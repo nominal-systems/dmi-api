@@ -6,7 +6,7 @@ import { EventData } from '../interfaces/event-data.interface'
 
 @Schema({ timestamps: { updatedAt: false } })
 export class Event {
-  @Prop({ unique: true })
+  @Prop({ unique: true, index: true })
   seq: number
 
   @Prop({ enum: EventNamespace })
