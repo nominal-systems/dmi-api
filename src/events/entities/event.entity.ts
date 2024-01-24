@@ -6,8 +6,7 @@ import { EventData } from '../interfaces/event-data.interface'
 
 @Schema({ timestamps: { updatedAt: false } })
 export class Event {
-  // TODO(gb): this field should be auto-incremented and unique
-  @Prop()
+  @Prop({ unique: true })
   seq: number
 
   @Prop({ enum: EventNamespace })

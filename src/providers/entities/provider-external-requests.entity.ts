@@ -3,7 +3,7 @@ import * as mongoose from 'mongoose'
 
 @Schema({ collection: 'external_requests' })
 export class ProviderExternalRequests {
-    @Prop()
+    @Prop({ index: true })
     createdAt: Date
 
     @Prop()
