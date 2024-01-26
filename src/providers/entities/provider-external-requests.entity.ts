@@ -6,10 +6,10 @@ export class ProviderExternalRequests {
     @Prop({ index: true })
     createdAt: Date
 
-    @Prop()
+    @Prop({ index: true })
     provider: string
 
-    @Prop()
+    @Prop({ index: true })
     status: number
 
     @Prop()
