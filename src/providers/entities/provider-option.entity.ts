@@ -1,5 +1,5 @@
 import { Exclude } from 'class-transformer'
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne } from 'typeorm'
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm'
 import { Provider } from './provider.entity'
 
 @Entity()
@@ -21,6 +21,7 @@ export class ProviderOption {
   required: boolean
 
   @Column({
+    type: 'enum',
     enum: ['configuration', 'integration']
   })
   @Exclude()

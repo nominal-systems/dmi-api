@@ -1,5 +1,5 @@
 import { Provider } from '../../providers/entities/provider.entity'
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm'
+import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm'
 import { Ref } from './ref.entity'
 
 @Entity()
@@ -8,6 +8,7 @@ export class ProviderRef {
   id: number
 
   @Column({ default: null })
+  @Index()
   code: string
 
   @Column()
