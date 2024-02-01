@@ -265,13 +265,13 @@ export class AdminController {
     }
 
     if (integration.status === IntegrationStatus.STOPPED) {
-      res.status(201).send('Integration is already stopped')
+      res.status(201).send({ ok: 'Integration is already stopped' })
     } else {
       const response = await this.integrationsService.doStop(integration)
       if (response?.message === undefined) {
-        res.status(201).send('Integration stopped')
+        res.status(201).send({ ok: 'Integration stopped' })
       } else {
-        res.status(400).send(response.message)
+        res.status(500).send({ error: response.message })
       }
     }
   }
@@ -290,13 +290,13 @@ export class AdminController {
     })
 
     if (integration.status === IntegrationStatus.RUNNING) {
-      res.status(201).send('Integration is already running')
+      res.status(201).send({ ok: 'Integration is already running' })
     } else {
       const response = await this.integrationsService.doStart(integrationId, integration.providerConfiguration, integration.integrationOptions)
       if (response?.message === undefined) {
-        res.status(201).send('Integration started')
+        res.status(201).send({ ok: 'Integration started' })
       } else {
-        res.status(400).send(response.message)
+        res.status(400).send({ error: response.message })
       }
     }
   }
