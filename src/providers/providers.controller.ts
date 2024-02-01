@@ -62,16 +62,16 @@ export class ProvidersController {
     )
   }
 
-  @Get(':id/services/:serviceId')
+  @Get(':id/services/:serviceCode')
   async getProviderServiceByCode (
     @Param('id') providerId: string,
-    @Param('serviceId') serviceId: string,
+    @Param('serviceCode') serviceCode: string,
     @Query() { integrationId }: ReferenceDataQueryParams
   ): Promise<Service[]> {
     return await this.providersService.getProviderServiceByCode(
       providerId,
       integrationId,
-      serviceId
+      serviceCode
     )
   }
 
