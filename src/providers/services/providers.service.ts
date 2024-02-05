@@ -85,8 +85,8 @@ export class ProvidersService {
     const { labRequisitionParameters } = await this.findOneById(providerId)
 
     const { message, messagePattern } = ieMessageBuilder(providerId, {
-      resource: 'services',
-      operation: 'list',
+      resource: Resource.Services,
+      operation: Operation.List,
       data: {
         integrationOptions,
         providerConfiguration: configurationOptions,
@@ -94,6 +94,35 @@ export class ProvidersService {
       }
     })
 
+    return await this.client.send(messagePattern, message).toPromise()
+  }
+
+  async getProviderServiceByCode (
+    providerId: string,
+    integrationId: string,
+    code: string
+  ): Promise<Service[]> {
+    const {
+      providerConfiguration: { configurationOptions },
+      integrationOptions
+    } = await this.integrationsService.findOne({
+      id: integrationId,
+      options: {
+        relations: ['providerConfiguration']
+      }
+    })
+
+    const { labRequisitionParameters } = await this.findOneById(providerId)
+
+    const { message, messagePattern } = ieMessageBuilder(providerId, {
+      resource: Resource.Services,
+      operation: Operation.Get,
+      data: {
+        integrationOptions,
+        providerConfiguration: configurationOptions,
+        payload: { labRequisitionParameters, code }
+      }
+    })
     return await this.client.send(messagePattern, message).toPromise()
   }
 
@@ -120,7 +149,12 @@ export class ProvidersService {
       }
     })
 
-    return await this.client.send(messagePattern, message).toPromise()
+    try {
+      return await this.client.send(messagePattern, message).toPromise()
+    } catch (error) {
+      this.logger.error(error)
+      throw new NotFoundException(error)
+    }
   }
 
   async getDataStatus (

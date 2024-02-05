@@ -663,10 +663,11 @@ export class OrdersService {
   ): Promise<Order> {
     return await this.findOne({
       options: {
-        where: {
-          externalId: externalId
-        },
-        relations: ['patient', 'patient.identifier', 'client', 'veterinarian', 'tests']
+        where: [
+          { externalId: externalId },
+          { requisitionId: externalId }
+        ],
+        relations: ['patient', 'patient.identifier', 'client', 'veterinarian', 'tests', 'client.identifier']
       }
     })
   }
@@ -675,7 +676,7 @@ export class OrdersService {
     externalIds: string[]
   ): Promise<Order[]> {
     return await this.findAll({
-      relations: ['patient', 'patient.identifier', 'client', 'veterinarian', 'tests'],
+      relations: ['patient', 'patient.identifier', 'client', 'veterinarian', 'tests', 'client.identifier'],
       where: {
         externalId: In(externalIds)
       }

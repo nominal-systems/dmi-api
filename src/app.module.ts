@@ -10,7 +10,7 @@ import { OrdersModule } from './orders/orders.module'
 import { EventsModule } from './events/events.module'
 import configuration from './config/configuration'
 import { MongooseModule } from '@nestjs/mongoose'
-import { AppController } from './app.controller'
+import { FrontendController } from './frontend.controller'
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core'
 import { RpcExceptionInterceptor } from './common/interceptors/rpc-exception.interceptor'
 import { AuthModule } from './common/auth/auth.module'
@@ -59,7 +59,7 @@ import { ResultsModule } from './results/results.module'
     ResultsModule
   ],
   controllers: [
-    AppController
+    FrontendController
   ],
   providers: [
     {

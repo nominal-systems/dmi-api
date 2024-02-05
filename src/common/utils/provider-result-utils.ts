@@ -4,6 +4,7 @@ import { Test } from '../../orders/entities/test.entity'
 import { Patient } from '../../orders/entities/patient.entity'
 import { Client } from '../../orders/entities/client.entity'
 import { Veterinarian } from '../../orders/entities/veterinarian.entity'
+import { Identifier } from '../../orders/entities/identifier.entity'
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class ProviderResultUtils {
@@ -25,12 +26,14 @@ export class ProviderResultUtils {
         patient.sex = result.order.patient.sex
         patient.species = result.order.patient.species
         patient.breed = <string>result.order.patient.breed
+        patient.identifier = result.order.patient.identifier as Identifier[]
         order.patient = patient
       }
       if (result.order.client !== undefined) {
         const client = new Client()
         client.firstName = result.order.client.firstName
         client.lastName = result.order.client.lastName
+        client.identifier = result.order.client.identifier as Identifier[]
         order.client = client
       }
       if (result.order.veterinarian !== undefined) {

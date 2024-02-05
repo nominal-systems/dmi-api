@@ -1,0 +1,76 @@
+name: Build Docker image and push to registry
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  REGISTRY_NAME: nominaldevacr
+  APP_NAME: dmi-api
+  API_URL: '/dmi'
+  UI_APP_URL: '/dmi/ui'
+  UI_APP_VERSION: v0.2.3
+
+jobs:
+  publish:
+    name: Build and publish Docker image
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - name: Checkout API code
+        uses: actions/checkout@main
+      - name: Generate an auth token
+        id: generate_token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.NOMINAL_AGENT_APP_ID }}
+          private-key: ${{ secrets.NOMINAL_AGENT_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+      - name: Check out Admin UI code
+        uses: actions/checkout@v4
+        with:
+          repository: nominal-systems/dmi-api-admin-ui
+          ref: ${{ env.UI_APP_VERSION }}
+          token: ${{ steps.generate_token.outputs.token }}
+          path: ${{ github.workspace }}/dmi-api-admin-ui
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          working-directory: ${{ github.workspace }}/dmi-api-admin-ui
+          node-version: '20.x'
+      - name: Install dependencies
+        working-directory: ${{ github.workspace }}/dmi-api-admin-ui
+        run: npm install
+      - name: Build Admin UI
+        working-directory: ${{ github.workspace }}/dmi-api-admin-ui
+        run: API_URL=${{ env.API_URL }} UI_URL=${{ env.UI_APP_URL }} npm run build
+      - name: Copy UI assets
+        run: |
+          mkdir -p public
+          cp -r ${{ github.workspace }}/dmi-api-admin-ui/dist/* public/
+      - name: Set Docker tag
+        id: tag
+        shell: bash
+        run: |
+          # Default GITHUB_SHA
+          tag="${GITHUB_SHA}"
+
+          # If ref is a tag, parse that
+          if [[ "${GITHUB_REF}" == refs/tags* ]]; then
+            tag=$(echo $GITHUB_REF | sed 's/refs\/tags\///g')
+          fi
+
+          echo "::set-output name=tag::$tag"
+      - name: Build Docker image
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ env.REGISTRY_NAME }}.azurecr.io
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+      - name: Push to ACR
+        run: |
+          docker build . -t ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ steps.tag.outputs.tag }} --target production --build-arg GHP_TOKEN=${{ secrets.GHP_TOKEN }}
+          docker push ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ steps.tag.outputs.tag }}
