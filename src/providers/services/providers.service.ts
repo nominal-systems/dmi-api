@@ -227,7 +227,10 @@ export class ProvidersService {
     return await this.client.send(messagePattern, message).toPromise()
   }
 
-  async checkLabRequisitionParameters (providerId: string, labRequisitionInfo: any): Promise<void> {
+  async checkLabRequisitionParameters (
+    providerId: string,
+    labRequisitionInfo: any
+  ): Promise<void> {
     const provider = await this.findOneById(providerId)
     const { labRequisitionParameters } = provider
     const missingParameters: string[] = []
@@ -256,7 +259,10 @@ export class ProvidersService {
     }
   }
 
-  async createProviderOptions (providerId: string, providerOptions: ProviderOptionDto[]): Promise<void> {
+  async createProviderOptions (
+    providerId: string,
+    providerOptions: ProviderOptionDto[]
+  ): Promise<void> {
     const provider = await this.findOneById(providerId)
     if (provider === undefined) {
       throw new BadRequestException(`The provider ${providerId} doesn't exist`)
@@ -274,7 +280,10 @@ export class ProvidersService {
     }
   }
 
-  async deleteProviderOption (providerId: string, providerOptionId: string): Promise<void> {
+  async deleteProviderOption (
+    providerId: string,
+    providerOptionId: string
+  ): Promise<void> {
     const provider = await this.findOneById(providerId)
     if (provider === undefined) {
       throw new BadRequestException(`The provider ${providerId} doesn't exist`)
@@ -286,7 +295,9 @@ export class ProvidersService {
     await this.providerOptionRepository.delete(providerOptionId)
   }
 
-  async saveProviderRawData (data: ProviderRawDataDto): Promise<void> {
+  async saveProviderRawData (
+    data: ProviderRawDataDto
+  ): Promise<void> {
     const { body, url, method, provider, status, payload, headers } = data
 
     const rawData: ProviderExternalRequests = {
@@ -338,7 +349,9 @@ export class ProvidersService {
     return await this.providerExternalRequestsModel.countDocuments(options)
   }
 
-  async update (provider: UpdateProviderDto): Promise<void> {
+  async update (
+    provider: UpdateProviderDto
+  ): Promise<void> {
     await this.providerRepository.save(provider)
   }
 }
