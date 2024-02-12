@@ -25,10 +25,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       const errorResponse = exception.getResponse() as Record<string, any>
       errorMessage = exception.message
-      errors = errorResponse.message
+      errors = typeof errorResponse.message === 'string' ? [errorResponse.message] : errorResponse.message
     } else if (exception instanceof ProviderError) {
       errorMessage = exception.response.message
-      errors = exception.response.error
+      errors = typeof exception.response.error === 'string' ? [exception.response.error] : exception.response.error
       if (typeof errors !== 'string') {
         httpStatus = HttpStatus.BAD_REQUEST
       }
@@ -39,7 +39,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const responseBody = {
       statusCode: httpStatus,
       message: errorMessage,
-      ...(errors?.length > 0 && { errors }),
+      errors,
       path: httpAdapter.getRequestUrl(ctx.getRequest()),
       timestamp: new Date().toISOString()
     }
