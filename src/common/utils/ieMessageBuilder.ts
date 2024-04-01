@@ -32,7 +32,8 @@ interface Parameters {
 }
 
 export default function (providerId: string, params: Parameters): MessageAndPattern {
-  const messagePattern = `${providerId}.${params.resource}.${params.operation}`
+  const messagePattern = `${providerId}/${params.resource}/${params.operation}`
+  console.log(`messagePattern= ${JSON.stringify(messagePattern, null, 2)}`) // TODO(gb): remove trace
 
   const message: IntergrationEngineOutgoingMessage = {
     id: uuidv4(),
