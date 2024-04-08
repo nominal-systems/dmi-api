@@ -17,6 +17,8 @@ export function isValidStatusChange (
   existingStatus: OrderStatus
 ): boolean {
   switch (externalStatus) {
+    case OrderStatus.SUBMITTED:
+      return externalStatus !== existingStatus && [OrderStatus.WAITING_FOR_INPUT, OrderStatus.ACCEPTED].includes(existingStatus)
     case OrderStatus.PARTIAL:
     case OrderStatus.COMPLETED:
       return externalStatus !== existingStatus && [OrderStatus.SUBMITTED, OrderStatus.PARTIAL, OrderStatus.ACCEPTED].includes(existingStatus)
