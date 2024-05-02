@@ -32,7 +32,7 @@ interface Parameters {
 }
 
 export default function (providerId: string, params: Parameters): MessageAndPattern {
-  const messagePattern = `${providerId}.${params.resource}.${params.operation}`
+  const messagePattern = `${providerId}/${params.resource}/${params.operation}`
 
   const message: IntergrationEngineOutgoingMessage = {
     id: uuidv4(),
