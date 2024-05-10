@@ -260,6 +260,7 @@ export class ReportsService {
       .leftJoinAndSelect('order.patient', 'patient')
       .leftJoinAndSelect('order.client', 'client')
       .leftJoinAndSelect('client.identifier', 'clientIdentifier')
+      .leftJoinAndSelect('veterinarian.identifier', 'veterinarianIdentifier')
       .leftJoinAndSelect('patient.identifier', 'identifier')
       .leftJoinAndSelect('report.testResultsSet', 'testResult')
       .leftJoinAndSelect('report.patient', 'reportPatient')

@@ -8,7 +8,7 @@ export class Attachment {
     @Column({ nullable: true })
     uri: string
 
-    @Column({ type: 'text', nullable: true })
+    @Column({ type: 'longtext', nullable: true })
     data: string
 
     @Column({ nullable: true })

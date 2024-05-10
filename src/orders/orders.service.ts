@@ -19,9 +19,9 @@ import {
   Order as ExternalOrder,
   OrderCreatedResponse,
   OrderStatus,
+  ProviderError,
   ProviderResult,
-  Resource,
-  ProviderError
+  Resource
 } from '@nominal-systems/dmi-engine-common'
 import { updateOrder } from '../common/utils/order-status.helper'
 import { EventNamespace } from '../events/constants/event-namespace.enum'
@@ -184,7 +184,7 @@ export class OrdersService {
           payload: { id: externalId },
           integrationOptions,
           providerConfiguration:
-            providerConfiguration.configurationOptions
+          providerConfiguration.configurationOptions
         }
       }
     )
@@ -405,7 +405,7 @@ export class OrdersService {
         operation: 'tests.add',
         data: {
           providerConfiguration:
-            providerConfiguration.configurationOptions,
+          providerConfiguration.configurationOptions,
           integrationOptions,
           payload: {
             id: externalId,
@@ -461,7 +461,7 @@ export class OrdersService {
         operation: 'tests.cancel',
         data: {
           providerConfiguration:
-            providerConfiguration.configurationOptions,
+          providerConfiguration.configurationOptions,
           integrationOptions,
           payload: {
             id: externalId,
@@ -504,8 +504,9 @@ export class OrdersService {
     // Handle non-existing orders
     const mapper = new ExternalOrderMapper()
     const existingOrdersExternalIds = existingOrders.map(order => order.externalId)
+    const existingOrdersRequisitionIds = existingOrders.map(order => order.requisitionId)
     const nonExistingOrders = orders
-      .filter(order => !existingOrdersExternalIds.includes(order.externalId))
+      .filter(order => !existingOrdersExternalIds.includes(order.externalId) && !existingOrdersRequisitionIds.includes(order.externalId))
       .map(order => mapper.mapOrder(order, integrationId))
     const newOrders = this.ordersRepository.create(nonExistingOrders)
     const allOrders = [...newOrders, ...updatedOrders]
@@ -677,9 +678,10 @@ export class OrdersService {
   ): Promise<Order[]> {
     return await this.findAll({
       relations: ['patient', 'patient.identifier', 'client', 'veterinarian', 'tests', 'client.identifier'],
-      where: {
-        externalId: In(externalIds)
-      }
+      where: [
+        { externalId: In(externalIds) },
+        { requisitionId: In(externalIds) }
+      ]
     })
   }
 
