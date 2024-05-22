@@ -10,7 +10,7 @@ import {
   UpdateDateColumn
 } from 'typeorm'
 import { Integration } from '../../integrations/entities/integration.entity'
-import { Attachment } from './attachment.entity'
+import { Attachment } from '../../common/entities/attachment.entity'
 import { Client } from './client.entity'
 import { Patient } from './patient.entity'
 import { Test } from './test.entity'

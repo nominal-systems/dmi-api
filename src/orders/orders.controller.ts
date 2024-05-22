@@ -26,7 +26,7 @@ import { OrdersService } from './orders.service'
 import { Report } from '../reports/entities/report.entity'
 import { ExternalResultEventData } from '../common/typings/external-result-event-data.interface'
 import { ApiParam } from '@nestjs/swagger'
-import { Attachment } from './entities/attachment.entity'
+import { Attachment } from '../common/entities/attachment.entity'
 
 @Controller('orders')
 @UseGuards(ApiGuard)

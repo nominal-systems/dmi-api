@@ -33,7 +33,7 @@ import { ExternalResultEventData } from '../common/typings/external-result-event
 import { ProviderResultUtils } from '../common/utils/provider-result-utils'
 import { ProviderConfiguration } from '../providers/entities/provider-configuration.entity'
 import { RefsService } from '../refs/refs.service'
-import { Attachment } from './entities/attachment.entity'
+import { Attachment } from '../common/entities/attachment.entity'
 import { ProvidersService } from '../providers/services/providers.service'
 
 interface OrderTestCancelOrAddParams {
