@@ -9,8 +9,16 @@ Repository for the DMI API built using [Nest](https://github.com/nestjs/nest).
 ```bash
 $ npm install
 ```
+Note that GitHub Personal Access Token (PAT) may be required for the installation of certain packages. Be sure to have your local `.npmrc` configured properly.
+For example:
+```bash
+@your-scope:registry=https://npm.pkg.github.com/
+//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
+```
+Where `@your-scope` is your package scope (e.g., `@nominal-systems`), and `GITHUB_TOKEN` is a defined environment variable containing your GitHub PAT.
 
 ## Running the app
+
 1. Create a `.env` file if setting up locally, or `.env.docker` if using docker-compose, if it doesn't already exist. Take a look at the `.env.example` file for reference.
 2. Change credentials such as the Database password in the `docker-compose*.yaml` files as you see fit, and make sure it's the same password in the `.env` file.
 3. Choose one of the methods below
