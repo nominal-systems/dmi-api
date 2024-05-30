@@ -6,6 +6,7 @@ import { FindOneOfTypeOptions } from '../common/typings/find-one-of-type-options
 import { ExternalResultEventData } from '../common/typings/external-result-event-data.interface'
 import { Order } from '../orders/entities/order.entity'
 import {
+  Attachment,
   Order as ExternalOrder,
   ProviderResult,
   ProviderTestResultItem,
@@ -23,6 +24,7 @@ import { Organization } from '../organizations/entities/organization.entity'
 import { resultStatusMapper, testResultStatusMapper } from '../common/utils/result-status.helper'
 import { ProviderResultUtils } from '../common/utils/provider-result-utils'
 import { isNullOrEmpty } from '../common/utils/shared.utils'
+import { Attachment as AttachmentEntity } from '../common/entities/attachment.entity'
 
 @Injectable()
 export class ReportsService {
@@ -64,6 +66,7 @@ export class ReportsService {
       .leftJoinAndSelect('report.patient', 'patient')
       .leftJoinAndSelect('report.testResultsSet', 'testResult')
       .leftJoinAndSelect('testResult.observations', 'observation')
+      .leftJoinAndSelect('report.presentedFrom', 'presentedFrom')
       .where('report.id = :id', { id })
       .orderBy('testResult.seq', 'ASC')
       .addOrderBy('observation.seq', 'ASC')
@@ -234,6 +237,7 @@ export class ReportsService {
 
     // Notify about updated reports
     for (const report of updatedReports) {
+      delete report.presentedFrom
       await this.eventsService.addEvent({
         namespace: EventNamespace.REPORTS,
         type: EventType.REPORT_UPDATED,
@@ -294,6 +298,15 @@ export class ReportsService {
 
     const resultsStatus = Array.from(new Set<string>(results.map(result => result.status)))
     const reportStatus = resultStatusMapper(resultsStatus[0])
+
+    // Report PDF
+    const pdfReport = results
+      .filter(result => result.pdfReport !== undefined)
+      .map(result => result.pdfReport)
+      .reduce((a, v) => a.concat(v), [] as any[])
+    if (pdfReport.length > 0) {
+      this.attachPdfReport(report, pdfReport)
+    }
 
     // Build test results set
     const createdTestResults: TestResult[] = []
@@ -427,6 +440,22 @@ export class ReportsService {
     report.status = ReportStatus.REGISTERED
     report.testResultsSet = []
     return report
+  }
+
+  public attachPdfReport (
+    report: Report,
+    pdfReport: Attachment[]
+  ): void {
+    report.presentedFrom = pdfReport.filter((attachment) => {
+      return attachment.contentType !== undefined && attachment.data !== undefined
+    }).map(attachment => {
+      const attachmentEntity = new AttachmentEntity()
+      if (attachment.contentType !== undefined && attachment.data !== undefined) {
+        attachmentEntity.contentType = attachment.contentType
+        attachmentEntity.data = attachment.data
+      }
+      return attachmentEntity
+    })
   }
 
   private printReport (

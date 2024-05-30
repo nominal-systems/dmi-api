@@ -2137,5 +2137,69 @@ describe('ReportsService', () => {
         eventsServiceMock.addEvent.mockReset()
       })
     })
+    describe('Wisdom Panel', () => {
+      const externalResult = {
+        integrationId: 'wisdom-panel-integration-id',
+        results: [
+          {
+            orderId: 'WP-123',
+            status: 'COMPLETED',
+            testResults: [],
+            pdfReport: [
+              {
+                contentType: 'application/pdf',
+                data: 'baseEncodedPdfData'
+              }
+            ]
+          }
+        ]
+      } as unknown as ExternalResultEventData
+      it('should attach a report PDF for existing reports if present in results', async () => {
+        jest.spyOn(reportsService, 'findReportsByExternalOrderIds').mockResolvedValueOnce([{
+          order: {
+            externalId: 'WP-123'
+          },
+          testResultsSet: []
+        } as unknown as Report])
+        await reportsService.handleExternalResults(externalResult)
+
+        // TODO(gb): test that the PDF has in fact been attached to the report
+
+        // It should not include the PDF data in the report event
+        expect(eventsServiceMock.addEvent).toBeCalledTimes(1)
+        expect(eventsServiceMock.addEvent).toBeCalledWith(expect.objectContaining({
+          type: EventType.REPORT_UPDATED,
+          data: expect.objectContaining({
+            report: expect.not.objectContaining({
+              presentedForm: expect.any(Object)
+            })
+          })
+        }))
+      })
+      it('should attach a report PDF for orphan results', async () => {
+        const orphanResultsData = Object.assign({}, externalResult)
+        // @ts-expect-error
+        delete orphanResultsData.results[0].orderId
+        jest.spyOn(reportsService, 'findReportByExternalOrderId').mockResolvedValueOnce({
+          order: {
+            externalId: 'WP-123'
+          },
+          testResultsSet: []
+        } as unknown as Report)
+        await reportsService.handleExternalResults(externalResult)
+
+        // TODO(gb): test that the PDF has in fact been attached to the report
+
+        // It should not include the PDF data in the report event
+        expect(eventsServiceMock.addEvent).toBeCalledWith(expect.objectContaining({
+          type: EventType.REPORT_UPDATED,
+          data: expect.objectContaining({
+            report: expect.not.objectContaining({
+              presentedForm: expect.any(Object)
+            })
+          })
+        }))
+      })
+    })
   })
 })

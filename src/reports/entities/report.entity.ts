@@ -43,7 +43,7 @@ export class Report {
 
   @OneToMany(() => Attachment, (attachment) => attachment.report, { cascade: true })
   @JoinTable()
-  presentedFrom: Attachment[]
+  presentedFrom?: Attachment[]
 
   @OneToOne(() => Order)
   @JoinColumn()

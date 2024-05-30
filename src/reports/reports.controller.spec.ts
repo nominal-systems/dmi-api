@@ -3,7 +3,7 @@ import { ReportsController } from './reports.controller'
 import { ReportsService } from './reports.service'
 
 describe('ReportsController', () => {
-  let controller: ReportsController
+  let reportsController: ReportsController
   const reportsService = {}
 
   beforeEach(async () => {
@@ -17,10 +17,10 @@ describe('ReportsController', () => {
       ]
     }).compile()
 
-    controller = module.get<ReportsController>(ReportsController)
+    reportsController = module.get<ReportsController>(ReportsController)
   })
 
   it('should be defined', () => {
-    expect(controller).toBeDefined()
+    expect(reportsController).toBeDefined()
   })
 })
