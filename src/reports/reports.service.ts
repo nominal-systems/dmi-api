@@ -303,7 +303,7 @@ export class ReportsService {
     const pdfReport = results
       .filter(result => result.pdfReport !== undefined)
       .map(result => result.pdfReport)
-      .reduce((a, v) => a.concat(v), [] as any[])
+      .reduce<any[]>((a, v) => a.concat(v), [])
     if (pdfReport.length > 0) {
       this.attachPdfReport(report, pdfReport)
     }

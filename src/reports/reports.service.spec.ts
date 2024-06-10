@@ -2178,7 +2178,7 @@ describe('ReportsService', () => {
       })
       it('should attach a report PDF for orphan results', async () => {
         const orphanResultsData = Object.assign({}, externalResult)
-        // @ts-expect-error
+        // @ts-expect-error - trying to simulate orphan results
         delete orphanResultsData.results[0].orderId
         jest.spyOn(reportsService, 'findReportByExternalOrderId').mockResolvedValueOnce({
           order: {
