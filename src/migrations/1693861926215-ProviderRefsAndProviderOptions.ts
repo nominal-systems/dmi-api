@@ -11,14 +11,14 @@ export class ProviderRefsAndProviderOptions1693861926215 implements MigrationInt
         await queryRunner.query(`ALTER TABLE \`provider_option\` ADD CONSTRAINT \`FK_964474fdde11ef40ed5f77a15a3\` FOREIGN KEY (\`providerId\`) REFERENCES \`provider\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE \`ref\` ADD CONSTRAINT \`FK_cfbd036367517dbff67d98d55e5\` FOREIGN KEY (\`species\`) REFERENCES \`ref\`(\`code\`) ON DELETE SET NULL ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE \`provider_ref\` ADD CONSTRAINT \`FK_0d11edecc9934abe342fab8a1d4\` FOREIGN KEY (\`provider\`) REFERENCES \`provider\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE \`provider_ref\` ADD CONSTRAINT \`FK_39f35ae0ad7d98da7164f61e2ff\` FOREIGN KEY (\`species\`) REFERENCES \`provider_ref\`(\`code\`) ON DELETE SET NULL ON UPDATE NO ACTION`);
+        //await queryRunner.query(`ALTER TABLE \`provider_ref\` ADD CONSTRAINT \`FK_39f35ae0ad7d98da7164f61e2ff\` FOREIGN KEY (\`species\`) REFERENCES \`provider_ref\`(\`code\`) ON DELETE SET NULL ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE \`provider_ref\` ADD CONSTRAINT \`FK_fb6d1b1664e072f36c952eb73f9\` FOREIGN KEY (\`refId\`) REFERENCES \`ref\`(\`id\`) ON DELETE SET NULL ON UPDATE NO ACTION`);
 
     }
 
     public async down (queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`ALTER TABLE \`provider_ref\` DROP FOREIGN KEY \`FK_fb6d1b1664e072f36c952eb73f9\``);
-        await queryRunner.query(`ALTER TABLE \`provider_ref\` DROP FOREIGN KEY \`FK_39f35ae0ad7d98da7164f61e2ff\``);
+        //await queryRunner.query(`ALTER TABLE \`provider_ref\` DROP FOREIGN KEY \`FK_39f35ae0ad7d98da7164f61e2ff\``);
         await queryRunner.query(`ALTER TABLE \`provider_ref\` DROP FOREIGN KEY \`FK_0d11edecc9934abe342fab8a1d4\``);
         await queryRunner.query(`ALTER TABLE \`ref\` DROP FOREIGN KEY \`FK_cfbd036367517dbff67d98d55e5\``);
         await queryRunner.query(`ALTER TABLE \`provider_option\` DROP FOREIGN KEY \`FK_964474fdde11ef40ed5f77a15a3\``);
