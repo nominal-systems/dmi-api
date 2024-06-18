@@ -3,6 +3,7 @@ import {
   CreateDateColumn,
   Entity,
   JoinColumn,
+  JoinTable,
   ManyToOne,
   OneToMany,
   OneToOne,
@@ -14,6 +15,7 @@ import { Type } from 'class-transformer'
 import { TestResult } from './test-result.entity'
 import { Order } from '../../orders/entities/order.entity'
 import { Patient } from '../../orders/entities/patient.entity'
+import { Attachment } from '../../common/entities/attachment.entity'
 
 @Entity()
 export class Report {
@@ -39,7 +41,9 @@ export class Report {
   })
   testResultsSet: TestResult[]
 
-  // TODO(gb): Add presentedForm
+  @OneToMany(() => Attachment, (attachment) => attachment.report, { cascade: true })
+  @JoinTable()
+  presentedFrom?: Attachment[]
 
   @OneToOne(() => Order)
   @JoinColumn()

@@ -315,9 +315,9 @@ export class AdminController {
     })
     const response = await this.integrationsService.restart(integration)
     if (response?.message === undefined) {
-      res.status(201).send('Integration restarted')
+      res.status(201).send({ ok: 'Integration restarted' })
     } else {
-      res.status(400).send(response.message)
+      res.status(400).send({ error: response.message })
     }
   }
 

@@ -1,6 +1,6 @@
 {
   "name": "diagnostic-modality-integration-api",
-  "version": "1.8.1",
+  "version": "1.8.4",
   "description": "",
   "author": "",
   "private": true,
@@ -49,7 +49,7 @@
     "@nestjs/swagger": "^4.8.2",
     "@nestjs/terminus": "^7.2.0",
     "@nestjs/typeorm": "^7.1.5",
-    "@nominal-systems/dmi-engine-common": "^0.6.21",
+    "@nominal-systems/dmi-engine-common": "^0.6.25",
     "argon2": "^0.28.2",
     "class-transformer": "^0.4.0",
     "class-validator": "^0.13.1",
