@@ -27,11 +27,17 @@ export class EventsService implements OnModuleInit {
     this.ordersService = this.moduleRef.get(OrdersService, { strict: false })
   }
 
+  async findById (
+    id: string
+  ): Promise<Event> {
+    return await this.eventModel.findById(id, { __v: 0 }, { lean: true }) as Event
+  }
+
   async findAll (
     query: FilterQuery<EventDocument>,
     options: QueryOptions = { lean: true }
   ): Promise<Event[]> {
-    return await this.eventModel.find(query, { __v: 0, _id: 0 }, options)
+    return await this.eventModel.find(query, { __v: 0 }, options)
   }
 
   async count (

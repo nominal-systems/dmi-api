@@ -25,6 +25,11 @@ export class FrontendController {
     await this.sendFile(res, 'events.html')
   }
 
+  @Get('events/:id')
+  async event (@Res() res: FastifyReply): Promise<void> {
+    await this.sendFile(res, 'event.html')
+  }
+
   @Get('external-requests')
   async externalRequests (@Res() res: FastifyReply): Promise<void> {
     await this.sendFile(res, 'external-requests.html')

@@ -164,6 +164,14 @@ export class AdminController {
     }
   }
 
+  @Get('events/:id')
+  @UseGuards(AdminGuard)
+  async getEvent (
+    @Param('id') eventId: string
+  ): Promise<Event> {
+    return await this.eventsService.findById(eventId)
+  }
+
   @Get('integrations')
   @UseGuards(AdminGuard)
   async getIntegrations (
