@@ -20,6 +20,11 @@ export class FrontendController {
     await this.sendFile(res, 'integrations.html')
   }
 
+  @Get('integrations/:id')
+  async integration (@Res() res: FastifyReply): Promise<void> {
+    await this.sendFile(res, 'integration.html')
+  }
+
   @Get('events')
   async events (@Res() res: FastifyReply): Promise<void> {
     await this.sendFile(res, 'events.html')

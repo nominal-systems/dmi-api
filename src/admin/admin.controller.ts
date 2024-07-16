@@ -204,7 +204,7 @@ export class AdminController {
     return await this.integrationsService.findOne({
       id: integrationId,
       options: {
-        relations: ['practice', 'providerConfiguration']
+        relations: ['practice', 'practice.organization', 'providerConfiguration']
       }
     })
   }
