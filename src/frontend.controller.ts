@@ -45,6 +45,11 @@ export class FrontendController {
     await this.sendFile(res, 'providers.html')
   }
 
+  @Get('providers/:id')
+  async provider (@Res() res: FastifyReply): Promise<void> {
+    await this.sendFile(res, 'provider.html')
+  }
+
   @Get('refs')
   async refs (@Res() res: FastifyReply): Promise<void> {
     await this.sendFile(res, 'refs.html')
