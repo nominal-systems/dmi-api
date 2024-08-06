@@ -29,7 +29,7 @@ import { OrganizationsService } from '../organizations/services/organizations.se
 import { Organization } from '../organizations/entities/organization.entity'
 import { IntegrationStatus } from '../integrations/constants/integration-status.enum'
 import { InjectRepository } from '@nestjs/typeorm'
-import { FindManyOptions, In, Repository } from 'typeorm'
+import { FindManyOptions, ILike, In, Repository } from 'typeorm'
 import { CreateIntegrationDto } from '../integrations/dtos/create-integration.dto'
 import { ReferenceDataQueryParams } from '../providers/dtos/reference-data-queryparams.dto'
 import { RefsService } from '../refs/refs.service'
@@ -56,6 +56,7 @@ import { PaginationDto } from '../common/dtos/pagination.dto'
 import { PAGINATION_PAGE_LIMIT } from '../common/constants/pagination.constant'
 import { ProviderDefaultBreed } from '../refs/entities/providerDefaultBreed.entity'
 import { getStatusRanges } from './admin-utils'
+import { FindConditions } from 'typeorm/find-options/FindConditions'
 
 @Controller('admin')
 export class AdminController {
@@ -418,17 +419,22 @@ export class AdminController {
   @Get('providers/:providerId/refs/:type')
   async getProviderRefs (
     @Param('providerId') providerId: string,
-    @Param('type') type: string,
-    @Query() params: PaginationDto
+    @Param('type') type: 'species' | 'breed' | 'sex',
+    @Query() params: PaginationDto & { search: string }
   ): Promise<PaginationResult<ProviderRef>> {
     const take = params.limit !== undefined ? params.limit : PAGINATION_PAGE_LIMIT
     const skip = (params.page - 1) * take
-    const where = {
+    const where: FindConditions<ProviderRef> = {
       type: type,
       provider: {
         id: providerId
       }
     }
+
+    if (params.search !== undefined) {
+      where.name = ILike(`%${params.search}%`)
+    }
+
     const relations = ['provider', 'ref']
 
     const data = await this.providerRefService.findAll({
