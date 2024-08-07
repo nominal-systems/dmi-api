@@ -12,6 +12,7 @@ import { EventsService } from '../events/services/events.service'
 import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import { ProviderRefService } from '../refs/providerRef.service'
+import { ProviderRef } from '../refs/entities/providerRef.entity'
 
 describe('AdminController', () => {
   let controller: AdminController
@@ -19,6 +20,7 @@ describe('AdminController', () => {
   const providersConfigurationsServiceMock = {}
   const integrationsServiceMock = {}
   const integrationsRepositoryMock = {}
+  const providerRefRepositoryMock = {}
   const eventSubscriptionsServiceMock = {}
   const refsServiceMock = {}
   const providersServiceMock = {}
@@ -50,6 +52,10 @@ describe('AdminController', () => {
         {
           provide: getRepositoryToken(Integration),
           useValue: integrationsRepositoryMock
+        },
+        {
+          provide: getRepositoryToken(ProviderRef),
+          useValue: providerRefRepositoryMock
         },
         {
           provide: RefsService,

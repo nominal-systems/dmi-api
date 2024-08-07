@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { ProviderRef } from './entities/providerRef.entity'
 import { FindManyOptions, Repository } from 'typeorm'
@@ -8,6 +8,18 @@ export class ProviderRefService {
   constructor (
     @InjectRepository(ProviderRef) private readonly providerRefRepository: Repository<ProviderRef>
   ) {
+  }
+
+  async findOneById (id: string): Promise<ProviderRef> {
+    const providerRef = await this.providerRefRepository.findOne(id, {
+      relations: ['provider']
+    })
+
+    if (providerRef === undefined) {
+      throw new NotFoundException('ProviderRef not found')
+    }
+
+    return providerRef
   }
 
   async findAll (

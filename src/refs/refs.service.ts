@@ -325,4 +325,24 @@ export class RefsService {
       return newDefaultBreed
     }
   }
+
+  async setMapping (refId: number, providerRefId: number): Promise<Ref> {
+    const ref = await this.refRepository.findOne(refId, { relations: ['providerRef', 'providerRef.provider'] })
+    if (ref === undefined) {
+      throw new NotFoundException('Ref not found')
+    }
+    const providerRef = await this.providerRefRepository.findOne(providerRefId, { relations: ['provider'] })
+    if (providerRef === undefined) {
+      throw new NotFoundException('Provider ref not found')
+    }
+
+    const existingMappingIndex = ref.providerRef.findIndex((pr) => pr.provider.id === providerRef.provider.id)
+    if (existingMappingIndex > 0) {
+      ref.providerRef.splice(existingMappingIndex, 1)
+    }
+    ref.providerRef.push(providerRef)
+
+    this.logger.log(`Updated mapping for ${ref.type} Ref/${ref.id} (${ref.name}) to ProviderRef/${providerRef.id} (${providerRef.name})`)
+    return await this.refRepository.save(ref)
+  }
 }

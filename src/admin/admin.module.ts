@@ -10,10 +10,11 @@ import { JwtModule } from '@nestjs/jwt'
 import { ConfigService } from '@nestjs/config'
 import { UsersModule } from '../users/users.module'
 import { RefsModule } from '../refs/refs.module'
+import { ProviderRef } from '../refs/entities/providerRef.entity'
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Integration]),
+    TypeOrmModule.forFeature([Integration, ProviderRef]),
     OrganizationsModule,
     ProvidersModule,
     EventsModule,

@@ -29,7 +29,7 @@ import { OrganizationsService } from '../organizations/services/organizations.se
 import { Organization } from '../organizations/entities/organization.entity'
 import { IntegrationStatus } from '../integrations/constants/integration-status.enum'
 import { InjectRepository } from '@nestjs/typeorm'
-import { FindManyOptions, ILike, In, Repository } from 'typeorm'
+import { FindManyOptions, In, Repository } from 'typeorm'
 import { CreateIntegrationDto } from '../integrations/dtos/create-integration.dto'
 import { ReferenceDataQueryParams } from '../providers/dtos/reference-data-queryparams.dto'
 import { RefsService } from '../refs/refs.service'
@@ -56,7 +56,6 @@ import { PaginationDto } from '../common/dtos/pagination.dto'
 import { PAGINATION_PAGE_LIMIT } from '../common/constants/pagination.constant'
 import { ProviderDefaultBreed } from '../refs/entities/providerDefaultBreed.entity'
 import { getStatusRanges } from './admin-utils'
-import { FindConditions } from 'typeorm/find-options/FindConditions'
 
 @Controller('admin')
 export class AdminController {
@@ -67,6 +66,7 @@ export class AdminController {
     private readonly eventSubscriptionsService: EventSubscriptionService,
     private readonly integrationsService: IntegrationsService,
     @InjectRepository(Integration) private readonly integrationsRepository: Repository<Integration>,
+    @InjectRepository(ProviderRef) private readonly providerRefRepository: Repository<ProviderRef>,
     private readonly refsService: RefsService,
     private readonly providersService: ProvidersService,
     private readonly configService: ConfigService,
@@ -400,6 +400,33 @@ export class AdminController {
     return { status: 'OK' }
   }
 
+  @Post('refs/:id/mapping')
+  @UseGuards(AdminGuard)
+  async updateRefMapping (
+    @Param('id') refId: string,
+    @Body() mapping: { providerRefId: string }
+  ): Promise<any> {
+    // Find Ref
+    const ref = await this.refsService.findOneById(refId)
+    if (ref === undefined) {
+      throw new BadRequestException(`The Ref ${refId} doesn't exist`)
+    }
+
+    // Find ProviderRef
+    const providerRef = await this.providerRefService.findOneById(mapping.providerRefId)
+    if (providerRef === undefined) {
+      throw new BadRequestException(`The ProviderRef ${mapping.providerRefId} doesn't exist`)
+    }
+
+    // Update mapping
+    try {
+      await this.refsService.setMapping(ref.id, providerRef.id)
+      return { ok: true }
+    } catch (error) {
+      throw new BadRequestException(error.message)
+    }
+  }
+
   @Get('providers')
   @UseGuards(AdminGuard)
   async getProviders (): Promise<Provider[]> {
@@ -424,26 +451,21 @@ export class AdminController {
   ): Promise<PaginationResult<ProviderRef>> {
     const take = params.limit !== undefined ? params.limit : PAGINATION_PAGE_LIMIT
     const skip = (params.page - 1) * take
-    const where: FindConditions<ProviderRef> = {
-      type: type,
-      provider: {
-        id: providerId
-      }
-    }
+
+    const queryBuilder = this.providerRefRepository.createQueryBuilder('providerRef')
+      .leftJoinAndSelect('providerRef.provider', 'provider')
+      .leftJoinAndSelect('providerRef.ref', 'ref')
+      .where('providerRef.type = :type', { type })
+      .andWhere('provider.id = :providerId', { providerId })
 
     if (params.search !== undefined) {
-      where.name = ILike(`%${params.search}%`)
+      queryBuilder.andWhere('providerRef.name LIKE :search', { search: `%${params.search}%` })
     }
 
-    const relations = ['provider', 'ref']
+    queryBuilder.skip(skip).take(take)
 
-    const data = await this.providerRefService.findAll({
-      where,
-      relations,
-      skip,
-      take
-    })
-    const total = await this.providerRefService.count({ where: where })
+    const [data, total] = await queryBuilder.getManyAndCount()
+
     return {
       total,
       page: params.page,
