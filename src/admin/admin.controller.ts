@@ -66,7 +66,8 @@ export class AdminController {
     private readonly eventSubscriptionsService: EventSubscriptionService,
     private readonly integrationsService: IntegrationsService,
     @InjectRepository(Integration) private readonly integrationsRepository: Repository<Integration>,
-    @InjectRepository(ProviderRef) private readonly providerRefRepository: Repository<ProviderRef>,
+    @InjectRepository(Ref) private readonly refsRepository: Repository<Ref>,
+    @InjectRepository(ProviderRef) private readonly providerRefsRepository: Repository<ProviderRef>,
     private readonly refsService: RefsService,
     private readonly providersService: ProvidersService,
     private readonly configService: ConfigService,
@@ -336,13 +337,22 @@ export class AdminController {
     @Param('type') type: 'sexes' | 'species' | 'breeds',
     @Query() params: PaginationDto
   ): Promise<PaginationResult<Ref>> {
-    const { page, limit } = params
-    const data = await this.refsService.getRefs(type, { page, limit })
+    const take = params.limit !== undefined ? params.limit : PAGINATION_PAGE_LIMIT
+    const skip = (params.page - 1) * take
+
+    const queryBuilder = this.refsRepository.createQueryBuilder('ref')
+      .leftJoinAndSelect('ref.providerRef', 'providerRef')
+      .leftJoinAndSelect('providerRef.provider', 'provider')
+      .where('ref.type = :type', { type })
+      .orderBy('ref.name', 'ASC')
+      .skip(skip).take(take)
+
+    const [data, total] = await queryBuilder.getManyAndCount()
 
     return {
-      total: await this.refsService.countRefs(type),
-      page,
-      limit,
+      total,
+      page: params.page,
+      limit: params.limit,
       data
     }
   }
@@ -452,7 +462,7 @@ export class AdminController {
     const take = params.limit !== undefined ? params.limit : PAGINATION_PAGE_LIMIT
     const skip = (params.page - 1) * take
 
-    const queryBuilder = this.providerRefRepository.createQueryBuilder('providerRef')
+    const queryBuilder = this.providerRefsRepository.createQueryBuilder('providerRef')
       .leftJoinAndSelect('providerRef.provider', 'provider')
       .leftJoinAndSelect('providerRef.ref', 'ref')
       .where('providerRef.type = :type', { type })

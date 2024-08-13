@@ -11,10 +11,11 @@ import { ConfigService } from '@nestjs/config'
 import { UsersModule } from '../users/users.module'
 import { RefsModule } from '../refs/refs.module'
 import { ProviderRef } from '../refs/entities/providerRef.entity'
+import { Ref } from '../refs/entities/ref.entity'
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Integration, ProviderRef]),
+    TypeOrmModule.forFeature([Integration, Ref, ProviderRef]),
     OrganizationsModule,
     ProvidersModule,
     EventsModule,
