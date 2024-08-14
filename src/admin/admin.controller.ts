@@ -470,6 +470,7 @@ export class AdminController {
       .leftJoinAndSelect('providerRef.provider', 'provider')
       .leftJoinAndSelect('providerRef.ref', 'ref')
       .where('providerRef.type = :type', { type })
+      .orderBy('providerRef.name', 'ASC')
       .andWhere('provider.id = :providerId', { providerId })
 
     if (params.search !== undefined) {
