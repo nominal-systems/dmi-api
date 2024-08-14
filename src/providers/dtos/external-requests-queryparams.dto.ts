@@ -7,5 +7,8 @@ export class ExternalRequestsSearch extends PaginationDto {
   providers: string
 
   @IsOptional()
+  method: string
+
+  @IsOptional()
   status: string
 }

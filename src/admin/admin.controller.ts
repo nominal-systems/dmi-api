@@ -568,6 +568,9 @@ export class AdminController {
           })
         )
     }
+    if (params.method !== undefined) {
+      options.method = { $in: params.method.split(',') }
+    }
 
     const { page, limit } = params
     const data = await this.providersService.findExternalRequests(options, { page, limit })
