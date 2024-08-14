@@ -335,7 +335,7 @@ export class AdminController {
   @UseGuards(AdminGuard)
   async getRefs (
     @Param('type') type: 'sexes' | 'species' | 'breeds',
-    @Query() params: PaginationDto
+    @Query() params: PaginationDto & { search: string }
   ): Promise<PaginationResult<Ref>> {
     const take = params.limit !== undefined ? params.limit : PAGINATION_PAGE_LIMIT
     const skip = (params.page - 1) * take
@@ -346,6 +346,10 @@ export class AdminController {
       .where('ref.type = :type', { type })
       .orderBy('ref.name', 'ASC')
       .skip(skip).take(take)
+
+    if (params.search !== undefined) {
+      queryBuilder.andWhere('ref.name LIKE :search', { search: `%${params.search}%` })
+    }
 
     const [data, total] = await queryBuilder.getManyAndCount()
 
