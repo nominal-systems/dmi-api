@@ -353,6 +353,7 @@ export class AdminController {
 
     const [data, total] = await queryBuilder.getManyAndCount()
 
+    // TODO(gb): 'page' and 'limit' are returning as strings, should be numbers
     return {
       total,
       page: params.page,
