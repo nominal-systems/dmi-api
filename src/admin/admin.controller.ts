@@ -572,6 +572,15 @@ export class AdminController {
     if (params.method !== undefined) {
       options.method = { $in: params.method.split(',') }
     }
+    if (params.date !== undefined) {
+      const dateParts = params.date.split('-')
+      const startDate = new Date(dateParts[0])
+      let endDate = startDate
+      if (dateParts.length === 2) {
+        endDate = new Date(dateParts[1])
+      }
+      options.createdAt = { $gte: startDate, $lte: endDate }
+    }
 
     const { page, limit } = params
     const data = await this.providersService.findExternalRequests(options, { page, limit })

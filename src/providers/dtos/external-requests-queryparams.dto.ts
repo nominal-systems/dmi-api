@@ -11,4 +11,7 @@ export class ExternalRequestsSearch extends PaginationDto {
 
   @IsOptional()
   status: string
+
+  @IsOptional()
+  date: string
 }
