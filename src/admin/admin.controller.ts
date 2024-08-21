@@ -56,6 +56,7 @@ import { PaginationDto } from '../common/dtos/pagination.dto'
 import { PAGINATION_PAGE_LIMIT } from '../common/constants/pagination.constant'
 import { ProviderDefaultBreed } from '../refs/entities/providerDefaultBreed.entity'
 import { getStatusRanges } from './admin-utils'
+import * as moment from 'moment'
 
 @Controller('admin')
 export class AdminController {
@@ -574,10 +575,10 @@ export class AdminController {
     }
     if (params.date !== undefined) {
       const dateParts = params.date.split('-')
-      const startDate = new Date(dateParts[0])
-      let endDate = startDate
+      const startDate = moment(dateParts[0]).startOf('day').toDate()
+      let endDate = moment(dateParts[0]).endOf('day').toDate()
       if (dateParts.length === 2) {
-        endDate = new Date(dateParts[1])
+        endDate = moment(dateParts[1]).endOf('day').toDate()
       }
       options.createdAt = { $gte: startDate, $lte: endDate }
     }
