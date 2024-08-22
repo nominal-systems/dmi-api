@@ -54,6 +54,7 @@ describe('RefsService', () => {
   }
 
   const findOneByCodeAndProviderMock = jest.fn()
+  const findDefaultBreedBySpeciesMock = jest.fn()
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -273,6 +274,76 @@ describe('RefsService', () => {
       expect(patient).toEqual(expect.objectContaining({
         sex: 'UNKNOWN',
         species: 'DOG'
+      }))
+    })
+    it('should use the default breed if the breed is not found', async () => {
+      const patient = {
+        id: '1',
+        name: 'Miso',
+        sex: 'MALE',
+        species: 'DOG',
+        breed: 'foo'
+      }
+
+      // The breed 'foo' shouldn't be found, and the default breed for the species 'DOG' is 'DEFAULT_DOG_BREED'
+      findOneByCodeAndProviderMock.mockImplementation((code: string) => {
+        switch (code) {
+          case 'foo':
+            return undefined
+          default:
+            return { code }
+        }
+      })
+      mockProviderDefaultBreedRepository.createQueryBuilder.mockReturnValue({
+        leftJoin: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValueOnce({ defaultBreed: 'DEFAULT_DOG_BREED' })
+      })
+
+      await refsService.mapPatientRefs('provider', patient)
+      expect(patient).toEqual(expect.objectContaining({
+        breed: 'DEFAULT_DOG_BREED'
+      }))
+    })
+    it('should not use the default breed if the breed is found', async () => {
+      const patient = {
+        id: '1',
+        name: 'Miso',
+        sex: 'MALE',
+        species: 'DOG',
+        breed: 'JACK_RUSSELL_TERRIER'
+      }
+
+      // The breed should be found
+      findOneByCodeAndProviderMock.mockImplementation((code: string) => {
+        return { code }
+      })
+
+      await refsService.mapPatientRefs('provider', patient)
+      expect(patient).toEqual(expect.objectContaining({
+        breed: 'JACK_RUSSELL_TERRIER'
+      }))
+    })
+    it('should use the default breed if no breed is provided', async () => {
+      const patient = {
+        id: '1',
+        name: 'Miso',
+        sex: 'MALE',
+        species: 'DOG'
+      }
+
+      // The default breed for the species 'DOG' is 'DEFAULT_DOG_BREED'
+      mockProviderDefaultBreedRepository.createQueryBuilder.mockReturnValue({
+        leftJoin: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValueOnce({ defaultBreed: 'DEFAULT_DOG_BREED' })
+      })
+
+      await refsService.mapPatientRefs('provider', patient as CreateOrderDtoPatient)
+      expect(patient).toEqual(expect.objectContaining({
+        breed: 'DEFAULT_DOG_BREED'
       }))
     })
   })
