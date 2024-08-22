@@ -29,7 +29,7 @@ import { OrganizationsService } from '../organizations/services/organizations.se
 import { Organization } from '../organizations/entities/organization.entity'
 import { IntegrationStatus } from '../integrations/constants/integration-status.enum'
 import { InjectRepository } from '@nestjs/typeorm'
-import { FindManyOptions, In, Repository } from 'typeorm'
+import { FindManyOptions, Repository } from 'typeorm'
 import { CreateIntegrationDto } from '../integrations/dtos/create-integration.dto'
 import { ReferenceDataQueryParams } from '../providers/dtos/reference-data-queryparams.dto'
 import { RefsService } from '../refs/refs.service'
@@ -54,7 +54,6 @@ import { FilterQuery } from 'mongoose'
 import { PaginationResult } from '../common/classes/pagination-result'
 import { PaginationDto } from '../common/dtos/pagination.dto'
 import { PAGINATION_PAGE_LIMIT } from '../common/constants/pagination.constant'
-import { ProviderDefaultBreed } from '../refs/entities/providerDefaultBreed.entity'
 import { getStatusRanges } from './admin-utils'
 import * as moment from 'moment'
 
@@ -470,7 +469,6 @@ export class AdminController {
 
     const queryBuilder = this.providerRefsRepository.createQueryBuilder('providerRef')
       .leftJoinAndSelect('providerRef.provider', 'provider')
-      .leftJoinAndSelect('providerRef.ref', 'ref')
       .where('providerRef.type = :type', { type })
       .orderBy('providerRef.name', 'ASC')
       .andWhere('provider.id = :providerId', { providerId })
@@ -496,14 +494,9 @@ export class AdminController {
   async getDefaultBreeds (
     @Param('providerId') providerId: string,
     @Query('speciesCodes') speciesCodes: string
-  ): Promise<ProviderDefaultBreed[]> {
+  ): Promise<ProviderRef[]> {
     const codes = speciesCodes.split(',')
-    return await this.refsService.findAllDefaultBreeds({
-      where: {
-        provider: providerId,
-        species: In(codes)
-      }
-    })
+    return await this.providerRefService.findDefaultBreeds(providerId, codes)
   }
 
   @Put('providers/:providerId/defaultBreed')
