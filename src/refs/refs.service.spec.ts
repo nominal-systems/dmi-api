@@ -54,7 +54,6 @@ describe('RefsService', () => {
   }
 
   const findOneByCodeAndProviderMock = jest.fn()
-  const findDefaultBreedBySpeciesMock = jest.fn()
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
