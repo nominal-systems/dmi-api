@@ -40,7 +40,7 @@ import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import { AdminGuard } from '../common/guards/admin.guard'
 import { EventsService } from '../events/services/events.service'
-import { Event } from '../events/entities/event.entity'
+import { Event, EventDocument } from '../events/entities/event.entity'
 import { Ref } from '../refs/entities/ref.entity'
 import { Provider } from '../providers/entities/provider.entity'
 import { ProviderRef } from '../refs/entities/providerRef.entity'
@@ -56,6 +56,7 @@ import { PaginationDto } from '../common/dtos/pagination.dto'
 import { PAGINATION_PAGE_LIMIT } from '../common/constants/pagination.constant'
 import { getStatusRanges } from './admin-utils'
 import * as moment from 'moment'
+import { EventsSearch } from '../events/dto/events-search.dto'
 
 @Controller('admin')
 export class AdminController {
@@ -149,19 +150,20 @@ export class AdminController {
   @Get('events')
   @UseGuards(AdminGuard)
   async getEvents (
-    @Query() paginationDto: PaginationDto
+    @Query() queryparams: EventsSearch
   ): Promise<PaginationResult<Event>> {
-    const query = {}
-    const limit = paginationDto.limit !== undefined ? paginationDto.limit : PAGINATION_PAGE_LIMIT
-    const skip = (paginationDto.page - 1) * limit
-    const options = { sort: { seq: -1 }, skip, limit, lean: true }
-    const total = await this.eventsService.count(query)
-    const data = await this.eventsService.findAll(query, options)
+    const options: FilterQuery<EventDocument> = {}
+    if (queryparams.integrations !== undefined) {
+      options.integrationId = { $in: queryparams.integrations.split(',') }
+    }
+    const { page, limit } = queryparams
+
+    const data = await this.eventsService.find(options, { page, limit })
 
     return {
-      total,
-      page: paginationDto.page,
-      limit: Math.min(limit, total),
+      total: await this.eventsService.count(options),
+      page,
+      limit,
       data
     }
   }

@@ -40,6 +40,21 @@ export class EventsService implements OnModuleInit {
     return await this.eventModel.find(query, { __v: 0 }, options)
   }
 
+  async find (
+    query: FilterQuery<EventDocument>,
+    paginationDto: PaginationDto
+  ): Promise<Event[]> {
+    const limit = paginationDto.limit !== undefined ? paginationDto.limit : PAGINATION_PAGE_LIMIT
+    const skip = (paginationDto.page - 1) * limit
+
+    return await this.eventModel.find(query, { __v: 0, data: 0 }, {
+      limit,
+      skip,
+      sort: { seq: -1 },
+      lean: true
+    })
+  }
+
   async count (
     query: FilterQuery<EventDocument>
   ): Promise<number> {
