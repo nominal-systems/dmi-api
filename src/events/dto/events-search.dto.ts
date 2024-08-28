@@ -9,4 +9,7 @@ export class EventsSearch extends PaginationDto {
   @IsOptional()
   @IsString()
   types: string
+
+  @IsOptional()
+  date: string
 }

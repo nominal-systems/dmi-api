@@ -159,6 +159,15 @@ export class AdminController {
     if (query.types !== undefined) {
       options.type = { $in: query.types.split(',') }
     }
+    if (query.date !== undefined) {
+      const dateParts = query.date.split('-')
+      const startDate = moment(dateParts[0]).startOf('day').toDate()
+      let endDate = moment(dateParts[0]).endOf('day').toDate()
+      if (dateParts.length === 2) {
+        endDate = moment(dateParts[1]).endOf('day').toDate()
+      }
+      options.createdAt = { $gte: startDate, $lte: endDate }
+    }
     const { page, limit } = query
 
     const data = await this.eventsService.find(options, { page, limit })
