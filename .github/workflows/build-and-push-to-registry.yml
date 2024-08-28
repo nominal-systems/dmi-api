@@ -11,7 +11,7 @@ env:
   APP_NAME: dmi-api
   API_URL: '/dmi'
   UI_APP_URL: '/dmi/ui'
-  UI_APP_VERSION: v0.4.5
+  UI_APP_VERSION: v0.4.6
 
 jobs:
   publish:
