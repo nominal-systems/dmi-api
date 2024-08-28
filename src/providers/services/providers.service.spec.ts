@@ -141,4 +141,26 @@ describe('ProvidersService', () => {
       createSpy.mockRestore()
     })
   })
+  describe('checkLabRequisitionParameters()', () => {
+    it('should throw an error if the lab requisition parameters are not defined or null', async () => {
+      const labRequisitionInfo = {
+        KitCode: null
+      }
+
+      // Mocks
+      jest.spyOn(service, 'findOneById').mockReturnValue(Promise.resolve({
+        labRequisitionParameters: [
+          {
+            name: 'KitCode',
+            type: 'string',
+            required: true
+          }
+        ]
+      } as unknown as Provider))
+
+      await expect(service.checkLabRequisitionParameters('provider', labRequisitionInfo))
+        .rejects
+        .toThrowError('The following lab requisition parameters are required and can\'t be null or empty: KitCode.')
+    })
+  })
 })
