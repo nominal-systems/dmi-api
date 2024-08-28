@@ -150,13 +150,16 @@ export class AdminController {
   @Get('events')
   @UseGuards(AdminGuard)
   async getEvents (
-    @Query() queryparams: EventsSearch
+    @Query() query: EventsSearch
   ): Promise<PaginationResult<Event>> {
     const options: FilterQuery<EventDocument> = {}
-    if (queryparams.integrations !== undefined) {
-      options.integrationId = { $in: queryparams.integrations.split(',') }
+    if (query.integrations !== undefined) {
+      options.integrationId = { $in: query.integrations.split(',') }
     }
-    const { page, limit } = queryparams
+    if (query.types !== undefined) {
+      options.type = { $in: query.types.split(',') }
+    }
+    const { page, limit } = query
 
     const data = await this.eventsService.find(options, { page, limit })
 

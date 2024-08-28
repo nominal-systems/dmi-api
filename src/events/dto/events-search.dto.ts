@@ -5,4 +5,8 @@ export class EventsSearch extends PaginationDto {
   @IsOptional()
   @IsString()
   integrations: string
+
+  @IsOptional()
+  @IsString()
+  types: string
 }
