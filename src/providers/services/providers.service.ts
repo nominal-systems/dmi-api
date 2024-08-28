@@ -29,6 +29,7 @@ import { ProviderOptionDto } from '../dtos/provider-option.dto'
 import { nestKeys } from '../../common/utils/nest-keys'
 import { PaginationDto } from '../../common/dtos/pagination.dto'
 import { PAGINATION_PAGE_LIMIT } from '../../common/constants/pagination.constant'
+import { isNullOrEmpty } from '../../common/utils/shared.utils'
 
 @Injectable()
 export class ProvidersService {
@@ -265,15 +266,17 @@ export class ProvidersService {
     providerId: string,
     labRequisitionInfo: any
   ): Promise<void> {
-    const provider = await this.findOneById(providerId)
+    const provider: Provider = await this.findOneById(providerId)
     const { labRequisitionParameters } = provider
     const missingParameters: string[] = []
+    const invalidParameters: string[] = []
     const unknownParameters: string[] = []
     for (const parameter of labRequisitionParameters) {
-      if (labRequisitionInfo[parameter.name] === undefined) {
-        if (parameter.required) {
-          missingParameters.push(parameter.name)
-        }
+      if (parameter.required && labRequisitionInfo[parameter.name] === undefined) {
+        missingParameters.push(parameter.name)
+      }
+      if (parameter.required && isNullOrEmpty(labRequisitionInfo[parameter.name])) {
+        invalidParameters.push(parameter.name)
       }
     }
     for (const key in labRequisitionInfo) {
@@ -281,10 +284,13 @@ export class ProvidersService {
         unknownParameters.push(key)
       }
     }
-    if (missingParameters.length > 0 || unknownParameters.length > 0) {
+    if (missingParameters.length > 0 || unknownParameters.length > 0 || invalidParameters.length > 0) {
       let errorMessage = ''
       if (missingParameters.length > 0) {
         errorMessage += `The following lab requisition parameters are missing: ${missingParameters.join(', ')}.`
+      }
+      if (invalidParameters.length > 0) {
+        errorMessage += `The following lab requisition parameters are required and can't be null or empty: ${invalidParameters.join(', ')}.`
       }
       if (unknownParameters.length > 0) {
         errorMessage += `The following unknown lab requisition parameters were found: ${unknownParameters.join(', ')}.`
