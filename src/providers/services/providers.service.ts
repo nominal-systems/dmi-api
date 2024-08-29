@@ -394,4 +394,37 @@ export class ProvidersService {
   ): Promise<void> {
     await this.providerRepository.save(provider)
   }
+
+  async externalRequestsStats (
+    query: FilterQuery<ProviderExternalRequestDocument>
+  ): Promise<any> {
+    return await this.providerExternalRequestsModel.aggregate([
+      {
+        $match: query
+      },
+      {
+        $group: {
+          _id: {
+            provider: '$provider',
+            year: { $year: '$createdAt' },
+            month: { $month: '$createdAt' },
+            day: { $dayOfMonth: '$createdAt' },
+            hour: { $hour: '$createdAt' }
+          },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          provider: '$_id.provider',
+          month: '$_id.month',
+          year: '$_id.year',
+          day: '$_id.day',
+          hour: '$_id.hour',
+          count: 1
+        }
+      }
+    ])
+  }
 }

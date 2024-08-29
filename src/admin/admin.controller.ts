@@ -57,6 +57,7 @@ import { PAGINATION_PAGE_LIMIT } from '../common/constants/pagination.constant'
 import { getStatusRanges } from './admin-utils'
 import * as moment from 'moment'
 import { EventsSearch } from '../events/dto/events-search.dto'
+import { DateRangeDto } from '../common/dtos/date-range.dto'
 
 @Controller('admin')
 export class AdminController {
@@ -178,6 +179,22 @@ export class AdminController {
       limit,
       data
     }
+  }
+
+  @Get('events/stats')
+  @UseGuards(AdminGuard)
+  async getEventsStats (
+    @Query() query: DateRangeDto
+  ): Promise<any> {
+    const options: FilterQuery<EventDocument> = {}
+    if (query.startDate !== undefined) {
+      options.createdAt = { $gte: new Date(query.startDate) }
+    }
+    if (query.endDate !== undefined) {
+      options.createdAt = { ...options.createdAt, $lte: new Date(query.endDate) }
+    }
+
+    return await this.eventsService.stats(options)
   }
 
   @Get('events/:id')
@@ -598,6 +615,26 @@ export class AdminController {
       limit,
       data
     }
+  }
+
+  @Get('/external-requests/stats')
+  @UseGuards(AdminGuard)
+  async getExternalRequestsStats (
+    @Query() query: DateRangeDto
+  ): Promise<any> {
+    const options: FilterQuery<ProviderExternalRequestDocument> = {}
+    if (query.startDate !== undefined) {
+      options.createdAt = { $gte: new Date(query.startDate) }
+    }
+    if (query.endDate !== undefined) {
+      options.createdAt = { ...options.createdAt, $lte: new Date(query.endDate) }
+    }
+    options.status = {
+      $gte: 400,
+      $lte: 599
+    }
+
+    return await this.providersService.externalRequestsStats(options)
   }
 
   @Get('/external-requests/:id')

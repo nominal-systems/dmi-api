@@ -90,4 +90,32 @@ export class EventsService implements OnModuleInit {
 
     return await this.findAll(query, options)
   }
+
+  async stats (
+    query: FilterQuery<EventDocument>
+  ): Promise<any> {
+    return await this.eventModel.aggregate([
+      {
+        $match: query
+      },
+      {
+        $group: {
+          _id: '$type',
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $addFields: {
+          type: '$_id'
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          type: 1,
+          count: 1
+        }
+      }
+    ])
+  }
 }
