@@ -92,29 +92,48 @@ export class EventsService implements OnModuleInit {
   }
 
   async stats (
-    query: FilterQuery<EventDocument>
+    query: FilterQuery<EventDocument>,
+    groupBy: string[]
   ): Promise<any> {
+    const $id = groupBy.reduce((acc, propName) => {
+      if (propName === 'createdAt') {
+        acc['year'] = { $year: '$createdAt' }
+        acc['month'] = { $month: '$createdAt' }
+        acc['day'] = { $dayOfMonth: '$createdAt' }
+      } else {
+        acc[propName] = `$${propName}`
+      }
+      return acc
+    }, {})
+
+    // Group
+    const $group = {
+      _id: $id,
+      count: { $sum: 1 }
+    }
+
+    // Project
+    const $project = groupBy.reduce((acc, propName) => {
+      if (propName === 'createdAt') {
+        acc['year'] = '$_id.year'
+        acc['month'] = '$_id.month'
+        acc['day'] = '$_id.day'
+      } else {
+        acc[propName] = `$_id.${propName}`
+      }
+      return acc
+    }, { _id: 0, count: 1 })
+
+    // Aggregate
     return await this.eventModel.aggregate([
       {
         $match: query
       },
       {
-        $group: {
-          _id: '$type',
-          count: { $sum: 1 }
-        }
+        $group
       },
       {
-        $addFields: {
-          type: '$_id'
-        }
-      },
-      {
-        $project: {
-          _id: 0,
-          type: 1,
-          count: 1
-        }
+        $project
       }
     ])
   }

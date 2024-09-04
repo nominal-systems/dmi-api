@@ -58,6 +58,7 @@ import { getStatusRanges } from './admin-utils'
 import * as moment from 'moment'
 import { EventsSearch } from '../events/dto/events-search.dto'
 import { DateRangeDto } from '../common/dtos/date-range.dto'
+import { GroupByDto } from '../common/dtos/group-by.dto'
 
 @Controller('admin')
 export class AdminController {
@@ -184,7 +185,7 @@ export class AdminController {
   @Get('events/stats')
   @UseGuards(AdminGuard)
   async getEventsStats (
-    @Query() query: DateRangeDto
+    @Query() query: EventsSearch & GroupByDto & DateRangeDto
   ): Promise<any> {
     const options: FilterQuery<EventDocument> = {}
     if (query.startDate !== undefined) {
@@ -194,7 +195,17 @@ export class AdminController {
       options.createdAt = { ...options.createdAt, $lte: new Date(query.endDate) }
     }
 
-    return await this.eventsService.stats(options)
+    if (query.types !== undefined) {
+      options.type = { $in: query.types.split(',') }
+    }
+
+    // Parse query: fields
+    let groupBy: string[] = []
+    if (query.groupBy !== undefined) {
+      groupBy = query.groupBy.split(',')
+    }
+
+    return await this.eventsService.stats(options, groupBy)
   }
 
   @Get('events/:id')

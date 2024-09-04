@@ -10,6 +10,7 @@ export class EventsSearch extends PaginationDto {
   @IsString()
   types: string
 
+  // TODO(gb): use DateRangeDto instead
   @IsOptional()
   date: string
 }
