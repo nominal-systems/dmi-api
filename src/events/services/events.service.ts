@@ -95,7 +95,7 @@ export class EventsService implements OnModuleInit {
     query: FilterQuery<EventDocument>,
     groupBy: string[]
   ): Promise<any> {
-    const $id = groupBy.reduce((acc, propName) => {
+    const $id = groupBy.reduce((acc: any, propName) => {
       if (propName === 'createdAt') {
         acc.year = { $year: '$createdAt' }
         acc.month = { $month: '$createdAt' }
@@ -113,7 +113,7 @@ export class EventsService implements OnModuleInit {
     }
 
     // Project
-    const $project = groupBy.reduce((acc, propName) => {
+    const $project = groupBy.reduce((acc: any, propName) => {
       if (propName === 'createdAt') {
         acc.year = '$_id.year'
         acc.month = '$_id.month'
