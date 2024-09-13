@@ -97,9 +97,9 @@ export class EventsService implements OnModuleInit {
   ): Promise<any> {
     const $id = groupBy.reduce((acc, propName) => {
       if (propName === 'createdAt') {
-        acc['year'] = { $year: '$createdAt' }
-        acc['month'] = { $month: '$createdAt' }
-        acc['day'] = { $dayOfMonth: '$createdAt' }
+        acc.year = { $year: '$createdAt' }
+        acc.month = { $month: '$createdAt' }
+        acc.day = { $dayOfMonth: '$createdAt' }
       } else {
         acc[propName] = `$${propName}`
       }
@@ -115,9 +115,9 @@ export class EventsService implements OnModuleInit {
     // Project
     const $project = groupBy.reduce((acc, propName) => {
       if (propName === 'createdAt') {
-        acc['year'] = '$_id.year'
-        acc['month'] = '$_id.month'
-        acc['day'] = '$_id.day'
+        acc.year = '$_id.year'
+        acc.month = '$_id.month'
+        acc.day = '$_id.day'
       } else {
         acc[propName] = `$_id.${propName}`
       }
