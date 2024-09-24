@@ -354,7 +354,21 @@ export class ProvidersService {
       rawData.payload = payload
     }
 
-    await this.providerExternalRequestsModel.create(rawData)
+    this.providerExternalRequestsModel.create(rawData, (error) => {
+      if (error != null && error.name === 'MongoError') {
+        this.logger.error(error.message)
+        this.logger.warn(`Could not save external request (${method} ${url}) to the database, saving without the body`)
+
+        // TODO(gb): implement a better fallback strategy than just removing the body
+        delete rawData.body
+        this.providerExternalRequestsModel.create(rawData, (error) => {
+          if (error != null && error.name === 'MongoError') {
+            this.logger.error(error.message)
+            this.logger.warn('Could not save external request (without the body) to database')
+          }
+        })
+      }
+    })
   }
 
   async findExternalRequests (

@@ -97,7 +97,7 @@ describe('ProvidersService', () => {
         method: data.method,
         provider: data.provider,
         status: data.status
-      })
+      }, expect.any(Function))
 
       createSpy.mockRestore()
     })
@@ -116,7 +116,7 @@ describe('ProvidersService', () => {
         method: data.method,
         provider: data.provider,
         status: data.status
-      })
+      }, expect.any(Function))
 
       createSpy.mockRestore()
     })
@@ -136,7 +136,7 @@ describe('ProvidersService', () => {
         provider: data.provider,
         status: data.status,
         payload: data.payload
-      })
+      }, expect.any(Function))
 
       createSpy.mockRestore()
     })
