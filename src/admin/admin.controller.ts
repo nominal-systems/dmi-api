@@ -29,7 +29,7 @@ import { OrganizationsService } from '../organizations/services/organizations.se
 import { Organization } from '../organizations/entities/organization.entity'
 import { IntegrationStatus } from '../integrations/constants/integration-status.enum'
 import { InjectRepository } from '@nestjs/typeorm'
-import { FindManyOptions, Repository } from 'typeorm'
+import { Repository } from 'typeorm'
 import { CreateIntegrationDto } from '../integrations/dtos/create-integration.dto'
 import { ReferenceDataQueryParams } from '../providers/dtos/reference-data-queryparams.dto'
 import { RefsService } from '../refs/refs.service'
@@ -59,6 +59,7 @@ import * as moment from 'moment'
 import { EventsSearch } from '../events/dto/events-search.dto'
 import { DateRangeDto } from '../common/dtos/date-range.dto'
 import { GroupByDto } from '../common/dtos/group-by.dto'
+import { IntegrationsSearch } from '../providers/dtos/integrations-search.dto'
 
 @Controller('admin')
 export class AdminController {
@@ -218,25 +219,38 @@ export class AdminController {
   @Get('integrations')
   @UseGuards(AdminGuard)
   async getIntegrations (
-    @Query('providerId') providerId?: string
-  ): Promise<Integration[]> {
-    let where = {}
-    if (providerId !== undefined) {
-      where = {
-        providerConfiguration: {
-          providerId: providerId
-        }
-      }
-    }
-    const options: FindManyOptions<Integration> = {
-      relations: ['practice', 'practice.organization', 'providerConfiguration'],
-      order: {
-        status: 'ASC'
-      },
-      where
+    @Query() params: IntegrationsSearch
+  ): Promise<PaginationResult<Integration>> {
+    const take = params.limit !== undefined ? params.limit : PAGINATION_PAGE_LIMIT
+    const skip = (params.page - 1) * take
+
+    const queryBuilder = this.integrationsRepository.createQueryBuilder('integration')
+      .leftJoinAndSelect('integration.practice', 'practice')
+      .leftJoinAndSelect('integration.providerConfiguration', 'providerConfiguration')
+      .leftJoinAndSelect('practice.organization', 'organization')
+      .orderBy('integration.status', 'ASC')
+      .skip(skip).take(take)
+
+    if (params.providers !== undefined) {
+      queryBuilder.andWhere('providerConfiguration.providerId IN (:...providers)', { providers: params.providers.split(',') })
     }
 
-    return await this.integrationsService.findAll(options)
+    if (params.organizations !== undefined) {
+      queryBuilder.andWhere('organization.id IN (:...organizations)', { organizations: params.organizations.split(',') })
+    }
+
+    if (params.statuses !== undefined) {
+      queryBuilder.andWhere('integration.status IN (:...status)', { status: params.statuses.split(',') })
+    }
+
+    const [data, total] = await queryBuilder.getManyAndCount()
+
+    return {
+      total,
+      page: params.page,
+      limit: params.limit,
+      data
+    }
   }
 
   @Get('integrations/:id')
