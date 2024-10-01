@@ -397,6 +397,7 @@ export class AdminController {
 
     const queryBuilder = this.refsRepository.createQueryBuilder('ref')
       .leftJoinAndSelect('ref.providerRef', 'providerRef')
+      .leftJoinAndSelect('ref.speciesEntity', 'species')
       .leftJoinAndSelect('providerRef.provider', 'provider')
       .where('ref.type = :type', { type })
       .orderBy('ref.name', 'ASC')
