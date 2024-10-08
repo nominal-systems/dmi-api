@@ -514,6 +514,21 @@ export class AdminController {
     return await this.providersService.findOneById(providerId)
   }
 
+  @Get('providers/:providerId/integrations')
+  @UseGuards(AdminGuard)
+  async getProviderIntegrations (
+    @Param('providerId') providerId: string
+  ): Promise<Integration[]> {
+    const queryBuilder = this.integrationsRepository.createQueryBuilder('integration')
+      .leftJoinAndSelect('integration.providerConfiguration', 'providerConfiguration')
+      .where('providerConfiguration.providerId = :providerId', { providerId })
+      .andWhere('integration.deletedAt IS NULL')
+      .andWhere('integration.status = :status', { status: IntegrationStatus.RUNNING })
+      .orderBy('integration.createdAt', 'ASC')
+
+    return await queryBuilder.getMany()
+  }
+
   @Get('providers/:providerId/refs/:type')
   async getProviderRefs (
     @Param('providerId') providerId: string,
