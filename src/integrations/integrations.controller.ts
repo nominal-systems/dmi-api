@@ -94,23 +94,23 @@ export class IntegrationsController {
     @Res() res: Response,
     @Param('id') integrationId: string
   ): Promise<void> {
-      const integration = await this.integrationsService.findOne({
-        id: integrationId,
-        options: {
-          join: {
-            alias: 'integration',
-            leftJoinAndSelect: {
-              practice: 'integration.practice',
-              providerConfiguration: 'integration.providerConfiguration'
-            }
+    const integration = await this.integrationsService.findOne({
+      id: integrationId,
+      options: {
+        join: {
+          alias: 'integration',
+          leftJoinAndSelect: {
+            practice: 'integration.practice',
+            providerConfiguration: 'integration.providerConfiguration'
           }
         }
-      })
-      const response = await this.integrationsService.restart(integration)
-      if (response?.message === undefined) {
-        res.status(201).send('Integration restarted')
-      } else {
-        res.status(400).send(response.message)
       }
+    })
+    const response = await this.integrationsService.restart(integration)
+    if (response?.message === undefined) {
+      res.status(201).send('Integration restarted')
+    } else {
+      res.status(400).send(response.message)
+    }
   }
 }

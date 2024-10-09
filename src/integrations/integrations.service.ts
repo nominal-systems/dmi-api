@@ -81,19 +81,6 @@ export class IntegrationsService {
       const integration = await this.integrationsRepository.save(newIntegration)
       this.logger.log(`Created Integration: [${integration.id}]`)
 
-      const {
-        id: integrationId,
-        providerConfiguration,
-        integrationOptions
-      } = await this.findOne({
-        id: newIntegration.id,
-        options: { relations: ['providerConfiguration', 'practice'] }
-      })
-
-      await this.doStart(integrationId, providerConfiguration, integrationOptions)
-
-      newIntegration.integrationOptions = integrationOptions
-
       return newIntegration
     } catch (error) {
       if (error.code === 'ER_NO_REFERENCED_ROW_2') {

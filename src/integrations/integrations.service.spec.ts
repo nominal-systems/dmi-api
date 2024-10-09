@@ -6,26 +6,56 @@ import { getRepositoryToken } from '@nestjs/typeorm'
 import { Organization } from '../organizations/entities/organization.entity'
 import { ProviderConfiguration } from '../providers/entities/provider-configuration.entity'
 import { Provider } from '../providers/entities/provider.entity'
+import { IntegrationStatus } from './constants/integration-status.enum'
 
 const organization = {} as Organization
 
 describe('IntegrationsService', () => {
-  let service: IntegrationsService
+  let integrationsService: IntegrationsService
 
   const configServiceMock = {
-    get: jest.fn()
+    get: jest.fn((key) => {
+      switch (key) {
+        case 'secretKey':
+          return 'AAABBBCCCDDDEEEFFFGGGHHHIIIJJJKK'
+        default:
+          return undefined
+      }
+    })
   }
   const integrationRepositoryMock = {
     findOne: jest.fn((obj) => obj),
     softDelete: jest.fn(),
-    update: jest.fn()
+    update: jest.fn(),
+    create: jest.fn((obj) => {
+      return {
+        ...obj,
+        status: IntegrationStatus.NEW
+      }
+    }),
+    save: jest.fn((obj) => obj)
   }
-  const providerConfigurationRepositoryMock = {}
+  const providerConfigurationRepositoryMock = {
+    findOne: jest.fn((id) => {
+      return {
+        id,
+        providerId: 'providerId',
+        provider: {
+          id: 'providerId'
+        }
+      }
+    })
+  }
   const clientProxyMock = {
     send: jest.fn()
   }
   const providersRepositoryMock = {
-    findOne: jest.fn((obj) => obj)
+    findOne: jest.fn((id) => {
+      return {
+        id,
+        options: []
+      }
+    })
   }
 
   beforeEach(async () => {
@@ -55,15 +85,11 @@ describe('IntegrationsService', () => {
       ]
     }).compile()
 
-    service = module.get<IntegrationsService>(IntegrationsService)
-  })
-
-  afterEach(() => {
-    jest.resetAllMocks()
+    integrationsService = module.get<IntegrationsService>(IntegrationsService)
   })
 
   it('should be defined', () => {
-    expect(service).toBeDefined()
+    expect(integrationsService).toBeDefined()
   })
 
   describe('delete()', () => {
@@ -83,21 +109,37 @@ describe('IntegrationsService', () => {
 
     it('should delete an integration', async () => {
       integrationRepositoryMock.findOne.mockResolvedValue(integrationA)
-      await service.delete(organization, integrationA.id)
+      await integrationsService.delete(organization, integrationA.id)
       expect(clientProxyMock.send).toHaveBeenCalled()
       expect(integrationRepositoryMock.softDelete).toHaveBeenCalledWith(integrationA.id)
+      integrationRepositoryMock.softDelete.mockClear()
+      clientProxyMock.send.mockClear()
     })
 
     it('should not delete a deleted integration', async () => {
-      integrationRepositoryMock.findOne.mockResolvedValue(integrationB)
-      await service.delete(organization, integrationA.id)
+      integrationRepositoryMock.findOne.mockResolvedValueOnce(integrationB)
+      await integrationsService.delete(organization, integrationA.id)
       expect(clientProxyMock.send).toHaveBeenCalledTimes(0)
       expect(integrationRepositoryMock.softDelete).toHaveBeenCalledTimes(0)
+      integrationRepositoryMock.softDelete.mockClear()
+      clientProxyMock.send.mockClear()
     })
 
     it('should return a 404 if the integration does not exist', async () => {
       integrationRepositoryMock.findOne.mockResolvedValue(undefined)
-      await expect(service.delete(organization, integrationA.id)).rejects.toThrowError()
+      await expect(integrationsService.delete(organization, integrationA.id)).rejects.toThrowError()
+    })
+  })
+
+  describe('create()', () => {
+    it('should create an integration in NEW state and do not start it', async () => {
+      integrationRepositoryMock.findOne.mockResolvedValue({ undefined })
+      const integration = await integrationsService.create({
+        practiceId: 'practiceId',
+        providerConfigurationId: 'providerConfigurationId',
+        integrationOptions: {}
+      })
+      expect(integration.status).toBe(IntegrationStatus.NEW)
     })
   })
 })

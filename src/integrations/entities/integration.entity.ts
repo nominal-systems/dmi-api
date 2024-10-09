@@ -31,7 +31,7 @@ export class Integration {
   @Column({
     type: 'enum',
     enum: IntegrationStatus,
-    default: IntegrationStatus.RUNNING
+    default: IntegrationStatus.NEW
   })
   status: string
 

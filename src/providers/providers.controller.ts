@@ -119,13 +119,14 @@ export class ProvidersController {
     @Param('providerId') providerId: string,
     @Param('configId') configId: string
   ): Promise<ProviderConfiguration> {
+    const where = {
+      id: configId,
+      organizationId: organization.id,
+      providerId: providerId
+    }
     return await this.providerConfigurationsService.findOne({
       options: {
-        where: {
-          id: configId,
-          organizationId: organization.id,
-          providerId: providerId
-        }
+        where: where
       }
     })
   }
