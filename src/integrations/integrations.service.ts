@@ -2,7 +2,7 @@ import { BadRequestException, Inject, Injectable, Logger, NotFoundException } fr
 import { ConfigService } from '@nestjs/config'
 import { ClientProxy } from '@nestjs/microservices'
 import { InjectRepository } from '@nestjs/typeorm'
-import { FindManyOptions, Repository, SelectQueryBuilder } from 'typeorm'
+import { FindManyOptions, In, Repository, SelectQueryBuilder } from 'typeorm'
 import { FindOneOfTypeOptions } from '../common/typings/find-one-of-type-options.interface'
 import { encrypt } from '../common/utils/crypto.utils'
 import ieMessageBuilder from '../common/utils/ieMessageBuilder'
@@ -178,6 +178,9 @@ export class IntegrationsService {
 
   async ensureStatusAll (): Promise<void> {
     const integrations = await this.findAll({
+      where: {
+        status: In([IntegrationStatus.RUNNING, IntegrationStatus.STOPPED])
+      },
       relations: ['providerConfiguration']
     })
 
