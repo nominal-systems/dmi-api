@@ -60,6 +60,7 @@ import { EventsSearch } from '../events/dto/events-search.dto'
 import { DateRangeDto } from '../common/dtos/date-range.dto'
 import { GroupByDto } from '../common/dtos/group-by.dto'
 import { IntegrationsSearch } from '../providers/dtos/integrations-search.dto'
+import { Practice } from '../practices/entities/practice.entity'
 
 @Controller('admin')
 export class AdminController {
@@ -76,7 +77,8 @@ export class AdminController {
     private readonly providersService: ProvidersService,
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
-    private readonly providerRefService: ProviderRefService
+    private readonly providerRefService: ProviderRefService,
+    @InjectRepository(Practice) private readonly practicesRepository: Repository<Practice>
   ) {
   }
 
@@ -683,5 +685,33 @@ export class AdminController {
     @Param('id') id: string
   ): Promise<ProviderExternalRequests> {
     return await this.providersService.findExternalRequestById(id)
+  }
+
+  @Get('/practices')
+  @UseGuards(AdminGuard)
+  async getPractices (
+    @Query() params: PaginationDto
+  ): Promise<any> {
+    const take = params.limit !== undefined ? params.limit : PAGINATION_PAGE_LIMIT
+    const skip = (params.page - 1) * take
+
+    const queryBuilder = this.practicesRepository.createQueryBuilder('practice')
+      .leftJoinAndSelect('practice.organization', 'organization')
+      .leftJoinAndSelect('practice.integrations', 'integrations')
+      .leftJoinAndSelect('integrations.providerConfiguration', 'providerConfiguration')
+      .where('practice.deletedAt IS NULL')
+      .andWhere('integrations.deletedAt IS NULL')
+      .andWhere('integrations.status = :status', { status: IntegrationStatus.RUNNING })
+      .orderBy('practice.createdAt', 'DESC')
+      .skip(skip).take(take)
+
+    const [data, total] = await queryBuilder.getManyAndCount()
+
+    return {
+      total,
+      page: params.page,
+      limit: params.limit,
+      data
+    }
   }
 }

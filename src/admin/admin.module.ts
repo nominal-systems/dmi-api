@@ -12,10 +12,11 @@ import { UsersModule } from '../users/users.module'
 import { RefsModule } from '../refs/refs.module'
 import { ProviderRef } from '../refs/entities/providerRef.entity'
 import { Ref } from '../refs/entities/ref.entity'
+import { Practice } from '../practices/entities/practice.entity'
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Integration, Ref, ProviderRef]),
+    TypeOrmModule.forFeature([Integration, Ref, ProviderRef, Practice]),
     OrganizationsModule,
     ProvidersModule,
     EventsModule,

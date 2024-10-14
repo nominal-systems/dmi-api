@@ -55,6 +55,11 @@ export class FrontendController {
     await this.sendFile(res, 'refs.html')
   }
 
+  @Get('practices')
+  async practices (@Res() res: FastifyReply): Promise<void> {
+    await this.sendFile(res, 'practices.html')
+  }
+
   private async sendFile (res: FastifyReply, filename: string): Promise<void> {
     const filePath = join(__dirname, '..', 'public', filename)
     const fileContent = readFileSync(filePath, 'utf-8')
