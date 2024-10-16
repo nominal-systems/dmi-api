@@ -749,11 +749,21 @@ export class AdminController {
         timestamp: event.createdAt,
         type: 'event',
         id: (event as EventDocument)._id,
-        message: `${event.type}`
+        message: `${event.type}`    // TODO(gb): improve these messages
       })
     })
 
-    // TODO(gb): Search for External Requests
+    const externalRequests: ProviderExternalRequests[] = await this.providersService.findAllExternalRequests({
+      accessionIds: query.accessionId
+    })
+    externalRequests.forEach((externalRequest) => {
+      logs.push({
+        timestamp: externalRequest.createdAt,
+        type: 'external-request',
+        id: (externalRequest as ProviderExternalRequestDocument)._id,
+        message: `${externalRequest.method} ${externalRequest.url} -> HTTP ${externalRequest.status}`
+      })
+    })
 
     return logs.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
   }

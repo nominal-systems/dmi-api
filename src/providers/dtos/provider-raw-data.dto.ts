@@ -5,6 +5,10 @@ export class ProviderRawDataDto {
   @IsString()
   provider: string
 
+  @IsOptional()
+  @IsString()
+  accessionIds?: string[]
+
   @IsNotEmpty()
   @IsNumber()
   status: number
