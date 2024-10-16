@@ -3,6 +3,7 @@ import * as mongoose from 'mongoose'
 import { EventType } from '../constants/event-type.enum'
 import { EventNamespace } from '../constants/event-namespace.enum'
 import { EventData } from '../interfaces/event-data.interface'
+import { Index } from 'typeorm'
 
 @Schema({ timestamps: { updatedAt: false } })
 export class Event {
@@ -17,6 +18,10 @@ export class Event {
 
   @Prop()
   integrationId: string
+
+  @Prop()
+  @Index()
+  accessionId: string
 
   @Prop({ type: mongoose.Schema.Types.Mixed })
   data: EventData

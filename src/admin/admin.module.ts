@@ -13,6 +13,7 @@ import { RefsModule } from '../refs/refs.module'
 import { ProviderRef } from '../refs/entities/providerRef.entity'
 import { Ref } from '../refs/entities/ref.entity'
 import { Practice } from '../practices/entities/practice.entity'
+import { OrdersModule } from '../orders/orders.module'
 
 @Module({
   imports: [
@@ -30,7 +31,8 @@ import { Practice } from '../practices/entities/practice.entity'
       inject: [ConfigService]
     }),
     RefsModule,
-    ProvidersModule
+    ProvidersModule,
+    OrdersModule
   ],
   controllers: [AdminController]
 })

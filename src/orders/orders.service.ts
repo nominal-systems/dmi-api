@@ -230,6 +230,7 @@ export class OrdersService {
       namespace: EventNamespace.ORDERS,
       type: EventType.ORDER_CREATED,
       integrationId: integration.id,
+      accessionId: order.requisitionId,
       data: {
         practice: integration.practice,
         orderId: order.id,
@@ -269,6 +270,7 @@ export class OrdersService {
         namespace: EventNamespace.ORDERS,
         type: EventType.ORDER_UPDATED,
         integrationId: integration.id,
+        accessionId: order.requisitionId,
         data: {
           practice: integration.practice,
           orderId: order.id,
@@ -290,6 +292,7 @@ export class OrdersService {
       namespace: EventNamespace.ORDERS,
       type: EventType.ORDER_UPDATED,
       integrationId: integration.id,
+      accessionId: order.requisitionId,
       data: {
         practice: integration.practice,
         orderId: order.id,
@@ -304,6 +307,7 @@ export class OrdersService {
       namespace: EventNamespace.REPORTS,
       type: EventType.REPORT_CREATED,
       integrationId: integration.id,
+      accessionId: order.requisitionId,
       data: {
         practice: integration.practice,
         orderId: order.id,
@@ -359,6 +363,7 @@ export class OrdersService {
       namespace: EventNamespace.ORDERS,
       type: EventType.ORDER_UPDATED,
       integrationId: order.integration.id,
+      accessionId: order.requisitionId,
       data: {
         practice: order.integration.practice,
         orderId: updatedOrder.id,
@@ -526,6 +531,7 @@ export class OrdersService {
         namespace: EventNamespace.ORDERS,
         type: EventType.ORDER_CREATED,
         integrationId: integrationId,
+        accessionId: newOrder.requisitionId,
         data: {
           practice: integration.practice,
           orderId: newOrder.id,
@@ -542,6 +548,7 @@ export class OrdersService {
         namespace: EventNamespace.ORDERS,
         type: EventType.ORDER_UPDATED,
         integrationId: integrationId,
+        accessionId: updatedOrder.requisitionId,
         data: {
           practice: integration.practice,
           orderId: updatedOrder.id,
@@ -587,6 +594,7 @@ export class OrdersService {
         namespace: EventNamespace.ORDERS,
         type: EventType.ORDER_UPDATED,
         integrationId: integrationId,
+        accessionId: updatedOrder.requisitionId,
         data: {
           practice: integration.practice,
           orderId: updatedOrder.id,
