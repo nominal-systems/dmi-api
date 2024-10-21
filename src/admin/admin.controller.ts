@@ -749,7 +749,7 @@ export class AdminController {
         timestamp: event.createdAt,
         type: 'event',
         id: (event as EventDocument)._id,
-        message: `${event.type}`    // TODO(gb): improve these messages
+        data: event
       })
     })
 
@@ -761,7 +761,7 @@ export class AdminController {
         timestamp: externalRequest.createdAt,
         type: 'external-request',
         id: (externalRequest as ProviderExternalRequestDocument)._id,
-        message: `${externalRequest.method} ${externalRequest.url} -> HTTP ${externalRequest.status}`
+        data: externalRequest
       })
     })
 
