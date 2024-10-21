@@ -37337,7 +37337,7 @@ export class MapRef1695218566420 implements MigrationInterface {
         await queryRunner.query('ALTER TABLE `provider_ref` AUTO_INCREMENT = 1')
         await queryRunner.query('ALTER TABLE `ref` AUTO_INCREMENT = 1')
         await queryRunner.query('ALTER TABLE `provider_ref` MODIFY COLUMN `type` VARCHAR(100)')
-        await queryRunner.query('ALTER TABLE `provider_ref` DROP FOREIGN KEY `FK_39f35ae0ad7d98da7164f61e2ff`')
+        //await queryRunner.query('ALTER TABLE `provider_ref` DROP FOREIGN KEY `FK_39f35ae0ad7d98da7164f61e2ff`')
         await queryRunner.query(`DROP INDEX \`idx_species_code\` ON \`provider_ref\``)
         let ref
         for (const ref of refs) {
@@ -37391,6 +37391,6 @@ export class MapRef1695218566420 implements MigrationInterface {
         await queryRunner.query('DELETE FROM `ref`')
         await queryRunner.query('ALTER TABLE `provider_ref` MODIFY COLUMN `type` VARCHAR(50)')
         await queryRunner.query('CREATE UNIQUE INDEX `idx_species_code` ON `provider_ref` (`code`)')
-        await queryRunner.query(`ALTER TABLE \`provider_ref\` ADD CONSTRAINT \`FK_39f35ae0ad7d98da7164f61e2ff\` FOREIGN KEY (\`species\`) REFERENCES \`provider_ref\`(\`code\`) ON DELETE SET NULL ON UPDATE NO ACTION`)
+        //await queryRunner.query(`ALTER TABLE \`provider_ref\` ADD CONSTRAINT \`FK_39f35ae0ad7d98da7164f61e2ff\` FOREIGN KEY (\`species\`) REFERENCES \`provider_ref\`(\`code\`) ON DELETE SET NULL ON UPDATE NO ACTION`)
     }
 }
