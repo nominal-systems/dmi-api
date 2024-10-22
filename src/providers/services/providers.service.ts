@@ -372,10 +372,10 @@ export class ProvidersService {
     })
   }
 
-  async findAllExternalRequests(
-    query: FilterQuery<ProviderExternalRequestDocument>,
+  async findAllExternalRequests (
+    query: FilterQuery<ProviderExternalRequestDocument>
   ): Promise<ProviderExternalRequests[]> {
-    return await this.providerExternalRequestsModel.find(query, { __v: 0, body: 0, payload: 0 }, { lean: true })
+    return await this.providerExternalRequestsModel.find(query, { __v: 0 }, { lean: true })
   }
 
   async findExternalRequests (

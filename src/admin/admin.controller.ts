@@ -737,13 +737,17 @@ export class AdminController {
     if (order === undefined) {
       throw new NotFoundException(`Order with accessionId ${query.accessionId} not found`)
     }
-    this.logger.debug(`Found Order/${order.id} with accession '${query.accessionId}'`)
+    logs.push({
+      timestamp: order.createdAt,
+      type: 'order',
+      id: order.id,
+      data: order
+    })
 
     // Events
     const events: Event[] = await this.eventsService.findAll({
       accessionId: query.accessionId
     })
-    this.logger.debug(`Found ${events.length} events for Order/${order.id}`)
     events.forEach((event) => {
       logs.push({
         timestamp: event.createdAt,
