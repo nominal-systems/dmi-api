@@ -18,6 +18,9 @@ export class Event {
   @Prop()
   integrationId: string
 
+  @Prop({ index: true })
+  accessionId: string
+
   @Prop({ type: mongoose.Schema.Types.Mixed })
   data: EventData
 

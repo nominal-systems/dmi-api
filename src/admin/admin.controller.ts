@@ -7,6 +7,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Logger,
   NotFoundException,
   Param,
   ParseBoolPipe,
@@ -61,9 +62,14 @@ import { DateRangeDto } from '../common/dtos/date-range.dto'
 import { GroupByDto } from '../common/dtos/group-by.dto'
 import { IntegrationsSearch } from '../providers/dtos/integrations-search.dto'
 import { Practice } from '../practices/entities/practice.entity'
+import { TransactionLogsDto } from '../common/dtos/transaction-logs.dto'
+import { OrdersService } from '../orders/orders.service'
+import { TransactionLog } from './interfaces/transaction-log.interface'
 
 @Controller('admin')
 export class AdminController {
+  private readonly logger = new Logger(AdminController.name)
+
   constructor (
     private readonly organizationsService: OrganizationsService,
     private readonly providerConfigurationsService: ProviderConfigurationsService,
@@ -78,7 +84,8 @@ export class AdminController {
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
     private readonly providerRefService: ProviderRefService,
-    @InjectRepository(Practice) private readonly practicesRepository: Repository<Practice>
+    @InjectRepository(Practice) private readonly practicesRepository: Repository<Practice>,
+    private readonly ordersService: OrdersService
   ) {
   }
 
@@ -713,5 +720,55 @@ export class AdminController {
       limit: params.limit,
       data
     }
+  }
+
+  @Get('transaction-logs')
+  @UseGuards(AdminGuard)
+  async getTransactionLogs (
+    @Query() query: TransactionLogsDto
+  ): Promise<TransactionLog[]> {
+    const logs: TransactionLog[] = []
+    if (query.accessionId === undefined) {
+      throw new BadRequestException('Missing accessionId')
+    }
+
+    // Find order
+    const order = await this.ordersService.findOneByExternalId(query.accessionId)
+    if (order === undefined) {
+      throw new NotFoundException(`Order with accessionId ${query.accessionId} not found`)
+    }
+    logs.push({
+      timestamp: order.createdAt,
+      type: 'order',
+      id: order.id,
+      data: order
+    })
+
+    // Events
+    const events: Event[] = await this.eventsService.findAll({
+      accessionId: query.accessionId
+    })
+    events.forEach((event) => {
+      logs.push({
+        timestamp: event.createdAt,
+        type: 'event',
+        id: (event as EventDocument)._id,
+        data: event
+      })
+    })
+
+    const externalRequests: ProviderExternalRequests[] = await this.providersService.findAllExternalRequests({
+      accessionIds: query.accessionId
+    })
+    externalRequests.forEach((externalRequest) => {
+      logs.push({
+        timestamp: externalRequest.createdAt,
+        type: 'external-request',
+        id: (externalRequest as ProviderExternalRequestDocument)._id,
+        data: externalRequest
+      })
+    })
+
+    return logs.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
   }
 }

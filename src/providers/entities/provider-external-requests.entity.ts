@@ -10,6 +10,9 @@ export class ProviderExternalRequests {
     provider: string
 
     @Prop({ index: true })
+    accessionIds?: string[]
+
+    @Prop({ index: true })
     status: number
 
     @Prop()

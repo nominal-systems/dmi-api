@@ -338,11 +338,12 @@ export class ProvidersService {
   async saveProviderRawData (
     data: ProviderRawDataDto
   ): Promise<void> {
-    const { body, url, method, provider, status, payload, headers } = data
+    const { body, url, method, provider, accessionIds, status, payload, headers } = data
 
     const rawData: ProviderExternalRequests = {
       createdAt: new Date(),
       provider,
+      accessionIds,
       status,
       method,
       url,
@@ -369,6 +370,12 @@ export class ProvidersService {
         })
       }
     })
+  }
+
+  async findAllExternalRequests (
+    query: FilterQuery<ProviderExternalRequestDocument>
+  ): Promise<ProviderExternalRequests[]> {
+    return await this.providerExternalRequestsModel.find(query, { __v: 0 }, { lean: true })
   }
 
   async findExternalRequests (
