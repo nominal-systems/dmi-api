@@ -11,7 +11,7 @@ import { CreateIntegrationDto } from './dtos/create-integration.dto'
 import { Integration } from './entities/integration.entity'
 import { ProviderConfiguration } from '../providers/entities/provider-configuration.entity'
 import * as createValidator from 'is-my-json-valid'
-import { Operation, Resource } from '@nominal-systems/dmi-engine-common'
+import { IntegrationTestResponse, Operation, Resource } from '@nominal-systems/dmi-engine-common'
 import { IntegrationStatus } from './constants/integration-status.enum'
 import { Provider } from '../providers/entities/provider.entity'
 
@@ -285,6 +285,26 @@ export class IntegrationsService {
     )
     this.client.emit(messagePattern, message)
     this.logger.log(`Updated integration ${integrationId}`)
+  }
+
+  async test (
+    integration: Integration
+  ): Promise<IntegrationTestResponse> {
+    const { message, messagePattern } = ieMessageBuilder(
+      integration.providerConfiguration.providerId,
+      {
+        resource: Resource.Integration,
+        operation: Operation.Test,
+        data: {
+          integrationOptions: integration.integrationOptions,
+          providerConfiguration: integration.providerConfiguration.configurationOptions,
+          payload: null
+        }
+      }
+    )
+    return await this.client
+      .send(messagePattern, message)
+      .toPromise()
   }
 
   private async validateIntegrationOptions (

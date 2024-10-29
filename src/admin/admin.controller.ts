@@ -65,6 +65,7 @@ import { Practice } from '../practices/entities/practice.entity'
 import { TransactionLogsDto } from '../common/dtos/transaction-logs.dto'
 import { OrdersService } from '../orders/orders.service'
 import { TransactionLog } from './interfaces/transaction-log.interface'
+import { IntegrationTestResponse } from '@nominal-systems/dmi-engine-common'
 
 @Controller('admin')
 export class AdminController {
@@ -393,6 +394,30 @@ export class AdminController {
     } else {
       res.status(400).send({ error: response.message })
     }
+  }
+
+  @Post('integrations/:id/test')
+  @UseGuards(AdminGuard)
+  async testIntegration (
+    @Res() res: Response,
+    @Param('id') integrationId: string
+  ): Promise<void> {
+    const integration = await this.integrationsService.findOne({
+      id: integrationId,
+      options: {
+        relations: ['practice', 'providerConfiguration']
+      }
+    })
+
+    const response: IntegrationTestResponse = await this.integrationsService.test(integration)
+
+    if (response.success) {
+      res.status(200).send({ ok: 'Authentication successful' })
+    } else {
+      res.status(400).send({ error: response.message })
+    }
+
+    res.status(response?.success ? 200 : 400).send(response)
   }
 
   @Get('refs/:type')
