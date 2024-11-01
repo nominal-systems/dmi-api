@@ -100,6 +100,7 @@ export class EventsService implements OnModuleInit {
         acc.year = { $year: '$createdAt' }
         acc.month = { $month: '$createdAt' }
         acc.day = { $dayOfMonth: '$createdAt' }
+        acc.hour = { $hour: '$createdAt' }
       } else {
         acc[propName] = `$${propName}`
       }
@@ -118,6 +119,7 @@ export class EventsService implements OnModuleInit {
         acc.year = '$_id.year'
         acc.month = '$_id.month'
         acc.day = '$_id.day'
+        acc.hour = '$_id.hour'
       } else {
         acc[propName] = `$_id.${propName}`
       }
