@@ -200,10 +200,10 @@ export class AdminController {
   ): Promise<any> {
     const options: FilterQuery<EventDocument> = {}
     if (query.startDate !== undefined) {
-      options.createdAt = { $gte: moment.utc(query.startDate).startOf('day').toDate() }
+      options.createdAt = { $gte: new Date(query.startDate) }
     }
     if (query.endDate !== undefined) {
-      options.createdAt = { ...options.createdAt, $lte: moment.utc(query.endDate).endOf('day').local().toDate() }
+      options.createdAt = { ...options.createdAt, $lte: new Date(query.endDate) }
     }
 
     if (query.types !== undefined) {
@@ -698,10 +698,10 @@ export class AdminController {
   ): Promise<any> {
     const options: FilterQuery<ProviderExternalRequestDocument> = {}
     if (query.startDate !== undefined) {
-      options.createdAt = { $gte: moment.utc(query.startDate).startOf('day').toDate() }
+      options.createdAt = { $gte: new Date(query.startDate) }
     }
     if (query.endDate !== undefined) {
-      options.createdAt = { ...options.createdAt, $lte: moment.utc(query.endDate).endOf('day').local().toDate() }
+      options.createdAt = { ...options.createdAt, $lte: new Date(query.endDate) }
     }
     options.status = {
       $gte: 400,
