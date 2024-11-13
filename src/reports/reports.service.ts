@@ -227,7 +227,7 @@ export class ReportsService {
         namespace: EventNamespace.REPORTS,
         type: EventType.REPORT_CREATED,
         integrationId: integrationId,
-        accessionId: report.order.requisitionId,
+        accessionId: report.order?.requisitionId,
         data: {
           practice: integration.practice,
           orderId: report.orderId,
@@ -244,7 +244,7 @@ export class ReportsService {
         namespace: EventNamespace.REPORTS,
         type: EventType.REPORT_UPDATED,
         integrationId: integrationId,
-        accessionId: report.order.requisitionId,
+        accessionId: report.order?.requisitionId,
         data: {
           practice: integration.practice,
           orderId: report.orderId,

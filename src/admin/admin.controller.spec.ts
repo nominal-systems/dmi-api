@@ -14,6 +14,8 @@ import { JwtService } from '@nestjs/jwt'
 import { ProviderRefService } from '../refs/providerRef.service'
 import { ProviderRef } from '../refs/entities/providerRef.entity'
 import { Ref } from '../refs/entities/ref.entity'
+import { Practice } from '../practices/entities/practice.entity'
+import { OrdersService } from '../orders/orders.service'
 
 describe('AdminController', () => {
   let controller: AdminController
@@ -81,6 +83,14 @@ describe('AdminController', () => {
         },
         {
           provide: ProviderRefService,
+          useValue: {}
+        },
+        {
+          provide: getRepositoryToken(Practice),
+          useValue: {}
+        },
+        {
+          provide: OrdersService,
           useValue: {}
         }
       ]
