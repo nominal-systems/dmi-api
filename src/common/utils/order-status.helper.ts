@@ -23,6 +23,7 @@ export function isValidStatusChange (
     case OrderStatus.COMPLETED:
       return externalStatus !== existingStatus && [OrderStatus.SUBMITTED, OrderStatus.PARTIAL, OrderStatus.ACCEPTED].includes(existingStatus)
     case OrderStatus.CANCELLED:
+    case OrderStatus.ERROR:
       return true
     default:
       return false
@@ -30,37 +31,42 @@ export function isValidStatusChange (
 }
 
 export function updateOrder (
-  order: DeepPartial<Order>,
+  localOrder: DeepPartial<Order>,
   externalOrder: ExternalOrder
 ): boolean {
   // Status
-  const statusChange = (order.status != null) && isValidStatusChange(externalOrder.status, OrderStatus[order.status])
+  const statusChange = (localOrder.status != null) && isValidStatusChange(externalOrder.status, OrderStatus[localOrder.status])
   if (statusChange) {
-    order.status = externalOrder.status
+    localOrder.status = externalOrder.status
   }
 
   // Patient
-  const patientChange = !isNonEmptyObject(order.patient) && isNonEmptyObject(externalOrder.patient)
+  const patientChange = !isNonEmptyObject(localOrder.patient) && isNonEmptyObject(externalOrder.patient)
   if (patientChange) {
-    order.patient = { ...externalOrder.patient }
+    localOrder.patient = { ...externalOrder.patient }
   }
 
   // Client
-  const clientChange = !isNonEmptyObject(order.client) && isNonEmptyObject(externalOrder.client)
+  const clientChange = !isNonEmptyObject(localOrder.client) && isNonEmptyObject(externalOrder.client)
   if (clientChange) {
-    order.client = { ...externalOrder.client }
+    localOrder.client = { ...externalOrder.client }
   }
 
   // Veterinarian
-  const veterinarianChange = !isNonEmptyObject(order.veterinarian) && isNonEmptyObject(externalOrder.veterinarian)
+  const veterinarianChange = !isNonEmptyObject(localOrder.veterinarian) && isNonEmptyObject(externalOrder.veterinarian)
   if (veterinarianChange) {
-    order.veterinarian = { ...externalOrder.veterinarian }
+    localOrder.veterinarian = { ...externalOrder.veterinarian }
   }
 
   // Tests
-  const testsChange = ((order.tests?.length) != null) && ((externalOrder.tests?.length) != null) && order.tests.length < externalOrder.tests.length
+  const testsChange = ((localOrder.tests?.length) != null) && ((externalOrder.tests?.length) != null) && localOrder.tests.length < externalOrder.tests.length
   if (testsChange) {
-    order.tests = externalOrder.tests
+    localOrder.tests = externalOrder.tests
+  }
+
+  // Notes
+  if (externalOrder.notes != null && externalOrder.notes !== localOrder.notes) {
+    localOrder.notes = externalOrder.notes
   }
 
   return statusChange || patientChange || clientChange || veterinarianChange || testsChange

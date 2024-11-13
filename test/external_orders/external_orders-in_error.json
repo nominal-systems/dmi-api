@@ -1,0 +1,27 @@
+{
+  "integrationId": "ceefe0c3-7da4-47fb-a4d0-b3dd8f8eb1a5",
+  "orders": [
+    {
+      "externalId": "de486e1e-e0ba-436a-a66c-f7dabfe64c3e",
+      "status": "ERROR",
+      "patient": {
+        "name": "Miso",
+        "sex": "male",
+        "species": "dog"
+      },
+      "client": {
+        "firstName": "Gonzalo",
+        "lastName": "Bellver"
+      },
+      "tests": [
+        {
+          "code": "VMNPTHL"
+        }
+      ],
+      "veterinarian": {
+        "firstName": "Foo Bar"
+      },
+      "notes": "Failure reason: sample-failed"
+    }
+  ]
+}

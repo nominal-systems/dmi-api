@@ -8,7 +8,7 @@ import { Repository } from 'typeorm'
 import { ReportsService } from '../reports/reports.service'
 import { IntegrationsService } from '../integrations/integrations.service'
 import { EventsService } from '../events/services/events.service'
-import { ProviderError, ProviderResult } from '@nominal-systems/dmi-engine-common'
+import { FileUtils, ProviderError, ProviderResult } from '@nominal-systems/dmi-engine-common'
 import * as fs from 'fs'
 import * as path from 'path'
 import { EventNamespace } from '../events/constants/event-namespace.enum'
@@ -18,8 +18,9 @@ import { CreateOrderDto, CreateOrderDtoClient, CreateOrderDtoPatient } from './d
 import { HttpException } from '@nestjs/common'
 import { v4 as uuidv4 } from 'uuid'
 import { Patient } from './entities/patient.entity'
-import any = jasmine.any
 import { ProvidersService } from '../providers/services/providers.service'
+import { ExternalOrdersEventData } from '../common/typings/external-order-event-data.interface'
+import any = jasmine.any
 
 export const repositoryMockFactory: () => MockUtils<Repository<any>> = jest.fn(() => ({
   find: jest.fn(entity => entity),
@@ -120,6 +121,7 @@ describe('OrdersService', () => {
 
     ordersService = module.get<OrdersService>(OrdersService)
     ordersRepositoryMock = module.get(getRepositoryToken(Order))
+    jest.clearAllMocks()
   })
 
   it('should be defined', () => {
@@ -440,6 +442,26 @@ describe('OrdersService', () => {
   })
 
   describe('handleExternalOrders()', () => {
+    it('should update order in error status', async () => {
+      const externalOrders: ExternalOrdersEventData = FileUtils.loadFile('test/external_orders/external_orders-in_error.json')
+      jest.spyOn(ordersService, 'findOrdersByExternalIds').mockResolvedValueOnce([
+        {
+          externalId: externalOrders.orders[0].externalId,
+          status: 'SUBMITTED'
+        } as unknown as Order
+      ])
+      await ordersService.handleExternalOrders(externalOrders)
+
+      expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
+        type: EventType.ORDER_UPDATED,
+        data: expect.objectContaining({
+          order: expect.objectContaining({
+            status: 'ERROR',
+            notes: externalOrders.orders[0].notes
+          })
+        })
+      }))
+    })
     describe('Antech', () => {
       const initialOrders = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'test', 'antech', 'orders-01.json'), 'utf8'))
       const updatedOrders = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'test', 'antech', 'orders-02.json'), 'utf8'))
