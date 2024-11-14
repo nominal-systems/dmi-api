@@ -50,22 +50,21 @@ import {
   ProviderExternalRequestDocument,
   ProviderExternalRequests
 } from '../providers/entities/provider-external-requests.entity'
-import { ExternalRequestsSearch } from '../providers/dtos/external-requests-queryparams.dto'
 import { FilterQuery } from 'mongoose'
 import { PaginationResult } from '../common/classes/pagination-result'
 import { PaginationDto } from '../common/dtos/pagination.dto'
 import { PAGINATION_PAGE_LIMIT } from '../common/constants/pagination.constant'
 import { getStatusRanges } from './admin-utils'
-import * as moment from 'moment'
-import { EventsSearch } from '../events/dto/events-search.dto'
-import { DateRangeDto } from '../common/dtos/date-range.dto'
-import { GroupByDto } from '../common/dtos/group-by.dto'
 import { IntegrationsSearch } from '../providers/dtos/integrations-search.dto'
 import { Practice } from '../practices/entities/practice.entity'
 import { TransactionLogsDto } from '../common/dtos/transaction-logs.dto'
 import { OrdersService } from '../orders/orders.service'
 import { TransactionLog } from './interfaces/transaction-log.interface'
 import { IntegrationTestResponse } from '@nominal-systems/dmi-engine-common'
+import { ExternalRequestsQueryDto } from './dtos/external-requests-query.dto'
+import { ExternalRequestsStatsDto } from './dtos/external-requests-stats.dto'
+import { EventsQueryDto } from './dtos/events-query.dto'
+import { EventsStatsDto } from './dtos/events-stats.dto'
 
 @Controller('admin')
 export class AdminController {
@@ -163,23 +162,20 @@ export class AdminController {
   @Get('events')
   @UseGuards(AdminGuard)
   async getEvents (
-    @Query() query: EventsSearch
+    @Query() query: EventsQueryDto
   ): Promise<PaginationResult<Event>> {
     const options: FilterQuery<EventDocument> = {}
     if (query.integrations !== undefined) {
-      options.integrationId = { $in: query.integrations.split(',') }
+      options.integrationId = { $in: query.integrations }
     }
     if (query.types !== undefined) {
-      options.type = { $in: query.types.split(',') }
+      options.type = { $in: query.types }
     }
-    if (query.date !== undefined) {
-      const dateParts = query.date.split('-')
-      const startDate = moment(dateParts[0]).startOf('day').toDate()
-      let endDate = moment(dateParts[0]).endOf('day').toDate()
-      if (dateParts.length === 2) {
-        endDate = moment(dateParts[1]).endOf('day').toDate()
-      }
-      options.createdAt = { $gte: startDate, $lte: endDate }
+    if (query.startDate !== undefined) {
+      options.createdAt = { $gte: new Date(query.startDate) }
+    }
+    if (query.endDate !== undefined) {
+      options.createdAt = { ...options.createdAt, $lte: new Date(query.endDate) }
     }
     const { page, limit } = query
 
@@ -196,7 +192,7 @@ export class AdminController {
   @Get('events/stats')
   @UseGuards(AdminGuard)
   async getEventsStats (
-    @Query() query: EventsSearch & GroupByDto & DateRangeDto
+    @Query() query: EventsStatsDto
   ): Promise<any> {
     const options: FilterQuery<EventDocument> = {}
     if (query.startDate !== undefined) {
@@ -207,7 +203,7 @@ export class AdminController {
     }
 
     if (query.types !== undefined) {
-      options.type = { $in: query.types.split(',') }
+      options.type = { $in: query.types }
     }
 
     let groupBy: string[] = []
@@ -654,34 +650,32 @@ export class AdminController {
   @Get('/external-requests')
   @UseGuards(AdminGuard)
   async getExternalRequests (
-    @Query() params: ExternalRequestsSearch
+    @Query() query: ExternalRequestsQueryDto
   ): Promise<PaginationResult<ProviderExternalRequests>> {
     // Build query options
     const options: FilterQuery<ProviderExternalRequestDocument> = {}
-    if (params.providers !== undefined) {
-      options.provider = { $in: params.providers.split(',') }
+    if (query.providers !== undefined) {
+      options.provider = { $in: query.providers }
     }
-    if (params.status !== undefined) {
-      options.$or = getStatusRanges(params.status.split(','))
+    if (query.status !== undefined) {
+      options.$or = getStatusRanges(query.status)
         .map(status => ({
             status: { $gte: status[0], $lte: status[1] }
           })
         )
     }
-    if (params.method !== undefined) {
-      options.method = { $in: params.method.split(',') }
-    }
-    if (params.date !== undefined) {
-      const dateParts = params.date.split('-')
-      const startDate = moment(dateParts[0]).startOf('day').toDate()
-      let endDate = moment(dateParts[0]).endOf('day').toDate()
-      if (dateParts.length === 2) {
-        endDate = moment(dateParts[1]).endOf('day').toDate()
-      }
-      options.createdAt = { $gte: startDate, $lte: endDate }
+    if (query.method !== undefined) {
+      options.method = { $in: query.method }
     }
 
-    const { page, limit } = params
+    if (query.startDate !== undefined) {
+      options.createdAt = { $gte: new Date(query.startDate) }
+    }
+    if (query.endDate !== undefined) {
+      options.createdAt = { ...options.createdAt, $lte: new Date(query.endDate) }
+    }
+
+    const { page, limit } = query
     const data = await this.providersService.findExternalRequests(options, { page, limit })
     return {
       total: await this.providersService.countExternalRequests(options),
@@ -694,7 +688,7 @@ export class AdminController {
   @Get('/external-requests/stats')
   @UseGuards(AdminGuard)
   async getExternalRequestsStats (
-    @Query() query: DateRangeDto
+    @Query() query: ExternalRequestsStatsDto
   ): Promise<any> {
     const options: FilterQuery<ProviderExternalRequestDocument> = {}
     if (query.startDate !== undefined) {

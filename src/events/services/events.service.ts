@@ -9,7 +9,6 @@ import { EventsQueryDto } from '../dto/events-query.dto'
 import { ModuleRef } from '@nestjs/core'
 import { EventSubscriptionService } from './event-subscription.service'
 import { PaginationDto } from '../../common/dtos/pagination.dto'
-import { PAGINATION_PAGE_LIMIT } from '../../common/constants/pagination.constant'
 
 @Injectable()
 export class EventsService implements OnModuleInit {
@@ -44,12 +43,11 @@ export class EventsService implements OnModuleInit {
     query: FilterQuery<EventDocument>,
     paginationDto: PaginationDto
   ): Promise<Event[]> {
-    const limit = paginationDto.limit !== undefined ? paginationDto.limit : PAGINATION_PAGE_LIMIT
-    const skip = (paginationDto.page - 1) * limit
+    const { page, limit } = paginationDto
 
     return await this.eventModel.find(query, { __v: 0, data: 0 }, {
-      limit,
-      skip,
+      limit: limit,
+      skip: (page - 1) * limit,
       sort: { seq: -1 },
       lean: true
     })
@@ -73,12 +71,12 @@ export class EventsService implements OnModuleInit {
   async getEventsForOrganization (
     organization: Organization,
     eventsQueryDto: EventsQueryDto,
-    paginationDto: PaginationDto = { page: 1, limit: 10 }
+    paginationDto: PaginationDto
   ): Promise<Event[]> {
     const { seq } = eventsQueryDto
+    const { page, limit } = paginationDto
     const query: FilterQuery<EventDocument> = { seq: { $gt: seq } }
-    const limit = paginationDto.limit !== undefined ? paginationDto.limit : PAGINATION_PAGE_LIMIT
-    const skip = (paginationDto.page - 1) * limit
+    const skip = (page - 1) * limit
     const options: QueryOptions = {
       lean: true,
       sort: {

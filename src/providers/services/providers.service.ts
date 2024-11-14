@@ -28,7 +28,6 @@ import { ProviderOption } from '../entities/provider-option.entity'
 import { ProviderOptionDto } from '../dtos/provider-option.dto'
 import { nestKeys } from '../../common/utils/nest-keys'
 import { PaginationDto } from '../../common/dtos/pagination.dto'
-import { PAGINATION_PAGE_LIMIT } from '../../common/constants/pagination.constant'
 import { isNullOrEmpty } from '../../common/utils/shared.utils'
 
 @Injectable()
@@ -382,12 +381,10 @@ export class ProvidersService {
     query: FilterQuery<ProviderExternalRequestDocument>,
     paginationDto: PaginationDto
   ): Promise<ProviderExternalRequests[]> {
-    const limit = paginationDto.limit !== undefined ? paginationDto.limit : PAGINATION_PAGE_LIMIT
-    const skip = (paginationDto.page - 1) * limit
-
+    const { page, limit } = paginationDto
     return await this.providerExternalRequestsModel.find(query, { __v: 0, body: 0, payload: 0 }, {
-      limit: limit,
-      skip: skip,
+      limit,
+      skip: (page - 1) * limit,
       sort: { createdAt: -1 },
       lean: true
     })

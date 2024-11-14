@@ -3,9 +3,9 @@ import { IsOptional, IsString } from 'class-validator'
 export class DateRangeDto {
   @IsOptional()
   @IsString()
-  startDate: string
+  startDate?: string
 
   @IsOptional()
   @IsString()
-  endDate: string
+  endDate?: string
 }
