@@ -814,11 +814,11 @@ export class AdminController {
     const startDate = new Date(query.startDate)
     const endDate = new Date(query.endDate)
 
-    switch (query.groupBy) {
-      case 'provider':
-        return await this.ordersService.getStatsByProvider(startDate, endDate)
+    switch (query.stat) {
+      case 'countByProvider':
+        return await this.ordersService.countByProvider(startDate, endDate)
       default:
-        throw new BadRequestException('Invalid groupBy')
+        throw new BadRequestException(`Unknown stat '${String(query.stat)}'`)
     }
   }
 }

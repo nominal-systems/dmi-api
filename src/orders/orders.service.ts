@@ -780,7 +780,7 @@ export class OrdersService {
     return await this.ordersRepository.save(createdOrder)
   }
 
-  async getStatsByProvider (
+  async countByProvider (
     start: Date,
     end: Date
   ): Promise<any> {
