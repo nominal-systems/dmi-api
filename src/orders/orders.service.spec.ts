@@ -44,7 +44,8 @@ describe('OrdersService', () => {
         id: integrationId,
         providerConfiguration: {
           providerId: integrationId
-        }
+        },
+        practice: {}
       }
     }),
     findOne: jest.fn().mockImplementation((integrationId) => {
@@ -233,7 +234,8 @@ describe('OrdersService', () => {
           providerConfiguration: {
             providerId: 'idexx',
             configurationOptions: { url: 'https://test.com' }
-          }
+          },
+          practice: {}
         })
         jest.spyOn(refsServiceMock, 'mapPatientReferences').mockResolvedValueOnce({
           name: 'Medicalnotes_author_test',
@@ -268,7 +270,8 @@ describe('OrdersService', () => {
           providerConfiguration: {
             providerId: 'idexx',
             configurationOptions: { url: 'https://test.com' }
-          }
+          },
+          practice: {}
         })
         jest.spyOn(refsServiceMock, 'mapPatientReferences').mockResolvedValueOnce({
           name: 'Medicalnotes_author_test',
@@ -329,7 +332,8 @@ describe('OrdersService', () => {
           providerConfiguration: {
             providerId: 'antech',
             configurationOptions: { url: 'https://test.com' }
-          }
+          },
+          practice: {}
         })
         jest.spyOn(refsServiceMock, 'mapPatientReferences').mockResolvedValueOnce({
           name: 'Medicalnotes_author_test',
@@ -364,7 +368,8 @@ describe('OrdersService', () => {
           providerConfiguration: {
             providerId: 'antech',
             configurationOptions: { url: 'https://test.com' }
-          }
+          },
+          practice: {}
         })
         jest.spyOn(refsServiceMock, 'mapPatientReferences').mockResolvedValueOnce({
           name: 'Medicalnotes_author_test',
@@ -413,7 +418,8 @@ describe('OrdersService', () => {
           providerConfiguration: {
             providerId: 'zoetis',
             configurationOptions: { url: 'https://test.com' }
-          }
+          },
+          practice: {}
         })
         jest.spyOn(refsServiceMock, 'mapPatientReferences').mockResolvedValueOnce({
           name: 'Medicalnotes_author_test',

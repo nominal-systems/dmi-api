@@ -15,6 +15,12 @@ export class Event {
   @Prop({ enum: EventType })
   type: string
 
+  @Prop({ index: true })
+  providerId: string
+
+  @Prop({ index: true })
+  practiceId: string
+
   @Prop()
   integrationId: string
 

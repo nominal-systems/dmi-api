@@ -65,6 +65,7 @@ import { ExternalRequestsQueryDto } from './dtos/external-requests-query.dto'
 import { ExternalRequestsStatsDto } from './dtos/external-requests-stats.dto'
 import { EventsQueryDto } from './dtos/events-query.dto'
 import { EventsStatsDto } from './dtos/events-stats.dto'
+import { PracticesQueryDto } from '../practices/dto/practice-search-query-params.dto'
 
 @Controller('admin')
 export class AdminController {
@@ -165,6 +166,9 @@ export class AdminController {
     @Query() query: EventsQueryDto
   ): Promise<PaginationResult<Event>> {
     const options: FilterQuery<EventDocument> = {}
+    if (query.providers !== undefined) {
+      options.providerId = { $in: query.providers }
+    }
     if (query.integrations !== undefined) {
       options.integrationId = { $in: query.integrations }
     }
@@ -716,10 +720,10 @@ export class AdminController {
   @Get('/practices')
   @UseGuards(AdminGuard)
   async getPractices (
-    @Query() params: PaginationDto
-  ): Promise<any> {
-    const take = params.limit !== undefined ? params.limit : PAGINATION_PAGE_LIMIT
-    const skip = (params.page - 1) * take
+    @Query() query: PracticesQueryDto & PaginationDto
+  ): Promise<PaginationResult<Practice>> {
+    const take = query.limit !== undefined ? query.limit : PAGINATION_PAGE_LIMIT
+    const skip = (query.page - 1) * take
 
     const queryBuilder = this.practicesRepository.createQueryBuilder('practice')
       .leftJoinAndSelect('practice.organization', 'organization')
@@ -728,6 +732,12 @@ export class AdminController {
       .where('practice.deletedAt IS NULL')
       .andWhere('integrations.deletedAt IS NULL')
       .andWhere('integrations.status = :status', { status: IntegrationStatus.RUNNING })
+
+    if (query.ids !== undefined) {
+      queryBuilder.andWhere('practice.id IN (:...ids)', { ids: query.ids })
+    }
+
+    queryBuilder
       .orderBy('practice.createdAt', 'DESC')
       .skip(skip).take(take)
 
@@ -735,8 +745,8 @@ export class AdminController {
 
     return {
       total,
-      page: params.page,
-      limit: params.limit,
+      page: query.page,
+      limit: query.limit,
       data
     }
   }

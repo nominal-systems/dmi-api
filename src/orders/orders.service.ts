@@ -229,6 +229,8 @@ export class OrdersService {
     await this.eventsService.addEvent({
       namespace: EventNamespace.ORDERS,
       type: EventType.ORDER_CREATED,
+      providerId: integration.providerConfiguration.providerId,
+      practiceId: integration.practice.id,
       integrationId: integration.id,
       accessionId: order.requisitionId,
       data: {
@@ -269,6 +271,8 @@ export class OrdersService {
       await this.eventsService.addEvent({
         namespace: EventNamespace.ORDERS,
         type: EventType.ORDER_UPDATED,
+        providerId: integration.providerConfiguration.providerId,
+        practiceId: integration.practice.id,
         integrationId: integration.id,
         accessionId: order.requisitionId,
         data: {
@@ -291,6 +295,8 @@ export class OrdersService {
     await this.eventsService.addEvent({
       namespace: EventNamespace.ORDERS,
       type: EventType.ORDER_UPDATED,
+      providerId: integration.providerConfiguration.providerId,
+      practiceId: integration.practice.id,
       integrationId: integration.id,
       accessionId: order.requisitionId,
       data: {
@@ -306,6 +312,8 @@ export class OrdersService {
     await this.eventsService.addEvent({
       namespace: EventNamespace.REPORTS,
       type: EventType.REPORT_CREATED,
+      providerId: integration.providerConfiguration.providerId,
+      practiceId: integration.practice.id,
       integrationId: integration.id,
       accessionId: order.requisitionId,
       data: {
@@ -362,6 +370,8 @@ export class OrdersService {
     await this.eventsService.addEvent({
       namespace: EventNamespace.ORDERS,
       type: EventType.ORDER_UPDATED,
+      providerId,
+      practiceId: order.integration.practice.id,
       integrationId: order.integration.id,
       accessionId: order.requisitionId,
       data: {
@@ -530,6 +540,8 @@ export class OrdersService {
       await this.eventsService.addEvent({
         namespace: EventNamespace.ORDERS,
         type: EventType.ORDER_CREATED,
+        providerId: integration.providerConfiguration.providerId,
+        practiceId: integration.practice.id,
         integrationId: integrationId,
         accessionId: newOrder.requisitionId,
         data: {
@@ -547,6 +559,8 @@ export class OrdersService {
       await this.eventsService.addEvent({
         namespace: EventNamespace.ORDERS,
         type: EventType.ORDER_UPDATED,
+        providerId: integration.providerConfiguration.providerId,
+        practiceId: integration.practice.id,
         integrationId: integrationId,
         accessionId: updatedOrder.requisitionId,
         data: {
@@ -593,6 +607,8 @@ export class OrdersService {
       await this.eventsService.addEvent({
         namespace: EventNamespace.ORDERS,
         type: EventType.ORDER_UPDATED,
+        providerId: integration.providerConfiguration.providerId,
+        practiceId: integration.practice.id,
         integrationId: integrationId,
         accessionId: updatedOrder.requisitionId,
         data: {

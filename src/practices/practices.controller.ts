@@ -5,7 +5,7 @@ import { Organization as OrganizationEntity } from '../organizations/entities/or
 import { CreatePracticeDto } from './dto/create-practice.dto'
 import { Practice } from './entities/practice.entity'
 import { PracticesService } from './practices.service'
-import { PracticeSearchQueryParams } from './dto/practice-search-query-params.dto'
+import { PracticesQueryDto } from './dto/practice-search-query-params.dto'
 
 @Controller('practices')
 @UseGuards(ApiGuard)
@@ -15,7 +15,7 @@ export class PracticesController {
   @Get()
   async searchPractices (
     @Organization() organization: OrganizationEntity,
-    @Query() searchQuery: PracticeSearchQueryParams
+    @Query() searchQuery: PracticesQueryDto
   ): Promise<Practice[]> {
     return await this.practicesService.search(organization.id, searchQuery)
   }

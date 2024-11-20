@@ -5,7 +5,7 @@ import { FindOneOfTypeOptions } from '../common/typings/find-one-of-type-options
 import { Organization } from '../organizations/entities/organization.entity'
 import { CreatePracticeDto } from './dto/create-practice.dto'
 import { Practice } from './entities/practice.entity'
-import { PracticeSearchQueryParams } from './dto/practice-search-query-params.dto'
+import { PracticesQueryDto } from './dto/practice-search-query-params.dto'
 
 @Injectable()
 export class PracticesService {
@@ -21,7 +21,7 @@ export class PracticesService {
     organizationId: string,
     {
       integration_id: integrationId
-    }: PracticeSearchQueryParams
+    }: PracticesQueryDto
   ): Promise<Practice[]> {
     return await this.findAll({
       where: (qb: SelectQueryBuilder<Practice>) => {

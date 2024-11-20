@@ -7,6 +7,10 @@ import { PaginationDto } from '../../common/dtos/pagination.dto'
 export class EventsQueryDto extends IntersectionType(DateRangeDto, PaginationDto) {
   @IsOptional()
   @Transform(({ value }) => value.split(','))
+  providers?: string[]
+
+  @IsOptional()
+  @Transform(({ value }) => value.split(','))
   integrations?: string[]
 
   @IsOptional()

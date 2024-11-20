@@ -203,6 +203,8 @@ export class ReportsService {
       await this.eventsService.addEvent({
         namespace: EventNamespace.ORDERS,
         type: EventType.ORDER_CREATED,
+        providerId: integration.providerConfiguration.providerId,
+        practiceId: integration.practice.id,
         integrationId: integrationId,
         accessionId: order.requisitionId,
         data: {
@@ -226,6 +228,8 @@ export class ReportsService {
       await this.eventsService.addEvent({
         namespace: EventNamespace.REPORTS,
         type: EventType.REPORT_CREATED,
+        providerId: integration.providerConfiguration.providerId,
+        practiceId: integration.practice.id,
         integrationId: integrationId,
         accessionId: report.order?.requisitionId,
         data: {
@@ -243,6 +247,8 @@ export class ReportsService {
       await this.eventsService.addEvent({
         namespace: EventNamespace.REPORTS,
         type: EventType.REPORT_UPDATED,
+        practiceId: integration.practice.id,
+        providerId: integration.providerConfiguration.providerId,
         integrationId: integrationId,
         accessionId: report.order?.requisitionId,
         data: {
