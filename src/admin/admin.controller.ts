@@ -66,6 +66,7 @@ import { ExternalRequestsStatsDto } from './dtos/external-requests-stats.dto'
 import { EventsQueryDto } from './dtos/events-query.dto'
 import { EventsStatsDto } from './dtos/events-stats.dto'
 import { PracticesQueryDto } from '../practices/dto/practice-search-query-params.dto'
+import { OrdersStatsDto } from './dtos/orders-stats.dto'
 
 @Controller('admin')
 export class AdminController {
@@ -799,5 +800,25 @@ export class AdminController {
     })
 
     return logs.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
+  }
+
+  @Get('orders/stats')
+  @UseGuards(AdminGuard)
+  async getOrdersStats (
+    @Query() query: OrdersStatsDto
+  ): Promise<any> {
+    if (query.startDate === undefined || query.endDate === undefined) {
+      throw new BadRequestException('Missing startDate or endDate')
+    }
+
+    const startDate = new Date(query.startDate)
+    const endDate = new Date(query.endDate)
+
+    switch (query.groupBy) {
+      case 'provider':
+        return await this.ordersService.getStatsByProvider(startDate, endDate)
+      default:
+        throw new BadRequestException('Invalid groupBy')
+    }
   }
 }

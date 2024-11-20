@@ -779,4 +779,32 @@ export class OrdersService {
     const createdOrder = this.ordersRepository.create(order)
     return await this.ordersRepository.save(createdOrder)
   }
+
+  async getStatsByProvider (
+    start: Date,
+    end: Date
+  ): Promise<any> {
+    const qb = this.ordersRepository.createQueryBuilder('order')
+      .innerJoinAndSelect('order.integration', 'integration')
+      .innerJoinAndSelect('integration.providerConfiguration', 'providerConfiguration')
+      .select('YEAR(order.createdAt)', 'year')
+      .addSelect('MONTH(order.createdAt)', 'month')
+      .addSelect('DAY(order.createdAt)', 'day')
+      .addSelect('HOUR(order.createdAt)', 'hour')
+      .addSelect('providerConfiguration.providerId', 'provider')
+      .addSelect('CAST(COUNT(1) AS UNSIGNED)', 'count')
+      .where('order.createdAt BETWEEN :start AND :end', { start, end })
+      .groupBy('year, month, day, hour, provider')
+      .orderBy('year', 'DESC')
+      .addOrderBy('month', 'DESC')
+      .addOrderBy('day', 'DESC')
+      .addOrderBy('hour', 'DESC')
+
+    const results = await qb.getRawMany()
+
+    return results.map(result => ({
+      ...result,
+      count: parseInt(result.count)
+    }))
+  }
 }
