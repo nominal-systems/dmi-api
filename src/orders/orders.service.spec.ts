@@ -468,6 +468,49 @@ describe('OrdersService', () => {
         })
       }))
     })
+    it('should handle multiple orders in error status', async () => {
+      const externalOrders: ExternalOrdersEventData = FileUtils.loadFile('test/external_orders/external_orders-multiple_in_error.json.json')
+      jest.spyOn(ordersService, 'findOrdersByExternalIds').mockResolvedValueOnce(
+        [
+          {
+            externalId: externalOrders.orders[0].externalId,
+            status: 'SUBMITTED'
+          },
+          {
+            externalId: externalOrders.orders[1].externalId,
+            status: 'SUBMITTED'
+          },
+          {
+            externalId: externalOrders.orders[2].externalId,
+            status: 'SUBMITTED'
+          },
+          {
+            externalId: externalOrders.orders[3].externalId,
+            status: 'SUBMITTED'
+          }
+        ] as Order[]
+      )
+      await ordersService.handleExternalOrders(externalOrders)
+      expect(eventsServiceMock.addEvent).toHaveBeenCalledTimes(externalOrders.orders.length)
+      expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
+        type: EventType.ORDER_UPDATED,
+        data: expect.objectContaining({
+          order: expect.objectContaining({
+            status: 'ERROR',
+            notes: externalOrders.orders[0].notes
+          })
+        })
+      }))
+      expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
+        type: EventType.ORDER_UPDATED,
+        data: expect.objectContaining({
+          order: expect.objectContaining({
+            status: 'ERROR',
+            notes: externalOrders.orders[1].notes
+          })
+        })
+      }))
+    })
     describe('Antech', () => {
       const initialOrders = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'test', 'antech', 'orders-01.json'), 'utf8'))
       const updatedOrders = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'test', 'antech', 'orders-02.json'), 'utf8'))
