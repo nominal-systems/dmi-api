@@ -1,0 +1,91 @@
+{
+  "integrationId": "ceefe0c3-7da4-47fb-a4d0-b3dd8f8eb1a5",
+  "orders": [
+    {
+      "externalId": "3540769b-5bec-4069-a93e-1840f533276b",
+      "status": "ERROR",
+      "patient": {
+        "name": "Miso",
+        "sex": "male",
+        "species": "dog"
+      },
+      "client": {
+        "firstName": "Gonzalo",
+        "lastName": "Bellver"
+      },
+      "tests": [
+        {
+          "code": "VTRGDNK"
+        }
+      ],
+      "veterinarian": {
+        "firstName": "Foo Bar"
+      },
+      "notes": "Failure reason: sample-failed"
+    },
+    {
+      "externalId": "5528612b-f3e9-4ea3-9532-a4676b008a4e",
+      "status": "ERROR",
+      "patient": {
+        "name": "Miso",
+        "sex": "male",
+        "species": "dog"
+      },
+      "client": {
+        "firstName": "Gonzalo",
+        "lastName": "Bellver"
+      },
+      "tests": [
+        {
+          "code": "VWCBZJQ"
+        }
+      ],
+      "veterinarian": {
+        "firstName": "Foo Bar"
+      },
+      "notes": "Failure reason: sample-failed"
+    },
+    {
+      "externalId": "9c9edc14-c19a-48cf-b31c-4bab3e481c9e",
+      "status": "COMPLETED",
+      "patient": {
+        "name": "Miso",
+        "sex": "male",
+        "species": "dog"
+      },
+      "client": {
+        "firstName": "Gonzalo",
+        "lastName": "Bellver"
+      },
+      "tests": [
+        {
+          "code": "VBLWFQZ"
+        }
+      ],
+      "veterinarian": {
+        "firstName": "Foo Bar"
+      }
+    },
+    {
+      "externalId": "e9a2bbd6-8eb4-43cc-a6ad-4369106efef4",
+      "status": "SUBMITTED",
+      "patient": {
+        "name": "Miso",
+        "sex": "male",
+        "species": "dog"
+      },
+      "client": {
+        "firstName": "Gonzalo",
+        "lastName": "Bellver"
+      },
+      "tests": [
+        {
+          "code": "VRTWKMF"
+        }
+      ],
+      "veterinarian": {
+        "firstName": "Foo Bar"
+      }
+    }
+  ]
+}
