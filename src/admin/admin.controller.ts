@@ -67,6 +67,7 @@ import { EventsQueryDto } from './dtos/events-query.dto'
 import { EventsStatsDto } from './dtos/events-stats.dto'
 import { PracticesQueryDto } from '../practices/dto/practice-search-query-params.dto'
 import { OrdersStatsDto } from './dtos/orders-stats.dto'
+import { AuthenticatedGuard } from '../common/auth/authenticated.guard'
 
 @Controller('admin')
 export class AdminController {
@@ -106,7 +107,7 @@ export class AdminController {
   }
 
   @Get('organizations')
-  @UseGuards(AdminGuard)
+  @UseGuards(AuthenticatedGuard)
   async getOrganizations (): Promise<Organization[]> {
     return await this.organizationsService.findAll()
   }
