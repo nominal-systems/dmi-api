@@ -9,6 +9,7 @@ export interface AppConfig {
   typeorm: TypeOrmModuleOptions
   mongoose: MongooseConfig
   docs: DocsConfig
+  okta: OktaConfig
 }
 
 export interface ActiveMQConfig {
@@ -33,4 +34,10 @@ export interface DocsConfig {
   description: string
   openApiSpecUrl: string
   version?: string
+}
+
+export interface OktaConfig {
+  domain: string
+  clientId: string
+  clientSecret: string
 }
