@@ -9,6 +9,10 @@ import { AppConfig, DocsConfig } from './config/config.interface'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 import { IntegrationsService } from './integrations/integrations.service'
 import { join } from 'path'
+import fastifyPassport from 'fastify-passport'
+import fastifySecureSession from '@fastify/secure-session'
+import { OktaStrategy } from './common/auth/okta.strategy'
+import * as fs from 'node:fs'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { version } = require('../package.json')
 
@@ -17,6 +21,33 @@ async function bootstrap (): Promise<void> {
     AppModule,
     new FastifyAdapter()
   )
+  const configService = app.get<ConfigService<AppConfig>>(ConfigService)
+
+  // Register secure-session plugin
+  await app.register(fastifySecureSession, {
+    // For development purposes only. In production, use a secure key.
+    key: fs.readFileSync('./secret-key'),
+    cookieName: 'session',
+    cookie: {
+      path: '/',
+      httpOnly: true,
+      secure: false // Set to true in production
+    }
+  })
+
+  // Initialize fastify-passport
+  await app.register(fastifyPassport.initialize())
+  await app.register(fastifyPassport.secureSession())
+
+  // Get the OktaStrategy instance from the Nest application context
+  const oktaStrategy = app.get(OktaStrategy)
+
+  // Register the strategy with fastify-passport
+  fastifyPassport.use('oidc', oktaStrategy)
+
+  // Register user serializer and deserializer
+  fastifyPassport.registerUserSerializer(async (user: any, request) => user)
+  fastifyPassport.registerUserDeserializer(async (user: any, request) => user)
 
   // Admin UI
   const staticFilesDirectory = join(__dirname, '..', 'public')
@@ -30,8 +61,6 @@ async function bootstrap (): Promise<void> {
 
   // CORS
   app.enableCors()
-
-  const configService = app.get<ConfigService<AppConfig>>(ConfigService)
 
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.MQTT,
