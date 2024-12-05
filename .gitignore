@@ -48,3 +48,4 @@ lerna-debug.log*
 /public
 .yalc
 yalc.lock
+.secret-key
