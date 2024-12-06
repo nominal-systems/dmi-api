@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer'
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm'
 import { Identifier } from './identifier.entity'
+import { Contact } from './contact'
 
 @Entity()
 export class Client {
@@ -13,7 +14,9 @@ export class Client {
   @Column({ nullable: true })
   firstName: string
 
-  // TODO(gb): Add contact
+  @Column(() => Contact)
+  contact: Contact
+
   // TODO(gb): Add address
   // TODO(gb): Add isDoctor
 

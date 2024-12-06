@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer'
 import { ArrayNotEmpty, IsNotEmpty, IsObject, IsOptional, ValidateNested } from 'class-validator'
 import { PatientWeight } from '../../common/typings/patient-weight.interface'
+import { ContactDto } from '../../common/dtos/contact.dto'
 
 export class CreateOrderDtoClient {
   id: string
@@ -14,7 +15,10 @@ export class CreateOrderDtoClient {
   @IsOptional()
   identifier?: CreateIdentifierDto[]
 
-  // TODO(gb): Add contact
+  @IsObject()
+  @IsOptional()
+  contact?: ContactDto
+
   // TODO(gb): Add address
   // TODO(gb): Add isDoctor
   // TODO(gb): Add isStaff
