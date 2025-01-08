@@ -481,4 +481,44 @@ export class ReportsService {
       }
     }
   }
+
+  async getPresentedForm (
+    reportId: string
+  ): Promise<AttachmentEntity[]> {
+    const report = await this.reportsRepository.createQueryBuilder('report')
+      .leftJoinAndSelect('report.presentedFrom', 'presentedFrom')
+      .where('report.id = :reportId', { reportId })
+      .getOne()
+
+    if (report === null || report === undefined) {
+      throw new NotFoundException(`Report '${reportId}' not found`)
+    }
+
+    if (report.presentedFrom === null || report.presentedFrom === undefined) {
+      throw new NotFoundException(`Presented form for report '${reportId}' not found`)
+    }
+
+    return report.presentedFrom
+  }
+
+  async getPresentedFormAttachment (
+    reportId: string,
+    attachmentId: string
+  ): Promise<AttachmentEntity> {
+    const report = await this.reportsRepository.createQueryBuilder('report')
+      .leftJoinAndSelect('report.presentedFrom', 'presentedFrom')
+      .where('report.id = :reportId', { reportId })
+      .getOne()
+
+    if (report == null || (report.presentedFrom == null)) {
+      throw new NotFoundException(`Presented form for report '${reportId}' not found`)
+    }
+
+    const attachment = report.presentedFrom.find(att => att.id === attachmentId)
+    if (attachment == null) {
+      throw new NotFoundException(`Attachment '${attachmentId}' not found in presented form of report '${reportId}'`)
+    }
+
+    return attachment
+  }
 }

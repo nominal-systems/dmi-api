@@ -4,7 +4,10 @@ import { ReportsService } from './reports.service'
 
 describe('ReportsController', () => {
   let reportsController: ReportsController
-  const reportsService = {}
+  const reportsService = {
+    getPresentedForm: jest.fn(),
+    getPresentedFormAttachment: jest.fn()
+  }
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
