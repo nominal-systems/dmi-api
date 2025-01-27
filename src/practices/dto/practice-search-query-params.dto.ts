@@ -9,4 +9,7 @@ export class PracticesQueryDto {
   @IsOptional()
   @Transform(({ value }) => value.split(','))
   ids?: string[]
+
+  @IsOptional()
+  search?: string
 }

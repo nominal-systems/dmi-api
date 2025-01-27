@@ -724,7 +724,7 @@ export class AdminController {
     @Query() query: PracticesQueryDto & PaginationDto
   ): Promise<PaginationResult<Practice>> {
     const take = query.limit !== undefined ? query.limit : PAGINATION_PAGE_LIMIT
-    const skip = (query.page - 1) * take
+    const skip = query.page !== undefined ? (query.page - 1) * take : 0
 
     const queryBuilder = this.practicesRepository.createQueryBuilder('practice')
       .leftJoinAndSelect('practice.organization', 'organization')
@@ -736,6 +736,10 @@ export class AdminController {
 
     if (query.ids !== undefined) {
       queryBuilder.andWhere('practice.id IN (:...ids)', { ids: query.ids })
+    }
+
+    if (query.search !== undefined) {
+      queryBuilder.andWhere('practice.name LIKE :search', { search: `%${query.search}%` })
     }
 
     queryBuilder
