@@ -254,6 +254,10 @@ export class AdminController {
       queryBuilder.andWhere('integration.status IN (:...status)', { status: params.statuses.split(',') })
     }
 
+    if (params.practices !== undefined) {
+      queryBuilder.andWhere('integration.practice IN (:...practice)', { practice: params.practices.split(',') })
+    }
+
     const [data, total] = await queryBuilder.getManyAndCount()
 
     return {
