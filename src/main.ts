@@ -10,9 +10,10 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 import { IntegrationsService } from './integrations/integrations.service'
 import { join } from 'path'
 import fastifyPassport from 'fastify-passport'
-import fastifySecureSession from '@fastify/secure-session'
+import fastifySecureSession from 'fastify-secure-session'
 import { OktaStrategy } from './common/auth/okta.strategy'
-import * as fs from 'node:fs'
+import { readFileSync } from 'fs'
+import { FastifyInstance } from 'fastify'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { version } = require('../package.json')
 
@@ -23,31 +24,36 @@ async function bootstrap (): Promise<void> {
   )
   const configService = app.get<ConfigService<AppConfig>>(ConfigService)
 
+  // Get the underlying Fastify instance
+  const fastifyInstance = app.getHttpAdapter().getInstance() as FastifyInstance
+
   // Register secure-session plugin
-  await app.register(fastifySecureSession, {
-    // For development purposes only. In production, use a secure key.
-    key: fs.readFileSync('./secret-key'),
-    cookieName: 'session',
+  await fastifyInstance.register(fastifySecureSession as any, {
+    key: readFileSync(join(__dirname, '..', '.secret-key')),
     cookie: {
       path: '/',
       httpOnly: true,
-      secure: false // Set to true in production
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 30 * 60 // 30 minutes
     }
   })
 
   // Initialize fastify-passport
-  await app.register(fastifyPassport.initialize())
-  await app.register(fastifyPassport.secureSession())
+  await fastifyInstance.register(fastifyPassport.initialize() as any)
+  await fastifyInstance.register(fastifyPassport.secureSession() as any)
 
-  // Get the OktaStrategy instance from the Nest application context
+  // Get and register the Okta strategy
   const oktaStrategy = app.get(OktaStrategy)
+  fastifyPassport.use('oidc', oktaStrategy as any)
 
-  // Register the strategy with fastify-passport
-  fastifyPassport.use('oidc', oktaStrategy)
-
-  // Register user serializer and deserializer
-  fastifyPassport.registerUserSerializer(async (user: any, request) => user)
-  fastifyPassport.registerUserDeserializer(async (user: any, request) => user)
+  // Register serializers before registering strategies
+  fastifyPassport.registerUserSerializer(async (user: any) => {
+    return JSON.stringify(user)
+  })
+  fastifyPassport.registerUserDeserializer(async (serialized: any) => {
+    return JSON.parse(serialized)
+  })
 
   // Admin UI
   const staticFilesDirectory = join(__dirname, '..', 'public')
@@ -109,4 +115,7 @@ async function bootstrap (): Promise<void> {
   await app.listen(PORT, '0.0.0.0')
 }
 
-bootstrap()
+bootstrap().catch((err) => {
+  console.error('Failed to start application:', err)
+  process.exit(1)
+})
