@@ -1,24 +1,31 @@
-import { ExecutionContext, Injectable } from '@nestjs/common'
+import { ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
-import { JwtService } from '@nestjs/jwt'
+import { FastifyReply } from 'fastify'
 
 @Injectable()
-export class AdminGuard extends AuthGuard('jwt') {
-  constructor (
-    private readonly jwtService: JwtService
-  ) {
+export class AdminGuard extends AuthGuard('oidc') {
+  constructor () {
     super()
   }
 
-  canActivate (context: ExecutionContext): boolean {
+  async canActivate (context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest()
-    const authorization = request.headers.authorization
+    const response = context.switchToHttp().getResponse<FastifyReply>()
+
     try {
-      this.jwtService.verify(authorization?.split('Bearer ')[1])
+      const result = (await super.canActivate(context)) as boolean
+      return result
     } catch (error) {
+      // If not authenticated, redirect to Okta login
+      await response.redirect('/auth/login')
       return false
     }
+  }
 
-    return true
+  handleRequest (err: any, user: any, info: any) {
+    if (err || !user) {
+      throw err || new UnauthorizedException()
+    }
+    return user
   }
 }
