@@ -67,9 +67,9 @@ import { EventsQueryDto } from './dtos/events-query.dto'
 import { EventsStatsDto } from './dtos/events-stats.dto'
 import { PracticesQueryDto } from '../practices/dto/practice-search-query-params.dto'
 import { OrdersStatsDto } from './dtos/orders-stats.dto'
-import { AuthenticatedGuard } from '../common/auth/authenticated.guard'
 
 @Controller('admin')
+@UseGuards(AdminGuard)
 export class AdminController {
   private readonly logger = new Logger(AdminController.name)
 
@@ -92,6 +92,7 @@ export class AdminController {
   ) {
   }
 
+  // TODO(gb): should this be removed?
   @Post('login')
   @HttpCode(HttpStatus.OK)
   async authenticate (
@@ -107,19 +108,16 @@ export class AdminController {
   }
 
   @Get('organizations')
-  @UseGuards(AuthenticatedGuard)
   async getOrganizations (): Promise<Organization[]> {
     return await this.organizationsService.findAll()
   }
 
   @Get('providerConfigurations')
-  @UseGuards(AdminGuard)
   async getProviderConfigurations (): Promise<ProviderConfiguration[]> {
     return await this.providerConfigurationsService.findAll()
   }
 
   @Get('providerConfigurations/:id')
-  @UseGuards(AdminGuard)
   async getProviderConfiguration (
     @Param('id') providerConfigurationId: string
   ): Promise<ProviderConfiguration> {
@@ -132,7 +130,6 @@ export class AdminController {
   }
 
   @Put('providerConfigurations/:id')
-  @UseGuards(AdminGuard)
   async updateProviderConfigurations (
     @Param('id') providerConfigurationId: string,
     @Body() updatedProviderConfiguration: any
@@ -157,13 +154,11 @@ export class AdminController {
   }
 
   @Get('event-subscriptions')
-  @UseGuards(AdminGuard)
   async getEventSubscriptions (): Promise<EventSubscription[]> {
     return await this.eventSubscriptionsService.findAll()
   }
 
   @Get('events')
-  @UseGuards(AdminGuard)
   async getEvents (
     @Query() query: EventsQueryDto
   ): Promise<PaginationResult<Event>> {
@@ -196,7 +191,6 @@ export class AdminController {
   }
 
   @Get('events/stats')
-  @UseGuards(AdminGuard)
   async getEventsStats (
     @Query() query: EventsStatsDto
   ): Promise<any> {
@@ -221,7 +215,6 @@ export class AdminController {
   }
 
   @Get('events/:id')
-  @UseGuards(AdminGuard)
   async getEvent (
     @Param('id') eventId: string
   ): Promise<Event> {
@@ -229,7 +222,6 @@ export class AdminController {
   }
 
   @Get('integrations')
-  @UseGuards(AdminGuard)
   async getIntegrations (
     @Query() params: IntegrationsSearch
   ): Promise<PaginationResult<Integration>> {
@@ -270,7 +262,6 @@ export class AdminController {
   }
 
   @Get('integrations/:id')
-  @UseGuards(AdminGuard)
   async getIntegration (
     @Param('id') integrationId: string
   ): Promise<Integration> {
@@ -283,7 +274,6 @@ export class AdminController {
   }
 
   @Delete('integrations/:id')
-  @UseGuards(AdminGuard)
   async deleteIntegration (
     @Param('id') integrationId: string
   ): Promise<void> {
@@ -302,7 +292,6 @@ export class AdminController {
   }
 
   @Patch('integrations/:id')
-  @UseGuards(AdminGuard)
   async updateIntegration (
     @Param('id') integrationId: string,
     @Body() updateIntegration: Pick<CreateIntegrationDto, 'integrationOptions'>
@@ -324,7 +313,6 @@ export class AdminController {
   }
 
   @Post('integrations/:id/stop')
-  @UseGuards(AdminGuard)
   async stopIntegration (
     @Res() res: Response,
     @Param('id') integrationId: string,
@@ -358,7 +346,6 @@ export class AdminController {
   }
 
   @Post('integrations/:id/start')
-  @UseGuards(AdminGuard)
   async startIntegration (
     @Res() res: Response,
     @Param('id') integrationId: string
@@ -383,7 +370,6 @@ export class AdminController {
   }
 
   @Post('integrations/:id/restart')
-  @UseGuards(AdminGuard)
   async restartIntegration (
     @Res() res: Response,
     @Param('id') integrationId: string
@@ -403,7 +389,6 @@ export class AdminController {
   }
 
   @Post('integrations/:id/test')
-  @UseGuards(AdminGuard)
   async testIntegration (
     @Res() res: Response,
     @Param('id') integrationId: string
@@ -427,7 +412,6 @@ export class AdminController {
   }
 
   @Get('refs/:type')
-  @UseGuards(AdminGuard)
   async getRefs (
     @Param('type') type: 'sexes' | 'species' | 'breeds',
     @Query() params: PaginationDto & { search: string }
@@ -459,7 +443,6 @@ export class AdminController {
   }
 
   @Post('refs/sync/:providerId')
-  @UseGuards(AdminGuard)
   async sync (
     @Param('providerId') providerId: string,
     @Query() { integrationId }: ReferenceDataQueryParams
@@ -479,7 +462,6 @@ export class AdminController {
   }
 
   @Post('refs/sync/:providerId/:type')
-  @UseGuards(AdminGuard)
   async syncType (
     @Param('providerId') providerId: string,
     @Param('type') type: string,
@@ -512,7 +494,6 @@ export class AdminController {
   }
 
   @Post('refs/:id/mapping')
-  @UseGuards(AdminGuard)
   async updateRefMapping (
     @Param('id') refId: string,
     @Body() mapping: { providerRefId: string }
@@ -539,7 +520,6 @@ export class AdminController {
   }
 
   @Get('providers')
-  @UseGuards(AdminGuard)
   async getProviders (): Promise<Provider[]> {
     return await this.providersService.findAll({
       relations: ['options']
@@ -547,7 +527,6 @@ export class AdminController {
   }
 
   @Get('providers/:providerId')
-  @UseGuards(AdminGuard)
   async getProvider (
     @Param('providerId') providerId: string
   ): Promise<Provider> {
@@ -555,7 +534,6 @@ export class AdminController {
   }
 
   @Get('providers/:providerId/integrations')
-  @UseGuards(AdminGuard)
   async getProviderIntegrations (
     @Param('providerId') providerId: string
   ): Promise<Integration[]> {
@@ -601,7 +579,6 @@ export class AdminController {
   }
 
   @Get('providers/:providerId/defaultBreed')
-  @UseGuards(AdminGuard)
   async getDefaultBreeds (
     @Param('providerId') providerId: string,
     @Query('speciesCodes') speciesCodes: string
@@ -611,7 +588,6 @@ export class AdminController {
   }
 
   @Put('providers/:providerId/defaultBreed')
-  @UseGuards(AdminGuard)
   async setDefaultBreed (
     @Param('providerId') providerId: string,
     @Query('species') species: string,
@@ -633,7 +609,6 @@ export class AdminController {
 
   @Post('providers/:providerId/options/create')
   @HttpCode(HttpStatus.CREATED)
-  @UseGuards(AdminGuard)
   async createProviderOptions (
     @Param('providerId') providerId: string,
     @Body() providerOptions: ProviderOptionDto[]
@@ -646,7 +621,6 @@ export class AdminController {
 
   @Delete('/providers/:providerId/options/:providerOptionId')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @UseGuards(AdminGuard)
   async deleteProviderOption (
     @Param('providerId') providerId: string,
     @Param('providerOptionId') providerOptionId: string
@@ -658,7 +632,6 @@ export class AdminController {
   }
 
   @Get('/external-requests')
-  @UseGuards(AdminGuard)
   async getExternalRequests (
     @Query() query: ExternalRequestsQueryDto
   ): Promise<PaginationResult<ProviderExternalRequests>> {
@@ -696,7 +669,6 @@ export class AdminController {
   }
 
   @Get('/external-requests/stats')
-  @UseGuards(AdminGuard)
   async getExternalRequestsStats (
     @Query() query: ExternalRequestsStatsDto
   ): Promise<any> {
@@ -716,7 +688,6 @@ export class AdminController {
   }
 
   @Get('/external-requests/:id')
-  @UseGuards(AdminGuard)
   async getExternalRequest (
     @Param('id') id: string
   ): Promise<ProviderExternalRequests> {
@@ -724,7 +695,6 @@ export class AdminController {
   }
 
   @Get('/practices')
-  @UseGuards(AdminGuard)
   async getPractices (
     @Query() query: PracticesQueryDto & PaginationDto
   ): Promise<PaginationResult<Practice>> {
@@ -762,7 +732,6 @@ export class AdminController {
   }
 
   @Get('transaction-logs')
-  @UseGuards(AdminGuard)
   async getTransactionLogs (
     @Query() query: TransactionLogsDto
   ): Promise<TransactionLog[]> {
@@ -812,7 +781,6 @@ export class AdminController {
   }
 
   @Get('orders/stats')
-  @UseGuards(AdminGuard)
   async getOrdersStats (
     @Query() query: OrdersStatsDto
   ): Promise<any> {
