@@ -35,25 +35,30 @@ async function bootstrap (): Promise<void> {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 30 * 60 // 30 minutes
+      maxAge: 30 * 60, // 30 minutes
     }
   })
 
-  // Initialize fastify-passport
+  // Initialize fastify-passport with explicit session support
   await fastifyInstance.register(fastifyPassport.initialize() as any)
   await fastifyInstance.register(fastifyPassport.secureSession() as any)
+
+  // Register serializers before registering strategies
+  fastifyPassport.registerUserSerializer(async (user: any) => {
+    const logger = new Logger('UserSerializer')
+    logger.debug(`Serializing user: ${JSON.stringify(user)}`)
+    return JSON.stringify(user)
+  })
+
+  fastifyPassport.registerUserDeserializer(async (serialized: string) => {
+    const logger = new Logger('UserDeserializer')
+    logger.debug(`Deserializing user: ${serialized}`)
+    return JSON.parse(serialized)
+  })
 
   // Get and register the Okta strategy
   const oktaStrategy = app.get(OktaStrategy)
   fastifyPassport.use('oidc', oktaStrategy as any)
-
-  // Register serializers before registering strategies
-  fastifyPassport.registerUserSerializer(async (user: any) => {
-    return JSON.stringify(user)
-  })
-  fastifyPassport.registerUserDeserializer(async (serialized: any) => {
-    return JSON.parse(serialized)
-  })
 
   // Admin UI
   const staticFilesDirectory = join(__dirname, '..', 'public')
