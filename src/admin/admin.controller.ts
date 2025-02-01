@@ -111,6 +111,7 @@ export class AdminController {
 
   @Get('organizations')
   async getOrganizations (): Promise<Organization[]> {
+    console.log('getOrganizations()') // TODO(gb): remove trace
     return await this.organizationsService.findAll()
   }
 
