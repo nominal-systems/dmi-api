@@ -25,6 +25,7 @@ export class AuthController {
 
       this.logger.debug('About to call authenticate')
       await authenticate(req, res)
+      console.log('After authenticate, req.user:', req.user)
       this.logger.debug('Authentication initiated')
     } catch (error) {
       this.logger.error('Login authentication error:')
@@ -44,8 +45,10 @@ export class AuthController {
 
     try {
       const authenticate = fastifyPassport.authenticate('oidc', {
+        session: true,
         successRedirect: '/ui/admin',
         failureRedirect: '/ui/login',
+        authInfo: false,
         failureMessage: true
       }) as (req: FastifyRequest, res: FastifyReply) => Promise<void>
 
