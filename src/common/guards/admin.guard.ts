@@ -1,4 +1,4 @@
-import { ExecutionContext, Injectable, Logger, UnauthorizedException } from '@nestjs/common'
+import { ExecutionContext, Injectable, Logger } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
 import { FastifyReply } from 'fastify'
 import fastifyPassport from 'fastify-passport'
@@ -13,12 +13,6 @@ interface ExtendedFastifyReply extends FastifyReply {
 export class AdminGuard extends AuthGuard('oidc') {
   private readonly logger = new Logger(AdminGuard.name)
 
-  constructor () {
-    super({
-      passReqToCallback: true
-    })
-  }
-
   async canActivate (context: ExecutionContext): Promise<boolean> {
     this.logger.debug('AdminGuard.canActivate() called')
     const request = context.switchToHttp().getRequest()
@@ -27,63 +21,43 @@ export class AdminGuard extends AuthGuard('oidc') {
     this.logger.debug(`Request URL: ${request.url}`)
     this.logger.debug(`Request method: ${request.method}`)
     this.logger.debug(`Request headers: ${JSON.stringify(request.headers)}`)
+    this.logger.debug(`Is authenticated: ${request.isAuthenticated?.()}`)
+    this.logger.debug(`Session: ${JSON.stringify(request.session)}`)
+    this.logger.debug(`User: ${JSON.stringify(request.user)}`)
 
-    const logger = this.logger
-
-    // Add Express-like methods to the Fastify response
-    response.setHeader = function (name: string, value: string) {
-      logger.debug(`Setting header: ${name}=${value}`)
-      this.header(name, value)
-      return this
+    // Check if we're already in the auth flow
+    const isAuthPath = request.url.startsWith('/auth/')
+    if (isAuthPath) {
+      this.logger.debug('Already in auth flow, allowing request')
+      return true
     }
 
-    response.end = function (data?: any) {
-      logger.debug(`Ending response with data: ${data}`)
-      this.send(data)
-      return this
+    if (!request.isAuthenticated?.()) {
+      this.logger.debug('User not authenticated, redirecting to /auth/login')
+      response.status(302).redirect('/auth/login')
+      return false
     }
 
     try {
-      this.logger.debug('Attempting to authenticate...')
       const result = (await super.canActivate(context)) as boolean
       this.logger.debug(`Authentication result: ${result}`)
       return result
     } catch (error) {
       this.logger.error(`Authentication error: ${error.message}`)
       this.logger.error(error.stack)
-
-      // Check if we're already in the auth flow
-      const isAuthPath = request.url.startsWith('/auth/')
-      if (isAuthPath) {
-        this.logger.debug('Already in auth flow, throwing error')
-        throw error // Don't redirect if we're already in the auth flow
-      }
-
-      this.logger.debug('Redirecting to /auth/login')
-      await response.redirect('/auth/login')
+      response.status(302).redirect('/auth/login')
       return false
     }
-  }
-
-  handleRequest (err: any, user: any, info: any) {
-    this.logger.debug(`AdminGuard.handleRequest() called`)
-    this.logger.debug(`User: ${JSON.stringify(user)}`)
-    this.logger.debug(`Error: ${err?.message}`)
-    this.logger.debug(`Error stack: ${err?.stack}`)
-    this.logger.debug(`Info: ${JSON.stringify(info)}`)
-
-    if (err || !user) {
-      throw err || new UnauthorizedException()
-    }
-    return user
   }
 }
 
 // Register serializers for session support
 fastifyPassport.registerUserSerializer(async (user: any) => {
+  console.log(`registerUserSerializer()= ${JSON.stringify(user, null, 2)}`) // TODO(gb): remove trace
   return JSON.stringify(user)
 })
 
 fastifyPassport.registerUserDeserializer(async (serialized: string) => {
+  console.log(`registerUserDeserializer= ${JSON.stringify(serialized, null, 2)}`) // TODO(gb): remove trace
   return JSON.parse(serialized)
 })

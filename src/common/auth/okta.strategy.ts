@@ -9,34 +9,32 @@ export class OktaStrategy extends PassportStrategy(Strategy, 'oidc') {
 
   constructor (private readonly configService: ConfigService) {
     const oktaDomain = configService.get<string>('okta.domain')
-    const clientID = configService.get<string>('okta.clientId')
+    const clientId = configService.get<string>('okta.clientId')
     const clientSecret = configService.get<string>('okta.clientSecret')
     const baseUrl = configService.get<string>('app.baseUrl', 'http://localhost:3000')
     const callbackURL = `${baseUrl}/auth/callback`
 
-    // Log configuration
-    console.log('Okta Strategy Configuration:')
-    console.log(`Domain: ${oktaDomain}`)
-    console.log(`Client ID: ${clientID}`)
-    console.log(`Callback URL: ${callbackURL}`)
-    console.log(`Base URL: ${baseUrl}`)
+    console.log(`issuer= https://${oktaDomain}`) // TODO(gb): remove trace
+    console.log(`authorizationURL= https://${oktaDomain}/oauth2/default/v1/authorize`) // TODO(gb): remove trace
+    console.log(`tokenURL= https://${oktaDomain}/oauth2/default/v1/token`) // TODO(gb): remove trace
+    console.log(`userInfoURL= https://${oktaDomain}/oauth2/default/v1/userinfo`) // TODO(gb): remove trace
+    console.log(`clientID= ${clientId}`) // TODO(gb): remove trace
+    console.log(`clientSecret= ${clientSecret}`) // TODO(gb): remove trace
+    console.log(`callbackURL= ${callbackURL}`) // TODO(gb): remove trace
+    console.log('scope= \'openid profile\'') // TODO(gb): remove trace
+    console.log('response_type: \'code\'') // TODO(gb): remove trace
 
     super({
       issuer: `https://${oktaDomain}/oauth2/default`,
       authorizationURL: `https://${oktaDomain}/oauth2/default/v1/authorize`,
       tokenURL: `https://${oktaDomain}/oauth2/default/v1/token`,
       userInfoURL: `https://${oktaDomain}/oauth2/default/v1/userinfo`,
-      clientID,
-      clientSecret,
-      callbackURL,
-      scope: 'profile email offline_access',
-      passReqToCallback: true,
-      state: true,
-      pkce: true,
+      clientID: clientId,
+      clientSecret: clientSecret,
+      callbackURL: callbackURL,
+      scope: 'profile',
       response_type: 'code',
-      sessionKey: 'oauth2:okta',
-      skipUserProfile: false,
-      proxy: false
+      passReqToCallback: true
     })
 
     this.logger.debug('OktaStrategy initialized')
@@ -53,11 +51,17 @@ export class OktaStrategy extends PassportStrategy(Strategy, 'oidc') {
   ): Promise<any> {
     try {
       this.logger.debug('Validate method called')
+      this.logger.debug(`Request URL: ${req.url}`)
+      this.logger.debug(`Request query: ${JSON.stringify(req.query)}`)
+      this.logger.debug(`Request headers: ${JSON.stringify(req.headers)}`)
       this.logger.debug(`Issuer: ${issuer}`)
       this.logger.debug(`Profile: ${JSON.stringify(profile)}`)
-      this.logger.debug(`ID Token: ${idToken}`)
+      this.logger.debug(`ID Token present: ${!!idToken}`)
+      this.logger.debug(`Access Token present: ${!!accessToken}`)
+      this.logger.debug(`Refresh Token present: ${!!refreshToken}`)
 
       if (!profile) {
+        this.logger.error('No profile received from Okta')
         return done(new UnauthorizedException('Invalid user profile'), null)
       }
 
@@ -69,9 +73,12 @@ export class OktaStrategy extends PassportStrategy(Strategy, 'oidc') {
         refreshToken
       }
 
+      this.logger.debug(`Returning user: ${JSON.stringify(user)}`)
       return done(null, user)
     } catch (error) {
       this.logger.error(`Validation error: ${error.message}`)
+      this.logger.error(error.stack)
+      this.logger.error('Full error object:', error)
       return done(error, null)
     }
   }

@@ -35,7 +35,7 @@ async function bootstrap (): Promise<void> {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 30 * 60, // 30 minutes
+      maxAge: 30 * 60 // 30 minutes
     }
   })
 
