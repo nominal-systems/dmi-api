@@ -10,12 +10,10 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 import { IntegrationsService } from './integrations/integrations.service'
 import { join } from 'path'
 import fastifyPassport from 'fastify-passport'
-import fastifySecureSession from 'fastify-secure-session'
-import { OktaStrategy } from './common/auth/okta.strategy'
-import { readFileSync } from 'fs'
+import fastifyCookie from 'fastify-cookie'
+import fastifySession from 'fastify-session'
+// Remove: import fastifySecureSession from 'fastify-secure-session'
 import { FastifyInstance } from 'fastify'
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const { version } = require('../package.json')
 
 async function bootstrap (): Promise<void> {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -27,40 +25,73 @@ async function bootstrap (): Promise<void> {
   // Get the underlying Fastify instance
   const fastifyInstance = app.getHttpAdapter().getInstance() as FastifyInstance
 
-  // Register secure-session plugin
-  await fastifyInstance.register(fastifySecureSession as any, {
-    key: readFileSync(join(__dirname, '..', '.secret-key')),
+  // 1. Register fastify-cookie (dependency for fastify-session)
+  await fastifyInstance.register(fastifyCookie)
+
+  // 2. Register fastify-session plugin (mutable session)
+  await fastifyInstance.register(fastifySession, {
+    secret: 'a-very-long-secret-key-at-least-32-characters', // Replace with a secure secret from config/env
     cookie: {
-      path: '/',
-      httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 30 * 60 // 30 minutes
+      maxAge: 30 * 60 * 1000 // 30 minutes (in milliseconds)
+      // You can add additional options: path, httpOnly, sameSite, etc.
     }
   })
 
-  // Initialize fastify-passport with explicit session support
-  await fastifyInstance.register(fastifyPassport.initialize() as any)
-  await fastifyInstance.register(fastifyPassport.secureSession() as any)
+  // 3. Initialize fastify-passport
+  await fastifyInstance.register(fastifyPassport.initialize())
+  // Note: fastifyPassport.session() is not available in v0.6.0 for fastify-session.
+  // We will add our own session handling below.
 
-  // Register serializers before registering strategies
+  // 4. Register Passport serializers (for session support)
   fastifyPassport.registerUserSerializer(async (user: any) => {
     const logger = new Logger('UserSerializer')
     logger.debug(`Serializing user: ${JSON.stringify(user)}`)
     return JSON.stringify(user)
   })
-
   fastifyPassport.registerUserDeserializer(async (serialized: string) => {
     const logger = new Logger('UserDeserializer')
     logger.debug(`Deserializing user: ${serialized}`)
     return JSON.parse(serialized)
   })
 
-  // Get and register the Okta strategy
+  // 5. Add a global preHandler hook to rehydrate the user from the session
+  fastifyInstance.addHook('preHandler', async (req, reply) => {
+    if (req.session && typeof req.session.set !== 'function') {
+      req.session.set = function(key: string, value: any) {
+        this[key] = value
+      }
+    }
+    if (req.session && req.session.passport && req.session.passport.user) {
+      try {
+        // Explicitly tell TypeScript that the promise will resolve to a value of type any.
+        const deserializedUser = await new Promise<any>((resolve, reject) => {
+          fastifyPassport.deserializeUser(
+            req.session.passport.user,
+            req,
+            (err, user) => {
+              if (err) return reject(err)
+              resolve(user)
+            }
+          )
+        })
+        // Cast the deserialized user to any (or to your User type if you have one)
+        req.user = deserializedUser
+      } catch (err) {
+        // Instead of null, assign undefined
+        req.user = undefined
+      }
+    }
+  })
+
+  // 6. Get and register the Okta strategy
+  const { OktaStrategy } = await import('./common/auth/okta.strategy')
   const oktaStrategy = app.get(OktaStrategy)
   fastifyPassport.use('oidc', oktaStrategy as any)
 
-  // Admin UI
+  // (The remainder of your main.ts remains unchanged)
+  // Admin UI, CORS, microservices, global pipes, Swagger, etc.
+
   const staticFilesDirectory = join(__dirname, '..', 'public')
   const staticFilesPrefix = '/ui'
   app.useStaticAssets({
@@ -70,7 +101,6 @@ async function bootstrap (): Promise<void> {
   })
   Logger.log(`Serving static files from ${staticFilesDirectory} at ${staticFilesPrefix}`)
 
-  // CORS
   app.enableCors()
 
   app.connectMicroservice<MicroserviceOptions>({
@@ -87,21 +117,17 @@ async function bootstrap (): Promise<void> {
   )
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)))
 
-  // Documentation
   const docsConfig = configService.get<DocsConfig>('docs')
   if (docsConfig !== undefined) {
     const config = new DocumentBuilder()
       .setTitle(docsConfig.title)
       .setDescription(docsConfig.description)
-      .setVersion(version)
+      .setVersion(require('../package.json').version)
       .build()
-
     const document = SwaggerModule.createDocument(app, config)
-    // Change the URL for the OpenAPI JSON
     app.getHttpAdapter().get(docsConfig.openApiSpecUrl, (req, res) => {
       res.send(document)
     })
-
     SwaggerModule.setup('docs', app, document, {
       swaggerOptions: {
         url: docsConfig.openApiSpecUrl
@@ -109,12 +135,11 @@ async function bootstrap (): Promise<void> {
     })
   }
 
+  const integrationsService = app.get(IntegrationsService)
   if (process.env.VERIFY_INTEGRATION_STATUS === 'true') {
-    const integrationsService = app.get(IntegrationsService)
     await integrationsService.ensureStatusAll()
   }
 
-  // Start application
   const PORT = configService.get<number>('port', 3000)
   await app.startAllMicroservices()
   await app.listen(PORT, '0.0.0.0')

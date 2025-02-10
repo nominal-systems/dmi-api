@@ -17,6 +17,7 @@ export class AdminGuard extends AuthGuard('oidc') {
     this.logger.debug('AdminGuard.canActivate() called')
     const request = context.switchToHttp().getRequest()
     const response = context.switchToHttp().getResponse<ExtendedFastifyReply>()
+    this.logger.debug(`Session contents: ${JSON.stringify(request.session)}`)
 
     this.logger.debug(`Request URL: ${request.url}`)
     this.logger.debug(`Request method: ${request.method}`)

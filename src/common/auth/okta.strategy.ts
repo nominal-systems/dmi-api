@@ -46,8 +46,7 @@ export class OktaStrategy extends PassportStrategy(Strategy, 'oidc') {
     profile: any,
     idToken: string,
     accessToken: string,
-    refreshToken: string,
-    done: Function
+    refreshToken: string
   ): Promise<any> {
     try {
       this.logger.debug('Validate method called')
@@ -62,7 +61,7 @@ export class OktaStrategy extends PassportStrategy(Strategy, 'oidc') {
 
       if (!profile) {
         this.logger.error('No profile received from Okta')
-        return done(new UnauthorizedException('Invalid user profile'), null)
+        throw new UnauthorizedException('Invalid user profile')
       }
 
       const user = {
@@ -74,12 +73,11 @@ export class OktaStrategy extends PassportStrategy(Strategy, 'oidc') {
       }
 
       this.logger.debug(`Returning user: ${JSON.stringify(user)}`)
-      return done(null, user)
+      return user
     } catch (error) {
       this.logger.error(`Validation error: ${error.message}`)
       this.logger.error(error.stack)
-      this.logger.error('Full error object:', error)
-      return done(error, null)
+      throw error
     }
   }
 }
