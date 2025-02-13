@@ -33,6 +33,13 @@ export class AdminGuard extends AuthGuard('oidc') {
       return true
     }
 
+    this.logger.debug(`Is authenticated: ${request.isAuthenticated?.()}`)
+    // If already authenticated, just allow access
+    if (request.isAuthenticated?.()) {
+      this.logger.debug('User already authenticated. Allowing request.')
+      return true
+    }
+
     if (!request.isAuthenticated?.()) {
       this.logger.debug('User not authenticated, redirecting to /auth/login')
       response.status(302).redirect('/auth/login')
