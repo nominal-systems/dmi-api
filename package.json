@@ -57,7 +57,6 @@
     "faker": "^5.5.3",
     "fastify": "^3.14.0",
     "fastify-cookie": "^5.7.0",
-    "fastify-flash": "^2.0.2",
     "fastify-passport": "^0.6.0",
     "fastify-session": "^5.2.1",
     "fastify-static": "^4.7.0",
