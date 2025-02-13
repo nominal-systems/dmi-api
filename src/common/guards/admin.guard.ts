@@ -54,11 +54,11 @@ export class AdminGuard extends AuthGuard('oidc') {
 
 // Register serializers for session support
 fastifyPassport.registerUserSerializer(async (user: any) => {
-  console.log(`registerUserSerializer()= ${JSON.stringify(user, null, 2)}`) // TODO(gb): remove trace
-  return JSON.stringify(user)
+  console.log(`AdminGuard UserSerializer= ${JSON.stringify(user, null, 2)}`) // TODO(gb): remove trace
+  return user
 })
 
-fastifyPassport.registerUserDeserializer(async (serialized: string) => {
-  console.log(`registerUserDeserializer= ${JSON.stringify(serialized, null, 2)}`) // TODO(gb): remove trace
-  return JSON.parse(serialized)
+fastifyPassport.registerUserDeserializer(async (user: any) => {
+  console.log(`AdminGuard UserDeserializer= ${JSON.stringify(user, null, 2)}`) // TODO(gb): remove trace
+  return user
 })

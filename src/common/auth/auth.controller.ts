@@ -23,18 +23,18 @@ export class AuthController {
         failureMessage: true
       }) as (req: FastifyRequest, res: FastifyReply) => Promise<void>
 
-      this.logger.debug('About to call authenticate')
-      await authenticate(req, res)
-      console.log('After authenticate, req.user:', req.user)
-      this.logger.debug('Authentication initiated')
-    } catch (error) {
-      this.logger.error('Login authentication error:')
-      this.logger.error(error.message)
-      this.logger.error(error.stack)
-      this.logger.error('Full error:', error)
-      return res.redirect('/ui/login?error=auth_failed')
+        this.logger.debug('About to call authenticate')
+        await authenticate(req, res)
+        console.log('After authenticate, req.user:', req.user)
+        this.logger.debug('Authentication initiated')
+      } catch (error) {
+        this.logger.error('Login authentication error:')
+        this.logger.error(error.message)
+        this.logger.error(error.stack)
+        this.logger.error('Full error:', error)
+        return await res.redirect('/ui/login?error=auth_failed')
+      }
     }
-  }
 
   @Get('callback')
   async callback (@Req() req: FastifyRequest, @Res() res: FastifyReply): Promise<void> {
@@ -52,20 +52,20 @@ export class AuthController {
         failureMessage: true
       }) as (req: FastifyRequest, res: FastifyReply) => Promise<void>
 
-      this.logger.debug('About to call authenticate')
-      await authenticate(req, res)
-      this.logger.debug('Authentication completed successfully')
-    } catch (error) {
-      this.logger.error('Callback authentication error:')
-      this.logger.error(error.message)
-      this.logger.error(error.stack)
-      return res.redirect('/ui/login?error=auth_failed')
+        this.logger.debug('About to call authenticate')
+        await authenticate(req, res)
+        this.logger.debug('Authentication completed successfully')
+      } catch (error) {
+        this.logger.error('Callback authentication error:')
+        this.logger.error(error.message)
+        this.logger.error(error.stack)
+        return await res.redirect('/ui/login?error=auth_failed')
+      }
+    }
+
+    @Get('test')
+    async test (@Req() req: FastifyRequest, @Res() res: FastifyReply): Promise<void> {
+      this.logger.debug('Test endpoint called')
+      return await res.send({ message: 'Auth controller is working' })
     }
   }
-
-  @Get('test')
-  async test (@Req() req: FastifyRequest, @Res() res: FastifyReply): Promise<void> {
-    this.logger.debug('Test endpoint called')
-    return res.send({ message: 'Auth controller is working' })
-  }
-}
