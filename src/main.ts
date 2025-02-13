@@ -43,18 +43,6 @@ async function bootstrap (): Promise<void> {
   // Note: fastifyPassport.session() is not available in v0.6.0 for fastify-session.
   // We will add our own session handling below.
 
-  // 4. Register Passport serializers (for session support)
-  fastifyPassport.registerUserSerializer(async (user: any) => {
-    const logger = new Logger('UserSerializer')
-    logger.debug(`Serializing user: ${JSON.stringify(user)}`)
-    return JSON.stringify(user)
-  })
-  fastifyPassport.registerUserDeserializer(async (serialized: string) => {
-    const logger = new Logger('UserDeserializer')
-    logger.debug(`Deserializing user: ${serialized}`)
-    return JSON.parse(serialized)
-  })
-
   // 5. Add a global preHandler hook to rehydrate the user from the session
   fastifyInstance.addHook('preHandler', async (req, reply) => {
     if (req.session && typeof req.session.set !== 'function') {
