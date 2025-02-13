@@ -9,10 +9,9 @@ import { AppConfig, DocsConfig } from './config/config.interface'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 import { IntegrationsService } from './integrations/integrations.service'
 import { join } from 'path'
-import fastifyPassport from 'fastify-passport'
 import fastifyCookie from 'fastify-cookie'
 import fastifySession from 'fastify-session'
-// Remove: import fastifySecureSession from 'fastify-secure-session'
+import fastifyPassport from 'fastify-passport'
 import { FastifyInstance } from 'fastify'
 
 async function bootstrap (): Promise<void> {
@@ -25,12 +24,12 @@ async function bootstrap (): Promise<void> {
   // Get the underlying Fastify instance
   const fastifyInstance = app.getHttpAdapter().getInstance() as FastifyInstance
 
-  // 1. Register fastify-cookie (dependency for fastify-session)
+  // Register fastify-cookie (required by fastify-session)
   await fastifyInstance.register(fastifyCookie)
 
   // 2. Register fastify-session plugin (mutable session)
   await fastifyInstance.register(fastifySession, {
-    secret: 'a-very-long-secret-key-at-least-32-characters', // Replace with a secure secret from config/env
+    secret: 'a-very-long-secret-key-at-least-32-characters',
     cookie: {
       secure: process.env.NODE_ENV === 'production',
       maxAge: 30 * 60 * 1000 // 30 minutes (in milliseconds)
@@ -40,35 +39,36 @@ async function bootstrap (): Promise<void> {
 
   // 3. Initialize fastify-passport
   await fastifyInstance.register(fastifyPassport.initialize())
+
   // Note: fastifyPassport.session() is not available in v0.6.0 for fastify-session.
   // We will add our own session handling below.
-
-  // 5. Add a global preHandler hook to rehydrate the user from the session
   fastifyInstance.addHook('preHandler', async (req, reply) => {
+    // Cast reply as any so we can add missing methods.
+    const res = reply as any
+
+    // Patch setHeader if missing.
+    if (typeof res.setHeader !== 'function') {
+      res.setHeader = reply.header.bind(reply)
+    }
+
+    // Patch end if missing.
+    if (typeof res.end !== 'function') {
+      res.end = function (data?: any) {
+        // If data is provided, send it; otherwise, send nothing.
+        return reply.send(data)
+      }
+    }
+
+    // Patch the session with a 'set' method if missing.
     if (req.session && typeof req.session.set !== 'function') {
-      req.session.set = function(key: string, value: any) {
+      req.session.set = function (key: string, value: any) {
         this[key] = value
       }
     }
-    if (req.session && req.session.passport && req.session.passport.user) {
-      try {
-        // Explicitly tell TypeScript that the promise will resolve to a value of type any.
-        const deserializedUser = await new Promise<any>((resolve, reject) => {
-          fastifyPassport.deserializeUser(
-            req.session.passport.user,
-            req,
-            (err, user) => {
-              if (err) return reject(err)
-              resolve(user)
-            }
-          )
-        })
-        // Cast the deserialized user to any (or to your User type if you have one)
-        req.user = deserializedUser
-      } catch (err) {
-        // Instead of null, assign undefined
-        req.user = undefined
-      }
+
+    // Rehydrate the user from the session.
+    if (req.session && req.session.passport) {
+      req.user = req.session.passport.user || req.session.passport
     }
   })
 

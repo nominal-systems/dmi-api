@@ -14,7 +14,6 @@ export class AuthController {
   async login (@Req() req: FastifyRequest, @Res() res: FastifyReply): Promise<void> {
     this.logger.debug('Login endpoint called')
     this.logger.debug(`Request headers: ${JSON.stringify(req.headers)}`)
-    this.logger.debug(`Session: ${JSON.stringify(req.session)}`)
 
     try {
       const authenticate = fastifyPassport.authenticate('oidc', {
