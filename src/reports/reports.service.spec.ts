@@ -2025,6 +2025,21 @@ describe('ReportsService', () => {
         }))
         jest.clearAllMocks()
       })
+      it('should handle Tyroid Profile report with missing results', async () => {
+        const results: ProviderResult[] = FileUtils.loadFile('test/antech/tyroid_results.json')
+        jest.spyOn(reportsService, 'findReportsByExternalOrderIds').mockResolvedValueOnce([])
+        jest.spyOn(ordersServiceMock, 'getOrderFromProvider').mockResolvedValue(null)
+        await reportsService.handleExternalResults({
+          integrationId: 'antech',
+          results: results
+        })
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
+          namespace: EventNamespace.REPORTS,
+          type: EventType.REPORT_CREATED
+        }))
+        //TODO(lg): Check if the created report is handling missing results correctly
+        jest.clearAllMocks()
+      })
     })
     describe('Heska', () => {
       it('should correctly match results for an order with a result batch', async () => {
