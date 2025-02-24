@@ -2035,9 +2035,16 @@ describe('ReportsService', () => {
         })
         expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
           namespace: EventNamespace.REPORTS,
-          type: EventType.REPORT_CREATED
+          type: EventType.REPORT_CREATED,
+          data: expect.objectContaining({
+            report: expect.objectContaining({
+              testResultsSet: expect.arrayContaining([
+                expect.objectContaining({
+                  observation: expect.any(Object)})
+              ])
+            })
+          })
         }))
-        //TODO(lg): Check if the created report is handling missing results correctly
         jest.clearAllMocks()
       })
     })
