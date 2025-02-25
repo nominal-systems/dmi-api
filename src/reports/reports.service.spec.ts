@@ -2040,7 +2040,7 @@ describe('ReportsService', () => {
             report: expect.objectContaining({
               testResultsSet: expect.arrayContaining([
                 expect.objectContaining({
-                  observation: expect.any(Object)})
+                  observations: expect.any(Object)})
               ])
             })
           })

@@ -348,12 +348,13 @@ export class ReportsService {
         createdTestResults.push(testResult)
       }
     }
-
-    const updatePerformed = createdTestResults.concat(updatedTestResults).length > 0 || report.status !== reportStatus
+    
+    const validTestResults = createdTestResults.concat(updatedTestResults).filter(testResult => testResult.observations && testResult.observations.length > 0)
+    const updatePerformed = validTestResults.length > 0 || report.status !== reportStatus
     if (updatePerformed) {
-      report.testResultsSet = report.testResultsSet.concat(createdTestResults)
-      report.status = resultStatusMapper(reportStatus)
-      await this.reportsRepository.save(report)
+      report.testResultsSet = report.testResultsSet.concat(validTestResults);
+      report.status = resultStatusMapper(reportStatus);
+      await this.reportsRepository.save(report);
     }
 
     return updatePerformed
