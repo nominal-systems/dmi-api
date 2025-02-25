@@ -352,9 +352,9 @@ export class ReportsService {
     const validTestResults = createdTestResults.concat(updatedTestResults).filter(testResult => testResult.observations && testResult.observations.length > 0)
     const updatePerformed = validTestResults.length > 0 || report.status !== reportStatus
     if (updatePerformed) {
-      report.testResultsSet = report.testResultsSet.concat(validTestResults);
-      report.status = resultStatusMapper(reportStatus);
-      await this.reportsRepository.save(report);
+      report.testResultsSet = report.testResultsSet.concat(validTestResults)
+      report.status = resultStatusMapper(reportStatus)
+      await this.reportsRepository.save(report)
     }
 
     return updatePerformed
