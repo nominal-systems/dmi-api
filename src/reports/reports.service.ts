@@ -321,7 +321,7 @@ export class ReportsService {
     const createdTestResults: TestResult[] = []
     const updatedTestResults: TestResult[] = []
     for (const providerTestResult of providerTestResults) {
-      const providerTestResultItemStatus = Array.from(new Set<string>((providerTestResult.items || []).map(testResult => testResult.status)))
+      const providerTestResultItemStatus = Array.from(new Set<string>(providerTestResult.items.map(testResult => testResult.status)))
       const testResultStatus = testResultStatusMapper(providerTestResultItemStatus[0])
       if (providerTestResultItemStatus.length > 1) {
         this.logger.warn(`Multiple test result item status for test result '${providerTestResult.code}'`)
@@ -349,10 +349,9 @@ export class ReportsService {
       }
     }
     
-    const validTestResults = createdTestResults.concat(updatedTestResults).filter(testResult => testResult.observations && testResult.observations.length > 0)
-    const updatePerformed = validTestResults.length > 0 || report.status !== reportStatus
+    const updatePerformed = createdTestResults.concat(updatedTestResults).length > 0 || report.status !== reportStatus
     if (updatePerformed) {
-      report.testResultsSet = report.testResultsSet.concat(validTestResults)
+      report.testResultsSet = report.testResultsSet.concat(createdTestResults)
       report.status = resultStatusMapper(reportStatus)
       await this.reportsRepository.save(report)
     }
@@ -367,8 +366,7 @@ export class ReportsService {
     const observationMap: Map<string, Observation> = new Map(
       testResult.observations.map(observation => [observation.code, observation])
     )
-    const newObservationCodes = arrayDiff((items || []).map(item => item.code), Array.from(observationMap.keys()))
-
+    const newObservationCodes = arrayDiff(items.map(item => item.code), Array.from(observationMap.keys()))
     // Update existing observations
     for (const existingObservationCode of observationMap.keys()) {
       const existingObservation = observationMap.get(existingObservationCode)

@@ -68,8 +68,7 @@ export class ProviderResultUtils {
     return Array.from(
       new Set(
         result.testResults
-          .flatMap((testResult) => testResult.items || [])
-          .filter((item) => item && item.code)
+          .flatMap((testResult) => testResult.items)
           .map((item) => {
             return { code: item.code }
           })
