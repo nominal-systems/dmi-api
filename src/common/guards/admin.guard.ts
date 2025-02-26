@@ -14,17 +14,10 @@ export class AdminGuard extends AuthGuard('oidc') {
   private readonly logger = new Logger(AdminGuard.name)
 
   async canActivate (context: ExecutionContext): Promise<boolean> {
-    this.logger.debug('AdminGuard.canActivate() called')
     const request = context.switchToHttp().getRequest()
     const response = context.switchToHttp().getResponse<ExtendedFastifyReply>()
-    this.logger.debug(`Session contents: ${JSON.stringify(request.session)}`)
 
-    this.logger.debug(`Request URL: ${request.url}`)
-    this.logger.debug(`Request method: ${request.method}`)
-    this.logger.debug(`Request headers: ${JSON.stringify(request.headers)}`)
-    this.logger.debug(`Is authenticated: ${request.isAuthenticated?.()}`)
-    this.logger.debug(`Session: ${JSON.stringify(request.session)}`)
-    this.logger.debug(`User: ${JSON.stringify(request.user)}`)
+    this.logger.debug(`AdminGuard.canActivate(): ${request.method} ${request.url}`)
 
     // Check if we're already in the auth flow
     const isAuthPath = request.url.startsWith('/auth/')
@@ -33,10 +26,9 @@ export class AdminGuard extends AuthGuard('oidc') {
       return true
     }
 
-    this.logger.debug(`Is authenticated: ${request.isAuthenticated?.()}`)
     // If already authenticated, just allow access
     if (request.isAuthenticated?.()) {
-      this.logger.debug('User already authenticated. Allowing request.')
+      this.logger.debug(`User already authenticated: ${JSON.stringify(request.user.profile.username)}. Allowing request.`)
       return true
     }
 
