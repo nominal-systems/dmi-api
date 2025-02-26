@@ -14,10 +14,17 @@ export class AuthController {
   async login (@Req() req: FastifyRequest, @Res() res: FastifyReply): Promise<void> {
     this.logger.debug('Login endpoint called')
 
+    // Capture the redirect query parameter and store it in the session.
+    const query = req.query as { redirect?: string }
+    if (query.redirect) {
+      req.session.redirectUrl = query.redirect
+    }
+
     try {
       const authenticate = fastifyPassport.authenticate('oidc', {
-        successRedirect: '/ui/admin',
+        session: true,
         failureRedirect: '/ui/login',
+        authInfo: false,
         failureMessage: true
       }) as (req: FastifyRequest, res: FastifyReply) => Promise<void>
 
@@ -35,13 +42,23 @@ export class AuthController {
   }
 
   @Get('callback')
-  async callback (@Req() req: FastifyRequest, @Res() res: FastifyReply): Promise<void> {
+  async callback (
+    @Req() req: FastifyRequest,
+    @Res() res: FastifyReply
+  ): Promise<void> {
     this.logger.debug('Callback endpoint called')
 
     try {
+      // Retrieve the originally requested URL from the session.
+      const redirectUrl = req.session.redirectUrl || '/ui/admin' // default fallback
+      console.log(`redirectUrl= ${JSON.stringify(redirectUrl, null, 2)}`) // TODO(gb): remove trace
+
+      // Clean up the stored redirect so it doesn't persist for future requests.
+      delete req.session.redirectUrl
+
       const authenticate = fastifyPassport.authenticate('oidc', {
         session: true,
-        successRedirect: '/ui/admin',
+        successRedirect: redirectUrl,
         failureRedirect: '/ui/login',
         authInfo: false,
         failureMessage: true
@@ -50,6 +67,8 @@ export class AuthController {
       this.logger.debug('About to call authenticate')
       await authenticate(req, res)
       this.logger.debug('Authentication completed successfully')
+
+
     } catch (error) {
       this.logger.error('Callback authentication error:')
       this.logger.error(error.message)
