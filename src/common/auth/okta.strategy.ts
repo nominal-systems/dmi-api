@@ -49,15 +49,7 @@ export class OktaStrategy extends PassportStrategy(Strategy, 'oidc') {
     refreshToken: string
   ): Promise<any> {
     try {
-      this.logger.debug('Validate method called')
-      this.logger.debug(`Request URL: ${req.url}`)
-      this.logger.debug(`Request query: ${JSON.stringify(req.query)}`)
-      this.logger.debug(`Request headers: ${JSON.stringify(req.headers)}`)
-      this.logger.debug(`Issuer: ${issuer}`)
-      this.logger.debug(`Profile: ${JSON.stringify(profile)}`)
-      this.logger.debug(`ID Token present: ${!!idToken}`)
-      this.logger.debug(`Access Token present: ${!!accessToken}`)
-      this.logger.debug(`Refresh Token present: ${!!refreshToken}`)
+      this.logger.debug(`OktaStrategy.validate(): ${JSON.stringify(profile)}`)
 
       if (!profile) {
         this.logger.error('No profile received from Okta')
