@@ -2028,8 +2028,10 @@ describe('ReportsService', () => {
     })
     describe ('Antech-V6', () => {
       it('should handle Tyroid Profile report with missing results', async () => {
-        const results_1: ProviderResult[] = FileUtils.loadFile('test/antech-v6/TyroidResults/tyroid_results_1.json')
+        const order: ProviderResult[] = FileUtils.loadFile('test/antech-v6/TyroidResults/tyroid_orders_01.json')
+        const results_1: ProviderResult[] = FileUtils.loadFile('test/antech-v6/TyroidResults/tyroid_results_01.json')
         jest.spyOn(reportsService, 'findReportsByExternalOrderIds').mockResolvedValueOnce([])
+        jest.spyOn(ordersServiceMock, 'findOrdersByExternalIds').mockResolvedValue(order)
         jest.spyOn(ordersServiceMock, 'getOrderFromProvider').mockResolvedValue(null)
         
         // 1) Create a report with empty and pending results.
@@ -2055,7 +2057,7 @@ describe('ReportsService', () => {
         // Should igore empty result
         // First test should have name: "TSH", and one item with code 4001
         // Second and third test should respect the order in which they were received and be empty.
-        const results_2: ProviderResult[] = FileUtils.loadFile('test/antech-v6/TyroidResults/tyroid_results_2.json')
+        const results_2: ProviderResult[] = FileUtils.loadFile('test/antech-v6/TyroidResults/tyroid_results_02.json')
         jest.spyOn(reportsService, 'findReportsByExternalOrderIds').mockResolvedValueOnce([])
         jest.spyOn(ordersServiceMock, 'getOrderFromProvider').mockResolvedValue(null)
         await reportsService.handleExternalResults({
@@ -2081,7 +2083,7 @@ describe('ReportsService', () => {
         // First test should have named: "TSH", and one item with code 4001
         // Second test should have name: "Free T4 By Equilibrium Dialysis", and one item with code 6386
         // Third test should have name: "T4", and one item with code 4022
-        const results_3: ProviderResult[] = FileUtils.loadFile('test/antech-v6/TyroidResults/tyroid_results_3.json')
+        const results_3: ProviderResult[] = FileUtils.loadFile('test/antech-v6/TyroidResults/tyroid_results_03.json')
         jest.spyOn(reportsService, 'findReportsByExternalOrderIds').mockResolvedValueOnce([])
         jest.spyOn(ordersServiceMock, 'getOrderFromProvider').mockResolvedValue(null)
         await reportsService.handleExternalResults({
