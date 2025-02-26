@@ -2025,13 +2025,68 @@ describe('ReportsService', () => {
         }))
         jest.clearAllMocks()
       })
+    })
+    describe ('Antech-V6', () => {
       it('should handle Tyroid Profile report with missing results', async () => {
-        const results: ProviderResult[] = FileUtils.loadFile('test/antech/tyroid_results.json')
+        const results_1: ProviderResult[] = FileUtils.loadFile('test/antech-v6/TyroidResults/tyroid_results_1.json')
+        jest.spyOn(reportsService, 'findReportsByExternalOrderIds').mockResolvedValueOnce([])
+        jest.spyOn(ordersServiceMock, 'getOrderFromProvider').mockResolvedValue(null)
+        
+        // 1) Create a report with empty and pending results.
+        // Result should have three tests, maintaining the received order.
+        // All tests should be marked as pending, and the report should be marked as registered.
+        // Test with missing result should be ignored. 
+        await reportsService.handleExternalResults({
+          integrationId: 'antech-v6',
+          results: results_1
+        })
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
+          namespace: EventNamespace.REPORTS,
+          type: EventType.REPORT_CREATED,
+          data: expect.objectContaining({
+            report: expect.objectContaining({
+              testResultsSet: expect.arrayContaining([]) 
+            })
+          })
+        }))
+
+        // 2) Update the report with the complete results.
+        // Status should be PARTIAL
+        // Should igore empty result
+        // First test should have name: "TSH", and one item with code 4001
+        // Second and third test should respect the order in which they were received and be empty.
+        const results_2: ProviderResult[] = FileUtils.loadFile('test/antech-v6/TyroidResults/tyroid_results_2.json')
         jest.spyOn(reportsService, 'findReportsByExternalOrderIds').mockResolvedValueOnce([])
         jest.spyOn(ordersServiceMock, 'getOrderFromProvider').mockResolvedValue(null)
         await reportsService.handleExternalResults({
-          integrationId: 'antech',
-          results: results
+          integrationId: 'antech-v6',
+          results: results_2
+        })
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
+          namespace: EventNamespace.REPORTS,
+          type: EventType.REPORT_UPDATED,
+          data: expect.objectContaining({
+            report: expect.objectContaining({
+              testResultsSet: expect.arrayContaining([
+                expect.objectContaining({
+                  observations: expect.any(Object)})
+              ])
+            })
+          })
+        }))
+      
+        // 3) Update the report with the complete results.
+        // Status should be COMPLETE or FINAL?
+        // Should igore empty result
+        // First test should have named: "TSH", and one item with code 4001
+        // Second test should have name: "Free T4 By Equilibrium Dialysis", and one item with code 6386
+        // Third test should have name: "T4", and one item with code 4022
+        const results_3: ProviderResult[] = FileUtils.loadFile('test/antech-v6/TyroidResults/tyroid_results_3.json')
+        jest.spyOn(reportsService, 'findReportsByExternalOrderIds').mockResolvedValueOnce([])
+        jest.spyOn(ordersServiceMock, 'getOrderFromProvider').mockResolvedValue(null)
+        await reportsService.handleExternalResults({
+          integrationId: 'antech-v6',
+          results: results_3
         })
         expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
           namespace: EventNamespace.REPORTS,
@@ -2045,6 +2100,7 @@ describe('ReportsService', () => {
             })
           })
         }))
+        
         jest.clearAllMocks()
       })
     })
