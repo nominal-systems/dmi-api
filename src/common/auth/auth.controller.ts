@@ -51,24 +51,33 @@ export class AuthController {
     try {
       // Retrieve the originally requested URL from the session.
       const redirectUrl = req.session.redirectUrl || '/ui/admin' // default fallback
-      console.log(`redirectUrl= ${JSON.stringify(redirectUrl, null, 2)}`) // TODO(gb): remove trace
+      this.logger.debug(`Redirect URL from session: ${redirectUrl}`)
 
       // Clean up the stored redirect so it doesn't persist for future requests.
       delete req.session.redirectUrl
 
+      // We still need this to complete the authentication process
       const authenticate = fastifyPassport.authenticate('oidc', {
         session: true,
-        successRedirect: redirectUrl,
-        failureRedirect: '/ui/login',
-        authInfo: false,
-        failureMessage: true
+        failureRedirect: '/ui/login'
       }) as (req: FastifyRequest, res: FastifyReply) => Promise<void>
 
-      this.logger.debug('About to call authenticate')
+      // Complete the authentication
       await authenticate(req, res)
-      this.logger.debug('Authentication completed successfully')
 
+      // At this point, the user should be authenticated and the session established
+      if (req.user == null) {
+        this.logger.error('Authentication completed but no user was set')
+        return await res.redirect('/ui/login?error=auth_failed')
+      }
 
+      this.logger.debug(`User authenticated: ${JSON.stringify(req.user)}`)
+      this.logger.debug(`Authentication successful, redirecting to ${redirectUrl}`)
+
+      // Explicitly set status and perform redirect
+      res.status(302)
+      res.header('Location', redirectUrl)
+      return await res.send()
     } catch (error) {
       this.logger.error('Callback authentication error:')
       this.logger.error(error.message)
