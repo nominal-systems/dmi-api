@@ -2047,7 +2047,12 @@ describe('ReportsService', () => {
           type: EventType.REPORT_CREATED,
           data: expect.objectContaining({
             report: expect.objectContaining({
-              testResultsSet: expect.arrayContaining([]) 
+              testResultsSet: [
+                expect.objectContaining({ code: "SA380", name: "", status: "DONE" }), // Should we remove this?
+                expect.objectContaining({ code: "SA380", name: "TSH", status: "PENDING" }),
+                expect.objectContaining({ code: "SA380", name: "Free T4 By Equilibrium Dialysis", status: "PENDING" }),
+                expect.objectContaining({ code: "SA380", name: "T4", status: "PENDING" })
+              ]
             })
           })
         }))
@@ -2069,10 +2074,25 @@ describe('ReportsService', () => {
           type: EventType.REPORT_UPDATED,
           data: expect.objectContaining({
             report: expect.objectContaining({
-              testResultsSet: expect.arrayContaining([
+              status: "PARTIAL",
+              testResultsSet: [
+                expect.objectContaining({ code: "SA380", name: "", status: "DONE" }), // Should we remove this?
+                //expect.objectContaining({ code: "SA380", name: "TSH", status: "COMPLETED" }),
                 expect.objectContaining({
-                  observations: expect.any(Object)})
-              ])
+                  code: "SA380",
+                  name: "TSH",
+                  status: "COMPLETED",
+                  observations: expect.arrayContaining([
+                    expect.objectContaining({
+                      code: "4001",
+                      name: "TSH",
+                      status: "DONE"
+                    })
+                  ])
+                }),        
+                expect.objectContaining({ code: "SA380", name: "Free T4 By Equilibrium Dialysis", status: "PENDING" }),
+                expect.objectContaining({ code: "SA380", name: "T4", status: "PENDING" })
+              ]
             })
           })
         }))
@@ -2092,7 +2112,7 @@ describe('ReportsService', () => {
         })
         expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
           namespace: EventNamespace.REPORTS,
-          type: EventType.REPORT_CREATED,
+          type: EventType.REPORT_UPDATED,
           data: expect.objectContaining({
             report: expect.objectContaining({
               testResultsSet: expect.arrayContaining([
