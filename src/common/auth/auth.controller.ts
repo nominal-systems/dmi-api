@@ -12,8 +12,6 @@ export class AuthController {
 
   @Get('login')
   async login (@Req() req: FastifyRequest, @Res() res: FastifyReply): Promise<void> {
-    this.logger.debug('Login endpoint called')
-
     // Capture the redirect query parameter and store it in the session.
     const query = req.query as { redirect?: string }
     if (query.redirect) {
@@ -28,9 +26,7 @@ export class AuthController {
         failureMessage: true
       }) as (req: FastifyRequest, res: FastifyReply) => Promise<void>
 
-      this.logger.debug('About to call authenticate')
       await authenticate(req, res)
-      console.log('After authenticate, req.user:', req.user)
       this.logger.debug('Authentication initiated')
     } catch (error) {
       this.logger.error('Login authentication error:')
@@ -46,12 +42,10 @@ export class AuthController {
     @Req() req: FastifyRequest,
     @Res() res: FastifyReply
   ): Promise<void> {
-    this.logger.debug('Callback endpoint called')
 
     try {
       // Retrieve the originally requested URL from the session.
-      const redirectUrl = req.session.redirectUrl || '/ui/admin' // default fallback
-      this.logger.debug(`Redirect URL from session: ${redirectUrl}`)
+      const redirectUrl = req.session.redirectUrl || '/ui' // default fallback
 
       // Clean up the stored redirect so it doesn't persist for future requests.
       delete req.session.redirectUrl
@@ -71,8 +65,7 @@ export class AuthController {
         return await res.redirect('/ui/login?error=auth_failed')
       }
 
-      this.logger.debug(`User authenticated: ${JSON.stringify(req.user)}`)
-      this.logger.debug(`Authentication successful, redirecting to ${redirectUrl}`)
+      this.logger.debug(`User authenticated: ${JSON.stringify(req.user.profile.username)}. Redirecting to ${redirectUrl}`)
 
       // Explicitly set status and perform redirect
       res.status(302)
