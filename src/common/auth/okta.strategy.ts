@@ -14,16 +14,6 @@ export class OktaStrategy extends PassportStrategy(Strategy, 'oidc') {
     const baseUrl = configService.get<string>('app.baseUrl', 'http://localhost:3000')
     const callbackURL = `${baseUrl}/auth/callback`
 
-    console.log(`issuer= https://${oktaDomain}`) // TODO(gb): remove trace
-    console.log(`authorizationURL= https://${oktaDomain}/oauth2/default/v1/authorize`) // TODO(gb): remove trace
-    console.log(`tokenURL= https://${oktaDomain}/oauth2/default/v1/token`) // TODO(gb): remove trace
-    console.log(`userInfoURL= https://${oktaDomain}/oauth2/default/v1/userinfo`) // TODO(gb): remove trace
-    console.log(`clientID= ${clientId}`) // TODO(gb): remove trace
-    console.log(`clientSecret= ${clientSecret}`) // TODO(gb): remove trace
-    console.log(`callbackURL= ${callbackURL}`) // TODO(gb): remove trace
-    console.log('scope= \'openid profile\'') // TODO(gb): remove trace
-    console.log('response_type: \'code\'') // TODO(gb): remove trace
-
     super({
       issuer: `https://${oktaDomain}/oauth2/default`,
       authorizationURL: `https://${oktaDomain}/oauth2/default/v1/authorize`,
@@ -37,7 +27,7 @@ export class OktaStrategy extends PassportStrategy(Strategy, 'oidc') {
       passReqToCallback: true
     })
 
-    this.logger.debug('OktaStrategy initialized')
+    this.logger.log(`OktaStrategy initialized for ${oktaDomain}`)
   }
 
   async validate (
@@ -49,8 +39,6 @@ export class OktaStrategy extends PassportStrategy(Strategy, 'oidc') {
     refreshToken: string
   ): Promise<any> {
     try {
-      this.logger.debug(`OktaStrategy.validate(): ${JSON.stringify(profile)}`)
-
       if (!profile) {
         this.logger.error('No profile received from Okta')
         throw new UnauthorizedException('Invalid user profile')
@@ -64,7 +52,6 @@ export class OktaStrategy extends PassportStrategy(Strategy, 'oidc') {
         refreshToken
       }
 
-      this.logger.debug(`Returning user: ${JSON.stringify(user)}`)
       return user
     } catch (error) {
       this.logger.error(`Validation error: ${error.message}`)

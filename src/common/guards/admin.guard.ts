@@ -17,18 +17,14 @@ export class AdminGuard extends AuthGuard('oidc') {
     const request = context.switchToHttp().getRequest()
     const response = context.switchToHttp().getResponse<ExtendedFastifyReply>()
 
-    this.logger.debug(`AdminGuard.canActivate(): ${request.method} ${request.url}`)
-
     // Check if we're already in the auth flow
-    const isAuthPath = request.url.startsWith('/auth/')
+    const isAuthPath: boolean = request.url.startsWith('/auth/')
     if (isAuthPath) {
-      this.logger.debug('Already in auth flow, allowing request')
       return true
     }
 
     // If already authenticated, just allow access
     if (request.isAuthenticated?.()) {
-      this.logger.debug(`User already authenticated: ${JSON.stringify(request.user.profile.username)}. Allowing request.`)
       return true
     }
 
@@ -53,11 +49,9 @@ export class AdminGuard extends AuthGuard('oidc') {
 
 // Register serializers for session support
 fastifyPassport.registerUserSerializer(async (user: any) => {
-  console.log(`AdminGuard UserSerializer= ${JSON.stringify(user, null, 2)}`) // TODO(gb): remove trace
   return user
 })
 
 fastifyPassport.registerUserDeserializer(async (user: any) => {
-  console.log(`AdminGuard UserDeserializer= ${JSON.stringify(user, null, 2)}`) // TODO(gb): remove trace
   return user
 })
