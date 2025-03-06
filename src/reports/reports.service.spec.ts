@@ -2093,8 +2093,38 @@ describe('ReportsService', () => {
         // First test should have name: "TSH", and one item with code 4001
         // Second and third test should respect the order in which they were received and be empty.
         const results2: ProviderResult[] = FileUtils.loadFile('test/antech-v6/ThyroidResults/thyroid_results_2.json')
-        jest.spyOn(reportsService, 'findReportsByExternalOrderIds').mockResolvedValueOnce([])
+        jest.spyOn(reportsService, 'findReportsByExternalOrderIds').mockResolvedValueOnce([{
+          order: {
+            externalId: '7092-VOY-37157652213',
+            status: 'SUBMITTED'
+          },
+          status: 'REGISTERED',
+          testResultsSet: [
+            {
+              seq: 0,
+              code: 'SA380',
+              name: 'TSH',
+              observations: [],
+              status: 'PENDING'
+            },
+            {
+              seq: 1,
+              code: 'SA380',
+              name: 'Free T4 By Equilibrium Dialysis',
+              observations: [],
+              status: 'PENDING'
+            },
+            {
+              seq: 2,
+              code: 'SA380',
+              name: 'T4',
+              observations: [],
+              status: 'PENDING'
+            }
+          ]
+        }] as unknown as Report[])
         jest.spyOn(ordersServiceMock, 'getOrderFromProvider').mockResolvedValue(null)
+        jest.spyOn(ordersServiceMock, 'findOrdersByExternalIds').mockResolvedValue([])
         await reportsService.handleExternalResults({
           integrationId: 'antech-v6',
           results: results2
