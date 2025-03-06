@@ -1,0 +1,69 @@
+{
+  "results": [
+    {
+      "id": "305580024",
+      "orderId": "7092-VOY-37157652213",
+      "accession": "DLEA00533798",
+      "status": "PARTIAL",
+      "testResults": [
+        {
+          "seq": 0,
+          "code": "SA380",
+          "name": "TSH",
+          "items": [
+            {
+              "seq": 0,
+              "code": "4001",
+              "name": "TSH",
+              "status": "DONE",
+              "valueQuantity": {
+                "value": 0.17,
+                "units": "NG/ML"
+              },
+              "referenceRange": [
+                {
+                  "type": "NORMAL",
+                  "text": "0 - 0.60",
+                  "low": 0,
+                  "high": 0.6
+                }
+              ],
+              "notes": "  While many dogs with primary hypothyroidism have elevated cTSH concentrations, up to one third of affected dogs have normal or low cTSH concentrations, for reasons that are unclear. In those cases where TSH concentrations are normal and hypothyroidism is still strongly suspected, consider performing a free T4 and/or thyroglobulin autoantibodies."
+            }
+          ]
+        },
+        {
+          "seq": 1,
+          "code": "SA380",
+          "name": "Free T4 By Equilibrium Dialysis",
+          "items": []
+        },
+        {
+          "seq": 2,
+          "code": "SA380",
+          "name": "T4",
+          "items": [
+            {
+              "seq": 0,
+              "code": "4022",
+              "name": "T4",
+              "status": "DONE",
+              "valueQuantity": {
+                "value": 1.4,
+                "units": "UG/DL"
+              },
+              "referenceRange": [
+                {
+                  "type": "NORMAL",
+                  "text": "0.8-3.5",
+                  "low": 0.8,
+                  "high": 3.5
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
