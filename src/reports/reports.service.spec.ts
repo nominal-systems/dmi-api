@@ -2035,10 +2035,6 @@ describe('ReportsService', () => {
         jest.spyOn(ordersServiceMock, 'findOrdersByExternalIds').mockResolvedValue(order)
         jest.spyOn(ordersServiceMock, 'getOrderFromProvider').mockResolvedValue(null)
 
-        // 1) Create a report with empty and pending results.
-        // Result should have three tests, maintaining the received order.
-        // All tests should be marked as pending, and the report should be marked as registered.
-        // Test with missing result should be ignored.
         await reportsService.handleExternalResults({
           integrationId: 'antech-v6',
           results: results1
@@ -2057,7 +2053,7 @@ describe('ReportsService', () => {
           })
         }))
       })
-      it('Should correctly handle the Thyroid Profile report and order until the second result is received.', async () => {
+      it('Should save Thyroid Profile report results in the same order they were received when fetched a second time.', async () => {
         const order: ProviderResult[] = FileUtils.loadFile('test/antech-v6/ThyroidResults/thyroid_orders_1.json')
         const results1: ProviderResult[] = FileUtils.loadFile('test/antech-v6/ThyroidResults/thyroid_results_1.json')
 
@@ -2065,10 +2061,6 @@ describe('ReportsService', () => {
         jest.spyOn(ordersServiceMock, 'findOrdersByExternalIds').mockResolvedValue(order)
         jest.spyOn(ordersServiceMock, 'getOrderFromProvider').mockResolvedValue(null)
 
-        // 1) Create a report with empty and pending results.
-        // Result should have three tests, maintaining the received order.
-        // All tests should be marked as pending, and the report should be marked as registered.
-        // Test with missing result should be ignored.
         await reportsService.handleExternalResults({
           integrationId: 'antech-v6',
           results: results1
@@ -2087,11 +2079,6 @@ describe('ReportsService', () => {
           })
         }))
 
-        // 2) Update the report with the complete results.
-        // Status should be PARTIAL
-        // Should igore empty result
-        // First test should have name: "TSH", and one item with code 4001
-        // Second and third test should respect the order in which they were received and be empty.
         const results2: ProviderResult[] = FileUtils.loadFile('test/antech-v6/ThyroidResults/thyroid_results_2.json')
         jest.spyOn(reportsService, 'findReportsByExternalOrderIds').mockResolvedValueOnce([{
           order: {
@@ -2129,12 +2116,126 @@ describe('ReportsService', () => {
           integrationId: 'antech-v6',
           results: results2
         })
+
+        expect(eventsServiceMock.addEvent).toHaveBeenNthCalledWith(2, expect.objectContaining({
+          namespace: EventNamespace.REPORTS,
+          type: EventType.REPORT_UPDATED,
+          data: expect.objectContaining({
+            report: expect.objectContaining({
+              testResultsSet: [
+                expect.objectContaining({
+                  code: 'SA380',
+                  name: 'TSH',
+                  observations: expect.arrayContaining([
+                    expect.objectContaining({
+                      seq: 0,
+                      code: '4001',
+                      name: 'TSH',
+                      status: 'DONE'
+                    })
+                  ])
+                }),
+                expect.objectContaining({ code: 'SA380', name: 'Free T4 By Equilibrium Dialysis', status: 'PENDING' }),
+                expect.objectContaining({ code: 'SA380', name: 'T4', status: 'PENDING' })
+              ]
+            })
+          })
+        }))
+      })
+
+      it('Should correctly handle Thyroid Profile report results status when fetched a second time.', async () => {
+        const order: ProviderResult[] = FileUtils.loadFile('test/antech-v6/ThyroidResults/thyroid_orders_1.json')
+        const results1: ProviderResult[] = FileUtils.loadFile('test/antech-v6/ThyroidResults/thyroid_results_1.json')
+
+        jest.spyOn(reportsService, 'findReportsByExternalOrderIds').mockResolvedValueOnce([])
+        jest.spyOn(ordersServiceMock, 'findOrdersByExternalIds').mockResolvedValue(order)
+        jest.spyOn(ordersServiceMock, 'getOrderFromProvider').mockResolvedValue(null)
+
+        await reportsService.handleExternalResults({
+          integrationId: 'antech-v6',
+          results: results1
+        })
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
+          namespace: EventNamespace.REPORTS,
+          type: EventType.REPORT_CREATED,
+          data: expect.objectContaining({
+            report: expect.objectContaining({
+              testResultsSet: [
+                expect.objectContaining({ code: 'SA380', name: 'TSH', status: 'PENDING' }),
+                expect.objectContaining({ code: 'SA380', name: 'Free T4 By Equilibrium Dialysis', status: 'PENDING' }),
+                expect.objectContaining({ code: 'SA380', name: 'T4', status: 'PENDING' })
+              ]
+            })
+          })
+        }))
+
+        const results2: ProviderResult[] = FileUtils.loadFile('test/antech-v6/ThyroidResults/thyroid_results_2.json')
+        jest.spyOn(reportsService, 'findReportsByExternalOrderIds').mockResolvedValueOnce([{
+          order: {
+            externalId: '7092-VOY-37157652213',
+            status: 'SUBMITTED'
+          },
+          status: 'REGISTERED',
+          testResultsSet: [
+            {
+              seq: 0,
+              code: 'SA380',
+              name: 'TSH',
+              observations: [],
+              status: 'PENDING'
+            },
+            {
+              seq: 1,
+              code: 'SA380',
+              name: 'Free T4 By Equilibrium Dialysis',
+              observations: [],
+              status: 'PENDING'
+            },
+            {
+              seq: 2,
+              code: 'SA380',
+              name: 'T4',
+              observations: [],
+              status: 'PENDING'
+            }
+          ]
+        }] as unknown as Report[])
+        jest.spyOn(ordersServiceMock, 'getOrderFromProvider').mockResolvedValue(null)
+        jest.spyOn(ordersServiceMock, 'findOrdersByExternalIds').mockResolvedValue([])
+        await reportsService.handleExternalResults({
+          integrationId: 'antech-v6',
+          results: results2
+        })
+
         expect(eventsServiceMock.addEvent).toHaveBeenNthCalledWith(2, expect.objectContaining({
           namespace: EventNamespace.REPORTS,
           type: EventType.REPORT_UPDATED,
           data: expect.objectContaining({
             report: expect.objectContaining({
               status: 'PARTIAL',
+              testResultsSet: [
+                expect.objectContaining({
+                  code: 'SA380',
+                  name: 'TSH',
+                  // status: 'COMPLETED',
+                  observations: expect.arrayContaining([
+                    expect.objectContaining({
+                      seq: 0,
+                      code: '4001',
+                      name: 'TSH',
+                      status: 'DONE'
+                    })
+                  ])
+                }),
+                expect.objectContaining({ code: 'SA380', name: 'Free T4 By Equilibrium Dialysis', status: 'PENDING' }),
+                expect.objectContaining({ code: 'SA380', name: 'T4', status: 'PENDING' })
+              ]
+            })
+          })
+        }))
+        expect(eventsServiceMock.addEvent).toHaveBeenNthCalledWith(2, expect.objectContaining({
+          data: expect.objectContaining({
+            report: expect.objectContaining({
               testResultsSet: [
                 expect.objectContaining({
                   code: 'SA380',
@@ -2150,6 +2251,94 @@ describe('ReportsService', () => {
                 }),
                 expect.objectContaining({ code: 'SA380', name: 'Free T4 By Equilibrium Dialysis', status: 'PENDING' }),
                 expect.objectContaining({ code: 'SA380', name: 'T4', status: 'PENDING' })
+              ]
+            })
+          })
+        }))
+      })
+
+      it('Should maintain the sequence order of Thyroid Profile report results when fetched a second time.', async () => {
+        const order: ProviderResult[] = FileUtils.loadFile('test/antech-v6/ThyroidResults/thyroid_orders_1.json')
+        const results1: ProviderResult[] = FileUtils.loadFile('test/antech-v6/ThyroidResults/thyroid_results_1.json')
+
+        jest.spyOn(reportsService, 'findReportsByExternalOrderIds').mockResolvedValueOnce([])
+        jest.spyOn(ordersServiceMock, 'findOrdersByExternalIds').mockResolvedValue(order)
+        jest.spyOn(ordersServiceMock, 'getOrderFromProvider').mockResolvedValue(null)
+
+        await reportsService.handleExternalResults({
+          integrationId: 'antech-v6',
+          results: results1
+        })
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
+          namespace: EventNamespace.REPORTS,
+          type: EventType.REPORT_CREATED,
+          data: expect.objectContaining({
+            report: expect.objectContaining({
+              testResultsSet: [
+                expect.objectContaining({ code: 'SA380', name: 'TSH', status: 'PENDING' }),
+                expect.objectContaining({ code: 'SA380', name: 'Free T4 By Equilibrium Dialysis', status: 'PENDING' }),
+                expect.objectContaining({ code: 'SA380', name: 'T4', status: 'PENDING' })
+              ]
+            })
+          })
+        }))
+
+        const results2: ProviderResult[] = FileUtils.loadFile('test/antech-v6/ThyroidResults/thyroid_results_2.json')
+        jest.spyOn(reportsService, 'findReportsByExternalOrderIds').mockResolvedValueOnce([{
+          order: {
+            externalId: '7092-VOY-37157652213',
+            status: 'SUBMITTED'
+          },
+          status: 'REGISTERED',
+          testResultsSet: [
+            {
+              seq: 0,
+              code: 'SA380',
+              name: 'TSH',
+              observations: [],
+              status: 'PENDING'
+            },
+            {
+              seq: 1,
+              code: 'SA380',
+              name: 'Free T4 By Equilibrium Dialysis',
+              observations: [],
+              status: 'PENDING'
+            },
+            {
+              seq: 2,
+              code: 'SA380',
+              name: 'T4',
+              observations: [],
+              status: 'PENDING'
+            }
+          ]
+        }] as unknown as Report[])
+        jest.spyOn(ordersServiceMock, 'getOrderFromProvider').mockResolvedValue(null)
+        jest.spyOn(ordersServiceMock, 'findOrdersByExternalIds').mockResolvedValue([])
+        await reportsService.handleExternalResults({
+          integrationId: 'antech-v6',
+          results: results2
+        })
+
+        expect(eventsServiceMock.addEvent).toHaveBeenNthCalledWith(2, expect.objectContaining({
+          data: expect.objectContaining({
+            report: expect.objectContaining({
+              testResultsSet: [
+                expect.objectContaining({
+                  seq: 0,
+                  code: 'SA380',
+                  name: 'TSH',
+                  observations: expect.arrayContaining([
+                    expect.objectContaining({
+                      code: '4001',
+                      name: 'TSH',
+                      status: 'DONE'
+                    })
+                  ])
+                }),
+                expect.objectContaining({ seq: 1, code: 'SA380', name: 'Free T4 By Equilibrium Dialysis' }),
+                expect.objectContaining({ seq: 2, code: 'SA380', name: 'T4' })
               ]
             })
           })
