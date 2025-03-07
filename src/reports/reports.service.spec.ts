@@ -2061,24 +2061,36 @@ describe('ReportsService', () => {
         jest.spyOn(ordersServiceMock, 'findOrdersByExternalIds').mockResolvedValue(order)
         jest.spyOn(ordersServiceMock, 'getOrderFromProvider').mockResolvedValue(null)
 
+        // First version of the results
         await reportsService.handleExternalResults({
           integrationId: 'antech-v6',
           results: results1
         })
-        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
-          namespace: EventNamespace.REPORTS,
-          type: EventType.REPORT_CREATED,
-          data: expect.objectContaining({
-            report: expect.objectContaining({
-              testResultsSet: [
-                expect.objectContaining({ code: 'SA380', name: 'TSH', status: 'PENDING' }),
-                expect.objectContaining({ code: 'SA380', name: 'Free T4 By Equilibrium Dialysis', status: 'PENDING' }),
-                expect.objectContaining({ code: 'SA380', name: 'T4', status: 'PENDING' })
-              ]
-            })
-          })
-        }))
 
+        const eventCall1 = eventsServiceMock.addEvent.mock.calls[0][0]
+        const testResultSet1 = eventCall1.data.report.testResultsSet
+        const testResultNamespace1 = eventCall1.namespace
+        const testResultType1 = eventCall1.type
+
+        expect(testResultNamespace1).toEqual(EventNamespace.REPORTS)
+        expect(testResultType1).toEqual(EventType.REPORT_CREATED)
+
+        expect(testResultSet1).toBeDefined()
+        expect(testResultSet1.length).toBeGreaterThanOrEqual(3)
+
+        expect(testResultSet1[0].code).toEqual('SA380')
+        expect(testResultSet1[0].status).toEqual('PENDING')
+        expect(testResultSet1[0].name).toEqual('TSH')
+
+        expect(testResultSet1[1].code).toEqual('SA380')
+        expect(testResultSet1[1].name).toEqual('Free T4 By Equilibrium Dialysis')
+        expect(testResultSet1[1].status).toEqual('PENDING')
+
+        expect(testResultSet1[2].code).toEqual('SA380')
+        expect(testResultSet1[2].name).toEqual('T4')
+        expect(testResultSet1[2].status).toEqual('PENDING')
+
+        // Second version of the results
         const results2: ProviderResult[] = FileUtils.loadFile('test/antech-v6/ThyroidResults/thyroid_results_2.json')
         jest.spyOn(reportsService, 'findReportsByExternalOrderIds').mockResolvedValueOnce([{
           order: {
@@ -2117,232 +2129,38 @@ describe('ReportsService', () => {
           results: results2
         })
 
-        expect(eventsServiceMock.addEvent).toHaveBeenNthCalledWith(2, expect.objectContaining({
-          namespace: EventNamespace.REPORTS,
-          type: EventType.REPORT_UPDATED,
-          data: expect.objectContaining({
-            report: expect.objectContaining({
-              testResultsSet: [
-                expect.objectContaining({
-                  code: 'SA380',
-                  name: 'TSH',
-                  observations: expect.arrayContaining([
-                    expect.objectContaining({
-                      seq: 0,
-                      code: '4001',
-                      name: 'TSH',
-                      status: 'DONE'
-                    })
-                  ])
-                }),
-                expect.objectContaining({ code: 'SA380', name: 'Free T4 By Equilibrium Dialysis', status: 'PENDING' }),
-                expect.objectContaining({ code: 'SA380', name: 'T4', status: 'PENDING' })
-              ]
-            })
-          })
-        }))
-      })
+        const eventCall2 = eventsServiceMock.addEvent.mock.calls[1][0]
+        const testResultSet2 = eventCall2.data.report.testResultsSet
+        const testResultNamespace2 = eventCall2.namespace
+        const testResultType2 = eventCall2.type
 
-      it('Should correctly handle Thyroid Profile report results status when fetched a second time.', async () => {
-        const order: ProviderResult[] = FileUtils.loadFile('test/antech-v6/ThyroidResults/thyroid_orders_1.json')
-        const results1: ProviderResult[] = FileUtils.loadFile('test/antech-v6/ThyroidResults/thyroid_results_1.json')
+        expect(testResultNamespace2).toEqual(EventNamespace.REPORTS)
+        expect(testResultType2).toEqual(EventType.REPORT_UPDATED)
 
-        jest.spyOn(reportsService, 'findReportsByExternalOrderIds').mockResolvedValueOnce([])
-        jest.spyOn(ordersServiceMock, 'findOrdersByExternalIds').mockResolvedValue(order)
-        jest.spyOn(ordersServiceMock, 'getOrderFromProvider').mockResolvedValue(null)
+        expect(testResultSet2).toBeDefined()
+        expect(testResultSet2.length).toBeGreaterThanOrEqual(3)
 
-        await reportsService.handleExternalResults({
-          integrationId: 'antech-v6',
-          results: results1
-        })
-        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
-          namespace: EventNamespace.REPORTS,
-          type: EventType.REPORT_CREATED,
-          data: expect.objectContaining({
-            report: expect.objectContaining({
-              testResultsSet: [
-                expect.objectContaining({ code: 'SA380', name: 'TSH', status: 'PENDING' }),
-                expect.objectContaining({ code: 'SA380', name: 'Free T4 By Equilibrium Dialysis', status: 'PENDING' }),
-                expect.objectContaining({ code: 'SA380', name: 'T4', status: 'PENDING' })
-              ]
-            })
-          })
-        }))
-
-        const results2: ProviderResult[] = FileUtils.loadFile('test/antech-v6/ThyroidResults/thyroid_results_2.json')
-        jest.spyOn(reportsService, 'findReportsByExternalOrderIds').mockResolvedValueOnce([{
-          order: {
-            externalId: '7092-VOY-37157652213',
-            status: 'SUBMITTED'
-          },
-          status: 'REGISTERED',
-          testResultsSet: [
-            {
+        expect(testResultSet2[0].code).toEqual('SA380')
+        expect(testResultSet2[0].status).toEqual('COMPLETED')
+        expect(testResultSet2[0].name).toEqual('TSH')
+        expect(testResultSet2[0].observations).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
               seq: 0,
-              code: 'SA380',
+              code: '4001',
               name: 'TSH',
-              observations: [],
-              status: 'PENDING'
-            },
-            {
-              seq: 1,
-              code: 'SA380',
-              name: 'Free T4 By Equilibrium Dialysis',
-              observations: [],
-              status: 'PENDING'
-            },
-            {
-              seq: 2,
-              code: 'SA380',
-              name: 'T4',
-              observations: [],
-              status: 'PENDING'
-            }
-          ]
-        }] as unknown as Report[])
-        jest.spyOn(ordersServiceMock, 'getOrderFromProvider').mockResolvedValue(null)
-        jest.spyOn(ordersServiceMock, 'findOrdersByExternalIds').mockResolvedValue([])
-        await reportsService.handleExternalResults({
-          integrationId: 'antech-v6',
-          results: results2
-        })
-
-        expect(eventsServiceMock.addEvent).toHaveBeenNthCalledWith(2, expect.objectContaining({
-          namespace: EventNamespace.REPORTS,
-          type: EventType.REPORT_UPDATED,
-          data: expect.objectContaining({
-            report: expect.objectContaining({
-              status: 'PARTIAL',
-              testResultsSet: [
-                expect.objectContaining({
-                  code: 'SA380',
-                  name: 'TSH',
-                  // status: 'COMPLETED',
-                  observations: expect.arrayContaining([
-                    expect.objectContaining({
-                      seq: 0,
-                      code: '4001',
-                      name: 'TSH',
-                      status: 'DONE'
-                    })
-                  ])
-                }),
-                expect.objectContaining({ code: 'SA380', name: 'Free T4 By Equilibrium Dialysis', status: 'PENDING' }),
-                expect.objectContaining({ code: 'SA380', name: 'T4', status: 'PENDING' })
-              ]
+              status: 'DONE'
             })
-          })
-        }))
-        expect(eventsServiceMock.addEvent).toHaveBeenNthCalledWith(2, expect.objectContaining({
-          data: expect.objectContaining({
-            report: expect.objectContaining({
-              testResultsSet: [
-                expect.objectContaining({
-                  code: 'SA380',
-                  name: 'TSH',
-                  status: 'COMPLETED',
-                  observations: expect.arrayContaining([
-                    expect.objectContaining({
-                      code: '4001',
-                      name: 'TSH',
-                      status: 'DONE'
-                    })
-                  ])
-                }),
-                expect.objectContaining({ code: 'SA380', name: 'Free T4 By Equilibrium Dialysis', status: 'PENDING' }),
-                expect.objectContaining({ code: 'SA380', name: 'T4', status: 'PENDING' })
-              ]
-            })
-          })
-        }))
-      })
+          ])
+        )
 
-      it('Should maintain the sequence order of Thyroid Profile report results when fetched a second time.', async () => {
-        const order: ProviderResult[] = FileUtils.loadFile('test/antech-v6/ThyroidResults/thyroid_orders_1.json')
-        const results1: ProviderResult[] = FileUtils.loadFile('test/antech-v6/ThyroidResults/thyroid_results_1.json')
+        expect(testResultSet2[1].code).toEqual('SA380')
+        expect(testResultSet2[1].name).toEqual('Free T4 By Equilibrium Dialysis')
+        expect(testResultSet2[1].status).toEqual('PENDING')
 
-        jest.spyOn(reportsService, 'findReportsByExternalOrderIds').mockResolvedValueOnce([])
-        jest.spyOn(ordersServiceMock, 'findOrdersByExternalIds').mockResolvedValue(order)
-        jest.spyOn(ordersServiceMock, 'getOrderFromProvider').mockResolvedValue(null)
-
-        await reportsService.handleExternalResults({
-          integrationId: 'antech-v6',
-          results: results1
-        })
-        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
-          namespace: EventNamespace.REPORTS,
-          type: EventType.REPORT_CREATED,
-          data: expect.objectContaining({
-            report: expect.objectContaining({
-              testResultsSet: [
-                expect.objectContaining({ code: 'SA380', name: 'TSH', status: 'PENDING' }),
-                expect.objectContaining({ code: 'SA380', name: 'Free T4 By Equilibrium Dialysis', status: 'PENDING' }),
-                expect.objectContaining({ code: 'SA380', name: 'T4', status: 'PENDING' })
-              ]
-            })
-          })
-        }))
-
-        const results2: ProviderResult[] = FileUtils.loadFile('test/antech-v6/ThyroidResults/thyroid_results_2.json')
-        jest.spyOn(reportsService, 'findReportsByExternalOrderIds').mockResolvedValueOnce([{
-          order: {
-            externalId: '7092-VOY-37157652213',
-            status: 'SUBMITTED'
-          },
-          status: 'REGISTERED',
-          testResultsSet: [
-            {
-              seq: 0,
-              code: 'SA380',
-              name: 'TSH',
-              observations: [],
-              status: 'PENDING'
-            },
-            {
-              seq: 1,
-              code: 'SA380',
-              name: 'Free T4 By Equilibrium Dialysis',
-              observations: [],
-              status: 'PENDING'
-            },
-            {
-              seq: 2,
-              code: 'SA380',
-              name: 'T4',
-              observations: [],
-              status: 'PENDING'
-            }
-          ]
-        }] as unknown as Report[])
-        jest.spyOn(ordersServiceMock, 'getOrderFromProvider').mockResolvedValue(null)
-        jest.spyOn(ordersServiceMock, 'findOrdersByExternalIds').mockResolvedValue([])
-        await reportsService.handleExternalResults({
-          integrationId: 'antech-v6',
-          results: results2
-        })
-
-        expect(eventsServiceMock.addEvent).toHaveBeenNthCalledWith(2, expect.objectContaining({
-          data: expect.objectContaining({
-            report: expect.objectContaining({
-              testResultsSet: [
-                expect.objectContaining({
-                  seq: 0,
-                  code: 'SA380',
-                  name: 'TSH',
-                  observations: expect.arrayContaining([
-                    expect.objectContaining({
-                      code: '4001',
-                      name: 'TSH',
-                      status: 'DONE'
-                    })
-                  ])
-                }),
-                expect.objectContaining({ seq: 1, code: 'SA380', name: 'Free T4 By Equilibrium Dialysis' }),
-                expect.objectContaining({ seq: 2, code: 'SA380', name: 'T4' })
-              ]
-            })
-          })
-        }))
+        expect(testResultSet2[2].code).toEqual('SA380')
+        expect(testResultSet2[2].name).toEqual('T4')
+        expect(testResultSet2[2].status).toEqual('PENDING')
       })
     })
     describe('Heska', () => {

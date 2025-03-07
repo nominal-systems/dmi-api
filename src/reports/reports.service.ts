@@ -326,7 +326,8 @@ export class ReportsService {
       if (providerTestResultItemStatus.length > 1) {
         this.logger.warn(`Multiple test result item status for test result '${providerTestResult.code}'`)
       }
-      const existingTestResult = report.testResultsSet.find(testResult => testResult.code === providerTestResult.code && testResult.seq === providerTestResult.seq)
+
+      const existingTestResult = report.testResultsSet.find(testResult => testResult.code === providerTestResult.code)
 
       if (existingTestResult != null) {
         existingTestResult.seq = providerTestResult.seq
