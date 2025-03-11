@@ -342,7 +342,7 @@ export class ProvidersService {
     const rawData: ProviderExternalRequests = {
       createdAt: new Date(),
       provider,
-      accessionIds,
+      accessionIds: [...new Set(accessionIds)],
       status,
       method,
       url,
