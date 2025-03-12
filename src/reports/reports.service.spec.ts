@@ -2053,7 +2053,9 @@ describe('ReportsService', () => {
           })
         }))
       })
-      it('Should save Thyroid Profile report results in the same order they were received when fetched a second time.', async () => {
+      it('Should correctly process Thyroid Profile report results when they are received for the second, third and fourth time.', async () => {
+        const errors: string[] = []
+
         const order: ProviderResult[] = FileUtils.loadFile('test/antech-v6/ThyroidResults/thyroid_orders_1.json')
         const results1: ProviderResult[] = FileUtils.loadFile('test/antech-v6/ThyroidResults/thyroid_results_1.json')
 
@@ -2141,7 +2143,8 @@ describe('ReportsService', () => {
         expect(testResultSet2.length).toBeGreaterThanOrEqual(3)
 
         expect(testResultSet2[0].code).toEqual('SA380')
-        expect(testResultSet2[0].status).toEqual('COMPLETED')
+        try { expect(testResultSet2[0].status).toEqual('COMPLETED') } catch (err) { errors.push(`Expected testResultSet2[0].status to be 'COMPLETED', got ${String(testResultSet2[0]?.status)}`) }
+
         expect(testResultSet2[0].name).toEqual('TSH')
         expect(testResultSet2[0].observations).toEqual(
           expect.arrayContaining([
@@ -2161,6 +2164,194 @@ describe('ReportsService', () => {
         expect(testResultSet2[2].code).toEqual('SA380')
         expect(testResultSet2[2].name).toEqual('T4')
         expect(testResultSet2[2].status).toEqual('PENDING')
+
+        // Third version of the results
+        const results3: ProviderResult[] = FileUtils.loadFile('test/antech-v6/ThyroidResults/thyroid_results_3.json')
+        jest.spyOn(reportsService, 'findReportsByExternalOrderIds').mockResolvedValueOnce([{
+          order: {
+            externalId: '7092-VOY-37157652213',
+            status: 'SUBMITTED'
+          },
+          status: 'REGISTERED',
+          testResultsSet: [
+            {
+              seq: 0,
+              code: 'SA380',
+              name: 'TSH',
+              observations: [],
+              status: 'PENDING'
+            },
+            {
+              seq: 1,
+              code: 'SA380',
+              name: 'Free T4 By Equilibrium Dialysis',
+              observations: [],
+              status: 'PENDING'
+            },
+            {
+              seq: 2,
+              code: 'SA380',
+              name: 'T4',
+              observations: [],
+              status: 'PENDING'
+            }
+          ]
+        }] as unknown as Report[])
+        jest.spyOn(ordersServiceMock, 'getOrderFromProvider').mockResolvedValue(null)
+        jest.spyOn(ordersServiceMock, 'findOrdersByExternalIds').mockResolvedValue([])
+        await reportsService.handleExternalResults({
+          integrationId: 'antech-v6',
+          results: results3
+        })
+
+        const eventCall3 = eventsServiceMock.addEvent.mock.calls[2][0]
+        const testResultSet3 = eventCall3.data.report.testResultsSet
+        const testResultNamespace3 = eventCall3.namespace
+        const testResultType3 = eventCall3.type
+
+        expect(testResultNamespace3).toEqual(EventNamespace.REPORTS)
+        expect(testResultType3).toEqual(EventType.REPORT_UPDATED)
+
+        expect(testResultSet3).toBeDefined()
+        expect(testResultSet3.length).toBeGreaterThanOrEqual(3)
+
+        expect(testResultSet3[0].code).toEqual('SA380')
+        expect(testResultSet3[0].status).toEqual('COMPLETED')
+        expect(testResultSet3[0].name).toEqual('TSH')
+        expect(testResultSet3[0].observations).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              seq: 0,
+              code: '4001',
+              name: 'TSH',
+              status: 'DONE'
+            })
+          ])
+        )
+
+        expect(testResultSet3[1].code).toEqual('SA380')
+        expect(testResultSet3[1].name).toEqual('Free T4 By Equilibrium Dialysis')
+        expect(testResultSet3[1].status).toEqual('PENDING')
+
+        expect(testResultSet3[2].code).toEqual('SA380')
+        expect(testResultSet3[2].name).toEqual('T4')
+        try { expect(testResultSet3[2].status).toEqual('COMPLETED') } catch (err) { errors.push(`Expected testResultSet3[2].status to be 'COMPLETED', got ${String(testResultSet3[2]?.status)}`) }
+        try {
+ expect(testResultSet3[2].observations).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              seq: 0,
+              code: '4022',
+              name: 'T4',
+              status: 'DONE'
+            })
+          ])
+        )
+        } catch (err) { errors.push(`Expected testResultSet3[2].observations to be..., got ${String(testResultSet3[2]?.observations)}`) }
+
+        // Fourth version of the results
+        const results4: ProviderResult[] = FileUtils.loadFile('test/antech-v6/ThyroidResults/thyroid_results_4.json')
+        jest.spyOn(reportsService, 'findReportsByExternalOrderIds').mockResolvedValueOnce([{
+          order: {
+            externalId: '7092-VOY-37157652213',
+            status: 'SUBMITTED'
+          },
+          status: 'REGISTERED',
+          testResultsSet: [
+            {
+              seq: 0,
+              code: 'SA380',
+              name: 'TSH',
+              observations: [],
+              status: 'PENDING'
+            },
+            {
+              seq: 1,
+              code: 'SA380',
+              name: 'Free T4 By Equilibrium Dialysis',
+              observations: [],
+              status: 'PENDING'
+            },
+            {
+              seq: 2,
+              code: 'SA380',
+              name: 'T4',
+              observations: [],
+              status: 'PENDING'
+            }
+          ]
+        }] as unknown as Report[])
+        jest.spyOn(ordersServiceMock, 'getOrderFromProvider').mockResolvedValue(null)
+        jest.spyOn(ordersServiceMock, 'findOrdersByExternalIds').mockResolvedValue([])
+        await reportsService.handleExternalResults({
+          integrationId: 'antech-v6',
+          results: results4
+        })
+
+        const eventCall4 = eventsServiceMock.addEvent.mock.calls[3][0]
+        const testResultSet4 = eventCall4.data.report.testResultsSet
+        const testResultNamespace4 = eventCall4.namespace
+        const testResultType4 = eventCall4.type
+
+        expect(testResultNamespace4).toEqual(EventNamespace.REPORTS)
+        expect(testResultType4).toEqual(EventType.REPORT_UPDATED)
+
+        expect(testResultSet4).toBeDefined()
+        expect(testResultSet4.length).toBeGreaterThanOrEqual(3)
+
+        expect(testResultSet4[0].code).toEqual('SA380')
+        expect(testResultSet4[0].status).toEqual('COMPLETED')
+        expect(testResultSet4[0].name).toEqual('TSH')
+        expect(testResultSet4[0].observations).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              seq: 0,
+              code: '4001',
+              name: 'TSH',
+              status: 'DONE'
+            })
+          ])
+        )
+
+        expect(testResultSet4[1].code).toEqual('SA380')
+        expect(testResultSet4[1].name).toEqual('Free T4 By Equilibrium Dialysis')
+
+        try { expect(testResultSet4[1].status).toEqual('COMPLETED') } catch (err) { errors.push(`Expected testResultSet4[1].status to be 'COMPLETED', got ${String(testResultSet4[1]?.status)}`) }
+
+        try {
+expect(testResultSet4[1].observations).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              seq: 0,
+              code: '6386',
+              name: 'Free T4 Equilibrium Dialysis',
+              status: 'DONE'
+            })
+          ])
+        )
+} catch (err) { errors.push(`Expected testResultSet4[1].observations to be: , got ${String(testResultSet4[1]?.observations)}`) }
+
+        expect(testResultSet4[2].code).toEqual('SA380')
+        expect(testResultSet4[2].name).toEqual('T4')
+
+        try { expect(testResultSet4[2].status).toEqual('COMPLETED') } catch (err) { errors.push(`Expected testResultSet4[2].status to be 'COMPLETED', got ${String(testResultSet4[2]?.status)}`) }
+
+        try {
+expect(testResultSet4[2].observations).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              seq: 0,
+              code: '4022',
+              name: 'T4',
+              status: 'DONE'
+            })
+          ])
+        )
+} catch (err) { errors.push(`Expected testResultSet3[2].observations to be: , got ${String(testResultSet4[2]?.observations)}`) }
+
+        if (errors.length > 0) {
+          throw new Error(`Test failed with multiple errors:\n${errors.join('\n')}`)
+        }
       })
     })
     describe('Heska', () => {
