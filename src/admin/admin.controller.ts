@@ -572,7 +572,7 @@ export class AdminController {
   async getProviderRefs (
     @Param('providerId') providerId: string,
     @Param('type') type: 'species' | 'breed' | 'sex',
-    @Query() params: PaginationDto & { search: string }
+    @Query() params: PaginationDto & { search?: string, species?: string }
   ): Promise<PaginationResult<ProviderRef>> {
     const take = params.limit !== undefined ? params.limit : PAGINATION_PAGE_LIMIT
     const skip = (params.page - 1) * take
@@ -582,6 +582,10 @@ export class AdminController {
       .where('providerRef.type = :type', { type })
       .orderBy('providerRef.name', 'ASC')
       .andWhere('provider.id = :providerId', { providerId })
+
+    if (params.species !== undefined) {
+      queryBuilder.andWhere('providerRef.species = :species', { species: params.species })
+    }
 
     if (params.search !== undefined) {
       queryBuilder.andWhere('providerRef.name LIKE :search', { search: `%${params.search}%` })
