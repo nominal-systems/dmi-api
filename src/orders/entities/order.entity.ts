@@ -24,10 +24,12 @@ export class Order {
   id: string
 
   @Column({ nullable: true })
+  @Index()
   requisitionId: string
 
   // TODO(gb): rename to accessionId?
   @Column({ nullable: true })
+  @Index()
   externalId: string
 
   @Column()
