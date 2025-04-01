@@ -337,7 +337,12 @@ export class ProvidersService {
   async saveProviderRawData (
     data: ProviderRawDataDto
   ): Promise<void> {
-    const { body, url, method, provider, accessionIds, status, payload, headers } = data
+    const { body, url, method, provider, status, payload, headers } = data
+
+    let accessionIds
+    if (data.accessionIds !== undefined) {
+      accessionIds = [...new Set(data.accessionIds)]
+    }
 
     const rawData: ProviderExternalRequests = {
       createdAt: new Date(),

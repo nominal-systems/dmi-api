@@ -3,6 +3,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   JoinTable,
   ManyToMany,
   ManyToOne,
@@ -16,16 +17,19 @@ import { Patient } from './patient.entity'
 import { Test } from './test.entity'
 import { Veterinarian } from './veterinarian.entity'
 
+@Index(['externalId', 'requisitionId'])
 @Entity()
 export class Order {
   @PrimaryGeneratedColumn('uuid')
   id: string
 
   @Column({ nullable: true })
+  @Index()
   requisitionId: string
 
   // TODO(gb): rename to accessionId?
   @Column({ nullable: true })
+  @Index()
   externalId: string
 
   @Column()

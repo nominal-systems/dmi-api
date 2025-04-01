@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  Index,
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn
@@ -62,6 +63,7 @@ export class Integration {
 
   @DeleteDateColumn()
   @Exclude()
+  @Index()
   deletedAt: Date
 
   @AfterLoad()

@@ -82,7 +82,8 @@ describe('ProvidersService', () => {
   afterEach(() => {
     jest.resetAllMocks()
   })
-  describe('handleProviderRawData', () => {
+
+  describe('saveProviderRawData', () => {
     it('should save the correct raw data having a JSON body', async () => {
       const createSpy = jest.spyOn(providerExternalRequestsModel, 'create')
       const data = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', '..', 'test', 'externalRequests', 'results.json'), 'utf8'))
@@ -101,7 +102,6 @@ describe('ProvidersService', () => {
 
       createSpy.mockRestore()
     })
-
     it('should save the correct raw data having a XML body', async () => {
       const createSpy = jest.spyOn(providerExternalRequestsModel, 'create')
       const data = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', '..', 'test', 'externalRequests', 'results.json'), 'utf8'))
@@ -120,7 +120,6 @@ describe('ProvidersService', () => {
 
       createSpy.mockRestore()
     })
-
     it('should save the payload when defined', async () => {
       const createSpy = jest.spyOn(providerExternalRequestsModel, 'create')
       const data = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', '..', 'test', 'externalRequests', 'result-payload.json'), 'utf8'))
@@ -137,6 +136,31 @@ describe('ProvidersService', () => {
         status: data.status,
         payload: data.payload
       }, expect.any(Function))
+
+      createSpy.mockRestore()
+    })
+    it('should remove duplicate accession IDs before saving', async () => {
+      const createSpy = jest.spyOn(providerExternalRequestsModel, 'create')
+
+      const data = {
+        headers: { 'Content-Type': 'application/json' },
+        body: { some: 'data' },
+        url: 'http://example.com',
+        method: 'POST',
+        provider: 'test-provider',
+        status: 200,
+        accessionIds: ['ACC123', 'ACC123', 'ACC456', 'ACC789', 'ACC789'], // Duplicates present
+        payload: { extra: 'info' }
+      }
+
+      await service.saveProviderRawData(data)
+
+      expect(createSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          accessionIds: ['ACC123', 'ACC456', 'ACC789'] // Expect duplicates removed
+        }),
+        expect.any(Function)
+      )
 
       createSpy.mockRestore()
     })
