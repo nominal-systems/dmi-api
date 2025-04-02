@@ -1,10 +1,19 @@
-import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn
+} from 'typeorm'
 import { TestResult } from './test-result.entity'
 import { ObservationStatus } from '@nominal-systems/dmi-engine-common'
 import { ValueQuantity } from '../interfaces/value-quantity.interface'
 import { ReferenceRange } from '../interfaces/reference-range.interface'
 import { Interpretation } from '../interfaces/interpretation.interface'
 import { Exclude } from 'class-transformer'
+import { ObservationRelationship } from './observation-relationship.entity'
 
 @Entity()
 export class Observation {
@@ -58,6 +67,12 @@ export class Observation {
     onDelete: 'CASCADE'
   })
   testResult: TestResult
+
+  @OneToMany(() => ObservationRelationship, (relationship) => relationship.source, {
+    cascade: true,
+    eager: true
+  })
+  related: ObservationRelationship[]
 
   @CreateDateColumn()
   createdAt: Date
