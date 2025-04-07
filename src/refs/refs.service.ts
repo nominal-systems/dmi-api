@@ -10,6 +10,7 @@ import { CreateOrderDtoPatient } from '../orders/dtos/create-order.dto'
 import { PaginationDto } from '../common/dtos/pagination.dto'
 import { ProviderDefaultBreed } from './entities/providerDefaultBreed.entity'
 import { Patient } from '../orders/entities/patient.entity'
+import { Breed, ReferenceDataResponse, Sex, Species } from '@nominal-systems/dmi-engine-common'
 
 @Injectable()
 export class RefsService {
@@ -23,11 +24,12 @@ export class RefsService {
   ) {
   }
 
-  async syncProviderRefs (provider: Provider, mapList: any, type: 'species' | 'breed' | 'sex'): Promise<void> {
-    this.logger.log(`Found ${type} in ${provider.id}: ${<string>mapList.items.length}`)
+  async syncProviderRefs (provider: Provider, mapList: ReferenceDataResponse<Sex | Breed | Species>, type: 'species' | 'breed' | 'sex'): Promise<void> {
+    this.logger.log(`Found ${type} in ${provider.id}: ${mapList.items.length}`)
     if (provider.hashes === null || provider.hashes[type] !== mapList.hash) {
       let newRefsCount = 0
-      let existingRefsCount = 0
+      let updatedRefsCount = 0
+      let skippedRefsCount = 0
       for (const item of mapList.items) {
         const existingItem = await this.providerRefRepository.findOne({
           where: {
@@ -43,17 +45,23 @@ export class RefsService {
             name: item.name,
             type: type,
             provider: provider,
-            species: item.species
+            species: 'species' in item ? item.species : undefined
           })
-
           await this.providerRefRepository.save(newItem)
           newRefsCount++
         } else {
-          existingRefsCount++
+          if (existingItem.name !== item.name || ('species' in item && existingItem.species !== item.species)) {
+            existingItem.name = item.name
+            existingItem.species = 'species' in item ? item.species : undefined
+            await this.providerRefRepository.save(existingItem)
+            updatedRefsCount++
+          }
+          skippedRefsCount++
         }
       }
-      this.logger.log(`New ${type} refs created: ${newRefsCount}`)
-      this.logger.log(`Existing ${type} refs: ${existingRefsCount}`)
+      this.logger.log(`Created ${type} refs: ${newRefsCount}`)
+      this.logger.log(`Updated ${type} refs: ${updatedRefsCount}`)
+      this.logger.log(`Skipped ${type} refs: ${skippedRefsCount}`)
 
       provider.hashes = { ...provider.hashes, [type]: mapList.hash }
       await this.providersService.update(provider)
