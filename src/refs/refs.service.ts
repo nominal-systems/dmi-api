@@ -289,7 +289,8 @@ export class RefsService {
   }
 
   async mapPatientReferences (order, providerPatient, providerId): Promise<Patient> {
-    let { species, breed, sex, ...patient } = order.patient
+    const { species, sex, ...patient } = order.patient
+    let { breed } = order.patient
     await this.mapPatientRefs(providerId, providerPatient)
     if (breed === undefined) {
       breed = providerPatient.breed

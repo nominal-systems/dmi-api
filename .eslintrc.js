@@ -5,15 +5,15 @@ module.exports = {
     jest: true
   },
   root: true,
-  extends: ['plugin:@typescript-eslint/recommended', 'standard-with-typescript'],
+  extends: ['plugin:@typescript-eslint/recommended'],
   parser: '@typescript-eslint/parser',
   parserOptions: {
-    ecmaVersion: 12,
+    ecmaVersion: 'latest',
     sourceType: 'module',
     project: './tsconfig.json'
   },
   plugins: ['@typescript-eslint/eslint-plugin', '@typescript-eslint'],
-  ignorePatterns: ['.eslintrc.js', 'migrations'],
+  ignorePatterns: ['.eslintrc.js', 'migrations', 'dist'],
   rules: {
     '@typescript-eslint/interface-name-prefix': 'off',
     '@typescript-eslint/explicit-module-boundary-types': 'off',
