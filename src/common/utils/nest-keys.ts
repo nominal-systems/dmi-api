@@ -3,6 +3,10 @@ export function nestKeys (obj: any): any {
     return obj
   }
 
+  if (Array.isArray(obj)) {
+    return obj.map(item => nestKeys(item))
+  }
+
   const output: Record<string, any> = {}
 
   for (const key in obj) {
