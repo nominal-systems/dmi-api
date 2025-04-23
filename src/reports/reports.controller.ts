@@ -48,6 +48,7 @@ export class ReportsController {
   }
 
   @EventPattern('external_results')
+  // TODO(gb): use InternalEventLoggingInterceptor
   @DisableGuards(ApiGuard)
   async handleExternalResults (data: ExternalResultEventData): Promise<void> {
     await this.reportsService.handleExternalResults(data)
