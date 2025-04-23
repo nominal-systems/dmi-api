@@ -9,7 +9,8 @@ import {
   Param,
   Post,
   Query,
-  UseGuards
+  UseGuards,
+  UseInterceptors
 } from '@nestjs/common'
 import { EventPattern } from '@nestjs/microservices'
 import { DisableGuards } from '../common/decorators/disable-guards.decorator'
@@ -27,6 +28,7 @@ import { Report } from '../reports/entities/report.entity'
 import { ExternalResultEventData } from '../common/typings/external-result-event-data.interface'
 import { ApiParam } from '@nestjs/swagger'
 import { Attachment } from '../common/entities/attachment.entity'
+import { InternalEventLoggingInterceptor } from '../event-logging/internal-event-logging.interceptor'
 
 @Controller('orders')
 @UseGuards(ApiGuard)
@@ -130,12 +132,14 @@ export class OrdersController {
 
   @EventPattern('external_orders')
   @DisableGuards(ApiGuard)
+  @UseInterceptors(InternalEventLoggingInterceptor)
   async handleExternalOrders (data: ExternalOrdersEventData): Promise<void> {
     await this.ordersService.handleExternalOrders(data)
   }
 
   @EventPattern('external_order_results')
   @DisableGuards(ApiGuard)
+  // TODO(gb): use InternalEventLoggingInterceptor
   async handleExternalOrderResults (data: ExternalResultEventData): Promise<void> {
     await this.ordersService.handleExternalOrderResults(data)
   }

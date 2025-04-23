@@ -15,6 +15,7 @@ import { Test } from './entities/test.entity'
 import { ReportsModule } from '../reports/reports.module'
 import { RefsModule } from '../refs/refs.module'
 import { ProvidersModule } from '../providers/providers.module'
+import { InternalEventLoggingModule } from '../event-logging/internal-event-logging.module'
 
 @Module({
   imports: [
@@ -25,10 +26,11 @@ import { ProvidersModule } from '../providers/providers.module'
     ProvidersModule,
     forwardRef(() => ReportsModule),
     TypeOrmModule.forFeature([Order, Patient, Client, Veterinarian, Test]),
-    ClientsModule.registerAsync([activeMQClientProvider])
+    ClientsModule.registerAsync([activeMQClientProvider]),
+    InternalEventLoggingModule
   ],
   controllers: [OrdersController],
   providers: [OrdersService],
   exports: [OrdersService]
 })
-export class OrdersModule { }
+export class OrdersModule {}
