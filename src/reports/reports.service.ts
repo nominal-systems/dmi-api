@@ -3,7 +3,6 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { FindManyOptions, Repository } from 'typeorm'
 import { Report } from './entities/report.entity'
 import { FindOneOfTypeOptions } from '../common/typings/find-one-of-type-options.interface'
-import { ExternalResultEventData } from '../common/typings/external-result-event-data.interface'
 import { Order } from '../orders/entities/order.entity'
 import {
   Attachment,
@@ -25,6 +24,7 @@ import { resultStatusMapper, testResultStatusMapper } from '../common/utils/resu
 import { ProviderResultUtils } from '../common/utils/provider-result-utils'
 import { isNullOrEmpty } from '../common/utils/shared.utils'
 import { Attachment as AttachmentEntity } from '../common/entities/attachment.entity'
+import { ExternalResultEventData } from '../common/typings/internal-event-data.interface'
 
 @Injectable()
 export class ReportsService {

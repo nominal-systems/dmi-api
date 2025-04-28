@@ -3,12 +3,12 @@ import { ReportsService } from './reports.service'
 import { EventPattern } from '@nestjs/microservices'
 import { DisableGuards } from '../common/decorators/disable-guards.decorator'
 import { ApiGuard } from '../common/guards/api.guard'
-import { ExternalResultEventData } from '../common/typings/external-result-event-data.interface'
 import { Organization } from '../common/decorators/organization.decorator'
 import { Organization as OrganizationEntity } from '../organizations/entities/organization.entity'
 import { Report } from './entities/report.entity'
 import { Attachment } from '@nominal-systems/dmi-engine-common'
 import { Response } from 'express'
+import { ExternalResultEventData } from '../common/typings/internal-event-data.interface'
 
 @Controller('reports')
 export class ReportsController {

@@ -14,8 +14,8 @@ import { EventNamespace } from '../events/constants/event-namespace.enum'
 import { EventType } from '../events/constants/event-type.enum'
 import { FileUtils } from '../common/utils/file-utils'
 import { Order } from '../orders/entities/order.entity'
-import { ExternalResultEventData } from '../common/typings/external-result-event-data.interface'
 import { HttpException, HttpStatus } from '@nestjs/common'
+import { ExternalResultEventData } from '../common/typings/internal-event-data.interface'
 
 const repositoryMockFactory: () => MockUtils<Repository<any>> = jest.fn(() => ({
   findOne: jest.fn(entity => entity),
@@ -2237,16 +2237,16 @@ describe('ReportsService', () => {
         expect(testResultSet3[2].name).toEqual('T4')
         try { expect(testResultSet3[2].status).toEqual('COMPLETED') } catch (err) { errors.push(`Expected testResultSet3[2].status to be 'COMPLETED', got ${String(testResultSet3[2]?.status)}`) }
         try {
- expect(testResultSet3[2].observations).toEqual(
-          expect.arrayContaining([
-            expect.objectContaining({
-              seq: 0,
-              code: '4022',
-              name: 'T4',
-              status: 'DONE'
-            })
-          ])
-        )
+          expect(testResultSet3[2].observations).toEqual(
+            expect.arrayContaining([
+              expect.objectContaining({
+                seq: 0,
+                code: '4022',
+                name: 'T4',
+                status: 'DONE'
+              })
+            ])
+          )
         } catch (err) { errors.push(`Expected testResultSet3[2].observations to be..., got ${String(testResultSet3[2]?.observations)}`) }
 
         // Fourth version of the results
@@ -2319,17 +2319,17 @@ describe('ReportsService', () => {
         try { expect(testResultSet4[1].status).toEqual('COMPLETED') } catch (err) { errors.push(`Expected testResultSet4[1].status to be 'COMPLETED', got ${String(testResultSet4[1]?.status)}`) }
 
         try {
-expect(testResultSet4[1].observations).toEqual(
-          expect.arrayContaining([
-            expect.objectContaining({
-              seq: 0,
-              code: '6386',
-              name: 'Free T4 Equilibrium Dialysis',
-              status: 'DONE'
-            })
-          ])
-        )
-} catch (err) { errors.push(`Expected testResultSet4[1].observations to be: , got ${String(testResultSet4[1]?.observations)}`) }
+          expect(testResultSet4[1].observations).toEqual(
+            expect.arrayContaining([
+              expect.objectContaining({
+                seq: 0,
+                code: '6386',
+                name: 'Free T4 Equilibrium Dialysis',
+                status: 'DONE'
+              })
+            ])
+          )
+        } catch (err) { errors.push(`Expected testResultSet4[1].observations to be: , got ${String(testResultSet4[1]?.observations)}`) }
 
         expect(testResultSet4[2].code).toEqual('SA380')
         expect(testResultSet4[2].name).toEqual('T4')
@@ -2337,17 +2337,17 @@ expect(testResultSet4[1].observations).toEqual(
         try { expect(testResultSet4[2].status).toEqual('COMPLETED') } catch (err) { errors.push(`Expected testResultSet4[2].status to be 'COMPLETED', got ${String(testResultSet4[2]?.status)}`) }
 
         try {
-expect(testResultSet4[2].observations).toEqual(
-          expect.arrayContaining([
-            expect.objectContaining({
-              seq: 0,
-              code: '4022',
-              name: 'T4',
-              status: 'DONE'
-            })
-          ])
-        )
-} catch (err) { errors.push(`Expected testResultSet3[2].observations to be: , got ${String(testResultSet4[2]?.observations)}`) }
+          expect(testResultSet4[2].observations).toEqual(
+            expect.arrayContaining([
+              expect.objectContaining({
+                seq: 0,
+                code: '4022',
+                name: 'T4',
+                status: 'DONE'
+              })
+            ])
+          )
+        } catch (err) { errors.push(`Expected testResultSet3[2].observations to be: , got ${String(testResultSet4[2]?.observations)}`) }
 
         if (errors.length > 0) {
           throw new Error(`Test failed with multiple errors:\n${errors.join('\n')}`)

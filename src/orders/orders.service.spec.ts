@@ -19,7 +19,7 @@ import { HttpException } from '@nestjs/common'
 import { v4 as uuidv4 } from 'uuid'
 import { Patient } from './entities/patient.entity'
 import { ProvidersService } from '../providers/services/providers.service'
-import { ExternalOrdersEventData } from '../common/typings/external-order-event-data.interface'
+import { ExternalOrdersEventData } from '../common/typings/internal-event-data.interface'
 
 export const repositoryMockFactory: () => MockUtils<Repository<any>> = jest.fn(() => ({
   find: jest.fn(entity => entity),
