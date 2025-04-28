@@ -1,6 +1,7 @@
 import { CallHandler, ExecutionContext, Injectable, Logger, NestInterceptor } from '@nestjs/common'
 import { Observable } from 'rxjs'
 import { InternalEventLoggingService } from './internal-event-logging.service'
+import { ExternalOrdersEventData, ExternalResultEventData } from '../common/typings/internal-event-data.interface'
 
 @Injectable()
 export class InternalEventLoggingInterceptor implements NestInterceptor {
@@ -19,11 +20,11 @@ export class InternalEventLoggingInterceptor implements NestInterceptor {
       const handlerName = handler.name
       const methodName = context.getHandler().name
       const pattern = metadata?.getArgs()?.[0] || 'unknown'
-      // TODO(gb): extract accessionIds from payload
+      const accessionIds = this.extractAccessionIds(payload)
 
       // Fire and forget - don't await or use the promise result
       this.eventLoggingService
-        .logEvent(pattern, payload, handlerName, methodName)
+        .logEvent(pattern, payload, accessionIds, handlerName, methodName)
         .catch((error) => {
           this.logger.error(
             `Error logging event payload: ${error.message}`,
@@ -34,5 +35,38 @@ export class InternalEventLoggingInterceptor implements NestInterceptor {
 
     // Continue with the normal execution flow
     return next.handle()
+  }
+
+  private extractAccessionIds (payload: any): string[] {
+    let accessionIds: string[] = []
+
+    if (this.isExternalOrdersEventData(payload)) {
+      accessionIds = payload.orders.map((order: any) => order.externalId)
+    } else if (this.isExternalResultEventData(payload)) {
+      // Accession IDs are the `externalId` of the `order` of each `result`
+      accessionIds = payload.results.map((result: any) => result.order?.externalId).filter(Boolean)
+    }
+
+    return accessionIds
+  }
+
+  private isExternalOrdersEventData (payload: any): payload is ExternalOrdersEventData {
+    return (
+      payload &&
+      typeof payload === 'object' &&
+      'orders' in payload &&
+      Array.isArray(payload.orders) &&
+      payload.orders.every((order) => typeof order === 'object')
+    )
+  }
+
+  private isExternalResultEventData (payload: any): payload is ExternalResultEventData {
+    return (
+      payload &&
+      typeof payload === 'object' &&
+      'results' in payload &&
+      Array.isArray(payload.results) &&
+      payload.results.every((result) => typeof result === 'object')
+    )
   }
 }

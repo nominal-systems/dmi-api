@@ -17,7 +17,8 @@ export class InternalEvent {
   @Prop()
   methodName: string
 
-  // TODO(gb): add accessionIds
+  @Prop()
+  accessionIds: string[]
 }
 
 export const InternalEventSchema = SchemaFactory.createForClass(InternalEvent)

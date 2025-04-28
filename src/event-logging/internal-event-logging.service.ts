@@ -5,14 +5,6 @@ import { EventLogDocument, InternalEvent } from './schemas/internal-event.schema
 
 @Injectable()
 export class InternalEventLoggingService {
-  private readonly logger = new Logger(InternalEventLoggingService.name)
-
-  constructor (
-    @InjectModel(InternalEvent.name)
-    private readonly eventLogModel: Model<EventLogDocument>
-  ) {
-  }
-
   /**
    * Asynchronously log an event payload to MongoDB
    * This is designed to be "fire and forget" so we don't block the event handler
@@ -20,6 +12,7 @@ export class InternalEventLoggingService {
   async logEvent (
     pattern: string,
     payload: any,
+    accessionIds?: string[],
     handlerName?: string,
     methodName?: string
   ): Promise<void> {
@@ -27,6 +20,7 @@ export class InternalEventLoggingService {
       const eventLog = new this.eventLogModel({
         pattern,
         payload,
+        accessionIds,
         handlerName,
         methodName
       })
@@ -39,5 +33,13 @@ export class InternalEventLoggingService {
         error.stack
       )
     }
+  }
+
+  private readonly logger = new Logger(InternalEventLoggingService.name)
+
+  constructor (
+    @InjectModel(InternalEvent.name)
+    private readonly eventLogModel: Model<EventLogDocument>
+  ) {
   }
 }
