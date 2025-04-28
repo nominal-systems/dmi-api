@@ -16,7 +16,6 @@ import { EventPattern } from '@nestjs/microservices'
 import { DisableGuards } from '../common/decorators/disable-guards.decorator'
 import { Organization } from '../common/decorators/organization.decorator'
 import { ApiGuard } from '../common/guards/api.guard'
-import { ExternalOrdersEventData } from '../common/typings/external-order-event-data.interface'
 import { Organization as OrganizationEntity } from '../organizations/entities/organization.entity'
 import { AddTestsToOrderDTO } from './dtos/add-tests-to-order.dto'
 import { CreateOrderDto } from './dtos/create-order.dto'
@@ -25,10 +24,10 @@ import { OrderTestCancelPathParams } from './dtos/order-test-cancel-path-params.
 import { Order } from './entities/order.entity'
 import { OrdersService } from './orders.service'
 import { Report } from '../reports/entities/report.entity'
-import { ExternalResultEventData } from '../common/typings/external-result-event-data.interface'
 import { ApiParam } from '@nestjs/swagger'
 import { Attachment } from '../common/entities/attachment.entity'
 import { InternalEventLoggingInterceptor } from '../event-logging/internal-event-logging.interceptor'
+import { ExternalOrdersEventData, ExternalResultEventData } from '../common/typings/internal-event-data.interface'
 
 @Controller('orders')
 @UseGuards(ApiGuard)

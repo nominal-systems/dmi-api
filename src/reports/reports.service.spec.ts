@@ -14,8 +14,8 @@ import { EventNamespace } from '../events/constants/event-namespace.enum'
 import { EventType } from '../events/constants/event-type.enum'
 import { FileUtils } from '../common/utils/file-utils'
 import { Order } from '../orders/entities/order.entity'
-import { ExternalResultEventData } from '../common/typings/external-result-event-data.interface'
 import { HttpException, HttpStatus } from '@nestjs/common'
+import { ExternalResultEventData } from '../common/typings/internal-event-data.interface'
 import { TestResultItemInterpretationCode } from '@nominal-systems/dmi-engine-common/lib/interfaces/results.interface'
 
 const repositoryMockFactory: () => MockUtils<Repository<any>> = jest.fn(() => ({

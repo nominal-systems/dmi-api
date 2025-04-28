@@ -9,7 +9,6 @@ import { FindOneOfTypeOptions } from '../common/typings/find-one-of-type-options
 import { Organization } from '../organizations/entities/organization.entity'
 import { ConfigService } from '@nestjs/config'
 import ieMessageBuilder from '../common/utils/ieMessageBuilder'
-import { ExternalOrdersEventData } from '../common/typings/external-order-event-data.interface'
 import { EventsService } from '../events/services/events.service'
 import { OrderSearchQueryParams } from './dtos/order-search-queryparams.dto'
 import { Test } from './entities/test.entity'
@@ -29,12 +28,12 @@ import { EventType } from '../events/constants/event-type.enum'
 import { ReportsService } from '../reports/reports.service'
 import { Report } from '../reports/entities/report.entity'
 import { ExternalOrderMapper } from './mappers/external-order.mapper'
-import { ExternalResultEventData } from '../common/typings/external-result-event-data.interface'
 import { ProviderResultUtils } from '../common/utils/provider-result-utils'
 import { ProviderConfiguration } from '../providers/entities/provider-configuration.entity'
 import { RefsService } from '../refs/refs.service'
 import { Attachment } from '../common/entities/attachment.entity'
 import { ProvidersService } from '../providers/services/providers.service'
+import { ExternalOrdersEventData, ExternalResultEventData } from '../common/typings/internal-event-data.interface'
 
 interface OrderTestCancelOrAddParams {
   orderId: string
