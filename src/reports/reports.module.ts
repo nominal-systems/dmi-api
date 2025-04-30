@@ -8,11 +8,13 @@ import { TestResult } from './entities/test-result.entity'
 import { Observation } from './entities/observation.entity'
 import { IntegrationsModule } from '../integrations/integrations.module'
 import { OrdersModule } from '../orders/orders.module'
+import { InternalEventLoggingModule } from '../event-logging/internal-event-logging.module'
 
 @Module({
   imports: [
     EventsModule,
     IntegrationsModule,
+    InternalEventLoggingModule,
     forwardRef(() => OrdersModule),
     TypeOrmModule.forFeature([Report, TestResult, Observation])
   ],

@@ -21,6 +21,7 @@ import { PaginationResult } from '../common/classes/pagination-result'
 import { ProviderExternalRequests } from '../providers/entities/provider-external-requests.entity'
 import { ArgumentMetadata, BadRequestException, ValidationPipe } from '@nestjs/common'
 import { PAGINATION_PAGE_LIMIT } from '../common/constants/pagination.constant'
+import { InternalEventLoggingService } from '../event-logging/internal-event-logging.service'
 
 describe('AdminController', () => {
   let adminController: AdminController
@@ -91,6 +92,10 @@ describe('AdminController', () => {
         },
         {
           provide: OrdersService,
+          useValue: {}
+        },
+        {
+          provide: InternalEventLoggingService,
           useValue: {}
         }
       ]

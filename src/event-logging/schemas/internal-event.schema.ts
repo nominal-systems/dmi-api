@@ -1,10 +1,11 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { Document } from 'mongoose'
 
-export type EventLogDocument = InternalEvent & Document;
-
 @Schema({ collection: 'iternal-events', timestamps: true })
 export class InternalEvent {
+  @Prop({ index: true })
+  createdAt: Date
+
   @Prop({ required: true })
   pattern: string
 
@@ -17,8 +18,10 @@ export class InternalEvent {
   @Prop()
   methodName: string
 
-  @Prop()
+  @Prop({ index: true })
   accessionIds: string[]
 }
+
+export type EventLogDocument = InternalEvent & Document;
 
 export const InternalEventSchema = SchemaFactory.createForClass(InternalEvent)

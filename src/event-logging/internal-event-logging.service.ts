@@ -5,6 +5,26 @@ import { EventLogDocument, InternalEvent } from './schemas/internal-event.schema
 
 @Injectable()
 export class InternalEventLoggingService {
+  private readonly logger = new Logger(InternalEventLoggingService.name)
+
+  constructor (
+    @InjectModel(InternalEvent.name)
+    private readonly eventLogModel: Model<EventLogDocument>
+  ) {
+  }
+
+  /**
+   * Find event logs by accession IDs
+   */
+  async findByAccessionIds (accessionIds: string[]): Promise<EventLogDocument[]> {
+    try {
+      return await this.eventLogModel.find({ accessionIds: { $in: accessionIds } }).exec()
+    } catch (error) {
+      this.logger.error(`Failed to find event logs by accession IDs: ${error.message}`, error.stack)
+      throw error
+    }
+  }
+
   /**
    * Asynchronously log an event payload to MongoDB
    * This is designed to be "fire and forget" so we don't block the event handler
@@ -33,13 +53,5 @@ export class InternalEventLoggingService {
         error.stack
       )
     }
-  }
-
-  private readonly logger = new Logger(InternalEventLoggingService.name)
-
-  constructor (
-    @InjectModel(InternalEvent.name)
-    private readonly eventLogModel: Model<EventLogDocument>
-  ) {
   }
 }

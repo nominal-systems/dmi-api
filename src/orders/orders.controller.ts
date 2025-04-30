@@ -138,7 +138,7 @@ export class OrdersController {
 
   @EventPattern('external_order_results')
   @DisableGuards(ApiGuard)
-  // TODO(gb): use InternalEventLoggingInterceptor
+  @UseInterceptors(InternalEventLoggingInterceptor)
   async handleExternalOrderResults (data: ExternalResultEventData): Promise<void> {
     await this.ordersService.handleExternalOrderResults(data)
   }
