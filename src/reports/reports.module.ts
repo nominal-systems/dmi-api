@@ -8,7 +8,7 @@ import { TestResult } from './entities/test-result.entity'
 import { Observation } from './entities/observation.entity'
 import { IntegrationsModule } from '../integrations/integrations.module'
 import { OrdersModule } from '../orders/orders.module'
-import { InternalEventLoggingModule } from '../event-logging/internal-event-logging.module'
+import { InternalEventLoggingModule } from '../internal-event-logging/internal-event-logging.module'
 
 @Module({
   imports: [

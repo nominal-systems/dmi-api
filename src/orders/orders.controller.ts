@@ -26,7 +26,7 @@ import { OrdersService } from './orders.service'
 import { Report } from '../reports/entities/report.entity'
 import { ApiParam } from '@nestjs/swagger'
 import { Attachment } from '../common/entities/attachment.entity'
-import { InternalEventLoggingInterceptor } from '../event-logging/internal-event-logging.interceptor'
+import { InternalEventLoggingInterceptor } from '../internal-event-logging/internal-event-logging.interceptor'
 import { ExternalOrdersEventData, ExternalResultEventData } from '../common/typings/internal-event-data.interface'
 
 @Controller('orders')
