@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { InternalEventLoggingInterceptor } from './internal-event-logging.interceptor'
 import { InternalEventLoggingService } from './internal-event-logging.service'
+import { OrdersService } from '../orders/orders.service'
 
 describe('InternalEventLoggingInterceptor', () => {
   let interceptor: InternalEventLoggingInterceptor
@@ -14,6 +15,12 @@ describe('InternalEventLoggingInterceptor', () => {
           provide: InternalEventLoggingService,
           useValue: {
             logEvent: jest.fn().mockResolvedValue(undefined)
+          }
+        },
+        {
+          provide: OrdersService,
+          useValue: {
+            findOrdersByExternalIds: jest.fn()
           }
         }
       ]
@@ -36,7 +43,7 @@ describe('InternalEventLoggingInterceptor', () => {
         ]
       }
 
-      const result = interceptor.extractAccessionIds(payload)
+      const result = interceptor.extractExternalIds(payload)
       expect(result).toEqual(['order-123', 'order-456', 'order-789'])
     })
     it('should extract accession IDs for ExternalResultEventData payloads', () => {
@@ -51,7 +58,7 @@ describe('InternalEventLoggingInterceptor', () => {
         ]
       }
 
-      const result = interceptor.extractAccessionIds(payload)
+      const result = interceptor.extractExternalIds(payload)
       expect(result).toEqual(['order-123', 'order-456', 'order-789'])
     })
     it('should return empty array for unrecognized payloads', () => {
@@ -59,12 +66,12 @@ describe('InternalEventLoggingInterceptor', () => {
         someOtherData: 'value'
       }
 
-      const result = interceptor.extractAccessionIds(payload)
+      const result = interceptor.extractExternalIds(payload)
       expect(result).toEqual([])
     })
     it('should return empty array for null or undefined payloads', () => {
-      expect(interceptor.extractAccessionIds(null)).toEqual([])
-      expect(interceptor.extractAccessionIds(undefined)).toEqual([])
+      expect(interceptor.extractExternalIds(null)).toEqual([])
+      expect(interceptor.extractExternalIds(undefined)).toEqual([])
     })
   })
 })

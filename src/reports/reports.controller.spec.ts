@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { ReportsController } from './reports.controller'
 import { ReportsService } from './reports.service'
 import { InternalEventLoggingService } from '../event-logging/internal-event-logging.service'
+import { OrdersService } from '../orders/orders.service'
 
 describe('ReportsController', () => {
   let reportsController: ReportsController
@@ -20,6 +21,10 @@ describe('ReportsController', () => {
         },
         {
           provide: InternalEventLoggingService,
+          useValue: {}
+        },
+        {
+          provide: OrdersService,
           useValue: {}
         }
       ]
