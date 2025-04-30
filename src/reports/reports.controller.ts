@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Res } from '@nestjs/common'
+import { Controller, Get, Param, Res, UseInterceptors } from '@nestjs/common'
 import { ReportsService } from './reports.service'
 import { EventPattern } from '@nestjs/microservices'
 import { DisableGuards } from '../common/decorators/disable-guards.decorator'
@@ -9,6 +9,7 @@ import { Report } from './entities/report.entity'
 import { Attachment } from '@nominal-systems/dmi-engine-common'
 import { Response } from 'express'
 import { ExternalResultEventData } from '../common/typings/internal-event-data.interface'
+import { InternalEventLoggingInterceptor } from '../event-logging/internal-event-logging.interceptor'
 
 @Controller('reports')
 export class ReportsController {
@@ -48,7 +49,7 @@ export class ReportsController {
   }
 
   @EventPattern('external_results')
-  // TODO(gb): use InternalEventLoggingInterceptor
+  @UseInterceptors(InternalEventLoggingInterceptor)
   @DisableGuards(ApiGuard)
   async handleExternalResults (data: ExternalResultEventData): Promise<void> {
     await this.reportsService.handleExternalResults(data)

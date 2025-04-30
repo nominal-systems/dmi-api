@@ -20,6 +20,8 @@ export class InternalEventLoggingInterceptor implements NestInterceptor {
       const handlerName = handler.name
       const methodName = context.getHandler().name
       const pattern = metadata?.getArgs()?.[0] || 'unknown'
+
+      // TODO(gb): Get the requisition ID from the order and use that instead?
       const accessionIds = this.extractAccessionIds(payload)
 
       // Fire and forget - don't await or use the promise result
@@ -37,14 +39,13 @@ export class InternalEventLoggingInterceptor implements NestInterceptor {
     return next.handle()
   }
 
-  private extractAccessionIds (payload: any): string[] {
+  extractAccessionIds (payload: any): string[] {
     let accessionIds: string[] = []
 
     if (this.isExternalOrdersEventData(payload)) {
-      accessionIds = payload.orders.map((order: any) => order.externalId)
+      accessionIds = payload.orders.map((order: any) => order.externalId).filter(Boolean)
     } else if (this.isExternalResultEventData(payload)) {
-      // Accession IDs are the `externalId` of the `order` of each `result`
-      accessionIds = payload.results.map((result: any) => result.order?.externalId).filter(Boolean)
+      accessionIds = payload.results.map((result: any) => result.orderId).filter(Boolean)
     }
 
     return accessionIds

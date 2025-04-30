@@ -14,6 +14,7 @@ import { ProviderRef } from '../refs/entities/providerRef.entity'
 import { Ref } from '../refs/entities/ref.entity'
 import { Practice } from '../practices/entities/practice.entity'
 import { OrdersModule } from '../orders/orders.module'
+import { InternalEventLoggingModule } from '../event-logging/internal-event-logging.module'
 
 @Module({
   imports: [
@@ -32,7 +33,8 @@ import { OrdersModule } from '../orders/orders.module'
     }),
     RefsModule,
     ProvidersModule,
-    OrdersModule
+    OrdersModule,
+    InternalEventLoggingModule
   ],
   controllers: [AdminController]
 })
