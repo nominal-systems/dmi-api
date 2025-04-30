@@ -15,7 +15,7 @@ import { Test } from './entities/test.entity'
 import { ReportsModule } from '../reports/reports.module'
 import { RefsModule } from '../refs/refs.module'
 import { ProvidersModule } from '../providers/providers.module'
-import { InternalEventLoggingModule } from '../event-logging/internal-event-logging.module'
+import { InternalEventLoggingModule } from '../internal-event-logging/internal-event-logging.module'
 
 @Module({
   imports: [

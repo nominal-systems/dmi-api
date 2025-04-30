@@ -9,7 +9,7 @@ import { Report } from './entities/report.entity'
 import { Attachment } from '@nominal-systems/dmi-engine-common'
 import { Response } from 'express'
 import { ExternalResultEventData } from '../common/typings/internal-event-data.interface'
-import { InternalEventLoggingInterceptor } from '../event-logging/internal-event-logging.interceptor'
+import { InternalEventLoggingInterceptor } from '../internal-event-logging/internal-event-logging.interceptor'
 
 @Controller('reports')
 export class ReportsController {
