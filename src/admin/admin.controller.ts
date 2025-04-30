@@ -67,6 +67,7 @@ import { EventsQueryDto } from './dtos/events-query.dto'
 import { EventsStatsDto } from './dtos/events-stats.dto'
 import { PracticesQueryDto } from '../practices/dto/practice-search-query-params.dto'
 import { OrdersStatsDto } from './dtos/orders-stats.dto'
+import { InternalEventLoggingService } from '../internal-event-logging/internal-event-logging.service'
 
 @Controller('admin')
 export class AdminController {
@@ -87,7 +88,8 @@ export class AdminController {
     private readonly jwtService: JwtService,
     private readonly providerRefService: ProviderRefService,
     @InjectRepository(Practice) private readonly practicesRepository: Repository<Practice>,
-    private readonly ordersService: OrdersService
+    private readonly ordersService: OrdersService,
+    private readonly internalEventLoggingService: InternalEventLoggingService
   ) {
   }
 
@@ -786,7 +788,7 @@ export class AdminController {
       data: order
     })
 
-    // Events
+    // Find Events
     const events: Event[] = await this.eventsService.findAll({
       accessionId: query.accessionId
     })
@@ -799,6 +801,7 @@ export class AdminController {
       })
     })
 
+    // Find External Requests
     const externalRequests: ProviderExternalRequests[] = await this.providersService.findAllExternalRequests({
       accessionIds: query.accessionId
     })
@@ -808,6 +811,17 @@ export class AdminController {
         type: 'external-request',
         id: (externalRequest as ProviderExternalRequestDocument)._id,
         data: externalRequest
+      })
+    })
+
+    // Find Internal Events
+    const internalEvents = await this.internalEventLoggingService.findByAccessionIds([query.accessionId])
+    internalEvents.forEach((internalEvent) => {
+      logs.push({
+        timestamp: internalEvent.createdAt,
+        type: 'internal-event',
+        id: internalEvent._id,
+        data: internalEvent
       })
     })
 
