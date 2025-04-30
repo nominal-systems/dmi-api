@@ -2,15 +2,19 @@ import { CallHandler, ExecutionContext, Injectable, Logger, NestInterceptor } fr
 import { Observable } from 'rxjs'
 import { InternalEventLoggingService } from './internal-event-logging.service'
 import { ExternalOrdersEventData, ExternalResultEventData } from '../common/typings/internal-event-data.interface'
+import { OrdersService } from '../orders/orders.service'
 
 @Injectable()
 export class InternalEventLoggingInterceptor implements NestInterceptor {
   private readonly logger = new Logger(InternalEventLoggingInterceptor.name)
 
-  constructor (private readonly eventLoggingService: InternalEventLoggingService) {
+  constructor (
+    private readonly eventLoggingService: InternalEventLoggingService,
+    private readonly ordersService: OrdersService
+  ) {
   }
 
-  intercept (context: ExecutionContext, next: CallHandler): Observable<any> {
+  async intercept (context: ExecutionContext, next: CallHandler): Promise<Observable<any>> {
     const contextType = context.getType()
 
     // We only want to intercept microservice events (EventPattern)
@@ -21,8 +25,10 @@ export class InternalEventLoggingInterceptor implements NestInterceptor {
       const methodName = context.getHandler().name
       const pattern = metadata?.getArgs()?.[0] || 'unknown'
 
-      // TODO(gb): Get the requisition ID from the order and use that instead?
-      const accessionIds = this.extractAccessionIds(payload)
+      // Extract accession IDs
+      const externalOrderIds = this.extractExternalIds(payload)
+      const orders = await this.ordersService.findOrdersByExternalIds(externalOrderIds)
+      const accessionIds = orders.map((order) => order.requisitionId).filter(Boolean)
 
       // Fire and forget - don't await or use the promise result
       this.eventLoggingService
@@ -39,7 +45,7 @@ export class InternalEventLoggingInterceptor implements NestInterceptor {
     return next.handle()
   }
 
-  extractAccessionIds (payload: any): string[] {
+  extractExternalIds (payload: any): string[] {
     let accessionIds: string[] = []
 
     if (this.isExternalOrdersEventData(payload)) {
