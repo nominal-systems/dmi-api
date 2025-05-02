@@ -427,7 +427,9 @@ export class ReportsService {
     }
 
     // Interpretation
-    if (item.interpretation != null) {
+    if (isNullOrEmpty(item.interpretation)) {
+      delete observation.interpretation
+    } else {
       observation.interpretation = {
         code: item.interpretation?.code,
         text: item.interpretation?.text
