@@ -16,9 +16,11 @@ export class AuthController {
     const query = req.query as { redirect?: string }
     if (query.redirect) {
       req.session.redirectUrl = query.redirect
+      this.logger.debug(`Stored redirect URL: ${query.redirect}`)
     }
 
     try {
+      this.logger.debug('Starting Okta authentication...')
       const authenticate = fastifyPassport.authenticate('oidc', {
         session: true,
         failureRedirect: '/ui/login',
@@ -27,7 +29,7 @@ export class AuthController {
       }) as (req: FastifyRequest, res: FastifyReply) => Promise<void>
 
       await authenticate(req, res)
-      this.logger.debug('Authentication initiated')
+      this.logger.debug('Authentication initiated successfully')
     } catch (error) {
       this.logger.error('Login authentication error:')
       this.logger.error(error.message)
@@ -42,10 +44,21 @@ export class AuthController {
     @Req() req: FastifyRequest,
     @Res() res: FastifyReply
   ): Promise<void> {
+    this.logger.debug('Received callback from Okta')
+    this.logger.debug(`Query parameters: ${JSON.stringify(req.query)}`)
+
+    // Check for Okta policy errors
+    const query = req.query as { error?: string; error_description?: string }
+    if (query.error) {
+      this.logger.error(`Okta authentication error: ${query.error}`)
+      this.logger.error(`Error description: ${query.error_description}`)
+      return await res.redirect(`/ui/login?error=${query.error}&description=${encodeURIComponent(query.error_description || '')}`)
+    }
 
     try {
       // Retrieve the originally requested URL from the session.
       const redirectUrl = req.session.redirectUrl || '/ui' // default fallback
+      this.logger.debug(`Retrieved redirect URL from session: ${redirectUrl}`)
 
       // Clean up the stored redirect so it doesn't persist for future requests.
       delete req.session.redirectUrl
@@ -57,6 +70,7 @@ export class AuthController {
       }) as (req: FastifyRequest, res: FastifyReply) => Promise<void>
 
       // Complete the authentication
+      this.logger.debug('Completing authentication...')
       await authenticate(req, res)
 
       // At this point, the user should be authenticated and the session established
@@ -75,6 +89,7 @@ export class AuthController {
       this.logger.error('Callback authentication error:')
       this.logger.error(error.message)
       this.logger.error(error.stack)
+      this.logger.error('Full error:', error)
       return await res.redirect('/ui/login?error=auth_failed')
     }
   }

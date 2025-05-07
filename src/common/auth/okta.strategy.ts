@@ -27,6 +27,12 @@ export class OktaStrategy extends PassportStrategy(Strategy, 'oidc') {
       passReqToCallback: true
     })
 
+    // Debug logging
+    this.logger.debug('Okta Configuration:')
+    this.logger.debug(`Domain: ${oktaDomain}`)
+    this.logger.debug(`Client ID: ${clientId}`)
+    this.logger.debug(`Base URL: ${baseUrl}`)
+    this.logger.debug(`Callback URL: ${callbackURL}`)
     this.logger.log(`OktaStrategy initialized for ${oktaDomain}`)
   }
 
