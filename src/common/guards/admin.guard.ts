@@ -1,57 +1,21 @@
-import { ExecutionContext, Injectable, Logger } from '@nestjs/common'
-import { AuthGuard } from '@nestjs/passport'
-import { FastifyReply } from 'fastify'
-import fastifyPassport from 'fastify-passport'
-
-// Define the extended FastifyReply type
-interface ExtendedFastifyReply extends FastifyReply {
-  setHeader?: (name: string, value: string) => ExtendedFastifyReply
-  end?: (data?: any) => ExtendedFastifyReply
-}
+import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
+import { OidcAuthGuard } from './oidc-auth.guard'
+import { AdminJwtAuthGuard } from './admin-jwt-auth.guard'
 
 @Injectable()
-export class AdminGuard extends AuthGuard('oidc') {
-  private readonly logger = new Logger(AdminGuard.name)
+export class AdminGuard implements CanActivate {
+  constructor (
+    private readonly configService: ConfigService,
+    private readonly oidcAuthGuard: OidcAuthGuard,
+    private readonly jwtAuthGuard: AdminJwtAuthGuard
+  ) {
+  }
 
-  async canActivate (context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest()
-    const response = context.switchToHttp().getResponse<ExtendedFastifyReply>()
-
-    // Check if we're already in the auth flow
-    const isAuthPath: boolean = request.url.startsWith('/auth/')
-    if (isAuthPath) {
-      return true
-    }
-
-    // If already authenticated, just allow access
-    if (request.isAuthenticated?.()) {
-      return true
-    }
-
-    if (!request.isAuthenticated?.()) {
-      this.logger.debug('User not authenticated, redirecting to /auth/login')
-      response.status(302).redirect('/auth/login')
-      return false
-    }
-
-    try {
-      const result = (await super.canActivate(context)) as boolean
-      this.logger.debug(`Authentication result: ${result}`)
-      return result
-    } catch (error) {
-      this.logger.error(`Authentication error: ${error.message}`)
-      this.logger.error(error.stack)
-      response.status(302).redirect('/auth/login')
-      return false
-    }
+  async canActivate (ctx: ExecutionContext): Promise<boolean> {
+    const authStrategy = this.configService.get<string>('admin.authStrategy')
+    return authStrategy === 'jwt'
+      ? this.jwtAuthGuard.canActivate(ctx) as Promise<boolean>
+      : this.oidcAuthGuard.canActivate(ctx) as Promise<boolean>
   }
 }
-
-// Register serializers for session support
-fastifyPassport.registerUserSerializer(async (user: any) => {
-  return user
-})
-
-fastifyPassport.registerUserDeserializer(async (user: any) => {
-  return user
-})

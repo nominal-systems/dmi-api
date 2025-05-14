@@ -4,7 +4,7 @@ export interface AppConfig {
   nodeEnv: string
   port: number
   secretKey: string
-  admin: AdminCredentials
+  admin: AdminConfig
   activeMQ: ActiveMQConfig
   typeorm: TypeOrmModuleOptions
   mongoose: MongooseConfig
@@ -24,7 +24,8 @@ export interface MongooseConfig {
   uri: string
 }
 
-export interface AdminCredentials {
+export interface AdminConfig {
+  authStrategy: 'jwt' | 'okta'
   username: string
   password: string
 }
