@@ -10,7 +10,6 @@ import { RefsService } from '../refs/refs.service'
 import { ProvidersService } from '../providers/services/providers.service'
 import { EventsService } from '../events/services/events.service'
 import { ConfigService } from '@nestjs/config'
-import { JwtService } from '@nestjs/jwt'
 import { ProviderRefService } from '../refs/providerRef.service'
 import { ProviderRef } from '../refs/entities/providerRef.entity'
 import { Ref } from '../refs/entities/ref.entity'
@@ -22,6 +21,8 @@ import { ProviderExternalRequests } from '../providers/entities/provider-externa
 import { ArgumentMetadata, BadRequestException, ValidationPipe } from '@nestjs/common'
 import { PAGINATION_PAGE_LIMIT } from '../common/constants/pagination.constant'
 import { InternalEventLoggingService } from '../internal-event-logging/internal-event-logging.service'
+import { OidcAuthGuard } from '../common/guards/oidc-auth.guard'
+import { AdminJwtAuthGuard } from '../common/guards/admin-jwt-auth.guard'
 
 describe('AdminController', () => {
   let adminController: AdminController
@@ -34,6 +35,18 @@ describe('AdminController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AdminController],
       providers: [
+        {
+          provide: ConfigService,
+          useValue: {}
+        },
+        {
+          provide: OidcAuthGuard,
+          useValue: {}
+        },
+        {
+          provide: AdminJwtAuthGuard,
+          useValue: {}
+        },
         {
           provide: OrganizationsService,
           useValue: {}
@@ -73,14 +86,6 @@ describe('AdminController', () => {
         {
           provide: ProvidersService,
           useValue: providersServiceMock
-        },
-        {
-          provide: ConfigService,
-          useValue: {}
-        },
-        {
-          provide: JwtService,
-          useValue: {}
         },
         {
           provide: ProviderRefService,

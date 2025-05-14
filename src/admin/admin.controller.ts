@@ -16,7 +16,6 @@ import {
   Put,
   Query,
   Res,
-  UnauthorizedException,
   UseGuards
 } from '@nestjs/common'
 import { Response } from 'express'
@@ -36,10 +35,6 @@ import { ReferenceDataQueryParams } from '../providers/dtos/reference-data-query
 import { RefsService } from '../refs/refs.service'
 import { ProviderOptionDto } from '../providers/dtos/provider-option.dto'
 import { ProvidersService } from '../providers/services/providers.service'
-import { AdminUserCredentialsDto } from '../users/dtos/admin-user-credentials.dto'
-import { ConfigService } from '@nestjs/config'
-import { JwtService } from '@nestjs/jwt'
-import { AdminGuard } from '../common/guards/admin.guard'
 import { EventsService } from '../events/services/events.service'
 import { Event, EventDocument } from '../events/entities/event.entity'
 import { Ref } from '../refs/entities/ref.entity'
@@ -68,6 +63,7 @@ import { EventsStatsDto } from './dtos/events-stats.dto'
 import { PracticesQueryDto } from '../practices/dto/practice-search-query-params.dto'
 import { OrdersStatsDto } from './dtos/orders-stats.dto'
 import { InternalEventLoggingService } from '../internal-event-logging/internal-event-logging.service'
+import { AdminGuard } from '../common/guards/admin.guard'
 
 @Controller('admin')
 @UseGuards(AdminGuard)
@@ -85,28 +81,11 @@ export class AdminController {
     @InjectRepository(ProviderRef) private readonly providerRefsRepository: Repository<ProviderRef>,
     private readonly refsService: RefsService,
     private readonly providersService: ProvidersService,
-    private readonly configService: ConfigService,
-    private readonly jwtService: JwtService,
     private readonly providerRefService: ProviderRefService,
     @InjectRepository(Practice) private readonly practicesRepository: Repository<Practice>,
     private readonly ordersService: OrdersService,
     private readonly internalEventLoggingService: InternalEventLoggingService
   ) {
-  }
-
-  // TODO(gb): should this be removed?
-  @Post('login')
-  @HttpCode(HttpStatus.OK)
-  async authenticate (
-    @Body() credentials: AdminUserCredentialsDto
-  ): Promise<{ token: string }> {
-    const adminCredentials = this.configService.get('admin')
-    if (credentials.username === adminCredentials.username && credentials.password === adminCredentials.password) {
-      const token = await this.jwtService.signAsync({}, { subject: 'admin' })
-      return { token }
-    }
-
-    throw new UnauthorizedException('Username or password is incorrect')
   }
 
   @Get('organizations')

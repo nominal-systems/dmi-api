@@ -6,6 +6,7 @@ export default (): AppConfig => ({
   port: Number(process.env.PORT ?? 3000),
   secretKey: process.env.SECRET_KEY ?? '',
   admin: {
+    authStrategy: process.env.ADMIN_AUTH_STRATEGY === 'okta' ? 'okta' : 'jwt',
     username: process.env.ADMIN_USERNAME ?? 'admin',
     password: process.env.ADMIN_PASSWORD ?? 'admin'
   },

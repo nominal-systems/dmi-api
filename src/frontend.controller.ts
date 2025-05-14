@@ -2,7 +2,7 @@ import { Controller, Get, Res, UseGuards } from '@nestjs/common'
 import { join } from 'path'
 import { FastifyReply } from 'fastify'
 import { readFileSync } from 'node:fs'
-import { FrontendAuthGuard } from './frontend-auth.guard'
+import { FrontendAuthGuard } from './common/guards/frontend-auth.guard'
 
 @UseGuards(FrontendAuthGuard)
 @Controller('ui')

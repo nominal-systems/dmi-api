@@ -1,13 +1,29 @@
-import { Controller, Get, Logger, Req, Res } from '@nestjs/common'
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Logger,
+  Post,
+  Req,
+  Res,
+  UnauthorizedException
+} from '@nestjs/common'
 import { FastifyReply, FastifyRequest } from 'fastify'
 import { ConfigService } from '@nestjs/config'
 import fastifyPassport from 'fastify-passport'
+import { AdminUserCredentialsDto } from '../../users/dtos/admin-user-credentials.dto'
+import { JwtService } from '@nestjs/jwt'
 
 @Controller('auth')
 export class AuthController {
   private readonly logger = new Logger(AuthController.name)
 
-  constructor (private readonly configService: ConfigService) {
+  constructor (
+    private readonly configService: ConfigService,
+    private readonly jwtService: JwtService,
+  ) {
   }
 
   @Get('login')
@@ -98,5 +114,19 @@ export class AuthController {
   async test (@Req() req: FastifyRequest, @Res() res: FastifyReply): Promise<void> {
     this.logger.debug('Test endpoint called')
     return await res.send({ message: 'Auth controller is working' })
+  }
+
+  @Post('admin/login')
+  @HttpCode(HttpStatus.OK)
+  async authenticate (
+    @Body() credentials: AdminUserCredentialsDto
+  ): Promise<{ token: string }> {
+    const adminCredentials = this.configService.get('admin')
+    if (credentials.username === adminCredentials.username && credentials.password === adminCredentials.password) {
+      const token = await this.jwtService.signAsync({}, { subject: 'admin' })
+      return { token }
+    }
+
+    throw new UnauthorizedException('Username or password is incorrect')
   }
 }
