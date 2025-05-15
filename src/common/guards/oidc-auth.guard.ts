@@ -1,7 +1,6 @@
 import { ExecutionContext, Injectable, Logger } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
 import { FastifyReply } from 'fastify'
-import fastifyPassport from 'fastify-passport'
 
 // Define the extended FastifyReply type
 interface ExtendedFastifyReply extends FastifyReply {
@@ -46,12 +45,3 @@ export class OidcAuthGuard extends AuthGuard('oidc') {
     }
   }
 }
-
-// Register serializers for session support
-fastifyPassport.registerUserSerializer(async (user: any) => {
-  return user
-})
-
-fastifyPassport.registerUserDeserializer(async (user: any) => {
-  return user
-})

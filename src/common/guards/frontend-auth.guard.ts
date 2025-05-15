@@ -1,10 +1,14 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common'
 import { FastifyReply, FastifyRequest } from 'fastify'
 import { ConfigService } from '@nestjs/config'
+import { JwtService } from '@nestjs/jwt'
 
 @Injectable()
 export class FrontendAuthGuard implements CanActivate {
-  constructor (private readonly configService: ConfigService) {
+  constructor (
+    private readonly configService: ConfigService,
+    private readonly jwtService: JwtService
+  ) {
   }
 
   canActivate (context: ExecutionContext): boolean {
@@ -28,15 +32,17 @@ export class FrontendAuthGuard implements CanActivate {
 
     // JWT Mode
     if (strategy === 'jwt') {
-      // Allow if JWT cookie is present
-      // TODO(gb): should also check if the JWT is valid, or use request.isAuthenticated()?
-      const token = (request as any).cookies?.JWT_TOKEN
-      if (token) return true
-
-      // Otherwise redirect to the login page
-      const redirectUrl = encodeURIComponent(request.url)
-      response.redirect(`/ui/login?redirect=${redirectUrl}`)
-      return false
+      try {
+        const token = (request as any).cookies?.JWT_TOKEN
+        if (token) {
+          this.jwtService.verify(token)
+          return true
+        }
+      } catch (err) {
+        const redirectUrl = encodeURIComponent(request.url)
+        response.redirect(`/ui/login?redirect=${redirectUrl}`)
+        return false
+      }
     }
 
     // Fallback: deny
