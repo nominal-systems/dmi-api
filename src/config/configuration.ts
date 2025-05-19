@@ -3,6 +3,7 @@ import ormconfig from './ormconfig'
 
 export default (): AppConfig => ({
   nodeEnv: process.env.NODE_ENV ?? 'development',
+  baseUrl: process.env.BASE_URL ?? '',
   port: Number(process.env.PORT ?? 3000),
   secretKey: process.env.SECRET_KEY ?? '',
   admin: {
