@@ -2,6 +2,7 @@ import { TypeOrmModuleOptions } from '@nestjs/typeorm'
 
 export interface AppConfig {
   nodeEnv: string
+  baseUrl: string
   port: number
   secretKey: string
   admin: AdminConfig

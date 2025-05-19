@@ -11,7 +11,7 @@ export class OktaStrategy extends PassportStrategy(Strategy, 'oidc') {
     const oktaDomain = configService.get<string>('okta.domain')
     const clientId = configService.get<string>('okta.clientId')
     const clientSecret = configService.get<string>('okta.clientSecret')
-    const baseUrl = configService.get<string>('app.baseUrl', 'http://localhost:3000')
+    const baseUrl = configService.get<string>('baseUrl', '')
     const callbackURL = `${baseUrl}/auth/callback`
 
     super({
