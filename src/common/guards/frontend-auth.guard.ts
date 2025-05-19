@@ -15,6 +15,7 @@ export class FrontendAuthGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<FastifyRequest>()
     const response = context.switchToHttp().getResponse<FastifyReply>()
     const strategy = this.configService.get<string>('admin.authStrategy')
+    const baseUrl = this.configService.get<string>('baseUrl', '')
 
     // Allow public access to the login page
     if (request.url.startsWith('/ui/login')) return true
@@ -26,23 +27,22 @@ export class FrontendAuthGuard implements CanActivate {
 
       // Otherwise redirect to Okta login
       const redirectUrl = encodeURIComponent(request.url)
-      response.redirect(`/auth/login?redirect=${redirectUrl}`)
+      response.redirect(`${baseUrl}/auth/login?redirect=${redirectUrl}`)
       return false
     }
 
     // JWT Mode
     if (strategy === 'jwt') {
+      const token = (request as any).cookies?.JWT_TOKEN
       try {
-        const token = (request as any).cookies?.JWT_TOKEN
         if (token) {
           this.jwtService.verify(token)
           return true
         }
-      } catch (err) {
-        const redirectUrl = encodeURIComponent(request.url)
-        response.redirect(`/ui/login?redirect=${redirectUrl}`)
-        return false
-      }
+      } catch {}
+      const redirectUrl = encodeURIComponent(request.url)
+      response.redirect(`${baseUrl}/ui/login?redirect=${redirectUrl}`)
+      return false
     }
 
     // Fallback: deny
