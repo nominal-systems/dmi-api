@@ -22,8 +22,26 @@ export class AuthController {
 
   constructor (
     private readonly configService: ConfigService,
-    private readonly jwtService: JwtService,
+    private readonly jwtService: JwtService
   ) {
+  }
+
+  @Get('profile')
+  async profile (@Req() req: FastifyRequest): Promise<any> {
+    const strategy = this.configService.get<string>('admin.authStrategy')
+
+    if (strategy === 'jwt') {
+      const token = req.headers.authorization?.split('Bearer ')[1] ?? ''
+      const payload = this.jwtService.verify<{ sub: string }>(token)
+      return {
+        profile: {
+          username: payload.sub
+        }
+      }
+    }
+
+    // OIDC / Okta
+    return req.user ?? null
   }
 
   @Get('login')
@@ -123,7 +141,7 @@ export class AuthController {
   ): Promise<{ token: string }> {
     const adminCredentials = this.configService.get('admin')
     if (credentials.username === adminCredentials.username && credentials.password === adminCredentials.password) {
-      const token = await this.jwtService.signAsync({}, { subject: 'admin' })
+      const token = await this.jwtService.signAsync({}, { subject: 'Admin' })
       return { token }
     }
 
