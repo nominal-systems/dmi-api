@@ -3,10 +3,14 @@ import { join } from 'path'
 import { FastifyReply } from 'fastify'
 import { readFileSync } from 'node:fs'
 import { FrontendAuthGuard } from './common/guards/frontend-auth.guard'
+import { ConfigService } from '@nestjs/config'
 
 @UseGuards(FrontendAuthGuard)
 @Controller('ui')
 export class FrontendController {
+  constructor (private readonly configService: ConfigService) {
+  }
+
   @Get()
   async index (@Res() res: FastifyReply): Promise<void> {
     await this.sendFile(res, 'index.html')
@@ -14,7 +18,13 @@ export class FrontendController {
 
   @Get('login')
   async login (@Res() res: FastifyReply): Promise<void> {
-    await this.sendFile(res, 'login.html')
+    const strategy = this.configService.get<string>('admin.authStrategy')
+    if (strategy === 'jwt') {
+      await this.sendFile(res, 'login.html')
+    } else {
+      await this.sendFile(res, 'home.html')
+    }
+
   }
 
   @Get('integrations')
