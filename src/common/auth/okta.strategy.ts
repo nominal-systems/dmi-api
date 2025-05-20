@@ -24,7 +24,8 @@ export class OktaStrategy extends PassportStrategy(Strategy, 'oidc') {
       callbackURL: callbackURL,
       scope: 'profile',
       response_type: 'code',
-      passReqToCallback: true
+      passReqToCallback: true,
+      proxy: true
     })
 
     // Debug logging
