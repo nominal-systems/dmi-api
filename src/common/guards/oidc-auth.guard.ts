@@ -19,8 +19,6 @@ export class OidcAuthGuard extends AuthGuard('oidc') {
 
   async canActivate (context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest()
-    const response = context.switchToHttp().getResponse<ExtendedFastifyReply>()
-    const baseUrl = this.configService.get<string>('baseUrl', '')
 
     // Check if we're already in the auth flow
     const isAuthPath: boolean = request.url.startsWith('/auth/')
@@ -29,25 +27,14 @@ export class OidcAuthGuard extends AuthGuard('oidc') {
     }
 
     // If already authenticated, just allow access
-    if (request.isAuthenticated?.()) {
+    if (request.isAuthenticated()) {
       return true
     }
 
-    if (!request.isAuthenticated?.()) {
-      this.logger.debug('User not authenticated, redirecting to /auth/login')
-      response.status(302).redirect(`${baseUrl}/auth/login`)
+    if (!request.isAuthenticated()) {
       return false
     }
 
-    try {
-      const result = (await super.canActivate(context)) as boolean
-      this.logger.debug(`Authentication result: ${result}`)
-      return result
-    } catch (error) {
-      this.logger.error(`Authentication error: ${error.message}`)
-      this.logger.error(error.stack)
-      response.status(302).redirect(`${baseUrl}/auth/login`)
-      return false
-    }
+    return false
   }
 }
