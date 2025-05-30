@@ -9,6 +9,8 @@ import { AdminJwtAuthGuard } from '../guards/admin-jwt-auth.guard'
 import { OidcAuthGuard } from '../guards/oidc-auth.guard'
 import { AdminGuard } from '../guards/admin.guard'
 import { AdminConfig } from '../../config/config.interface'
+import { OktaJwtAuthGuard } from '../guards/okta-jwt-auth.guard'
+import { OktaJwtStrategy } from './okta-jwt.strategy'
 
 @Module({
   imports: [
@@ -27,6 +29,7 @@ import { AdminConfig } from '../../config/config.interface'
     AdminGuard,
     OidcAuthGuard,
     AdminJwtAuthGuard,
+    OktaJwtAuthGuard,
     {
       provide: 'ADMIN_OKTA_STRATEGY',
       inject: [ConfigService],
@@ -36,6 +39,14 @@ import { AdminConfig } from '../../config/config.interface'
         if (adminConfig?.authStrategy === 'okta') return new OktaStrategy(configService)
         if (adminConfig?.authStrategy === 'jwt') return new AdminJwtStrategy(configService)
       }
+    },
+    {
+      provide: 'ADMIN_OKTA_JWT_STRATEGY',
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => {
+        const adminConfig = configService.get<AdminConfig>('admin')
+        if (adminConfig?.authStrategy === 'okta') return new OktaJwtStrategy(configService)
+      }
     }
   ],
   controllers: [AuthController],
@@ -43,7 +54,8 @@ import { AdminConfig } from '../../config/config.interface'
     PassportModule,
     JwtModule,
     OidcAuthGuard,
-    AdminJwtAuthGuard
+    AdminJwtAuthGuard,
+    OktaJwtAuthGuard
   ]
 })
 export class AuthModule {}

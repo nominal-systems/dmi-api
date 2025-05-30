@@ -23,6 +23,7 @@ import { PAGINATION_PAGE_LIMIT } from '../common/constants/pagination.constant'
 import { InternalEventLoggingService } from '../internal-event-logging/internal-event-logging.service'
 import { OidcAuthGuard } from '../common/guards/oidc-auth.guard'
 import { AdminJwtAuthGuard } from '../common/guards/admin-jwt-auth.guard'
+import { OktaJwtAuthGuard } from '../common/guards/okta-jwt-auth.guard'
 
 describe('AdminController', () => {
   let adminController: AdminController
@@ -45,6 +46,10 @@ describe('AdminController', () => {
         },
         {
           provide: AdminJwtAuthGuard,
+          useValue: {}
+        },
+        {
+          provide: OktaJwtAuthGuard,
           useValue: {}
         },
         {
