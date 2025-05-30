@@ -121,6 +121,8 @@ The following environment variables are accepted to configure the application:
 | `ACTIVEMQ_PORT`           | ActiveMQ broker port.                                                                                                                                           |
 | `ACTIVEMQ_USERNAME`       | ActiveMQ username required by the broker, if any.                                                                                                               |
 | `ACTIVEMQ_PASSWORD`       | ActiveMQ password required by the broker, if any.                                                                                                               |
+| `OKTA_ISSUER`            | Issuer URL used to validate Okta access tokens.    |
+| `OKTA_AUDIENCE`          | Expected audience for Okta access tokens.          |
 
 
 ## Application
