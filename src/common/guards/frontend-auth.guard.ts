@@ -26,7 +26,7 @@ export class FrontendAuthGuard implements CanActivate {
       if (request.isAuthenticated?.()) return true
 
       // Otherwise redirect to Okta login
-      const redirectUrl = `${baseUrl}/${encodeURIComponent(request.url)}`
+      const redirectUrl = `${baseUrl}${encodeURIComponent(request.url)}`
       response.redirect(`${baseUrl}/auth/login?redirect=${redirectUrl}`)
       return false
     }
