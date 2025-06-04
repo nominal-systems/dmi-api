@@ -25,6 +25,7 @@ import { ResultsModule } from './results/results.module'
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: process.env.NODE_ENV ? [`.env.${process.env.NODE_ENV}`, '.env'] : '.env',
       load: [configuration]
     }),
     TypeOrmModule.forRootAsync({

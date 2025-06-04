@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-floating-promises */
+import { loadEnv } from './config/load-env'
 import { ClassSerializerInterceptor, Logger, ValidationPipe } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { NestFactory, Reflector } from '@nestjs/core'
@@ -9,6 +9,11 @@ import { AppConfig, DocsConfig } from './config/config.interface'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 import { IntegrationsService } from './integrations/integrations.service'
 import { join } from 'path'
+
+const loaded = loadEnv()
+Logger.log(`Loaded environment configuration from ${loaded.join(', ')}`)
+
+/* eslint-disable @typescript-eslint/no-floating-promises */
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { version } = require('../package.json')
 

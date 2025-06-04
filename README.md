@@ -11,7 +11,7 @@ $ npm install
 ```
 
 ## Running the app
-1. Create a `.env` file if setting up locally, or `.env.docker` if using docker-compose, if it doesn't already exist. Take a look at the `.env.example` file for reference.
+1. Create a `.env` file if it doesn't already exist. You can also provide environment specific files like `.env.dev` or `.env.docker` and set `NODE_ENV` accordingly. The application loads `.env.<NODE_ENV>` first (if present) and falls back to `.env`. See `.env.example` for reference.
 2. Change credentials such as the Database password in the `docker-compose*.yaml` files as you see fit, and make sure it's the same password in the `.env` file.
 3. Choose one of the methods below
 4. Run `npm run migration:run` to sync the database
@@ -99,7 +99,7 @@ This will build a docker image `nominal-systems/dmi-api`.
 
 ## Configuration
 
-Configuration is done though environment variables that can be set explicitly or read from a `.env` file in the root of this repository. See [.env.example](.env.example).
+Configuration is done through environment variables that can be set explicitly or loaded from environment files. When `NODE_ENV` is set, the application first looks for a `.env.<NODE_ENV>` file and then falls back to `.env`. The TypeORM CLI uses the same logic so migrations and other commands share the configuration. See [.env.example](.env.example).
 
 The following environment variables are accepted to configure the application:
 

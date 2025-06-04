@@ -6,8 +6,11 @@ export const reportRepositoryMockFactory: () => Partial<Repository<Report>> = ()
   find: jest.fn(),
   save: jest.fn(),
   remove: jest.fn(),
-  // @ts-expect-error: compiler type error
-  create: jest.fn<Array<Partial<Report>>, Report[]>((entityLikeArray) => entityLikeArray.map((item) => Object.assign(new Report(), item))),
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  create: jest.fn((entityLikeArray: Partial<Report>[]) =>
+    (entityLikeArray as any).map((item) => Object.assign(new Report(), item))
+  ),
   // @ts-expect-error: compiler type error
   createQueryBuilder: jest.fn(() => ({
     leftJoinAndSelect: jest.fn().mockReturnThis(),

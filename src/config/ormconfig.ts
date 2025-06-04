@@ -1,6 +1,8 @@
-import 'dotenv/config'
 import * as path from 'path'
 import { TypeOrmModuleOptions } from '@nestjs/typeorm'
+import { loadEnv } from './load-env'
+
+loadEnv()
 
 const typeormConfig: TypeOrmModuleOptions = {
   type: (process.env.DATABASE_TYPE ?? 'mysql') as any,
@@ -14,7 +16,7 @@ const typeormConfig: TypeOrmModuleOptions = {
   migrations: [path.join(__dirname, '../migrations/*.{ts,js}')],
   migrationsRun: Boolean(process.env.DATABASE_RUN_MIGRATIONS ?? false),
   cli: {
-      migrationsDir: 'src/migrations'
+    migrationsDir: 'src/migrations'
   },
   logging: Boolean(process.env.DATABASE_LOGGING ?? false),
   dropSchema: false
