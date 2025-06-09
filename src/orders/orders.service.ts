@@ -1,4 +1,11 @@
-import { ForbiddenException, HttpException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common'
+import {
+  ForbiddenException,
+  HttpException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException
+} from '@nestjs/common'
 import { ClientProxy } from '@nestjs/microservices'
 import { InjectRepository } from '@nestjs/typeorm'
 import { FindManyOptions, In, Repository, SelectQueryBuilder } from 'typeorm'
@@ -33,7 +40,10 @@ import { ProviderConfiguration } from '../providers/entities/provider-configurat
 import { RefsService } from '../refs/refs.service'
 import { Attachment } from '../common/entities/attachment.entity'
 import { ProvidersService } from '../providers/services/providers.service'
-import { ExternalOrdersEventData, ExternalResultEventData } from '../common/typings/internal-event-data.interface'
+import {
+  ExternalOrdersEventData,
+  ExternalResultEventData
+} from '../common/typings/internal-event-data.interface'
 
 interface OrderTestCancelOrAddParams {
   orderId: string
@@ -86,10 +96,9 @@ export class OrdersService {
         }
 
         if (providerId != null) {
-          qb.andWhere(
-            'providerConfiguration.providerId LIKE :providerId',
-            { providerId: `%${providerId}%` }
-          )
+          qb.andWhere('providerConfiguration.providerId LIKE :providerId', {
+            providerId: `%${providerId}%`
+          })
         }
 
         if (dateStart != null && dateEnd != null) {
@@ -182,8 +191,7 @@ export class OrdersService {
         data: {
           payload: { id: externalId },
           integrationOptions,
-          providerConfiguration:
-          providerConfiguration.configurationOptions
+          providerConfiguration: providerConfiguration.configurationOptions
         }
       }
     )
@@ -205,8 +213,14 @@ export class OrdersService {
     const { providerConfiguration, integrationOptions } = integration
     const { configurationOptions, providerId } = providerConfiguration
 
-    if (createOrderDto.labRequisitionInfo !== null && createOrderDto.labRequisitionInfo !== undefined) {
-      await this.providersService.checkLabRequisitionParameters(providerId, createOrderDto.labRequisitionInfo)
+    if (
+      createOrderDto.labRequisitionInfo !== null &&
+      createOrderDto.labRequisitionInfo !== undefined
+    ) {
+      await this.providersService.checkLabRequisitionParameters(
+        providerId,
+        createOrderDto.labRequisitionInfo
+      )
     }
 
     const order = this.ordersRepository.create(createOrderDto)
@@ -244,19 +258,16 @@ export class OrdersService {
       const providerOrder = { ...order, patient: { ...order.patient, sex, species, breed } }
 
       // Send order to Engine
-      const { message, messagePattern } = ieMessageBuilder(
-        providerId,
-        {
-          resource: 'orders',
-          operation: 'create',
-          data: {
-            payload: providerOrder,
-            integrationOptions,
-            providerConfiguration: configurationOptions,
-            autoSubmitOrder
-          }
+      const { message, messagePattern } = ieMessageBuilder(providerId, {
+        resource: 'orders',
+        operation: 'create',
+        data: {
+          payload: providerOrder,
+          integrationOptions,
+          providerConfiguration: configurationOptions,
+          autoSubmitOrder
         }
-      )
+      })
       this.logger.log(`Sending '${messagePattern}' to '${providerId}' provider`)
       const response: OrderCreatedResponse = await this.client
         .send(messagePattern, message)
@@ -346,20 +357,17 @@ export class OrdersService {
     }
 
     const { configurationOptions, providerId } = providerConfiguration
-    const { message, messagePattern } = ieMessageBuilder(
-      providerId,
-      {
-        resource: 'orders',
-        operation: 'cancel',
-        data: {
-          providerConfiguration: configurationOptions,
-          integrationOptions,
-          payload: {
-            id: externalId
-          }
+    const { message, messagePattern } = ieMessageBuilder(providerId, {
+      resource: 'orders',
+      operation: 'cancel',
+      data: {
+        providerConfiguration: configurationOptions,
+        integrationOptions,
+        payload: {
+          id: externalId
         }
       }
-    )
+    })
     this.logger.log(`Sending '${messagePattern}' to '${providerId}' provider`)
     await this.client.send(messagePattern, message).toPromise()
 
@@ -418,8 +426,7 @@ export class OrdersService {
         resource: 'orders',
         operation: 'tests.add',
         data: {
-          providerConfiguration:
-          providerConfiguration.configurationOptions,
+          providerConfiguration: providerConfiguration.configurationOptions,
           integrationOptions,
           payload: {
             id: externalId,
@@ -474,8 +481,7 @@ export class OrdersService {
         resource: 'orders',
         operation: 'tests.cancel',
         data: {
-          providerConfiguration:
-          providerConfiguration.configurationOptions,
+          providerConfiguration: providerConfiguration.configurationOptions,
           integrationOptions,
           payload: {
             id: externalId,
@@ -497,31 +503,41 @@ export class OrdersService {
     integrationId,
     orders
   }: ExternalOrdersEventData): Promise<void> {
-    const externalOrdersIds = orders.map(order => order.externalId)
+    const externalOrdersIds = orders.map((order) => order.externalId)
 
     // Handle existing orders
     const existingOrders = await this.findOrdersByExternalIds(externalOrdersIds)
     const updatedOrders: Order[] = []
     for (const existingOrder of existingOrders) {
       const externalOrder = orders.find(
-        order => order.externalId === existingOrder.externalId
+        (order) => order.externalId === existingOrder.externalId
       )
 
       if (externalOrder == null) continue
 
       // Will only update existing order if a valid status change occurred
-      if (updateOrder(existingOrder, externalOrder)) {
+      let updated = updateOrder(existingOrder, externalOrder)
+      if (externalOrder.manifest != null) {
+        existingOrder.manifest = externalOrder.manifest as any
+        updated = true
+      }
+
+      if (updated) {
         updatedOrders.push(existingOrder)
       }
     }
 
     // Handle non-existing orders
     const mapper = new ExternalOrderMapper()
-    const existingOrdersExternalIds = existingOrders.map(order => order.externalId)
-    const existingOrdersRequisitionIds = existingOrders.map(order => order.requisitionId)
+    const existingOrdersExternalIds = existingOrders.map((order) => order.externalId)
+    const existingOrdersRequisitionIds = existingOrders.map((order) => order.requisitionId)
     const nonExistingOrders = orders
-      .filter(order => !existingOrdersExternalIds.includes(order.externalId) && !existingOrdersRequisitionIds.includes(order.externalId))
-      .map(order => mapper.mapOrder(order, integrationId))
+      .filter(
+        (order) =>
+          !existingOrdersExternalIds.includes(order.externalId) &&
+          !existingOrdersRequisitionIds.includes(order.externalId)
+      )
+      .map((order) => mapper.mapOrder(order, integrationId))
     const newOrders = this.ordersRepository.create(nonExistingOrders)
     const allOrders = [...newOrders, ...updatedOrders]
 
@@ -571,7 +587,9 @@ export class OrdersService {
       })
     }
 
-    this.logger.log(`Got ${orders.length} external orders: ${newOrders.length} created, ${updatedOrders.length} updated`)
+    this.logger.log(
+      `Got ${orders.length} external orders: ${newOrders.length} created, ${updatedOrders.length} updated`
+    )
   }
 
   async handleExternalOrderResults ({
@@ -579,11 +597,15 @@ export class OrdersService {
     results
   }: ExternalResultEventData): Promise<void> {
     const integration = await this.integrationsService.findById(integrationId)
-    const externalOrderIds = new Set<string>(results.map(result => result.orderId).filter(Boolean))
+    const externalOrderIds = new Set<string>(
+      results.map((result) => result.orderId).filter(Boolean)
+    )
 
     const updatedOrders: Order[] = []
     for (const externalOrderId of externalOrderIds) {
-      const result = results.find(result => result.orderId === externalOrderId)
+      const result = results.find(
+        (result) => result.orderId === externalOrderId
+      )
 
       if (result == null) continue
 
@@ -619,7 +641,9 @@ export class OrdersService {
       })
     }
 
-    this.logger.log(`external_order_results -> Got ${results.length} results from ${integration.providerConfiguration.providerId}: ${updatedOrders.length} orders updated`)
+    this.logger.log(
+      `external_order_results -> Got ${results.length} results from ${integration.providerConfiguration.providerId}: ${updatedOrders.length} orders updated`
+    )
   }
 
   async getOrderReport (
@@ -659,21 +683,18 @@ export class OrdersService {
       }
 
       const { configurationOptions, providerId } = providerConfiguration
-      const { message, messagePattern } = ieMessageBuilder(
-        providerId,
-        {
-          resource: EventNamespace.ORDERS,
-          operation: Operation.Manifest,
-          data: {
-            providerConfiguration: configurationOptions,
-            integrationOptions,
-            payload: {
-              id: requisitionId,
-              externalId: externalId
-            }
+      const { message, messagePattern } = ieMessageBuilder(providerId, {
+        resource: EventNamespace.ORDERS,
+        operation: Operation.Manifest,
+        data: {
+          providerConfiguration: configurationOptions,
+          integrationOptions,
+          payload: {
+            id: requisitionId,
+            externalId: externalId
           }
         }
-      )
+      })
       this.logger.log(`Sending '${messagePattern}' to '${providerId}' provider`)
       manifest = await this.client.send(messagePattern, message).toPromise()
       order.manifest = manifest
@@ -682,25 +703,32 @@ export class OrdersService {
     return manifest
   }
 
-  async findOneByExternalId (
-    externalId: string
-  ): Promise<Order> {
+  async findOneByExternalId (externalId: string): Promise<Order> {
     return await this.findOne({
       options: {
-        where: [
-          { externalId: externalId },
-          { requisitionId: externalId }
-        ],
-        relations: ['patient', 'patient.identifier', 'client', 'veterinarian', 'tests', 'client.identifier']
+        where: [{ externalId: externalId }, { requisitionId: externalId }],
+        relations: [
+          'patient',
+          'patient.identifier',
+          'client',
+          'veterinarian',
+          'tests',
+          'client.identifier'
+        ]
       }
     })
   }
 
-  async findOrdersByExternalIds (
-    externalIds: string[]
-  ): Promise<Order[]> {
+  async findOrdersByExternalIds (externalIds: string[]): Promise<Order[]> {
     return await this.findAll({
-      relations: ['patient', 'patient.identifier', 'client', 'veterinarian', 'tests', 'client.identifier'],
+      relations: [
+        'patient',
+        'patient.identifier',
+        'client',
+        'veterinarian',
+        'tests',
+        'client.identifier'
+      ],
       where: [
         { externalId: In(externalIds) },
         { requisitionId: In(externalIds) }
@@ -727,9 +755,7 @@ export class OrdersService {
       }
     )
 
-    return await this.client
-      .send(messagePattern, message)
-      .toPromise()
+    return await this.client.send(messagePattern, message).toPromise()
   }
 
   async createExternalOrder (
@@ -737,7 +763,9 @@ export class OrdersService {
     externalOrder: ExternalOrder
   ): Promise<Order> {
     const mapper = new ExternalOrderMapper()
-    const createdOrders = this.ordersRepository.create(mapper.mapOrder(externalOrder, integrationId))
+    const createdOrders = this.ordersRepository.create(
+      mapper.mapOrder(externalOrder, integrationId)
+    )
     return await this.ordersRepository.save(createdOrders)
   }
 
@@ -753,37 +781,35 @@ export class OrdersService {
       updated = updateOrder(order, result.order)
     }
     if (orderStatus !== order.status) {
-      this.logger.debug(`updateOrderStatusFromResults: Order/${order.externalId} status changed from ${orderStatus} to ${order.status}`)
+      this.logger.debug(
+        `updateOrderStatusFromResults: Order/${order.externalId} status changed from ${orderStatus} to ${order.status}`
+      )
       updated = true
     } else {
-      this.logger.debug(`updateOrderStatusFromResults: Order/${order.externalId} status not changed. Current status: ${order.status}, result status: ${result.status}`)
+      this.logger.debug(
+        `updateOrderStatusFromResults: Order/${order.externalId} status not changed. Current status: ${order.status}, result status: ${result.status}`
+      )
     }
 
     await this.ordersRepository.save(order)
     return updated
   }
 
-  extractOrderFromResult (
-    result: ProviderResult
-  ): Order {
+  extractOrderFromResult (result: ProviderResult): Order {
     const order = new Order()
     ProviderResultUtils.setOrderStatusFromResult(result, order)
     order.tests = ProviderResultUtils.extractTestsFromProviderResult(result)
     return order
   }
 
-  async saveOrder (
-    order: Order
-  ): Promise<Order> {
+  async saveOrder (order: Order): Promise<Order> {
     const createdOrder = this.ordersRepository.create(order)
     return await this.ordersRepository.save(createdOrder)
   }
 
-  async countByProvider (
-    start: Date,
-    end: Date
-  ): Promise<any> {
-    const qb = this.ordersRepository.createQueryBuilder('order')
+  async countByProvider (start: Date, end: Date): Promise<any> {
+    const qb = this.ordersRepository
+      .createQueryBuilder('order')
       .innerJoinAndSelect('order.integration', 'integration')
       .innerJoinAndSelect('integration.providerConfiguration', 'providerConfiguration')
       .select('YEAR(order.createdAt)', 'year')
@@ -801,7 +827,7 @@ export class OrdersService {
 
     const results = await qb.getRawMany()
 
-    return results.map(result => ({
+    return results.map((result) => ({
       ...result,
       count: parseInt(result.count)
     }))
