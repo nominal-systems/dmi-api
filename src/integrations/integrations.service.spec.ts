@@ -7,6 +7,7 @@ import { Organization } from '../organizations/entities/organization.entity'
 import { ProviderConfiguration } from '../providers/entities/provider-configuration.entity'
 import { Provider } from '../providers/entities/provider.entity'
 import { IntegrationStatus } from './constants/integration-status.enum'
+import { BadRequestException } from '@nestjs/common'
 
 const organization = {} as Organization
 
@@ -140,6 +141,33 @@ describe('IntegrationsService', () => {
         integrationOptions: {},
       })
       expect(integration.status).toBe(IntegrationStatus.NEW)
+    })
+
+    it('should reject integration options with leading or trailing whitespace', async () => {
+      integrationRepositoryMock.findOne.mockResolvedValue({
+        id: 'providerConfigurationId',
+        providerId: 'providerId',
+        provider: { id: 'providerId' },
+      })
+      ;(providersRepositoryMock.findOne as jest.Mock).mockResolvedValueOnce({
+        id: 'providerId',
+        options: [
+          {
+            name: 'apiKey',
+            type: 'string',
+            required: true,
+            providerOptionType: 'integration',
+          },
+        ],
+      })
+
+      await expect(
+        integrationsService.create({
+          practiceId: 'practiceId',
+          providerConfigurationId: 'providerConfigurationId',
+          integrationOptions: { apiKey: ' secret ' },
+        }),
+      ).rejects.toThrow(BadRequestException)
     })
   })
 })

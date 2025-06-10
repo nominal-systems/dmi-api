@@ -148,5 +148,14 @@ export class ProviderConfigurationsService {
     if (!providerValidator(providerConfigurationOptions.configuration)) {
       throw new BadRequestException('The provider configuration is invalid')
     }
+
+    for (const option of provider.configurationOptions) {
+      if (option.type === 'string') {
+        const value = (providerConfigurationOptions.configuration as any)[option.name]
+        if (typeof value === 'string' && value.trim() !== value) {
+          throw new BadRequestException('The provider configuration is invalid')
+        }
+      }
+    }
   }
 }
