@@ -20,7 +20,7 @@ export class IntegrationsService {
   private readonly logger = new Logger(IntegrationsService.name)
   private readonly secretKey: string
 
-  constructor (
+  constructor(
     private readonly configService: ConfigService,
     @InjectRepository(Integration)
     private readonly integrationsRepository: Repository<Integration>,
@@ -28,24 +28,17 @@ export class IntegrationsService {
     private readonly providerConfigurationRepository: Repository<ProviderConfiguration>,
     @InjectRepository(Provider)
     private readonly providerRepository: Repository<Provider>,
-    @Inject('ACTIVEMQ') private readonly client: ClientProxy
+    @Inject('ACTIVEMQ') private readonly client: ClientProxy,
   ) {
     this.secretKey = this.configService.get('secretKey') ?? ''
   }
 
-  async findAll (
-    options?: FindManyOptions<Integration>
-  ): Promise<Integration[]> {
+  async findAll(options?: FindManyOptions<Integration>): Promise<Integration[]> {
     return await this.integrationsRepository.find(options)
   }
 
-  async findOne (
-    args: FindOneOfTypeOptions<Integration>
-  ): Promise<Integration> {
-    const integration = await this.integrationsRepository.findOne(
-      args.id,
-      args.options
-    )
+  async findOne(args: FindOneOfTypeOptions<Integration>): Promise<Integration> {
+    const integration = await this.integrationsRepository.findOne(args.id, args.options)
 
     if (integration == null) {
       throw new NotFoundException('The integration was not found')
@@ -54,28 +47,26 @@ export class IntegrationsService {
     return integration
   }
 
-  async findById (integrationId: string): Promise<Integration> {
+  async findById(integrationId: string): Promise<Integration> {
     return await this.findOne({
       id: integrationId,
       options: {
-        relations: ['practice', 'practice.identifier', 'providerConfiguration']
-      }
+        relations: ['practice', 'practice.identifier', 'providerConfiguration'],
+      },
     })
   }
 
-  async create (
-    createIntegrationDto: CreateIntegrationDto
-  ): Promise<Integration> {
+  async create(createIntegrationDto: CreateIntegrationDto): Promise<Integration> {
     try {
       await this.validateIntegrationOptions(createIntegrationDto)
 
       createIntegrationDto.integrationOptions = encrypt(
         createIntegrationDto.integrationOptions,
-        this.secretKey
+        this.secretKey,
       )
 
       const newIntegration = this.integrationsRepository.create({
-        ...createIntegrationDto
+        ...createIntegrationDto,
       })
 
       const integration = await this.integrationsRepository.save(newIntegration)
@@ -84,44 +75,40 @@ export class IntegrationsService {
       return newIntegration
     } catch (error) {
       if (error.code === 'ER_NO_REFERENCED_ROW_2') {
-        throw new NotFoundException(
-          'The practice or providerConfiguration was not found'
-        )
+        throw new NotFoundException('The practice or providerConfiguration was not found')
       }
 
       throw error
     }
   }
 
-  async update (
+  async update(
     integrationId: string,
-    integrationUpdate: Pick<CreateIntegrationDto, 'integrationOptions'>): Promise<any> {
+    integrationUpdate: Pick<CreateIntegrationDto, 'integrationOptions'>,
+  ): Promise<any> {
     const integration = await this.findOne({
       id: integrationId,
-      options: { relations: ['providerConfiguration', 'practice'] }
+      options: { relations: ['providerConfiguration', 'practice'] },
     })
 
     if (integration == null) {
-      throw new NotFoundException('The integration doesn\'t exist')
+      throw new NotFoundException("The integration doesn't exist")
     }
 
     const newIntegrationOptions = integrationUpdate.integrationOptions
     const updatedIntegration = {
       practiceId: integration.practiceId,
       integrationOptions: newIntegrationOptions,
-      providerConfigurationId: integration.providerConfigurationId
+      providerConfigurationId: integration.providerConfigurationId,
     }
     await this.validateIntegrationOptions(updatedIntegration)
 
     integrationUpdate.integrationOptions = encrypt(
       integrationUpdate.integrationOptions,
-      this.secretKey
+      this.secretKey,
     )
 
-    await this.integrationsRepository.update(
-      { id: integrationId },
-      { ...integrationUpdate }
-    )
+    await this.integrationsRepository.update({ id: integrationId }, { ...integrationUpdate })
 
     this.logger.log(`Updated Integration: [${integration.id}]`)
     await this.updateJobs(integrationId, integration.providerConfiguration, newIntegrationOptions)
@@ -129,43 +116,37 @@ export class IntegrationsService {
     return await this.findOne({ id: integrationId })
   }
 
-  async restart (integration: Integration): Promise<Error | undefined> {
+  async restart(integration: Integration): Promise<Error | undefined> {
     const responseStop = await this.doStop(integration)
     if (responseStop?.message === undefined && integration.status === IntegrationStatus.RUNNING) {
       await this.doStart(
         integration.id,
         integration.providerConfiguration,
-        integration.integrationOptions
+        integration.integrationOptions,
       )
     } else if (responseStop?.message !== undefined) {
       return responseStop
     }
   }
 
-  async delete (
-    organization: Organization,
-    integrationId: string
-  ): Promise<void> {
+  async delete(organization: Organization, integrationId: string): Promise<void> {
     // Find the integration
     const integration = await this.findOne({
       options: {
         where: (qb: SelectQueryBuilder<Integration>) => {
           qb.where('integration.id = :integrationId', {
-            integrationId
-          }).andWhere(
-            'providerConfiguration.organizationId = :organizationId',
-            {
-              organizationId: organization.id
-            }
-          )
+            integrationId,
+          }).andWhere('providerConfiguration.organizationId = :organizationId', {
+            organizationId: organization.id,
+          })
         },
         join: {
           alias: 'integration',
           leftJoinAndSelect: {
-            providerConfiguration: 'integration.providerConfiguration'
-          }
-        }
-      }
+            providerConfiguration: 'integration.providerConfiguration',
+          },
+        },
+      },
     })
 
     if (integration.deletedAt != null) {
@@ -176,20 +157,25 @@ export class IntegrationsService {
     await this.doDelete(integration)
   }
 
-  async ensureStatusAll (): Promise<void> {
+  async ensureStatusAll(): Promise<void> {
     const integrations = await this.findAll({
       where: {
-        status: In([IntegrationStatus.RUNNING, IntegrationStatus.STOPPED])
+        status: In([IntegrationStatus.RUNNING, IntegrationStatus.STOPPED]),
       },
-      relations: ['providerConfiguration']
+      relations: ['providerConfiguration'],
     })
 
-    const integrationStatusCounts = integrations.reduce((counts, integration) => {
-      counts[integration.status]++
-      return counts
-    }, { RUNNING: 0, STOPPED: 0 })
+    const integrationStatusCounts = integrations.reduce(
+      (counts, integration) => {
+        counts[integration.status]++
+        return counts
+      },
+      { RUNNING: 0, STOPPED: 0 },
+    )
 
-    this.logger.log(`Found: ${integrationStatusCounts.RUNNING} integrations RUNNING, ${integrationStatusCounts.STOPPED} integrations STOPPED`)
+    this.logger.log(
+      `Found: ${integrationStatusCounts.RUNNING} integrations RUNNING, ${integrationStatusCounts.STOPPED} integrations STOPPED`,
+    )
 
     for (const integration of integrations) {
       const response = await this.restart(integration)
@@ -201,18 +187,14 @@ export class IntegrationsService {
     }
   }
 
-  async doDelete (
-    integration: Integration
-  ): Promise<void> {
+  async doDelete(integration: Integration): Promise<void> {
     // Soft-delete the integration
     await this.doStop(integration)
     await this.integrationsRepository.softDelete(integration.id)
     this.logger.log(`Deleted Integration: ${integration.id}`)
   }
 
-  async doStop (
-    integration: Integration
-  ): Promise<Error | undefined> {
+  async doStop(integration: Integration): Promise<Error | undefined> {
     try {
       // Notify engine to remove jobs
       const { message, messagePattern } = ieMessageBuilder(
@@ -222,40 +204,39 @@ export class IntegrationsService {
           operation: Operation.Remove,
           data: {
             payload: {
-              integrationId: integration.id
-            }
-          }
-        }
+              integrationId: integration.id,
+            },
+          },
+        },
       )
 
       await this.client.send(messagePattern, message).toPromise()
-      await this.integrationsRepository.update(integration.id, { status: IntegrationStatus.STOPPED })
+      await this.integrationsRepository.update(integration.id, {
+        status: IntegrationStatus.STOPPED,
+      })
     } catch (e) {
       return new Error(`Error stopping integration ${integration.id}`)
     }
   }
 
-  async doStart (
+  async doStart(
     integrationId: string,
     providerConfiguration,
-    integrationOptions
+    integrationOptions,
   ): Promise<Error | undefined> {
     try {
       // Notify engine to add jobs
-      const { message, messagePattern } = ieMessageBuilder(
-        providerConfiguration.providerId,
-        {
-          resource: Resource.Integration,
-          operation: Operation.Create,
-          data: {
-            integrationOptions: integrationOptions,
-            providerConfiguration: providerConfiguration.configurationOptions,
-            payload: {
-              integrationId
-            }
-          }
-        }
-      )
+      const { message, messagePattern } = ieMessageBuilder(providerConfiguration.providerId, {
+        resource: Resource.Integration,
+        operation: Operation.Create,
+        data: {
+          integrationOptions: integrationOptions,
+          providerConfiguration: providerConfiguration.configurationOptions,
+          payload: {
+            integrationId,
+          },
+        },
+      })
       await this.client.send(messagePattern, message).toPromise()
       await this.integrationsRepository.update(integrationId, { status: IntegrationStatus.RUNNING })
     } catch (e) {
@@ -263,33 +244,28 @@ export class IntegrationsService {
     }
   }
 
-  async updateJobs (
+  async updateJobs(
     integrationId: string,
     providerConfiguration: any,
-    integrationOptions: any
+    integrationOptions: any,
   ): Promise<void> {
     // Notify engine to update jobs
-    const { message, messagePattern } = ieMessageBuilder(
-      providerConfiguration.providerId,
-      {
-        resource: Resource.Integration,
-        operation: Operation.Update,
-        data: {
-          integrationOptions: integrationOptions,
-          providerConfiguration: providerConfiguration.configurationOptions,
-          payload: {
-            integrationId
-          }
-        }
-      }
-    )
+    const { message, messagePattern } = ieMessageBuilder(providerConfiguration.providerId, {
+      resource: Resource.Integration,
+      operation: Operation.Update,
+      data: {
+        integrationOptions: integrationOptions,
+        providerConfiguration: providerConfiguration.configurationOptions,
+        payload: {
+          integrationId,
+        },
+      },
+    })
     this.client.emit(messagePattern, message)
     this.logger.log(`Updated integration ${integrationId}`)
   }
 
-  async test (
-    integration: Integration
-  ): Promise<IntegrationTestResponse> {
+  async test(integration: Integration): Promise<IntegrationTestResponse> {
     const { message, messagePattern } = ieMessageBuilder(
       integration.providerConfiguration.providerId,
       {
@@ -298,36 +274,43 @@ export class IntegrationsService {
         data: {
           integrationOptions: integration.integrationOptions,
           providerConfiguration: integration.providerConfiguration.configurationOptions,
-          payload: null
-        }
-      }
+          payload: null,
+        },
+      },
     )
-    return await this.client
-      .send(messagePattern, message)
-      .toPromise()
+    return await this.client.send(messagePattern, message).toPromise()
   }
 
-  private async validateIntegrationOptions (
-    createIntegrationDto: CreateIntegrationDto
+  private async validateIntegrationOptions(
+    createIntegrationDto: CreateIntegrationDto,
   ): Promise<void> {
-    const providerConfiguration = await this.providerConfigurationRepository.findOne({ id: createIntegrationDto.providerConfigurationId })
-    const provider = await this.providerRepository.findOne(<string>providerConfiguration?.providerId, { relations: ['options'] })
+    const providerConfiguration = await this.providerConfigurationRepository.findOne({
+      id: createIntegrationDto.providerConfigurationId,
+    })
+    const provider = await this.providerRepository.findOne(
+      <string>providerConfiguration?.providerId,
+      { relations: ['options'] },
+    )
     if (provider == null) {
-      throw new BadRequestException('The provider doesn\'t exist')
+      throw new BadRequestException("The provider doesn't exist")
     }
-    provider.integrationOptions = provider.options.filter((option) => option.providerOptionType === 'integration')
-    provider.configurationOptions = provider.options.filter((option) => option.providerOptionType === 'configuration')
+    provider.integrationOptions = provider.options.filter(
+      (option) => option.providerOptionType === 'integration',
+    )
+    provider.configurationOptions = provider.options.filter(
+      (option) => option.providerOptionType === 'configuration',
+    )
 
     const validatorOptions = {
       required: true,
       type: 'object',
-      properties: {}
+      properties: {},
     }
 
     for (const option of provider.integrationOptions) {
       validatorOptions.properties[option.name] = {
         type: option.type,
-        required: option.required
+        required: option.required,
       }
     }
 

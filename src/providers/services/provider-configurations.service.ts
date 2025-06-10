@@ -16,31 +16,26 @@ export class ProviderConfigurationsService {
   private readonly secretKey: string
   private readonly logger = new Logger('ProviderConfigurationsService')
 
-  constructor (
+  constructor(
     @InjectRepository(ProviderConfiguration)
     private readonly providerConfigurationRepository: Repository<ProviderConfiguration>,
     @InjectRepository(Integration)
     private readonly integrationsRepository: Repository<Integration>,
     private readonly providersService: ProvidersService,
     private readonly integrationsService: IntegrationsService,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
   ) {
     this.secretKey = this.configService.get('secretKey') ?? ''
   }
 
-  async findAll (
-    options?: FindManyOptions<ProviderConfiguration>
+  async findAll(
+    options?: FindManyOptions<ProviderConfiguration>,
   ): Promise<ProviderConfiguration[]> {
     return await this.providerConfigurationRepository.find(options)
   }
 
-  async findOne (
-    args: FindOneOfTypeOptions<ProviderConfiguration>
-  ): Promise<ProviderConfiguration> {
-    const providerConfig = await this.providerConfigurationRepository.findOne(
-      args.id,
-      args.options
-    )
+  async findOne(args: FindOneOfTypeOptions<ProviderConfiguration>): Promise<ProviderConfiguration> {
+    const providerConfig = await this.providerConfigurationRepository.findOne(args.id, args.options)
 
     if (providerConfig == null) {
       throw new NotFoundException('The provider configuration was not found')
@@ -49,68 +44,70 @@ export class ProviderConfigurationsService {
     return providerConfig
   }
 
-  async create (
+  async create(
     organization: Organization,
     providerId: string,
-    providerConfigurationOptions: any
+    providerConfigurationOptions: any,
   ): Promise<any> {
     await this.validateProviderConfiguration(providerId, providerConfigurationOptions)
 
-    const newProviderConfiguration = this.providerConfigurationRepository.create(
-      {
-        providerId: providerId,
-        configurationOptions: encrypt(
-          providerConfigurationOptions.configuration,
-          this.secretKey
-        ),
-        organization
-      }
-    )
+    const newProviderConfiguration = this.providerConfigurationRepository.create({
+      providerId: providerId,
+      configurationOptions: encrypt(providerConfigurationOptions.configuration, this.secretKey),
+      organization,
+    })
     this.logger.log(`Created Provider Configuration -> Provider: '${providerId}'`)
 
-    return await this.providerConfigurationRepository.save(
-      newProviderConfiguration
-    )
+    return await this.providerConfigurationRepository.save(newProviderConfiguration)
   }
 
-  async update (
+  async update(
     organization: Organization,
     providerId: string,
     configId: string,
-    providerConfigurationOptions: any): Promise<any> {
-    const providerConfig = await this.findOne({ id: configId, options: { relations: ['organization'] } })
+    providerConfigurationOptions: any,
+  ): Promise<any> {
+    const providerConfig = await this.findOne({
+      id: configId,
+      options: { relations: ['organization'] },
+    })
     if (providerConfig == null) {
-      throw new NotFoundException('The provider configuration doesn\'t exist')
+      throw new NotFoundException("The provider configuration doesn't exist")
     }
     await this.validateProviderConfiguration(providerId, providerConfigurationOptions)
-    providerConfig.configurationOptions = encrypt(providerConfigurationOptions.configuration, this.secretKey)
+    providerConfig.configurationOptions = encrypt(
+      providerConfigurationOptions.configuration,
+      this.secretKey,
+    )
     await this.providerConfigurationRepository.update(
       { id: configId },
       {
         providerId,
         configurationOptions: providerConfig.configurationOptions,
-        organization
-      }
+        organization,
+      },
     )
     this.logger.log(`Updated Provider Configuration -> Provider: '${providerId}'`)
 
     const integrations = await this.integrationsRepository.find({
       where: { providerConfigurationId: configId },
-      relations: ['providerConfiguration', 'practice']
+      relations: ['providerConfiguration', 'practice'],
     })
 
     for (const integration of integrations) {
-      await this.integrationsService.updateJobs(integration.id, integration.providerConfiguration, integration.integrationOptions)
+      await this.integrationsService.updateJobs(
+        integration.id,
+        integration.providerConfiguration,
+        integration.integrationOptions,
+      )
     }
   }
 
-  async delete (
-    args: FindOneOfTypeOptions<ProviderConfiguration>
-  ): Promise<void> {
+  async delete(args: FindOneOfTypeOptions<ProviderConfiguration>): Promise<void> {
     const providerConfig = await this.findOne(args)
 
     if (providerConfig == null) {
-      throw new NotFoundException('The provider configuration doesn\'t exist')
+      throw new NotFoundException("The provider configuration doesn't exist")
     }
 
     await this.providerConfigurationRepository.softDelete(providerConfig.id)
@@ -124,26 +121,26 @@ export class ProviderConfigurationsService {
     }
   }
 
-  private async validateProviderConfiguration (
+  private async validateProviderConfiguration(
     providerId: string,
-    providerConfigurationOptions: any
+    providerConfigurationOptions: any,
   ): Promise<void> {
     const provider = await this.providersService.findOneById(providerId)
 
     if (provider == null) {
-      throw new BadRequestException('The provider doesn\'t exist')
+      throw new BadRequestException("The provider doesn't exist")
     }
 
     const validatorOptions = {
       required: true,
       type: 'object',
-      properties: {}
+      properties: {},
     }
 
     for (const option of provider.configurationOptions) {
       validatorOptions.properties[option.name] = {
         type: option.type,
-        required: option.required
+        required: option.required,
       }
     }
 

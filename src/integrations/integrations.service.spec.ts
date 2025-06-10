@@ -21,7 +21,7 @@ describe('IntegrationsService', () => {
         default:
           return undefined
       }
-    })
+    }),
   }
   const integrationRepositoryMock = {
     findOne: jest.fn((obj) => obj),
@@ -30,10 +30,10 @@ describe('IntegrationsService', () => {
     create: jest.fn((obj) => {
       return {
         ...obj,
-        status: IntegrationStatus.NEW
+        status: IntegrationStatus.NEW,
       }
     }),
-    save: jest.fn((obj) => obj)
+    save: jest.fn((obj) => obj),
   }
   const providerConfigurationRepositoryMock = {
     findOne: jest.fn((id) => {
@@ -41,21 +41,21 @@ describe('IntegrationsService', () => {
         id,
         providerId: 'providerId',
         provider: {
-          id: 'providerId'
-        }
+          id: 'providerId',
+        },
       }
-    })
+    }),
   }
   const clientProxyMock = {
-    send: jest.fn()
+    send: jest.fn(),
   }
   const providersRepositoryMock = {
     findOne: jest.fn((id) => {
       return {
         id,
-        options: []
+        options: [],
       }
-    })
+    }),
   }
 
   beforeEach(async () => {
@@ -64,25 +64,25 @@ describe('IntegrationsService', () => {
         IntegrationsService,
         {
           provide: ConfigService,
-          useValue: configServiceMock
+          useValue: configServiceMock,
         },
         {
           provide: getRepositoryToken(Integration),
-          useValue: integrationRepositoryMock
+          useValue: integrationRepositoryMock,
         },
         {
           provide: getRepositoryToken(ProviderConfiguration),
-          useValue: providerConfigurationRepositoryMock
+          useValue: providerConfigurationRepositoryMock,
         },
         {
           provide: getRepositoryToken(Provider),
-          useValue: providersRepositoryMock
+          useValue: providersRepositoryMock,
         },
         {
           provide: 'ACTIVEMQ',
-          useValue: clientProxyMock
-        }
-      ]
+          useValue: clientProxyMock,
+        },
+      ],
     }).compile()
 
     integrationsService = module.get<IntegrationsService>(IntegrationsService)
@@ -96,15 +96,15 @@ describe('IntegrationsService', () => {
     const integrationA = {
       id: 'integrationA',
       providerConfiguration: {
-        id: 'providerConfigurationA'
-      }
+        id: 'providerConfigurationA',
+      },
     }
     const integrationB = {
       id: 'integrationB',
       deletedAt: new Date(),
       providerConfiguration: {
-        id: 'providerConfigurationA'
-      }
+        id: 'providerConfigurationA',
+      },
     }
 
     it('should delete an integration', async () => {
@@ -137,7 +137,7 @@ describe('IntegrationsService', () => {
       const integration = await integrationsService.create({
         practiceId: 'practiceId',
         providerConfigurationId: 'providerConfigurationId',
-        integrationOptions: {}
+        integrationOptions: {},
       })
       expect(integration.status).toBe(IntegrationStatus.NEW)
     })
