@@ -319,5 +319,14 @@ export class IntegrationsService {
     if (!providerValidator(createIntegrationDto.integrationOptions)) {
       throw new BadRequestException('Invalid integration options')
     }
+
+    for (const option of provider.integrationOptions) {
+      if (option.type === 'string') {
+        const value = (createIntegrationDto.integrationOptions as any)[option.name]
+        if (typeof value === 'string' && value.trim() !== value) {
+          throw new BadRequestException('Invalid integration options')
+        }
+      }
+    }
   }
 }
