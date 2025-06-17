@@ -29,7 +29,7 @@ describe('AdminController', () => {
   let adminController: AdminController
   const providersServiceMock = {
     findExternalRequests: jest.fn(),
-    countExternalRequests: jest.fn()
+    countExternalRequests: jest.fn(),
   }
 
   beforeEach(async () => {
@@ -38,77 +38,77 @@ describe('AdminController', () => {
       providers: [
         {
           provide: ConfigService,
-          useValue: {}
+          useValue: {},
         },
         {
           provide: OidcAuthGuard,
-          useValue: {}
+          useValue: {},
         },
         {
           provide: AdminJwtAuthGuard,
-          useValue: {}
+          useValue: {},
         },
         {
           provide: OktaJwtAuthGuard,
-          useValue: {}
+          useValue: {},
         },
         {
           provide: OrganizationsService,
-          useValue: {}
+          useValue: {},
         },
         {
           provide: ProviderConfigurationsService,
-          useValue: {}
+          useValue: {},
         },
         {
           provide: EventsService,
-          useValue: {}
+          useValue: {},
         },
         {
           provide: EventSubscriptionService,
-          useValue: {}
+          useValue: {},
         },
         {
           provide: IntegrationsService,
-          useValue: {}
+          useValue: {},
         },
         {
           provide: getRepositoryToken(Integration),
-          useValue: {}
+          useValue: {},
         },
         {
           provide: getRepositoryToken(Ref),
-          useValue: {}
+          useValue: {},
         },
         {
           provide: getRepositoryToken(ProviderRef),
-          useValue: {}
+          useValue: {},
         },
         {
           provide: RefsService,
-          useValue: {}
+          useValue: {},
         },
         {
           provide: ProvidersService,
-          useValue: providersServiceMock
+          useValue: providersServiceMock,
         },
         {
           provide: ProviderRefService,
-          useValue: {}
+          useValue: {},
         },
         {
           provide: getRepositoryToken(Practice),
-          useValue: {}
+          useValue: {},
         },
         {
           provide: OrdersService,
-          useValue: {}
+          useValue: {},
         },
         {
           provide: InternalEventLoggingService,
-          useValue: {}
-        }
-      ]
+          useValue: {},
+        },
+      ],
     }).compile()
 
     adminController = module.get<AdminController>(AdminController)
@@ -121,7 +121,7 @@ describe('AdminController', () => {
   describe('getExternalRequests()', () => {
     const validationPipe = new ValidationPipe({
       transform: true,
-      transformOptions: { enableImplicitConversion: true }
+      transformOptions: { enableImplicitConversion: true },
     })
     const metadata: ArgumentMetadata = { type: 'query', metatype: ExternalRequestsQueryDto }
 
@@ -133,24 +133,21 @@ describe('AdminController', () => {
         startDate: '2023-01-01',
         endDate: '2023-01-31',
         page: 1,
-        limit: 10
+        limit: 10,
       }
 
       const expectedOptions = {
         provider: { $in: ['provider1', 'provider2'] },
-        $or: [
-          { status: { $gte: 200, $lte: 299 } },
-          { status: { $gte: 400, $lte: 499 } }
-        ],
+        $or: [{ status: { $gte: 200, $lte: 299 } }, { status: { $gte: 400, $lte: 499 } }],
         method: { $in: ['GET', 'POST'] },
-        createdAt: { $gte: new Date('2023-01-01'), $lte: new Date('2023-01-31') }
+        createdAt: { $gte: new Date('2023-01-01'), $lte: new Date('2023-01-31') },
       }
 
       const expectedResult: PaginationResult<ProviderExternalRequests> = {
         total: 2,
         page: 1,
         limit: 10,
-        data: []
+        data: [],
       }
 
       providersServiceMock.findExternalRequests.mockResolvedValueOnce(expectedResult.data)
@@ -158,15 +155,24 @@ describe('AdminController', () => {
 
       const result = await adminController.getExternalRequests(query)
 
-      expect(providersServiceMock.findExternalRequests).toHaveBeenCalledWith(expectedOptions, { page: 1, limit: 10 })
+      expect(providersServiceMock.findExternalRequests).toHaveBeenCalledWith(expectedOptions, {
+        page: 1,
+        limit: 10,
+      })
       expect(providersServiceMock.countExternalRequests).toHaveBeenCalledWith(expectedOptions)
       expect(result).toEqual(expectedResult)
     })
 
     it('should throw BadRequestException for invalid query parameters', async () => {
-      await expect(validationPipe.transform({ page: '-1' }, metadata)).rejects.toThrow(BadRequestException)
-      await expect(validationPipe.transform({ page: 'a' }, metadata)).rejects.toThrow(BadRequestException)
-      await expect(validationPipe.transform({ limit: '-1' }, metadata)).rejects.toThrow(BadRequestException)
+      await expect(validationPipe.transform({ page: '-1' }, metadata)).rejects.toThrow(
+        BadRequestException,
+      )
+      await expect(validationPipe.transform({ page: 'a' }, metadata)).rejects.toThrow(
+        BadRequestException,
+      )
+      await expect(validationPipe.transform({ limit: '-1' }, metadata)).rejects.toThrow(
+        BadRequestException,
+      )
     })
 
     it('should use default values if undefined', async () => {
