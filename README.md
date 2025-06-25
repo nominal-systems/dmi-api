@@ -124,6 +124,9 @@ The following environment variables are accepted to configure the application:
 | `OKTA_ISSUER`            | Issuer URL used to validate Okta access tokens.    |
 | `OKTA_AUDIENCE`          | Expected audience for Okta access tokens.          |
 
+## Admin UI
+
+The Admin UI is served from `/ui` and every route is protected by `FrontendAuthGuard`, which initiates the login flow for unauthenticated users. API clients should redirect the browser to `/auth/login` whenever a `401` or `403` response is encountered to restart authentication.
 
 ## Application
 
