@@ -15,6 +15,7 @@ This repository contains the Diagnostic Modality Integration API built with Nest
 - **Build:** `npm run build` creates the compiled files in `dist/`.
 - **Start in development:** `npm run start:dev`.
 - **Run migrations:** `npm run migration:run`.
+- **Commit message:** generate a short (one-liner, if possible) commit message for all proposed changes
 
 ### Testing
 
