@@ -8,7 +8,7 @@ import {
   Post,
   Req,
   Res,
-  UnauthorizedException
+  UnauthorizedException,
 } from '@nestjs/common'
 import { FastifyReply, FastifyRequest } from 'fastify'
 import { ConfigService } from '@nestjs/config'
@@ -22,7 +22,7 @@ export class AuthController {
 
   constructor (
     private readonly configService: ConfigService,
-    private readonly jwtService: JwtService
+    private readonly jwtService: JwtService,
   ) {
   }
 
@@ -34,14 +34,11 @@ export class AuthController {
       const token = req.headers.authorization?.split('Bearer ')[1] ?? ''
       const payload = this.jwtService.verify<{ sub: string }>(token)
       return {
-        profile: {
-          username: payload.sub
-        }
+        username: payload.sub,
       }
     }
 
-    // OIDC / Okta
-    return req.user ?? null
+    return req.user?.profile ?? null
   }
 
   @Get('login')
@@ -59,7 +56,7 @@ export class AuthController {
         session: true,
         failureRedirect: '/ui/login',
         authInfo: false,
-        failureMessage: true
+        failureMessage: true,
       }) as (req: FastifyRequest, res: FastifyReply) => Promise<void>
 
       await authenticate(req, res)
@@ -74,10 +71,7 @@ export class AuthController {
   }
 
   @Get('callback')
-  async callback (
-    @Req() req: FastifyRequest,
-    @Res() res: FastifyReply
-  ): Promise<void> {
+  async callback (@Req() req: FastifyRequest, @Res() res: FastifyReply): Promise<void> {
     this.logger.debug('Received callback from Okta')
     this.logger.debug(`Query parameters: ${JSON.stringify(req.query)}`)
 
@@ -86,7 +80,11 @@ export class AuthController {
     if (query.error) {
       this.logger.error(`Okta authentication error: ${query.error}`)
       this.logger.error(`Error description: ${query.error_description}`)
-      return await res.redirect(`/ui/login?error=${query.error}&description=${encodeURIComponent(query.error_description || '')}`)
+      return await res.redirect(
+        `/ui/login?error=${query.error}&description=${encodeURIComponent(
+          query.error_description || '',
+        )}`,
+      )
     }
 
     try {
@@ -100,7 +98,7 @@ export class AuthController {
       // We still need this to complete the authentication process
       const authenticate = fastifyPassport.authenticate('oidc', {
         session: true,
-        failureRedirect: '/ui/login'
+        failureRedirect: '/ui/login',
       }) as (req: FastifyRequest, res: FastifyReply) => Promise<void>
 
       // Complete the authentication
@@ -113,7 +111,15 @@ export class AuthController {
         return await res.redirect('/ui/login?error=auth_failed')
       }
 
-      this.logger.debug(`User authenticated: ${JSON.stringify(req.user.profile.username)}. Redirecting to ${redirectUrl}`)
+      this.logger.debug(
+        `User authenticated: ${JSON.stringify(
+          req.user.profile.username,
+        )}. Redirecting to ${redirectUrl}`,
+      )
+
+      if (req.session && req.session.passport && req.user) {
+        req.session.passport.user = req.user
+      }
 
       // Explicitly set status and perform redirect
       res.status(302)
@@ -136,15 +142,53 @@ export class AuthController {
 
   @Post('admin/login')
   @HttpCode(HttpStatus.OK)
-  async authenticate (
-    @Body() credentials: AdminUserCredentialsDto
-  ): Promise<{ token: string }> {
+  async authenticate (@Body() credentials: AdminUserCredentialsDto): Promise<{ token: string }> {
     const adminCredentials = this.configService.get('admin')
-    if (credentials.username === adminCredentials.username && credentials.password === adminCredentials.password) {
+    if (
+      credentials.username === adminCredentials.username &&
+      credentials.password === adminCredentials.password
+    ) {
       const token = await this.jwtService.signAsync({}, { subject: 'Admin' })
       return { token }
     }
 
     throw new UnauthorizedException('Username or password is incorrect')
+  }
+
+  @Get('logout')
+  async logout (@Req() req: FastifyRequest, @Res() res: FastifyReply): Promise<void> {
+    const strategy = this.configService.get<string>('admin.authStrategy')
+    const baseUrl = this.configService.get<string>('baseUrl', '')
+
+    if (strategy === 'okta') {
+      const oktaDomain = this.configService.get<string>('okta.domain')
+      const clientId = this.configService.get<string>('okta.clientId')
+      const idToken = (req.user as any)?.idToken || (req.session as any)?.passport?.user?.idToken
+
+      try {
+        if (typeof (req as any).logout === 'function') {
+          (req as any).logout()
+        }
+        if (req.session?.destroy) {
+          await new Promise<void>((resolve) => req.session.destroy(() => resolve()))
+        }
+      } catch (err) {
+        this.logger.error('Error destroying session during logout', err as any)
+      }
+
+      const postLogoutRedirect = `${baseUrl}/ui/login`
+      const logoutUrl =
+        `https://${oktaDomain}/oauth2/default/v1/logout?client_id=${clientId}` +
+        `&post_logout_redirect_uri=${encodeURIComponent(postLogoutRedirect)}` +
+        (idToken ? `&id_token_hint=${idToken}` : '')
+
+      res.status(302)
+      res.header('Location', logoutUrl.trim())
+      return await res.send()
+    }
+
+    res.status(302)
+    res.header('Location', `${baseUrl}/ui/login`)
+    return await res.send()
   }
 }
