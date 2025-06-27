@@ -2,9 +2,10 @@ import { Injectable, Logger, UnauthorizedException } from '@nestjs/common'
 import fastifyPassport from 'fastify-passport'
 import { Strategy } from 'passport-openidconnect'
 import { ConfigService } from '@nestjs/config'
+import { PassportStrategy } from '@nestjs/passport'
 
 @Injectable()
-export class OktaStrategy extends Strategy {
+export class OktaStrategy extends PassportStrategy(Strategy, 'oidc') {
   private readonly logger = new Logger(OktaStrategy.name)
 
   constructor (private readonly configService: ConfigService) {
