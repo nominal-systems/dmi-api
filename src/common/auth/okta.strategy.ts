@@ -9,8 +9,7 @@ export class OktaStrategy extends PassportStrategy(Strategy, 'oidc') {
   private readonly logger = new Logger(OktaStrategy.name)
 
   constructor(private readonly configService: ConfigService) {
-    const oktaDomain = configService.get<string>('okta.domain')
-    const issuer = configService.get<string>('okta.issuer') || `https://${oktaDomain}/oauth2`
+    const issuer = configService.get<string>('okta.issuer') || ''
     const issuerBase = issuer.includes('/oauth2') ? issuer : `${issuer}/oauth2`
     const authorizationURL = `${issuerBase}/v1/authorize`
     const tokenURL = `${issuerBase}/v1/token`
@@ -77,7 +76,6 @@ export class OktaStrategy extends PassportStrategy(Strategy, 'oidc') {
 
     // Debug logging
     this.logger.debug('Okta Configuration:')
-    this.logger.debug(`Domain: ${oktaDomain}`)
     this.logger.debug(`Issuer: ${issuer}`)
     this.logger.debug(`Client ID: ${clientID}`)
     this.logger.debug(`Authorization URL: ${authorizationURL}`)
@@ -85,6 +83,6 @@ export class OktaStrategy extends PassportStrategy(Strategy, 'oidc') {
     this.logger.debug(`UserInfo URL: ${userInfoURL}`)
     this.logger.debug(`Base URL: ${baseUrl}`)
     this.logger.debug(`Callback URL: ${callbackURL}`)
-    this.logger.log(`OktaStrategy initialized for ${oktaDomain}`)
+    this.logger.log(`OktaStrategy initialized for ${issuer}`)
   }
 }

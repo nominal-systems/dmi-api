@@ -23,7 +23,6 @@ export class AuthController {
   private readonly baseUrl: string
   private readonly adminCredentials: { username: string; password: string }
   private readonly oktaConfig?: {
-    domain: string
     issuer: string
     issuerBase: string
     logoutURL: string
@@ -36,12 +35,10 @@ export class AuthController {
     this.adminCredentials = configService.get('admin') ?? { username: '', password: '' }
 
     if (this.strategy === 'okta') {
-      const domain = configService.get<string>('okta.domain') ?? ''
-      const issuer = configService.get<string>('okta.issuer') || `https://${domain}/oauth2`
+      const issuer = configService.get<string>('okta.issuer') ?? ''
       const issuerBase = issuer.includes('/oauth2') ? issuer : `${issuer}/oauth2`
 
       this.oktaConfig = {
-        domain,
         issuer,
         issuerBase,
         logoutURL: `${issuerBase}/v1/logout`,

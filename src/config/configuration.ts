@@ -9,31 +9,29 @@ export default (): AppConfig => ({
   admin: {
     authStrategy: process.env.ADMIN_AUTH_STRATEGY === 'okta' ? 'okta' : 'jwt',
     username: process.env.ADMIN_USERNAME ?? 'admin',
-    password: process.env.ADMIN_PASSWORD ?? 'admin'
+    password: process.env.ADMIN_PASSWORD ?? 'admin',
   },
   activeMQ: {
     protocol: process.env.ACTIVEMQ_PROTOCOL ?? 'mqtt',
     hostname: process.env.ACTIVEMQ_HOSTNAME ?? 'localhost',
     port: Number(process.env.ACTIVEMQ_PORT ?? 1883),
     username: process.env.ACTIVEMQ_USERNAME ?? '',
-    password: process.env.ACTIVEMQ_PASSWORD ?? ''
+    password: process.env.ACTIVEMQ_PASSWORD ?? '',
   },
   typeorm: ormconfig,
   mongoose: {
-    uri:
-      process.env.MONGO_URI ??
-      'mongodb://localhost/diagnostic-modality-integration'
+    uri: process.env.MONGO_URI ?? 'mongodb://localhost/diagnostic-modality-integration',
   },
   docs: {
     title: 'DMI API',
-    description: 'The Diagnostic Modality Integration API (DMI API) provides common workflows and standardized resource formats for interacting with multiple diagnostic providers through a single interface, by handling all the work specific to each provider and helping partners integrate in a flexible way.',
-    openApiSpecUrl: '/swagger-json'
+    description:
+      'The Diagnostic Modality Integration API (DMI API) provides common workflows and standardized resource formats for interacting with multiple diagnostic providers through a single interface, by handling all the work specific to each provider and helping partners integrate in a flexible way.',
+    openApiSpecUrl: '/swagger-json',
   },
   okta: {
-    domain: process.env.OKTA_DOMAIN ?? '',
     clientId: process.env.OKTA_CLIENT_ID ?? '',
     clientSecret: process.env.OKTA_CLIENT_SECRET ?? '',
     issuer: process.env.OKTA_ISSUER ?? '',
-    audience: process.env.OKTA_AUDIENCE ?? ''
-  }
+    audience: process.env.OKTA_AUDIENCE ?? '',
+  },
 })
