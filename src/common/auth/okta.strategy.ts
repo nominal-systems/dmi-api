@@ -8,22 +8,26 @@ import { PassportStrategy } from '@nestjs/passport'
 export class OktaStrategy extends PassportStrategy(Strategy, 'oidc') {
   private readonly logger = new Logger(OktaStrategy.name)
 
-  constructor (private readonly configService: ConfigService) {
-    const oktaDomain = configService.get<string>('okta.domain')
-    const clientId = configService.get<string>('okta.clientId', '')
-    const clientSecret = configService.get<string>('okta.clientSecret', '')
+  constructor(private readonly configService: ConfigService) {
     const baseUrl = configService.get<string>('baseUrl', '')
+    const oktaDomain = configService.get<string>('okta.domain')
+    const issuer = configService.get<string>('okta.issuer') || `https://${oktaDomain}/oauth2`
+    const authorizationURL = `${issuer}/v1/authorize`
+    const tokenURL = `${issuer}/v1/token`
+    const userInfoURL = `${issuer}/v1/userinfo`
+    const clientID = configService.get<string>('okta.clientId', '')
+    const clientSecret = configService.get<string>('okta.clientSecret', '')
     const callbackURL = `${baseUrl}/auth/callback`
 
     super(
       {
-        issuer: `https://${oktaDomain}/oauth2/default`,
-        authorizationURL: `https://${oktaDomain}/oauth2/default/v1/authorize`,
-        tokenURL: `https://${oktaDomain}/oauth2/default/v1/token`,
-        userInfoURL: `https://${oktaDomain}/oauth2/default/v1/userinfo`,
-        clientID: clientId,
-        clientSecret: clientSecret,
-        callbackURL: callbackURL,
+        issuer,
+        authorizationURL,
+        tokenURL,
+        userInfoURL,
+        clientID,
+        clientSecret,
+        callbackURL,
         scope: 'profile',
         passReqToCallback: true,
         proxy: true,
@@ -39,6 +43,8 @@ export class OktaStrategy extends PassportStrategy(Strategy, 'oidc') {
         params: any,
         done: (err: any, user?: any) => void,
       ) => {
+        this.logger.debug('OktaStrategy validate callback invoked')
+        this.logger.debug(`Session at strategy start: ${JSON.stringify(req.session)}`)
         try {
           if (!profile) {
             this.logger.error('No profile received from Okta')
@@ -53,6 +59,8 @@ export class OktaStrategy extends PassportStrategy(Strategy, 'oidc') {
             refreshToken,
           }
 
+          this.logger.debug(`Validated user profile: ${JSON.stringify(user.profile)}`)
+          this.logger.debug('Calling done with validated user')
 
           return done(null, user)
         } catch (error) {
@@ -69,7 +77,11 @@ export class OktaStrategy extends PassportStrategy(Strategy, 'oidc') {
     // Debug logging
     this.logger.debug('Okta Configuration:')
     this.logger.debug(`Domain: ${oktaDomain}`)
-    this.logger.debug(`Client ID: ${clientId}`)
+    this.logger.debug(`Issuer: ${issuer}`)
+    this.logger.debug(`Client ID: ${clientID}`)
+    this.logger.debug(`Authorization URL: ${authorizationURL}`)
+    this.logger.debug(`Token URL: ${tokenURL}`)
+    this.logger.debug(`UserInfo URL: ${userInfoURL}`)
     this.logger.debug(`Base URL: ${baseUrl}`)
     this.logger.debug(`Callback URL: ${callbackURL}`)
     this.logger.log(`OktaStrategy initialized for ${oktaDomain}`)
