@@ -9,14 +9,15 @@ export class OktaStrategy extends PassportStrategy(Strategy, 'oidc') {
   private readonly logger = new Logger(OktaStrategy.name)
 
   constructor(private readonly configService: ConfigService) {
-    const baseUrl = configService.get<string>('baseUrl', '')
     const oktaDomain = configService.get<string>('okta.domain')
     const issuer = configService.get<string>('okta.issuer') || `https://${oktaDomain}/oauth2`
-    const authorizationURL = `${issuer}/v1/authorize`
-    const tokenURL = `${issuer}/v1/token`
-    const userInfoURL = `${issuer}/v1/userinfo`
+    const issuerBase = issuer.includes('/oauth2') ? issuer : `${issuer}/oauth2`
+    const authorizationURL = `${issuerBase}/v1/authorize`
+    const tokenURL = `${issuerBase}/v1/token`
+    const userInfoURL = `${issuerBase}/v1/userinfo`
     const clientID = configService.get<string>('okta.clientId', '')
     const clientSecret = configService.get<string>('okta.clientSecret', '')
+    const baseUrl = configService.get<string>('baseUrl', '')
     const callbackURL = `${baseUrl}/auth/callback`
 
     super(
