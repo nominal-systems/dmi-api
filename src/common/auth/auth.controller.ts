@@ -162,6 +162,9 @@ export class AuthController {
 
     if (strategy === 'okta') {
       const oktaDomain = this.configService.get<string>('okta.domain')
+      const issuer = this.configService.get<string>('okta.issuer') || `https://${oktaDomain}/oauth2`
+      const issuerBase = issuer.includes('/oauth2') ? issuer : `${issuer}/oauth2`
+      const logoutURL = `${issuerBase}/v1/logout`
       const clientId = this.configService.get<string>('okta.clientId')
       const idToken = (req.user as any)?.idToken || (req.session as any)?.passport?.user?.idToken
 
@@ -177,9 +180,8 @@ export class AuthController {
       }
 
       const postLogoutRedirect = `${baseUrl}/ui/login`
-      const logoutUrl =
-        `https://${oktaDomain}/oauth2/default/v1/logout?client_id=${clientId}` +
-        `&post_logout_redirect_uri=${encodeURIComponent(postLogoutRedirect)}` +
+      const logoutUrl = `${logoutURL}?` +
+        `client_id=${clientId}&post_logout_redirect_uri=${encodeURIComponent(postLogoutRedirect)}` +
         (idToken ? `&id_token_hint=${idToken}` : '')
 
       res.status(302)
