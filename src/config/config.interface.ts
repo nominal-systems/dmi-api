@@ -39,7 +39,6 @@ export interface DocsConfig {
 }
 
 export interface OktaConfig {
-  domain: string
   clientId: string
   clientSecret: string
   issuer?: string

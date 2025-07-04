@@ -19,18 +19,37 @@ import { JwtService } from '@nestjs/jwt'
 @Controller('auth')
 export class AuthController {
   private readonly logger = new Logger(AuthController.name)
+  private readonly strategy: 'jwt' | 'okta'
+  private readonly baseUrl: string
+  private readonly adminCredentials: { username: string; password: string }
+  private readonly oktaConfig?: {
+    issuer: string
+    issuerBase: string
+    logoutURL: string
+    clientId: string
+  }
 
-  constructor (
-    private readonly configService: ConfigService,
-    private readonly jwtService: JwtService,
-  ) {
+  constructor (configService: ConfigService, private readonly jwtService: JwtService) {
+    this.strategy = configService.get<'jwt' | 'okta'>('admin.authStrategy') || 'jwt'
+    this.baseUrl = configService.get<string>('baseUrl', '') ?? ''
+    this.adminCredentials = configService.get('admin') ?? { username: '', password: '' }
+
+    if (this.strategy === 'okta') {
+      const issuer = configService.get<string>('okta.issuer') ?? ''
+      const issuerBase = issuer.includes('/oauth2') ? issuer : `${issuer}/oauth2`
+
+      this.oktaConfig = {
+        issuer,
+        issuerBase,
+        logoutURL: `${issuerBase}/v1/logout`,
+        clientId: configService.get<string>('okta.clientId') ?? '',
+      }
+    }
   }
 
   @Get('profile')
   async profile (@Req() req: FastifyRequest): Promise<any> {
-    const strategy = this.configService.get<string>('admin.authStrategy')
-
-    if (strategy === 'jwt') {
+    if (this.strategy === 'jwt') {
       const token = req.headers.authorization?.split('Bearer ')[1] ?? ''
       const payload = this.jwtService.verify<{ sub: string }>(token)
       return {
@@ -143,10 +162,9 @@ export class AuthController {
   @Post('admin/login')
   @HttpCode(HttpStatus.OK)
   async authenticate (@Body() credentials: AdminUserCredentialsDto): Promise<{ token: string }> {
-    const adminCredentials = this.configService.get('admin')
     if (
-      credentials.username === adminCredentials.username &&
-      credentials.password === adminCredentials.password
+      credentials.username === this.adminCredentials.username &&
+      credentials.password === this.adminCredentials.password
     ) {
       const token = await this.jwtService.signAsync({}, { subject: 'Admin' })
       return { token }
@@ -157,12 +175,8 @@ export class AuthController {
 
   @Get('logout')
   async logout (@Req() req: FastifyRequest, @Res() res: FastifyReply): Promise<void> {
-    const strategy = this.configService.get<string>('admin.authStrategy')
-    const baseUrl = this.configService.get<string>('baseUrl', '')
-
-    if (strategy === 'okta') {
-      const oktaDomain = this.configService.get<string>('okta.domain')
-      const clientId = this.configService.get<string>('okta.clientId')
+    if (this.strategy === 'okta' && this.oktaConfig) {
+      const { logoutURL, clientId } = this.oktaConfig
       const idToken = (req.user as any)?.idToken || (req.session as any)?.passport?.user?.idToken
 
       try {
@@ -176,10 +190,10 @@ export class AuthController {
         this.logger.error('Error destroying session during logout', err as any)
       }
 
-      const postLogoutRedirect = `${baseUrl}/ui/login`
+      const postLogoutRedirect = `${this.baseUrl}/ui/login`
       const logoutUrl =
-        `https://${oktaDomain}/oauth2/default/v1/logout?client_id=${clientId}` +
-        `&post_logout_redirect_uri=${encodeURIComponent(postLogoutRedirect)}` +
+        `${logoutURL}?` +
+        `client_id=${clientId}&post_logout_redirect_uri=${encodeURIComponent(postLogoutRedirect)}` +
         (idToken ? `&id_token_hint=${idToken}` : '')
 
       res.status(302)
@@ -188,7 +202,7 @@ export class AuthController {
     }
 
     res.status(302)
-    res.header('Location', `${baseUrl}/ui/login`)
+    res.header('Location', `${this.baseUrl}/ui/login`)
     return await res.send()
   }
 }
