@@ -10,6 +10,7 @@ import { encrypt } from '../../common/utils/crypto.utils'
 import { FindOneOfTypeOptions } from '../../common/typings/find-one-of-type-options.interface'
 import { Integration } from '../../integrations/entities/integration.entity'
 import { IntegrationsService } from '../../integrations/integrations.service'
+import { IntegrationStatus } from '../../integrations/constants/integration-status.enum'
 
 @Injectable()
 export class ProviderConfigurationsService {
@@ -90,7 +91,10 @@ export class ProviderConfigurationsService {
     this.logger.log(`Updated Provider Configuration -> Provider: '${providerId}'`)
 
     const integrations = await this.integrationsRepository.find({
-      where: { providerConfigurationId: configId },
+      where: {
+        providerConfigurationId: configId,
+        status: IntegrationStatus.RUNNING,
+      },
       relations: ['providerConfiguration', 'practice'],
     })
 
