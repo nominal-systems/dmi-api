@@ -15,10 +15,11 @@ import { OrdersModule } from '../orders/orders.module'
 import { InternalEventLoggingModule } from '../internal-event-logging/internal-event-logging.module'
 import { AuthModule } from '../common/auth/auth.module'
 import { AdminGuard } from '../common/guards/admin.guard'
+import { ProviderConfiguration } from '../providers/entities/provider-configuration.entity'
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Integration, Ref, ProviderRef, Practice]),
+    TypeOrmModule.forFeature([ProviderConfiguration, Integration, Ref, ProviderRef, Practice]),
     OrganizationsModule,
     ProvidersModule,
     EventsModule,

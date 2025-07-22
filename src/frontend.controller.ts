@@ -27,6 +27,16 @@ export class FrontendController {
 
   }
 
+  @Get('provider-configurations')
+  async providerConfigurations (@Res() res: FastifyReply): Promise<void> {
+    await this.sendFile(res, 'provider-configurations.html')
+  }
+
+  @Get('provider-configurations/:id')
+  async providerConfiguration (@Res() res: FastifyReply): Promise<void> {
+    await this.sendFile(res, 'provider-configuration.html')
+  }
+
   @Get('integrations')
   async integrations (@Res() res: FastifyReply): Promise<void> {
     await this.sendFile(res, 'integrations.html')

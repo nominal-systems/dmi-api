@@ -20,7 +20,9 @@ import {
 } from '@nestjs/common'
 import { Response } from 'express'
 import { ProviderConfiguration } from '../providers/entities/provider-configuration.entity'
-import { ProviderConfigurationsService } from '../providers/services/provider-configurations.service'
+import {
+  ProviderConfigurationsService,
+} from '../providers/services/provider-configurations.service'
 import { Integration } from '../integrations/entities/integration.entity'
 import { IntegrationsService } from '../integrations/integrations.service'
 import { EventSubscriptionService } from '../events/services/event-subscription.service'
@@ -62,7 +64,9 @@ import { EventsQueryDto } from './dtos/events-query.dto'
 import { EventsStatsDto } from './dtos/events-stats.dto'
 import { PracticesQueryDto } from '../practices/dto/practice-search-query-params.dto'
 import { OrdersStatsDto } from './dtos/orders-stats.dto'
-import { InternalEventLoggingService } from '../internal-event-logging/internal-event-logging.service'
+import {
+  InternalEventLoggingService,
+} from '../internal-event-logging/internal-event-logging.service'
 import { AdminGuard } from '../common/guards/admin.guard'
 
 @Controller('admin')
@@ -70,12 +74,13 @@ import { AdminGuard } from '../common/guards/admin.guard'
 export class AdminController {
   private readonly logger = new Logger(AdminController.name)
 
-  constructor(
+  constructor (
     private readonly organizationsService: OrganizationsService,
     private readonly providerConfigurationsService: ProviderConfigurationsService,
     private readonly eventsService: EventsService,
     private readonly eventSubscriptionsService: EventSubscriptionService,
     private readonly integrationsService: IntegrationsService,
+    @InjectRepository(ProviderConfiguration) private readonly providerConfigurationsRepository: Repository<ProviderConfiguration>,
     @InjectRepository(Integration) private readonly integrationsRepository: Repository<Integration>,
     @InjectRepository(Ref) private readonly refsRepository: Repository<Ref>,
     @InjectRepository(ProviderRef) private readonly providerRefsRepository: Repository<ProviderRef>,
@@ -85,20 +90,40 @@ export class AdminController {
     @InjectRepository(Practice) private readonly practicesRepository: Repository<Practice>,
     private readonly ordersService: OrdersService,
     private readonly internalEventLoggingService: InternalEventLoggingService,
-  ) {}
+  ) {
+  }
 
   @Get('organizations')
-  async getOrganizations(): Promise<Organization[]> {
+  async getOrganizations (): Promise<Organization[]> {
     return await this.organizationsService.findAll()
   }
 
   @Get('providerConfigurations')
-  async getProviderConfigurations(): Promise<ProviderConfiguration[]> {
-    return await this.providerConfigurationsService.findAll()
+  async getProviderConfigurations (
+    @Query() params: PaginationDto,
+  ): Promise<PaginationResult<ProviderConfiguration>> {
+    const take = params.limit !== undefined ? params.limit : PAGINATION_PAGE_LIMIT
+    const skip = (params.page - 1) * take
+
+    const queryBuilder = this.providerConfigurationsRepository
+      .createQueryBuilder('providerConfiguration')
+      .leftJoinAndSelect('providerConfiguration.organization', 'organization')
+      .orderBy('providerConfiguration.providerId', 'ASC')
+      .skip(skip)
+      .take(take)
+
+    const [data, total] = await queryBuilder.getManyAndCount()
+
+    return {
+      total,
+      page: params.page,
+      limit: params.limit,
+      data,
+    }
   }
 
   @Get('providerConfigurations/:id')
-  async getProviderConfiguration(
+  async getProviderConfiguration (
     @Param('id') providerConfigurationId: string,
   ): Promise<ProviderConfiguration> {
     return await this.providerConfigurationsService.findOne({
@@ -110,7 +135,7 @@ export class AdminController {
   }
 
   @Put('providerConfigurations/:id')
-  async updateProviderConfigurations(
+  async updateProviderConfigurations (
     @Param('id') providerConfigurationId: string,
     @Body() updatedProviderConfiguration: any,
   ): Promise<ProviderConfiguration> {
@@ -134,12 +159,12 @@ export class AdminController {
   }
 
   @Get('event-subscriptions')
-  async getEventSubscriptions(): Promise<EventSubscription[]> {
+  async getEventSubscriptions (): Promise<EventSubscription[]> {
     return await this.eventSubscriptionsService.findAll()
   }
 
   @Get('events')
-  async getEvents(@Query() query: EventsQueryDto): Promise<PaginationResult<Event>> {
+  async getEvents (@Query() query: EventsQueryDto): Promise<PaginationResult<Event>> {
     const options: FilterQuery<EventDocument> = {}
     if (query.providers !== undefined) {
       options.providerId = { $in: query.providers }
@@ -169,7 +194,7 @@ export class AdminController {
   }
 
   @Get('events/stats')
-  async getEventsStats(@Query() query: EventsStatsDto): Promise<any> {
+  async getEventsStats (@Query() query: EventsStatsDto): Promise<any> {
     const options: FilterQuery<EventDocument> = {}
     if (query.startDate !== undefined) {
       options.createdAt = { $gte: new Date(query.startDate) }
@@ -191,12 +216,12 @@ export class AdminController {
   }
 
   @Get('events/:id')
-  async getEvent(@Param('id') eventId: string): Promise<Event> {
+  async getEvent (@Param('id') eventId: string): Promise<Event> {
     return await this.eventsService.findById(eventId)
   }
 
   @Get('integrations')
-  async getIntegrations(
+  async getIntegrations (
     @Query() params: IntegrationsSearch,
   ): Promise<PaginationResult<Integration>> {
     const take = params.limit !== undefined ? params.limit : PAGINATION_PAGE_LIMIT
@@ -214,6 +239,12 @@ export class AdminController {
     if (params.providers !== undefined) {
       queryBuilder.andWhere('providerConfiguration.providerId IN (:...providers)', {
         providers: params.providers.split(','),
+      })
+    }
+
+    if (params.providerConfigurations !== undefined) {
+      queryBuilder.andWhere('integration.providerConfiguration.id = :providerConfigurationId', {
+        providerConfigurationId: params.providerConfigurations,
       })
     }
 
@@ -246,7 +277,7 @@ export class AdminController {
   }
 
   @Get('integrations/:id')
-  async getIntegration(@Param('id') integrationId: string): Promise<Integration> {
+  async getIntegration (@Param('id') integrationId: string): Promise<Integration> {
     return await this.integrationsService.findOne({
       id: integrationId,
       options: {
@@ -256,7 +287,7 @@ export class AdminController {
   }
 
   @Delete('integrations/:id')
-  async deleteIntegration(@Param('id') integrationId: string): Promise<void> {
+  async deleteIntegration (@Param('id') integrationId: string): Promise<void> {
     const integration = await this.integrationsService.findOne({
       id: integrationId,
       options: {
@@ -272,7 +303,7 @@ export class AdminController {
   }
 
   @Patch('integrations/:id')
-  async updateIntegration(
+  async updateIntegration (
     @Param('id') integrationId: string,
     @Body() updateIntegration: Pick<CreateIntegrationDto, 'integrationOptions'>,
   ): Promise<Integration> {
@@ -293,7 +324,7 @@ export class AdminController {
   }
 
   @Post('integrations/:id/stop')
-  async stopIntegration(
+  async stopIntegration (
     @Res() res: Response,
     @Param('id') integrationId: string,
     @Query('force', new DefaultValuePipe(false), ParseBoolPipe) force: boolean,
@@ -327,7 +358,7 @@ export class AdminController {
   }
 
   @Post('integrations/:id/start')
-  async startIntegration(@Res() res: Response, @Param('id') integrationId: string): Promise<void> {
+  async startIntegration (@Res() res: Response, @Param('id') integrationId: string): Promise<void> {
     const integration = await this.integrationsService.findOne({
       id: integrationId,
       options: {
@@ -352,7 +383,7 @@ export class AdminController {
   }
 
   @Post('integrations/:id/restart')
-  async restartIntegration(
+  async restartIntegration (
     @Res() res: Response,
     @Param('id') integrationId: string,
   ): Promise<void> {
@@ -371,7 +402,7 @@ export class AdminController {
   }
 
   @Post('integrations/:id/test')
-  async testIntegration(@Res() res: Response, @Param('id') integrationId: string): Promise<void> {
+  async testIntegration (@Res() res: Response, @Param('id') integrationId: string): Promise<void> {
     const integration = await this.integrationsService.findOne({
       id: integrationId,
       options: {
@@ -391,7 +422,7 @@ export class AdminController {
   }
 
   @Get('refs/:type')
-  async getRefs(
+  async getRefs (
     @Param('type') type: 'sexes' | 'species' | 'breeds',
     @Query() params: PaginationDto & { search: string },
   ): Promise<PaginationResult<Ref>> {
@@ -424,7 +455,7 @@ export class AdminController {
   }
 
   @Post('refs/sync/:providerId')
-  async sync(
+  async sync (
     @Param('providerId') providerId: string,
     @Query() { integrationId }: ReferenceDataQueryParams,
   ): Promise<void> {
@@ -443,7 +474,7 @@ export class AdminController {
   }
 
   @Post('refs/sync/:providerId/:type')
-  async syncType(
+  async syncType (
     @Param('providerId') providerId: string,
     @Param('type') type: string,
     @Query() { integrationId }: ReferenceDataQueryParams,
@@ -475,7 +506,7 @@ export class AdminController {
   }
 
   @Post('refs/:id/mapping')
-  async updateRefMapping(
+  async updateRefMapping (
     @Param('id') refId: string,
     @Body() mapping: { providerRefId: string },
   ): Promise<any> {
@@ -501,19 +532,19 @@ export class AdminController {
   }
 
   @Get('providers')
-  async getProviders(): Promise<Provider[]> {
+  async getProviders (): Promise<Provider[]> {
     return await this.providersService.findAll({
       relations: ['options'],
     })
   }
 
   @Get('providers/:providerId')
-  async getProvider(@Param('providerId') providerId: string): Promise<Provider> {
+  async getProvider (@Param('providerId') providerId: string): Promise<Provider> {
     return await this.providersService.findOneById(providerId)
   }
 
   @Get('providers/:providerId/integrations')
-  async getProviderIntegrations(@Param('providerId') providerId: string): Promise<Integration[]> {
+  async getProviderIntegrations (@Param('providerId') providerId: string): Promise<Integration[]> {
     const queryBuilder = this.integrationsRepository
       .createQueryBuilder('integration')
       .leftJoinAndSelect('integration.providerConfiguration', 'providerConfiguration')
@@ -526,7 +557,7 @@ export class AdminController {
   }
 
   @Get('providers/:providerId/refs/:type')
-  async getProviderRefs(
+  async getProviderRefs (
     @Param('providerId') providerId: string,
     @Param('type') type: 'species' | 'breed' | 'sex',
     @Query() params: PaginationDto & { search?: string; species?: string },
@@ -562,7 +593,7 @@ export class AdminController {
   }
 
   @Get('providers/:providerId/defaultBreed')
-  async getDefaultBreeds(
+  async getDefaultBreeds (
     @Param('providerId') providerId: string,
     @Query('speciesCodes') speciesCodes: string,
   ): Promise<ProviderRef[]> {
@@ -571,7 +602,7 @@ export class AdminController {
   }
 
   @Put('providers/:providerId/defaultBreed')
-  async setDefaultBreed(
+  async setDefaultBreed (
     @Param('providerId') providerId: string,
     @Query('species') species: string,
     @Query('breed') breed: string,
@@ -592,7 +623,7 @@ export class AdminController {
 
   @Post('providers/:providerId/options/create')
   @HttpCode(HttpStatus.CREATED)
-  async createProviderOptions(
+  async createProviderOptions (
     @Param('providerId') providerId: string,
     @Body() providerOptions: ProviderOptionDto[],
   ): Promise<void> {
@@ -601,7 +632,7 @@ export class AdminController {
 
   @Delete('/providers/:providerId/options/:providerOptionId')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async deleteProviderOption(
+  async deleteProviderOption (
     @Param('providerId') providerId: string,
     @Param('providerOptionId') providerOptionId: string,
   ): Promise<void> {
@@ -609,7 +640,7 @@ export class AdminController {
   }
 
   @Get('/external-requests')
-  async getExternalRequests(
+  async getExternalRequests (
     @Query() query: ExternalRequestsQueryDto,
   ): Promise<PaginationResult<ProviderExternalRequests>> {
     // Build query options
@@ -644,7 +675,7 @@ export class AdminController {
   }
 
   @Get('/external-requests/stats')
-  async getExternalRequestsStats(@Query() query: ExternalRequestsStatsDto): Promise<any> {
+  async getExternalRequestsStats (@Query() query: ExternalRequestsStatsDto): Promise<any> {
     const options: FilterQuery<ProviderExternalRequestDocument> = {}
     if (query.startDate !== undefined) {
       options.createdAt = { $gte: new Date(query.startDate) }
@@ -661,12 +692,12 @@ export class AdminController {
   }
 
   @Get('/external-requests/:id')
-  async getExternalRequest(@Param('id') id: string): Promise<ProviderExternalRequests> {
+  async getExternalRequest (@Param('id') id: string): Promise<ProviderExternalRequests> {
     return await this.providersService.findExternalRequestById(id)
   }
 
   @Get('/practices')
-  async getPractices(
+  async getPractices (
     @Query() query: PracticesQueryDto & PaginationDto,
   ): Promise<PaginationResult<Practice>> {
     const take = query.limit !== undefined ? query.limit : PAGINATION_PAGE_LIMIT
@@ -702,7 +733,7 @@ export class AdminController {
   }
 
   @Get('transaction-logs')
-  async getTransactionLogs(@Query() query: TransactionLogsDto): Promise<TransactionLog[]> {
+  async getTransactionLogs (@Query() query: TransactionLogsDto): Promise<TransactionLog[]> {
     const logs: TransactionLog[] = []
     if (query.accessionId === undefined) {
       throw new BadRequestException('Missing accessionId')
@@ -764,7 +795,7 @@ export class AdminController {
   }
 
   @Get('orders/stats')
-  async getOrdersStats(@Query() query: OrdersStatsDto): Promise<any> {
+  async getOrdersStats (@Query() query: OrdersStatsDto): Promise<any> {
     if (query.startDate === undefined || query.endDate === undefined) {
       throw new BadRequestException('Missing startDate or endDate')
     }

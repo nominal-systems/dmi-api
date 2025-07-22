@@ -12,6 +12,10 @@ export class IntegrationsSearch extends PaginationDto {
 
   @IsOptional()
   @IsString()
+  providerConfigurations: string
+
+  @IsOptional()
+  @IsString()
   statuses: string
 
   @IsOptional()
