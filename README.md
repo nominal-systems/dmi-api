@@ -103,26 +103,35 @@ Configuration is done through environment variables that can be set explicitly o
 
 The following environment variables are accepted to configure the application:
 
-| Name                      | Description                                                                                                                                                     |
-|---------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `PORT`                    | The port were the application will listen for HTTP connections.                                                                                                 |
-| `JWT_SECRET_KEY`          | Symmetric key for signing/verifying the [JWT](https://jwt.io/) token for authentication.                                                                        |
-| `SECRET_KEY`              | The raw key used for AES-256 CTR database encryption.                                                                                                           |
-| `ADMIN_USERNAME`          | The admin user name. See [Admin User](https://nominal.stoplight.io/docs/dmi/users#admin-user) in the API documentation.                                         |
-| `ADMIN_PASSWORD`          | The admin user password.                                                                                                                                        |
-| `DATABASE_TYPE`           | RDBMS database engine type. Supported values: `mysql`.                                                                                                          |
-| `DATABASE_HOST`           | Database host.                                                                                                                                                  |
-| `DATABASE_PORT`           | Database host port. Default mysql port is 3306.                                                                                                                 |
-| `DATABASE_DATABASE`       | Database name.                                                                                                                                                  |
- | `DATABASE_RUN_MIGRATIONS` | Whether to run database migrations of application startup. Should be set to `true` in productive environments.                                                  |
-| `MONGO_URI`               | MongoDB connection URI string. See [Connection String URI Format](https://www.mongodb.com/docs/manual/reference/connection-string/) in MongoDB's documentation. |
-| `ACTIVEMQ_PROTOCOL`       | ActiveMQ protocol. Supported values: `mqtt`.                                                                                                                    |
-| `ACTIVEMQ_HOSTNAME`       | ActiveMQ broker host.                                                                                                                                           |                       
-| `ACTIVEMQ_PORT`           | ActiveMQ broker port.                                                                                                                                           |
-| `ACTIVEMQ_USERNAME`       | ActiveMQ username required by the broker, if any.                                                                                                               |
-| `ACTIVEMQ_PASSWORD`       | ActiveMQ password required by the broker, if any.                                                                                                               |
-| `OKTA_ISSUER`            | Issuer URL used to validate Okta access tokens.    |
-| `OKTA_AUDIENCE`          | Expected audience for Okta access tokens.          |
+| Name                        | Description                                                                                                    |
+|-----------------------------|----------------------------------------------------------------------------------------------------------------|
+| `PORT`                      | The port where the application will listen for HTTP connections.                                               |
+| `BASE_URL`                  | Base URL used when generating redirect URIs.                                                                   |
+| `JWT_SECRET_KEY`            | Symmetric key for signing/verifying the [JWT](https://jwt.io/) token for authentication.                       |
+| `SECRET_KEY`                | The raw key used for AES-256 CTR database encryption.                                                          |
+| `ADMIN_AUTH_STRATEGY`       | Authentication strategy for the Admin UI. Supported values: `jwt`, `okta`.                                     |
+| `ADMIN_USERNAME`            | The admin user name.                                                                                           |
+| `ADMIN_PASSWORD`            | The admin user password.                                                                                       |
+| `DATABASE_TYPE`             | RDBMS database engine type. Supported values: `mysql`.                                                         |
+| `DATABASE_HOST`             | Database host.                                                                                                 |
+| `DATABASE_PORT`             | Database host port. Default MySQL port is 3306.                                                                |
+| `DATABASE_USERNAME`         | Database username.                                                                                             |
+| `DATABASE_PASSWORD`         | Database password.                                                                                             |
+| `DATABASE_DATABASE`         | Database name.                                                                                                 |
+| `DATABASE_SYNCHRONIZE`      | Synchronize database schema on startup (development).                                                          |
+| `DATABASE_RUN_MIGRATIONS`   | Whether to run database migrations on application startup. Should be set to `true` in productive environments. |
+| `DATABASE_LOGGING`          | Enable TypeORM logging.                                                                                        |
+| `VERIFY_INTEGRATION_STATUS` | Check integration status for all integrations on startup.                                                      |
+| `MONGO_URI`                 | MongoDB connection URI string.                                                                                 |
+| `ACTIVEMQ_PROTOCOL`         | ActiveMQ protocol. Supported values: `mqtt`.                                                                   |
+| `ACTIVEMQ_HOSTNAME`         | ActiveMQ broker host.                                                                                          |
+| `ACTIVEMQ_PORT`             | ActiveMQ broker port.                                                                                          |
+| `ACTIVEMQ_USERNAME`         | ActiveMQ username required by the broker, if any.                                                              |
+| `ACTIVEMQ_PASSWORD`         | ActiveMQ password required by the broker, if any.                                                              |
+| `OKTA_CLIENT_ID`            | Client ID for Okta when using `okta` admin auth strategy.                                                      |
+| `OKTA_CLIENT_SECRET`        | Client secret for Okta when using `okta` admin auth strategy.                                                  |
+| `OKTA_ISSUER`               | Issuer URL used to validate Okta access tokens.                                                                |
+| `OKTA_AUDIENCE`             | Expected audience for Okta access tokens.                                                                      |
 
 ## Admin UI
 
