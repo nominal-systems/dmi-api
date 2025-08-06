@@ -24,6 +24,7 @@ import { InternalEventLoggingService } from '../internal-event-logging/internal-
 import { OidcAuthGuard } from '../common/guards/oidc-auth.guard'
 import { AdminJwtAuthGuard } from '../common/guards/admin-jwt-auth.guard'
 import { OktaJwtAuthGuard } from '../common/guards/okta-jwt-auth.guard'
+import { ProviderConfiguration } from '../providers/entities/provider-configuration.entity'
 
 describe('AdminController', () => {
   let adminController: AdminController
@@ -82,6 +83,10 @@ describe('AdminController', () => {
         },
         {
           provide: getRepositoryToken(ProviderRef),
+          useValue: {},
+        },
+        {
+          provide: getRepositoryToken(ProviderConfiguration),
           useValue: {},
         },
         {
