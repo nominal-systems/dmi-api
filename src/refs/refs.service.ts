@@ -289,8 +289,8 @@ export class RefsService {
   }
 
   async mapPatientReferences (order, providerPatient, providerId): Promise<Patient> {
-    const { species, sex, ...patient } = order.patient
-    let { breed } = order.patient
+    const { species, sex, weight, ...patient } = providerPatient
+    let { breed } = providerPatient
     await this.mapPatientRefs(providerId, providerPatient)
     if (breed === undefined) {
       breed = providerPatient.breed
@@ -301,12 +301,20 @@ export class RefsService {
       this.findOneByCodeAndProvider(sex, providerId)
     ])
 
-    return {
+    const mappedPatient = {
+      ...order?.patient,
       ...patient,
       species: speciesRef?.code ?? species,
       breed: breedRef?.code ?? breed,
       sex: sexRef?.code ?? sex
     }
+
+    if (weight !== undefined) {
+      mappedPatient.weightMeasurement = weight?.measurement
+      mappedPatient.weightUnits = typeof weight?.units === 'string' ? weight.units.toLowerCase() : weight?.units
+    }
+
+    return mappedPatient
   }
 
   async setDefaultBreed (providerId: string, species: string, defaultBreed: string): Promise<ProviderDefaultBreed> {
