@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import * as mongoose from 'mongoose'
 
-@Schema({ collection: 'external_requests' })
+@Schema({ collection: 'external_requests_v2' })
 export class ProviderExternalRequests {
     @Prop({ index: true })
     createdAt: Date
