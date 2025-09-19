@@ -4,7 +4,7 @@ import { EventType } from '../constants/event-type.enum'
 import { EventNamespace } from '../constants/event-namespace.enum'
 import { EventData } from '../interfaces/event-data.interface'
 
-@Schema({ timestamps: { updatedAt: false } })
+@Schema({ collection: 'events_v2', timestamps: { updatedAt: false } })
 export class Event {
   @Prop({ index: true })
   seq: number

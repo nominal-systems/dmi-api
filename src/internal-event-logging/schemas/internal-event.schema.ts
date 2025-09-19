@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { Document } from 'mongoose'
 
-@Schema({ collection: 'internal_events', timestamps: true })
+@Schema({ collection: 'internal_events_v2', timestamps: true })
 export class InternalEvent {
   @Prop({ index: true })
   createdAt: Date
