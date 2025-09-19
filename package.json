@@ -30,6 +30,7 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
+    "migrate:mongo-shards": "node scripts/mongo-shard-migrate.js --collections=events,external_requests,internal_events --suffix=_v2 --batch=1000",
     "seed": "NODE_ENV=seed ts-node -r tsconfig-paths/register src/seeder.ts",
     "generate-session-key": "npx @fastify/secure-session > .secret-key"
   },
