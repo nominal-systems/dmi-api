@@ -503,6 +503,204 @@ describe('OrdersService', () => {
         eventsServiceMock.addEvent.mockClear()
       })
     })
+
+    describe('Patient extraction', () => {
+      it('uses patient fields from CreateOrderDto in provider payload', async () => {
+        const dtoPatient = {
+          name: 'Buddy',
+          sex: 'M',
+          species: '41',
+          breed: '163',
+          birthdate: '2018-01-20'
+        } as unknown as CreateOrderDtoPatient
+
+        const orderDto: CreateOrderDto = {
+          integrationId: 'idexx',
+          patient: dtoPatient,
+          client: { firstName: 'Amy', lastName: 'W' } as unknown as CreateOrderDtoClient,
+          veterinarian: { firstName: 'Dr', lastName: 'Who' } as unknown as CreateOrderDtoClient,
+          testCodes: [{ code: 'T100' }]
+        }
+
+        jest.spyOn(integrationsServiceMock, 'findOne').mockResolvedValueOnce({
+          providerConfiguration: { providerId: 'idexx', configurationOptions: {} },
+          practice: {}
+        })
+
+        // Return a mapped patient (DMI-coded) that differs from DTO values
+        jest.spyOn(refsServiceMock, 'mapPatientReferences').mockResolvedValueOnce({
+          name: 'Buddy',
+          birthdate: '2018-01-20',
+          sex: 'DMI_SEX_ID',
+          species: 'DMI_SPECIES_ID',
+          breed: 'DMI_BREED_ID'
+        })
+
+        const sendSpy = jest.spyOn(clientMock, 'send').mockReturnValue({
+          toPromise: jest.fn().mockResolvedValueOnce({ status: 'SUBMITTED' })
+        })
+        jest.spyOn(reportsServiceMock, 'registerForOrder').mockReturnValue({ id: '1' })
+
+        await ordersService.createOrder(orderDto)
+
+        expect(sendSpy).toHaveBeenCalledWith(
+          expect.any(String),
+          expect.objectContaining({
+            data: expect.objectContaining({
+              payload: expect.objectContaining({
+                patient: expect.objectContaining({
+                  // Must use the DTO (provider) values, not DMI-coded values
+                  sex: dtoPatient.sex,
+                  species: dtoPatient.species,
+                  breed: dtoPatient.breed
+                })
+              })
+            })
+          })
+        )
+      })
+      it('passes the DTO patient as providerPatient to mapPatientReferences', async () => {
+        const dtoPatient = {
+          name: 'Rex',
+          sex: 'F',
+          species: 'CANINE',
+          breed: 'LAB'
+        } as unknown as CreateOrderDtoPatient
+
+        const orderDto: CreateOrderDto = {
+          integrationId: 'antech',
+          patient: dtoPatient,
+          client: { firstName: 'A', lastName: 'B' } as unknown as CreateOrderDtoClient,
+          veterinarian: { firstName: 'C', lastName: 'D' } as unknown as CreateOrderDtoClient,
+          testCodes: [{ code: 'X' }]
+        }
+
+        jest.spyOn(integrationsServiceMock, 'findOne').mockResolvedValueOnce({
+          providerConfiguration: { providerId: 'antech', configurationOptions: {} },
+          practice: {}
+        })
+        const mapSpy = jest
+          .spyOn(refsServiceMock, 'mapPatientReferences')
+          .mockResolvedValueOnce({ ...dtoPatient })
+
+        jest.spyOn(clientMock, 'send').mockReturnValue({
+          toPromise: jest.fn().mockResolvedValueOnce({ status: 'COMPLETED' })
+        })
+        jest.spyOn(reportsServiceMock, 'registerForOrder').mockReturnValue({ id: '1' })
+
+        await ordersService.createOrder(orderDto)
+
+        // second arg is providerPatient; should equal the DTO patient object
+        expect(mapSpy).toHaveBeenCalledWith(
+          expect.any(Object),
+          dtoPatient,
+          'antech'
+        )
+      })
+      it('does not leak mapped breed into provider payload when DTO breed is undefined', async () => {
+        const dtoPatient = {
+          name: 'Spot',
+          sex: 'U',
+          species: 'FELINE'
+          // breed intentionally omitted
+        } as unknown as CreateOrderDtoPatient
+
+        const orderDto: CreateOrderDto = {
+          integrationId: 'zoetis',
+          patient: dtoPatient,
+          client: { firstName: 'Cat', lastName: 'Owner' } as unknown as CreateOrderDtoClient,
+          veterinarian: { firstName: 'Vet', lastName: 'One' } as unknown as CreateOrderDtoClient,
+          testCodes: [{ code: 'ABC' }]
+        }
+
+        jest.spyOn(integrationsServiceMock, 'findOne').mockResolvedValueOnce({
+          providerConfiguration: { providerId: 'zoetis', configurationOptions: {} },
+          practice: {}
+        })
+
+        jest.spyOn(refsServiceMock, 'mapPatientReferences').mockResolvedValueOnce({
+          ...dtoPatient,
+          // mapped DMI breed should not end up in provider payload if DTO breed was undefined
+          breed: 'DMI_BREED_ID'
+        })
+
+        const toPromise = jest.fn().mockResolvedValueOnce({ status: 'COMPLETED' })
+        const sendSpy = jest.spyOn(clientMock, 'send').mockReturnValue({ toPromise })
+        jest.spyOn(reportsServiceMock, 'registerForOrder').mockReturnValue({ id: '1' })
+
+        await ordersService.createOrder(orderDto)
+
+        expect(sendSpy).toHaveBeenCalledWith(
+          expect.any(String),
+          expect.objectContaining({
+            data: expect.objectContaining({
+              payload: expect.objectContaining({
+                patient: expect.objectContaining({
+                  sex: dtoPatient.sex,
+                  species: dtoPatient.species,
+                  breed: undefined
+                })
+              })
+            })
+          })
+        )
+      })
+      it('includes patient identifiers from DTO in provider payload', async () => {
+        const identifiers = [
+          { system: 'pims:internal-id', value: '12345' },
+          { system: 'microchip', value: '999' }
+        ]
+
+        const dtoPatient = {
+          name: 'Nala',
+          sex: 'F',
+          species: 'FELINE',
+          breed: 'Siamese',
+          identifier: identifiers
+        } as unknown as CreateOrderDtoPatient
+
+        const orderDto: CreateOrderDto = {
+          integrationId: 'idexx',
+          patient: dtoPatient,
+          client: { firstName: 'Owner', lastName: 'One' } as unknown as CreateOrderDtoClient,
+          veterinarian: { firstName: 'Vet', lastName: 'Two' } as unknown as CreateOrderDtoClient,
+          testCodes: [{ code: 'TTT' }]
+        }
+
+        jest.spyOn(integrationsServiceMock, 'findOne').mockResolvedValueOnce({
+          providerConfiguration: { providerId: 'idexx', configurationOptions: {} },
+          practice: {}
+        })
+
+        // Map refs and ALTER identifiers so the test detects if
+        // provider payload incorrectly uses mapped identifiers instead of DTO ones
+        jest.spyOn(refsServiceMock, 'mapPatientReferences').mockResolvedValueOnce({
+          ...dtoPatient,
+          sex: 'DMI_SEX_ID',
+          species: 'DMI_SPECIES_ID',
+          breed: 'DMI_BREED_ID'
+        })
+
+        const toPromise = jest.fn().mockResolvedValueOnce({ status: 'SUBMITTED' })
+        const sendSpy = jest.spyOn(clientMock, 'send').mockReturnValue({ toPromise })
+        jest.spyOn(reportsServiceMock, 'registerForOrder').mockReturnValue({ id: '1' })
+
+        await ordersService.createOrder(orderDto)
+
+        expect(sendSpy).toHaveBeenCalledWith(
+          expect.any(String),
+          expect.objectContaining({
+            data: expect.objectContaining({
+              payload: expect.objectContaining({
+                patient: expect.objectContaining({
+                  identifier: identifiers
+                })
+              })
+            })
+          })
+        )
+      })
+    })
   })
 
   describe('handleExternalOrders()', () => {
