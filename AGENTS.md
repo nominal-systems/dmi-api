@@ -26,8 +26,8 @@ This repository contains the Diagnostic Modality Integration API built with Nest
 ### Linting and Formatting
 
 - **ESLint:** `npm run lint` fixes lint errors automatically.
-- **Prettier:** `npm run format` formats `src/` and `test/` using Prettier (`singleQuote: true`, `semi: false`). Always
-  run formatting before committing.
+- **Prettier:** `npm run format` formats `src/` and `test/` using Prettier (`singleQuote: true`, `semi: false`).
+- **Do not** run linting or formatting before committing.
 
 ## Project Structure
 

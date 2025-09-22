@@ -17,7 +17,7 @@ import { RefsService } from '../refs/refs.service'
 import {
   CreateOrderDto,
   CreateOrderDtoClient,
-  CreateOrderDtoPatient
+  CreateOrderDtoPatient,
 } from './dtos/create-order.dto'
 import { HttpException } from '@nestjs/common'
 import { v4 as uuidv4 } from 'uuid'
@@ -25,61 +25,59 @@ import { Patient } from './entities/patient.entity'
 import { ProvidersService } from '../providers/services/providers.service'
 import { ExternalOrdersEventData } from '../common/typings/internal-event-data.interface'
 
-export const repositoryMockFactory: () => MockUtils<Repository<any>> = jest.fn(
-  () => ({
-    find: jest.fn((entity) => entity),
-    findOne: jest.fn((entity) => entity),
-    create: jest.fn((entity) => entity),
-    save: jest.fn((entity) => entity)
-  })
-)
+export const repositoryMockFactory: () => MockUtils<Repository<any>> = jest.fn(() => ({
+  find: jest.fn((entity) => entity),
+  findOne: jest.fn((entity) => entity),
+  create: jest.fn((entity) => entity),
+  save: jest.fn((entity) => entity),
+}))
 
 describe('OrdersService', () => {
   let ordersService: OrdersService
 
   const configServiceMock = {
-    get: jest.fn()
+    get: jest.fn(),
   }
   const reportsServiceMock = {
-    registerForOrder: jest.fn()
+    registerForOrder: jest.fn(),
   }
   const integrationsServiceMock = {
     findById: jest.fn().mockImplementation((integrationId) => {
       return {
         id: integrationId,
         providerConfiguration: {
-          providerId: integrationId
+          providerId: integrationId,
         },
-        practice: {}
+        practice: {},
       }
     }),
     findOne: jest.fn().mockImplementation((integrationId) => {
       return {
         id: integrationId,
         providerConfiguration: {
-          providerId: integrationId
+          providerId: integrationId,
         },
-        practice: {}
+        practice: {},
       }
-    })
+    }),
   }
   const refsServiceMock = {
     mapPatientReferences: jest.fn(),
-    findOneByCodeAndProvider: jest.fn()
+    findOneByCodeAndProvider: jest.fn(),
   }
   let ordersRepositoryMock: Partial<Repository<Order>>
   const eventsServiceMock = {
-    addEvent: jest.fn()
+    addEvent: jest.fn(),
   }
   const clientMock = {
-    send: jest.fn()
+    send: jest.fn(),
   }
   const customPromise = {
-    toPromise: jest.fn()
+    toPromise: jest.fn(),
   }
 
   const providerServiceMock = {
-    checkLabRequisitionParameters: jest.fn()
+    checkLabRequisitionParameters: jest.fn(),
   }
 
   beforeEach(async () => {
@@ -88,41 +86,41 @@ describe('OrdersService', () => {
         OrdersService,
         {
           provide: ConfigService,
-          useValue: configServiceMock
+          useValue: configServiceMock,
         },
         {
           provide: getRepositoryToken(Order),
-          useFactory: repositoryMockFactory
+          useFactory: repositoryMockFactory,
         },
         {
           provide: getRepositoryToken(Test),
-          useFactory: repositoryMockFactory
+          useFactory: repositoryMockFactory,
         },
         {
           provide: ReportsService,
-          useValue: reportsServiceMock
+          useValue: reportsServiceMock,
         },
         {
           provide: IntegrationsService,
-          useValue: integrationsServiceMock
+          useValue: integrationsServiceMock,
         },
         {
           provide: RefsService,
-          useValue: refsServiceMock
+          useValue: refsServiceMock,
         },
         {
           provide: EventsService,
-          useValue: eventsServiceMock
+          useValue: eventsServiceMock,
         },
         {
           provide: ProvidersService,
-          useValue: providerServiceMock
+          useValue: providerServiceMock,
         },
         {
           provide: 'ACTIVEMQ',
-          useValue: clientMock
-        }
-      ]
+          useValue: clientMock,
+        },
+      ],
     }).compile()
 
     ordersService = module.get<OrdersService>(OrdersService)
@@ -142,21 +140,19 @@ describe('OrdersService', () => {
       const PROVIDER_SEX = 'M'
       const PROVIDER_SPECIES = '41'
       const PROVIDER_BREED = '163'
-      jest
-        .spyOn(ordersRepositoryMock, 'save')
-        .mockImplementation(async (order) => {
-          return {
+      jest.spyOn(ordersRepositoryMock, 'save').mockImplementation(async (order) => {
+        return {
+          id: uuidv4(),
+          ...order,
+          patient: {
             id: uuidv4(),
-            ...order,
-            patient: {
-              id: uuidv4(),
-              ...order.patient
-            }
-          } as Order
-        })
+            ...order.patient,
+          },
+        } as Order
+      })
       jest
         .spyOn(refsServiceMock, 'mapPatientReferences')
-        .mockImplementationOnce(async (order, providerPatient, providerId) => {
+        .mockImplementationOnce(async (order, providerPatient) => {
           providerPatient.sex = PROVIDER_SEX
           providerPatient.species = PROVIDER_SPECIES
           providerPatient.breed = PROVIDER_BREED
@@ -165,19 +161,17 @@ describe('OrdersService', () => {
             ...providerPatient,
             sex: DMI_SEX,
             species: DMI_SPECIES,
-            breed: DMI_BREED
+            breed: DMI_BREED,
           } as unknown as Patient
         })
       jest.spyOn(clientMock, 'send').mockReturnValue({
         toPromise: jest.fn().mockResolvedValueOnce({
           requisitionId: '',
           externalId: '',
-          status: 'SUBMITTED'
-        })
+          status: 'SUBMITTED',
+        }),
       })
-      jest
-        .spyOn(reportsServiceMock, 'registerForOrder')
-        .mockReturnValue({ id: '1' })
+      jest.spyOn(reportsServiceMock, 'registerForOrder').mockReturnValue({ id: '1' })
       const createOrderDto: CreateOrderDto = {
         integrationId: '4b411845-2ed6-48d9-b513-5e95401adc0a',
         patient: {
@@ -185,13 +179,13 @@ describe('OrdersService', () => {
           identifier: [
             {
               system: 'pims:interal-id',
-              value: 'f9b01391-12da-47f4-b4a0-461f4fe86dc3'
-            }
+              value: 'f9b01391-12da-47f4-b4a0-461f4fe86dc3',
+            },
           ],
           sex: DMI_SEX,
           species: PROVIDER_SPECIES,
           breed: PROVIDER_BREED,
-          birthdate: '2022-09-01'
+          birthdate: '2022-09-01',
         } as unknown as CreateOrderDtoPatient,
         client: {
           firstName: 'Srikanth',
@@ -199,25 +193,25 @@ describe('OrdersService', () => {
           identifier: [
             {
               system: 'foo',
-              value: 'bar'
-            }
-          ]
+              value: 'bar',
+            },
+          ],
         } as unknown as CreateOrderDtoClient,
         veterinarian: {
           firstName: 'John',
-          lastName: 'Doe'
+          lastName: 'Doe',
         } as unknown as CreateOrderDtoClient,
         testCodes: [{ code: 'CAC655S' }],
         technician: 'Dr. Doolittle',
-        notes: 'This is a note.'
+        notes: 'This is a note.',
       }
       const createdOrder = await ordersService.createOrder(createOrderDto)
       expect(createdOrder.patient).toEqual(
         expect.objectContaining({
           sex: DMI_SEX,
           species: DMI_SPECIES,
-          breed: DMI_BREED
-        })
+          breed: DMI_BREED,
+        }),
       )
       expect(clientMock.send).toBeCalledWith(
         expect.any(String),
@@ -227,46 +221,39 @@ describe('OrdersService', () => {
               patient: expect.objectContaining({
                 sex: PROVIDER_SEX,
                 species: PROVIDER_SPECIES,
-                breed: PROVIDER_BREED
-              })
-            })
-          })
-        })
+                breed: PROVIDER_BREED,
+              }),
+            }),
+          }),
+        }),
       )
     })
     describe('IDEXX', () => {
       const exampleOrder = JSON.parse(
-        fs.readFileSync(
-          path.join(__dirname, '..', '..', 'test', 'orders', 'order.json'),
-          'utf8'
-        )
+        fs.readFileSync(path.join(__dirname, '..', '..', 'test', 'orders', 'order.json'), 'utf8'),
       )
       it('should create order and map ref correctly', async () => {
         const orderDto = {
           integrationId: 'idexx',
-          ...exampleOrder
+          ...exampleOrder,
         } as CreateOrderDto
         jest.spyOn(integrationsServiceMock, 'findOne').mockResolvedValueOnce({
           providerConfiguration: {
             providerId: 'idexx',
-            configurationOptions: { url: 'https://test.com' }
+            configurationOptions: { url: 'https://test.com' },
           },
-          practice: {}
+          practice: {},
         })
-        jest
-          .spyOn(refsServiceMock, 'mapPatientReferences')
-          .mockResolvedValueOnce({
-            name: 'Medicalnotes_author_test',
-            birthdate: '2022-08-15',
-            sex: 'bc93eac2-886a-47da-89b7-30e8e2d83e75',
-            species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
-            breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec'
-          })
+        jest.spyOn(refsServiceMock, 'mapPatientReferences').mockResolvedValueOnce({
+          name: 'Medicalnotes_author_test',
+          birthdate: '2022-08-15',
+          sex: 'bc93eac2-886a-47da-89b7-30e8e2d83e75',
+          species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
+          breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec',
+        })
         jest.spyOn(clientMock, 'send').mockReturnValue(customPromise)
         customPromise.toPromise.mockResolvedValueOnce({ status: 'COMPLETED' })
-        jest
-          .spyOn(reportsServiceMock, 'registerForOrder')
-          .mockReturnValue({ id: '1' })
+        jest.spyOn(reportsServiceMock, 'registerForOrder').mockReturnValue({ id: '1' })
         const order = await ordersService.createOrder(orderDto)
         expect(order).toEqual(
           expect.objectContaining({
@@ -276,9 +263,9 @@ describe('OrdersService', () => {
               breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec',
               name: 'Medicalnotes_author_test',
               sex: 'bc93eac2-886a-47da-89b7-30e8e2d83e75',
-              species: '36c3cde0-bd6b-11eb-9610-302432eba3e9'
-            }
-          })
+              species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
+            },
+          }),
         )
         eventsServiceMock.addEvent.mockClear()
       })
@@ -286,24 +273,22 @@ describe('OrdersService', () => {
         const orderDto = {
           integrationId: 'idexx',
           sex: 'UNKN',
-          ...exampleOrder
+          ...exampleOrder,
         } as CreateOrderDto
         jest.spyOn(integrationsServiceMock, 'findOne').mockResolvedValueOnce({
           providerConfiguration: {
             providerId: 'idexx',
-            configurationOptions: { url: 'https://test.com' }
+            configurationOptions: { url: 'https://test.com' },
           },
-          practice: {}
+          practice: {},
         })
-        jest
-          .spyOn(refsServiceMock, 'mapPatientReferences')
-          .mockResolvedValueOnce({
-            name: 'Medicalnotes_author_test',
-            birthdate: '2022-08-15',
-            sex: 'UNKN',
-            species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
-            breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec'
-          })
+        jest.spyOn(refsServiceMock, 'mapPatientReferences').mockResolvedValueOnce({
+          name: 'Medicalnotes_author_test',
+          birthdate: '2022-08-15',
+          sex: 'UNKN',
+          species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
+          breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec',
+        })
         try {
           jest.spyOn(clientMock, 'send').mockReturnValue(customPromise)
           customPromise.toPromise.mockRejectedValueOnce({
@@ -312,20 +297,18 @@ describe('OrdersService', () => {
                 provider: 'idexx',
                 message: 'Invalid order, see data for field level details',
                 code: 400,
-                error: 'INVALID_ORDER'
+                error: 'INVALID_ORDER',
               },
               {
                 provider: 'idexx',
                 message: 'Patient reproductive category is invalid',
                 code: 400,
-                error: 'INVALID_PATIENT_GENDER'
-              }
+                error: 'INVALID_PATIENT_GENDER',
+              },
             ],
-            status: 400
+            status: 400,
           })
-          jest
-            .spyOn(reportsServiceMock, 'registerForOrder')
-            .mockReturnValue({ id: '1' })
+          jest.spyOn(reportsServiceMock, 'registerForOrder').mockReturnValue({ id: '1' })
           await ordersService.createOrder(orderDto)
         } catch (error) {
           expect(error).toBeInstanceOf(HttpException)
@@ -335,51 +318,44 @@ describe('OrdersService', () => {
               provider: 'idexx',
               message: 'Invalid order, see data for field level details',
               code: 400,
-              error: 'INVALID_ORDER'
+              error: 'INVALID_ORDER',
             },
             {
               provider: 'idexx',
               message: 'Patient reproductive category is invalid',
               code: 400,
-              error: 'INVALID_PATIENT_GENDER'
-            }
+              error: 'INVALID_PATIENT_GENDER',
+            },
           ])
         }
       })
     })
     describe('Antech', () => {
       const exampleOrder = JSON.parse(
-        fs.readFileSync(
-          path.join(__dirname, '..', '..', 'test', 'orders', 'order.json'),
-          'utf8'
-        )
+        fs.readFileSync(path.join(__dirname, '..', '..', 'test', 'orders', 'order.json'), 'utf8'),
       )
       it('should create order and map ref correctly', async () => {
         const orderDto = {
           integrationId: 'antech',
-          ...exampleOrder
+          ...exampleOrder,
         } as CreateOrderDto
         jest.spyOn(integrationsServiceMock, 'findOne').mockResolvedValueOnce({
           providerConfiguration: {
             providerId: 'antech',
-            configurationOptions: { url: 'https://test.com' }
+            configurationOptions: { url: 'https://test.com' },
           },
-          practice: {}
+          practice: {},
         })
-        jest
-          .spyOn(refsServiceMock, 'mapPatientReferences')
-          .mockResolvedValueOnce({
-            name: 'Medicalnotes_author_test',
-            birthdate: '2022-08-15',
-            sex: 'bc93eac2-886a-47da-89b7-30e8e2d83e75',
-            species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
-            breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec'
-          })
+        jest.spyOn(refsServiceMock, 'mapPatientReferences').mockResolvedValueOnce({
+          name: 'Medicalnotes_author_test',
+          birthdate: '2022-08-15',
+          sex: 'bc93eac2-886a-47da-89b7-30e8e2d83e75',
+          species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
+          breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec',
+        })
         jest.spyOn(clientMock, 'send').mockReturnValue(customPromise)
         customPromise.toPromise.mockResolvedValueOnce({ status: 'COMPLETED' })
-        jest
-          .spyOn(reportsServiceMock, 'registerForOrder')
-          .mockReturnValue({ id: '1' })
+        jest.spyOn(reportsServiceMock, 'registerForOrder').mockReturnValue({ id: '1' })
         const order = await ordersService.createOrder(orderDto)
         expect(order).toEqual(
           expect.objectContaining({
@@ -389,9 +365,9 @@ describe('OrdersService', () => {
               breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec',
               name: 'Medicalnotes_author_test',
               sex: 'bc93eac2-886a-47da-89b7-30e8e2d83e75',
-              species: '36c3cde0-bd6b-11eb-9610-302432eba3e9'
-            }
-          })
+              species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
+            },
+          }),
         )
         eventsServiceMock.addEvent.mockClear()
       })
@@ -399,24 +375,22 @@ describe('OrdersService', () => {
         const orderDto = {
           integrationId: 'antech',
           sex: 'UNKN',
-          ...exampleOrder
+          ...exampleOrder,
         } as CreateOrderDto
         jest.spyOn(integrationsServiceMock, 'findOne').mockResolvedValueOnce({
           providerConfiguration: {
             providerId: 'antech',
-            configurationOptions: { url: 'https://test.com' }
+            configurationOptions: { url: 'https://test.com' },
           },
-          practice: {}
+          practice: {},
         })
-        jest
-          .spyOn(refsServiceMock, 'mapPatientReferences')
-          .mockResolvedValueOnce({
-            name: 'Medicalnotes_author_test',
-            birthdate: '2022-08-15',
-            sex: 'UNKN',
-            species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
-            breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec'
-          })
+        jest.spyOn(refsServiceMock, 'mapPatientReferences').mockResolvedValueOnce({
+          name: 'Medicalnotes_author_test',
+          birthdate: '2022-08-15',
+          sex: 'UNKN',
+          species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
+          breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec',
+        })
         try {
           jest.spyOn(clientMock, 'send').mockReturnValue(customPromise)
           customPromise.toPromise.mockRejectedValueOnce({
@@ -426,67 +400,50 @@ describe('OrdersService', () => {
               code: 400,
               message: 'The request is invalid.',
               error: {
-                'order.PetSex': [
-                  'The PetSex cannot be longer than 2 characters.'
-                ],
-                request: [
-                  'Order Code invalid 1 please confirm you sent a valid Order code '
-                ]
-              }
-            }
+                'order.PetSex': ['The PetSex cannot be longer than 2 characters.'],
+                request: ['Order Code invalid 1 please confirm you sent a valid Order code '],
+              },
+            },
           })
-          jest
-            .spyOn(reportsServiceMock, 'registerForOrder')
-            .mockReturnValue({ id: '1' })
+          jest.spyOn(reportsServiceMock, 'registerForOrder').mockReturnValue({ id: '1' })
           await ordersService.createOrder(orderDto)
         } catch (error) {
           expect(error.name).toEqual(ProviderError.name)
           expect(error.response.error).toEqual(
             expect.objectContaining({
-              'order.PetSex': [
-                'The PetSex cannot be longer than 2 characters.'
-              ],
-              request: [
-                'Order Code invalid 1 please confirm you sent a valid Order code '
-              ]
-            })
+              'order.PetSex': ['The PetSex cannot be longer than 2 characters.'],
+              request: ['Order Code invalid 1 please confirm you sent a valid Order code '],
+            }),
           )
         }
       })
     })
     describe('Zoetis', () => {
       const exampleOrder = JSON.parse(
-        fs.readFileSync(
-          path.join(__dirname, '..', '..', 'test', 'orders', 'order.json'),
-          'utf8'
-        )
+        fs.readFileSync(path.join(__dirname, '..', '..', 'test', 'orders', 'order.json'), 'utf8'),
       )
       it('should create order and map ref correctly even though sex and breed does not exists', async () => {
         const orderDto = {
           integrationId: 'zoetis',
-          ...exampleOrder
+          ...exampleOrder,
         } as CreateOrderDto
         jest.spyOn(integrationsServiceMock, 'findOne').mockResolvedValueOnce({
           providerConfiguration: {
             providerId: 'zoetis',
-            configurationOptions: { url: 'https://test.com' }
+            configurationOptions: { url: 'https://test.com' },
           },
-          practice: {}
+          practice: {},
         })
-        jest
-          .spyOn(refsServiceMock, 'mapPatientReferences')
-          .mockResolvedValueOnce({
-            name: 'Medicalnotes_author_test',
-            birthdate: '2022-08-15',
-            sex: 'bc93eac2-886a-47da-89b7-30e8e2d83e75',
-            species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
-            breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec'
-          })
+        jest.spyOn(refsServiceMock, 'mapPatientReferences').mockResolvedValueOnce({
+          name: 'Medicalnotes_author_test',
+          birthdate: '2022-08-15',
+          sex: 'bc93eac2-886a-47da-89b7-30e8e2d83e75',
+          species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
+          breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec',
+        })
         jest.spyOn(clientMock, 'send').mockReturnValue(customPromise)
         customPromise.toPromise.mockResolvedValueOnce({ status: 'COMPLETED' })
-        jest
-          .spyOn(reportsServiceMock, 'registerForOrder')
-          .mockReturnValue({ id: '1' })
+        jest.spyOn(reportsServiceMock, 'registerForOrder').mockReturnValue({ id: '1' })
         const order = await ordersService.createOrder(orderDto)
         expect(order).toEqual(
           expect.objectContaining({
@@ -496,14 +453,13 @@ describe('OrdersService', () => {
               breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec',
               name: 'Medicalnotes_author_test',
               sex: 'bc93eac2-886a-47da-89b7-30e8e2d83e75',
-              species: '36c3cde0-bd6b-11eb-9610-302432eba3e9'
-            }
-          })
+              species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
+            },
+          }),
         )
         eventsServiceMock.addEvent.mockClear()
       })
     })
-
     describe('Patient extraction', () => {
       it('uses patient fields from CreateOrderDto in provider payload', async () => {
         const dtoPatient = {
@@ -511,7 +467,7 @@ describe('OrdersService', () => {
           sex: 'M',
           species: '41',
           breed: '163',
-          birthdate: '2018-01-20'
+          birthdate: '2018-01-20',
         } as unknown as CreateOrderDtoPatient
 
         const orderDto: CreateOrderDto = {
@@ -519,12 +475,12 @@ describe('OrdersService', () => {
           patient: dtoPatient,
           client: { firstName: 'Amy', lastName: 'W' } as unknown as CreateOrderDtoClient,
           veterinarian: { firstName: 'Dr', lastName: 'Who' } as unknown as CreateOrderDtoClient,
-          testCodes: [{ code: 'T100' }]
+          testCodes: [{ code: 'T100' }],
         }
 
         jest.spyOn(integrationsServiceMock, 'findOne').mockResolvedValueOnce({
           providerConfiguration: { providerId: 'idexx', configurationOptions: {} },
-          practice: {}
+          practice: {},
         })
 
         // Return a mapped patient (DMI-coded) that differs from DTO values
@@ -533,11 +489,11 @@ describe('OrdersService', () => {
           birthdate: '2018-01-20',
           sex: 'DMI_SEX_ID',
           species: 'DMI_SPECIES_ID',
-          breed: 'DMI_BREED_ID'
+          breed: 'DMI_BREED_ID',
         })
 
         const sendSpy = jest.spyOn(clientMock, 'send').mockReturnValue({
-          toPromise: jest.fn().mockResolvedValueOnce({ status: 'SUBMITTED' })
+          toPromise: jest.fn().mockResolvedValueOnce({ status: 'SUBMITTED' }),
         })
         jest.spyOn(reportsServiceMock, 'registerForOrder').mockReturnValue({ id: '1' })
 
@@ -552,11 +508,11 @@ describe('OrdersService', () => {
                   // Must use the DTO (provider) values, not DMI-coded values
                   sex: dtoPatient.sex,
                   species: dtoPatient.species,
-                  breed: dtoPatient.breed
-                })
-              })
-            })
-          })
+                  breed: dtoPatient.breed,
+                }),
+              }),
+            }),
+          }),
         )
       })
       it('passes the DTO patient as providerPatient to mapPatientReferences', async () => {
@@ -564,7 +520,7 @@ describe('OrdersService', () => {
           name: 'Rex',
           sex: 'F',
           species: 'CANINE',
-          breed: 'LAB'
+          breed: 'LAB',
         } as unknown as CreateOrderDtoPatient
 
         const orderDto: CreateOrderDto = {
@@ -572,36 +528,32 @@ describe('OrdersService', () => {
           patient: dtoPatient,
           client: { firstName: 'A', lastName: 'B' } as unknown as CreateOrderDtoClient,
           veterinarian: { firstName: 'C', lastName: 'D' } as unknown as CreateOrderDtoClient,
-          testCodes: [{ code: 'X' }]
+          testCodes: [{ code: 'X' }],
         }
 
         jest.spyOn(integrationsServiceMock, 'findOne').mockResolvedValueOnce({
           providerConfiguration: { providerId: 'antech', configurationOptions: {} },
-          practice: {}
+          practice: {},
         })
         const mapSpy = jest
           .spyOn(refsServiceMock, 'mapPatientReferences')
           .mockResolvedValueOnce({ ...dtoPatient })
 
         jest.spyOn(clientMock, 'send').mockReturnValue({
-          toPromise: jest.fn().mockResolvedValueOnce({ status: 'COMPLETED' })
+          toPromise: jest.fn().mockResolvedValueOnce({ status: 'COMPLETED' }),
         })
         jest.spyOn(reportsServiceMock, 'registerForOrder').mockReturnValue({ id: '1' })
 
         await ordersService.createOrder(orderDto)
 
         // second arg is providerPatient; should equal the DTO patient object
-        expect(mapSpy).toHaveBeenCalledWith(
-          expect.any(Object),
-          dtoPatient,
-          'antech'
-        )
+        expect(mapSpy).toHaveBeenCalledWith(expect.any(Object), dtoPatient, 'antech')
       })
       it('does not leak mapped breed into provider payload when DTO breed is undefined', async () => {
         const dtoPatient = {
           name: 'Spot',
           sex: 'U',
-          species: 'FELINE'
+          species: 'FELINE',
           // breed intentionally omitted
         } as unknown as CreateOrderDtoPatient
 
@@ -610,18 +562,18 @@ describe('OrdersService', () => {
           patient: dtoPatient,
           client: { firstName: 'Cat', lastName: 'Owner' } as unknown as CreateOrderDtoClient,
           veterinarian: { firstName: 'Vet', lastName: 'One' } as unknown as CreateOrderDtoClient,
-          testCodes: [{ code: 'ABC' }]
+          testCodes: [{ code: 'ABC' }],
         }
 
         jest.spyOn(integrationsServiceMock, 'findOne').mockResolvedValueOnce({
           providerConfiguration: { providerId: 'zoetis', configurationOptions: {} },
-          practice: {}
+          practice: {},
         })
 
         jest.spyOn(refsServiceMock, 'mapPatientReferences').mockResolvedValueOnce({
           ...dtoPatient,
           // mapped DMI breed should not end up in provider payload if DTO breed was undefined
-          breed: 'DMI_BREED_ID'
+          breed: 'DMI_BREED_ID',
         })
 
         const toPromise = jest.fn().mockResolvedValueOnce({ status: 'COMPLETED' })
@@ -638,17 +590,17 @@ describe('OrdersService', () => {
                 patient: expect.objectContaining({
                   sex: dtoPatient.sex,
                   species: dtoPatient.species,
-                  breed: undefined
-                })
-              })
-            })
-          })
+                  breed: undefined,
+                }),
+              }),
+            }),
+          }),
         )
       })
       it('includes patient identifiers from DTO in provider payload', async () => {
         const identifiers = [
           { system: 'pims:internal-id', value: '12345' },
-          { system: 'microchip', value: '999' }
+          { system: 'microchip', value: '999' },
         ]
 
         const dtoPatient = {
@@ -656,7 +608,7 @@ describe('OrdersService', () => {
           sex: 'F',
           species: 'FELINE',
           breed: 'Siamese',
-          identifier: identifiers
+          identifier: identifiers,
         } as unknown as CreateOrderDtoPatient
 
         const orderDto: CreateOrderDto = {
@@ -664,12 +616,12 @@ describe('OrdersService', () => {
           patient: dtoPatient,
           client: { firstName: 'Owner', lastName: 'One' } as unknown as CreateOrderDtoClient,
           veterinarian: { firstName: 'Vet', lastName: 'Two' } as unknown as CreateOrderDtoClient,
-          testCodes: [{ code: 'TTT' }]
+          testCodes: [{ code: 'TTT' }],
         }
 
         jest.spyOn(integrationsServiceMock, 'findOne').mockResolvedValueOnce({
           providerConfiguration: { providerId: 'idexx', configurationOptions: {} },
-          practice: {}
+          practice: {},
         })
 
         // Map refs and ALTER identifiers so the test detects if
@@ -678,7 +630,7 @@ describe('OrdersService', () => {
           ...dtoPatient,
           sex: 'DMI_SEX_ID',
           species: 'DMI_SPECIES_ID',
-          breed: 'DMI_BREED_ID'
+          breed: 'DMI_BREED_ID',
         })
 
         const toPromise = jest.fn().mockResolvedValueOnce({ status: 'SUBMITTED' })
@@ -693,11 +645,11 @@ describe('OrdersService', () => {
             data: expect.objectContaining({
               payload: expect.objectContaining({
                 patient: expect.objectContaining({
-                  identifier: identifiers
-                })
-              })
-            })
-          })
+                  identifier: identifiers,
+                }),
+              }),
+            }),
+          }),
         )
       })
     })
@@ -706,16 +658,14 @@ describe('OrdersService', () => {
   describe('handleExternalOrders()', () => {
     it('should update order in error status', async () => {
       const externalOrders: ExternalOrdersEventData = FileUtils.loadFile(
-        'test/external_orders/external_orders-in_error.json'
+        'test/external_orders/external_orders-in_error.json',
       )
-      jest
-        .spyOn(ordersService, 'findOrdersByExternalIds')
-        .mockResolvedValueOnce([
-          {
-            externalId: externalOrders.orders[0].externalId,
-            status: 'SUBMITTED'
-          } as unknown as Order
-        ])
+      jest.spyOn(ordersService, 'findOrdersByExternalIds').mockResolvedValueOnce([
+        {
+          externalId: externalOrders.orders[0].externalId,
+          status: 'SUBMITTED',
+        } as unknown as Order,
+      ])
       await ordersService.handleExternalOrders(externalOrders)
 
       expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(
@@ -724,39 +674,46 @@ describe('OrdersService', () => {
           data: expect.objectContaining({
             order: expect.objectContaining({
               status: 'ERROR',
-              notes: externalOrders.orders[0].notes
-            })
-          })
-        })
+              notes: externalOrders.orders[0].notes,
+            }),
+          }),
+        }),
       )
     })
     it('should handle multiple orders in error status', async () => {
       const externalOrders: ExternalOrdersEventData = FileUtils.loadFile(
-        'test/external_orders/external_orders-multiple_in_error.json.json'
+        'test/external_orders/external_orders-multiple_in_error.json.json',
       )
-      jest
-        .spyOn(ordersService, 'findOrdersByExternalIds')
-        .mockResolvedValueOnce([
-          {
-            externalId: externalOrders.orders[0].externalId,
-            status: 'SUBMITTED'
-          },
-          {
-            externalId: externalOrders.orders[1].externalId,
-            status: 'SUBMITTED'
-          },
-          {
-            externalId: externalOrders.orders[2].externalId,
-            status: 'SUBMITTED'
-          },
-          {
-            externalId: externalOrders.orders[3].externalId,
-            status: 'SUBMITTED'
-          }
-        ] as Order[])
+      jest.spyOn(ordersService, 'findOrdersByExternalIds').mockResolvedValueOnce([
+        {
+          externalId: externalOrders.orders[0].externalId,
+          status: 'SUBMITTED',
+        },
+        {
+          externalId: externalOrders.orders[1].externalId,
+          status: 'SUBMITTED',
+        },
+        {
+          externalId: externalOrders.orders[2].externalId,
+          status: 'SUBMITTED',
+        },
+        {
+          externalId: externalOrders.orders[3].externalId,
+          status: 'SUBMITTED',
+        },
+      ] as Order[])
       await ordersService.handleExternalOrders(externalOrders)
-      expect(eventsServiceMock.addEvent).toHaveBeenCalledTimes(
-        externalOrders.orders.length
+      expect(eventsServiceMock.addEvent).toHaveBeenCalledTimes(externalOrders.orders.length)
+      expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: EventType.ORDER_UPDATED,
+          data: expect.objectContaining({
+            order: expect.objectContaining({
+              status: 'ERROR',
+              notes: externalOrders.orders[0].notes,
+            }),
+          }),
+        }),
       )
       expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -764,35 +721,24 @@ describe('OrdersService', () => {
           data: expect.objectContaining({
             order: expect.objectContaining({
               status: 'ERROR',
-              notes: externalOrders.orders[0].notes
-            })
-          })
-        })
-      )
-      expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: EventType.ORDER_UPDATED,
-          data: expect.objectContaining({
-            order: expect.objectContaining({
-              status: 'ERROR',
-              notes: externalOrders.orders[1].notes
-            })
-          })
-        })
+              notes: externalOrders.orders[1].notes,
+            }),
+          }),
+        }),
       )
     })
     describe('Antech', () => {
       const initialOrders = JSON.parse(
         fs.readFileSync(
           path.join(__dirname, '..', '..', 'test', 'antech', 'orders-01.json'),
-          'utf8'
-        )
+          'utf8',
+        ),
       )
       const updatedOrders = JSON.parse(
         fs.readFileSync(
           path.join(__dirname, '..', '..', 'test', 'antech', 'orders-02.json'),
-          'utf8'
-        )
+          'utf8',
+        ),
       )
 
       it('should create/update Antech orders', async () => {
@@ -801,62 +747,50 @@ describe('OrdersService', () => {
         jest.spyOn(ordersRepositoryMock, 'find').mockResolvedValueOnce([])
         // @ts-expect-error: compiler type error
         ordersRepositoryMock.create.mockImplementationOnce((data) =>
-          data.map((item, index) =>
-            Object.assign(new Order(), { ...item, id: index })
-          )
+          data.map((item, index) => Object.assign(new Order(), { ...item, id: index })),
         )
         // @ts-expect-error: compiler type error
-        ordersRepositoryMock.save.mockImplementation(
-          async (entities) => entities
-        )
+        ordersRepositoryMock.save.mockImplementation(async (entities) => entities)
 
         await ordersService.handleExternalOrders({
           integrationId: '1',
-          orders: JSON.parse(JSON.stringify(initialOrders))
+          orders: JSON.parse(JSON.stringify(initialOrders)),
         })
 
-        expect(eventsServiceMock.addEvent).toHaveBeenCalledTimes(
-          initialOrders.length
-        )
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledTimes(initialOrders.length)
         expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(
           expect.objectContaining({
             namespace: EventNamespace.ORDERS,
-            type: EventType.ORDER_CREATED
-          })
+            type: EventType.ORDER_CREATED,
+          }),
         )
         eventsServiceMock.addEvent.mockClear()
 
         // 2. Update existing orders
         // Setup: find existing orders, update them
-        jest
-          .spyOn(ordersRepositoryMock, 'find')
-          .mockResolvedValueOnce(initialOrders)
+        jest.spyOn(ordersRepositoryMock, 'find').mockResolvedValueOnce(initialOrders)
 
         await ordersService.handleExternalOrders({
           integrationId: '1',
-          orders: JSON.parse(JSON.stringify(updatedOrders))
+          orders: JSON.parse(JSON.stringify(updatedOrders)),
         })
 
-        expect(eventsServiceMock.addEvent).toHaveBeenCalledTimes(
-          updatedOrders.length
-        )
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledTimes(updatedOrders.length)
         expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(
           expect.objectContaining({
             namespace: EventNamespace.ORDERS,
-            type: EventType.ORDER_UPDATED
-          })
+            type: EventType.ORDER_UPDATED,
+          }),
         )
         eventsServiceMock.addEvent.mockClear()
 
         // 3. Should not update orders if with no new data
         // Setup: find existing orders, skip update
-        jest
-          .spyOn(ordersRepositoryMock, 'find')
-          .mockResolvedValueOnce(updatedOrders)
+        jest.spyOn(ordersRepositoryMock, 'find').mockResolvedValueOnce(updatedOrders)
 
         await ordersService.handleExternalOrders({
           integrationId: '1',
-          orders: JSON.parse(JSON.stringify(initialOrders))
+          orders: JSON.parse(JSON.stringify(initialOrders)),
         })
 
         expect(eventsServiceMock.addEvent).not.toHaveBeenCalled()
@@ -871,24 +805,22 @@ describe('OrdersService', () => {
           tests: [{ code: 'T805' }],
           manifest: { uri: 'https://example.com/manifest' },
           submissionUri: 'https://example.com/order',
-          editable: false
-        }
+          editable: false,
+        },
       ]
 
       it('should attach manifest to new orders', async () => {
         jest.spyOn(ordersRepositoryMock, 'find').mockResolvedValueOnce([])
         // @ts-expect-error: compiler type error
         ordersRepositoryMock.create.mockImplementationOnce((data) =>
-          data.map((item) => Object.assign(new Order(), item))
+          data.map((item) => Object.assign(new Order(), item)),
         )
         // @ts-expect-error: compiler type error
-        ordersRepositoryMock.save.mockImplementation(
-          async (entities) => entities
-        )
+        ordersRepositoryMock.save.mockImplementation(async (entities) => entities)
 
         await ordersService.handleExternalOrders({
           integrationId: '1',
-          orders: JSON.parse(JSON.stringify(orderWithManifest))
+          orders: JSON.parse(JSON.stringify(orderWithManifest)),
         })
 
         expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(
@@ -896,30 +828,26 @@ describe('OrdersService', () => {
             type: EventType.ORDER_CREATED,
             data: expect.objectContaining({
               order: expect.objectContaining({
-                manifest: { uri: expect.any(String) }
-              })
-            })
-          })
+                manifest: { uri: expect.any(String) },
+              }),
+            }),
+          }),
         )
       })
 
       it('should attach manifest when updating existing orders', async () => {
-        jest
-          .spyOn(ordersRepositoryMock, 'find')
-          .mockResolvedValueOnce([
-            {
-              externalId: orderWithManifest[0].externalId,
-              status: 'SUBMITTED'
-            } as Order
-          ])
+        jest.spyOn(ordersRepositoryMock, 'find').mockResolvedValueOnce([
+          {
+            externalId: orderWithManifest[0].externalId,
+            status: 'SUBMITTED',
+          } as Order,
+        ])
         // @ts-expect-error: compiler type error
-        ordersRepositoryMock.save.mockImplementation(
-          async (entities) => entities
-        )
+        ordersRepositoryMock.save.mockImplementation(async (entities) => entities)
 
         await ordersService.handleExternalOrders({
           integrationId: '1',
-          orders: JSON.parse(JSON.stringify(orderWithManifest))
+          orders: JSON.parse(JSON.stringify(orderWithManifest)),
         })
 
         expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(
@@ -927,10 +855,10 @@ describe('OrdersService', () => {
             type: EventType.ORDER_UPDATED,
             data: expect.objectContaining({
               order: expect.objectContaining({
-                manifest: { uri: expect.any(String) }
-              })
-            })
-          })
+                manifest: { uri: expect.any(String) },
+              }),
+            }),
+          }),
         )
       })
 
@@ -938,24 +866,22 @@ describe('OrdersService', () => {
         jest.spyOn(ordersRepositoryMock, 'find').mockResolvedValueOnce([])
         // @ts-expect-error: compiler type error
         ordersRepositoryMock.create.mockImplementationOnce((data) =>
-          data.map((item) => Object.assign(new Order(), item))
+          data.map((item) => Object.assign(new Order(), item)),
         )
         // @ts-expect-error: compiler type error
-        ordersRepositoryMock.save.mockImplementation(
-          async (entities) => entities
-        )
+        ordersRepositoryMock.save.mockImplementation(async (entities) => entities)
 
         const orderWithoutManifest = [
           {
             externalId: '999',
             status: 'SUBMITTED',
-            tests: []
-          }
+            tests: [],
+          },
         ]
 
         await ordersService.handleExternalOrders({
           integrationId: '1',
-          orders: JSON.parse(JSON.stringify(orderWithoutManifest))
+          orders: JSON.parse(JSON.stringify(orderWithoutManifest)),
         })
 
         expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(
@@ -963,10 +889,10 @@ describe('OrdersService', () => {
             type: EventType.ORDER_CREATED,
             data: expect.objectContaining({
               order: expect.not.objectContaining({
-                manifest: expect.anything()
-              })
-            })
-          })
+                manifest: expect.anything(),
+              }),
+            }),
+          }),
         )
       })
     })
@@ -977,33 +903,26 @@ describe('OrdersService', () => {
       const results01: ProviderResult[] = JSON.parse(
         fs.readFileSync(
           path.join(__dirname, '..', '..', 'test', 'idexx', 'results-01.json'),
-          'utf8'
-        )
+          'utf8',
+        ),
       )
       const resultsDropNRun01: ProviderResult[] = JSON.parse(
         fs.readFileSync(
-          path.join(
-            __dirname,
-            '..',
-            '..',
-            'test',
-            'idexx',
-            'results-drop-n-run-02.json'
-          ),
-          'utf8'
-        )
+          path.join(__dirname, '..', '..', 'test', 'idexx', 'results-drop-n-run-02.json'),
+          'utf8',
+        ),
       )
 
       it('should handle results for orphan orders', async () => {
         await ordersService.handleExternalOrderResults({
           integrationId: 'idexx',
-          results: results01
+          results: results01,
         })
       })
       it('should skip order results with no order ID', async () => {
         await ordersService.handleExternalOrderResults({
           integrationId: 'idexx',
-          results: resultsDropNRun01
+          results: resultsDropNRun01,
         })
         expect(ordersRepositoryMock.findOne).not.toHaveBeenCalled()
         expect(eventsServiceMock.addEvent).not.toHaveBeenCalled()
@@ -1013,22 +932,20 @@ describe('OrdersService', () => {
       const order = JSON.parse(
         fs.readFileSync(
           path.join(__dirname, '..', '..', 'test', 'antech', 'orders-03.json'),
-          'utf8'
-        )
+          'utf8',
+        ),
       )
       const result = JSON.parse(
         fs.readFileSync(
           path.join(__dirname, '..', '..', 'test', 'antech', 'results-03.json'),
-          'utf8'
-        )
+          'utf8',
+        ),
       )
       it('should update order with result order info', async () => {
-        jest
-          .spyOn(ordersRepositoryMock, 'findOne')
-          .mockResolvedValueOnce(order[0])
+        jest.spyOn(ordersRepositoryMock, 'findOne').mockResolvedValueOnce(order[0])
         await ordersService.handleExternalOrderResults({
           integrationId: 'idexx',
-          results: result
+          results: result,
         })
         expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(
           expect.objectContaining({
@@ -1038,34 +955,34 @@ describe('OrdersService', () => {
               order: expect.objectContaining({
                 client: {
                   firstName: 'Graciela',
-                  lastName: 'Romero'
+                  lastName: 'Romero',
                 },
                 editable: false,
                 externalId: '125603216',
                 manifest: {
-                  uri: 'https://URL/LabOrders/PDFPIMS?accessToken=1234567890&ClinicAccessionID=125603216&IsView=1'
+                  uri: 'https://URL/LabOrders/PDFPIMS?accessToken=1234567890&ClinicAccessionID=125603216&IsView=1',
                 },
                 patient: {
                   breed: 'Pomeranian',
                   name: 'ZEUS',
                   sex: 'CM',
-                  species: 'Canine'
+                  species: 'Canine',
                 },
                 status: 'COMPLETED',
                 submissionUri:
                   'https://URL/views/order.html?accessToken=1234567890&ClinicAccessionID=125603216',
                 tests: [
                   {
-                    code: 'T805'
-                  }
+                    code: 'T805',
+                  },
                 ],
                 veterinarian: {
                   firstName: 'Banfield',
-                  lastName: 'Staff'
-                }
-              })
-            })
-          })
+                  lastName: 'Staff',
+                },
+              }),
+            }),
+          }),
         )
       })
     })
