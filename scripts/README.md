@@ -36,6 +36,8 @@ MONGO_URI='mongodb://...' npm run migrate:mongo-shards -- --batch=2000 --suffix=
     - `--mode=replace|insertOnly` (default: `replace`). `insertOnly` avoids rewriting docs that already exist (uses `$setOnInsert`).
     - `--checkpoint=/path/to/state.json` (default: `scripts/.mongo-shard-migrate.state.json`).
     - `--resume=true|false` (default: `true`). When true, resumes from last saved `_id` per collection.
+    - `--retries=<n>` (default: `3`). Number of retry attempts for failed upsert operations.
+    - `--retryDelayMs=<ms>` (default: `500`). Delay between retry attempts in milliseconds.
 
 - Alternative (TypeScript): if your environment supports ts-node:
 
@@ -73,6 +75,7 @@ Behavior and Safety
 - Verbose progress logs each batch: migrated totals, rate (docs/s), optional createdAt span, percent complete (if total can be estimated), and a final summary with elapsed time.
 - Checkpointing: Writes a checkpoint file with the last processed `_id` and document counts so you can stop and resume later without reprocessing. When `--mode=insertOnly`, reprocessing already-migrated docs is safe and cheap (no-op updates).
 - Graceful shutdown: Pressing Ctrl-C (SIGINT) or sending SIGTERM saves the current checkpoint immediately and stops after the current batch, allowing you to resume cleanly.
+- Error handling and retries: Failed upserts are retried up to `--retries` times with `--retryDelayMs` delay; remaining failures are logged and tracked in the checkpoint for a later repair pass. Batch logs include successes, failures, and retry count.
 - Ensure destination collections exist first; the script does not create them.
 
 Verification
