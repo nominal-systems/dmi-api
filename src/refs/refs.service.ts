@@ -20,7 +20,7 @@ export class RefsService {
     private readonly providersService: ProvidersService,
     @InjectRepository(ProviderRef) private readonly providerRefRepository: Repository<ProviderRef>,
     @InjectRepository(Ref) private readonly refRepository: Repository<Ref>,
-    @InjectRepository(ProviderDefaultBreed) private readonly providerDefaultBreedRepository: Repository<ProviderDefaultBreed>
+    @InjectRepository(ProviderDefaultBreed) private readonly providerDefaultBreedRepository: Repository<ProviderDefaultBreed>,
   ) {
   }
 
@@ -35,8 +35,8 @@ export class RefsService {
           where: {
             code: item.code,
             type: type,
-            provider: provider
-          }
+            provider: provider,
+          },
         })
 
         if (existingItem === undefined) {
@@ -45,7 +45,7 @@ export class RefsService {
             name: item.name,
             type: type,
             provider: provider,
-            species: 'species' in item ? item.species : undefined
+            species: 'species' in item ? item.species : undefined,
           })
           await this.providerRefRepository.save(newItem)
           newRefsCount++
@@ -72,7 +72,7 @@ export class RefsService {
 
   async syncSpecies (
     provider: Provider,
-    integrationId: string
+    integrationId: string,
   ): Promise<void> {
     const species = await this.providersService.getSpecies(provider.id, integrationId)
     await this.syncProviderRefs(provider, species, 'species')
@@ -80,7 +80,7 @@ export class RefsService {
 
   async syncBreeds (
     provider: Provider,
-    integrationId: string
+    integrationId: string,
   ): Promise<void> {
     const breeds = await this.providersService.getBreeds(provider.id, integrationId)
     await this.syncProviderRefs(provider, breeds, 'breed')
@@ -88,7 +88,7 @@ export class RefsService {
 
   async syncSexes (
     provider: Provider,
-    integrationId: string
+    integrationId: string,
   ): Promise<void> {
     const sexes = await this.providersService.getSexes(provider.id, integrationId)
     await this.syncProviderRefs(provider, sexes, 'sex')
@@ -96,28 +96,28 @@ export class RefsService {
 
   async getSpecies (
     select: Array<(keyof Ref)> = ['code', 'name'],
-    relations: string[] = []
+    relations: string[] = [],
   ): Promise<Ref[]> {
     return await this.refRepository.find({ where: { type: 'species' }, select, relations })
   }
 
   async getBreeds (
     select: Array<(keyof Ref)> = ['code', 'name', 'species'],
-    relations: string[] = []
+    relations: string[] = [],
   ): Promise<Ref[]> {
     return await this.refRepository.find({ where: { type: 'breed' }, select, relations })
   }
 
   async getSexes (
     select: Array<(keyof Ref)> = ['code', 'name'],
-    relations: string[] = []
+    relations: string[] = [],
   ): Promise<Ref[]> {
     return await this.refRepository.find({ where: { type: 'sex' }, select, relations })
   }
 
   async getRefs (
     type: 'sexes' | 'species' | 'breeds',
-    paginationDto: PaginationDto
+    paginationDto: PaginationDto,
   ): Promise<Ref[]> {
     const { page, limit } = paginationDto
     const take = limit
@@ -128,12 +128,12 @@ export class RefsService {
       select: ['id', 'name', 'code', 'type', 'providerRef'],
       relations: ['providerRef', 'providerRef.provider'],
       skip,
-      take
+      take,
     })
   }
 
   async countRefs (
-    type: 'sexes' | 'species' | 'breeds'
+    type: 'sexes' | 'species' | 'breeds',
   ): Promise<number> {
     return await this.refRepository.count({ where: { type: type } })
   }
@@ -148,20 +148,20 @@ export class RefsService {
       name: refDto.name,
       code: refDto.code,
       type: refDto.type,
-      species: refDto.species !== null ? refDto.species : undefined
+      species: refDto.species !== null ? refDto.species : undefined,
     })
     await this.refRepository.save(newRef)
 
-    for (const providerRefId of refDto.providerRefIds) {
-      const providerRef = await this.providerRefRepository.findOne(providerRefId)
-      if (providerRef === undefined) {
-        throw new NotFoundException('Provider ref not found')
+    if (refDto.providerRefIds?.length > 0) {
+      const providerRefs = await this.providerRefRepository.findByIds(refDto.providerRefIds)
+      if (providerRefs.length !== refDto.providerRefIds.length) {
+        throw new NotFoundException('One or more provider refs not found')
       }
-      providerRef.ref = newRef
-      await this.providerRefRepository.save(providerRef)
+      newRef.providerRef = providerRefs
+      await this.refRepository.save(newRef)
     }
 
-    return newRef
+    return await this.findOneById(String(newRef.id))
   }
 
   async updateRefs (id: string, updateRefDto: any): Promise<Ref> {
@@ -202,7 +202,7 @@ export class RefsService {
 
   async findOneByCodeAndProvider (code: string, provider?: string, providerRef = false): Promise<Ref | ProviderRef | undefined> {
     const result = await this.refRepository.createQueryBuilder('ref')
-      .leftJoinAndSelect('ref.providerRef', 'providerRef', 'providerRef.ref = ref.id AND providerRef.provider = :provider', { provider })
+      .leftJoinAndSelect('ref.providerRef', 'providerRef', 'providerRef.provider = :provider', { provider })
       .leftJoinAndSelect('providerRef.provider', 'provider')
       .where('ref.code = :code OR providerRef.code = :code', { code })
       .getOne()
@@ -217,19 +217,22 @@ export class RefsService {
     return await this.providerRefRepository.createQueryBuilder('providerRef')
       .leftJoin('providerRef.provider', 'provider', 'provider.id = providerRef.provider')
       .select(['providerRef', 'provider.id'])
-      .where('providerRef.code = :code AND providerRef.provider = :provider', { code, provider: provider })
+      .where('providerRef.code = :code AND providerRef.provider = :provider', {
+        code,
+        provider: provider,
+      })
       .getOne()
   }
 
   async findProvidersMappedRefs (): Promise<any> {
     const refs = await this.providerRefRepository.createQueryBuilder('providerRefs')
-      .leftJoin('providerRefs.ref', 'ref', 'ref.id = providerRefs.ref')
+      .leftJoinAndSelect('providerRefs.refs', 'ref')
       .leftJoin('providerRefs.provider', 'provider', 'provider.id = providerRefs.provider')
       .select(['providerRefs', 'ref', 'provider.id'])
       .getMany()
 
     const { mappedRefs, unmappedRefs } = refs.reduce((acc, obj) => {
-      if (obj.ref !== null) {
+      if (Array.isArray(obj.refs) && obj.refs.length > 0) {
         acc.mappedRefs.push(obj)
       } else {
         acc.unmappedRefs.push(obj)
@@ -244,12 +247,15 @@ export class RefsService {
     return await this.providerDefaultBreedRepository.createQueryBuilder('providerDefaultBreed')
       .leftJoin('providerDefaultBreed.provider', 'provider', 'provider.id = providerDefaultBreed.provider')
       .select(['providerDefaultBreed', 'provider.id'])
-      .where('providerDefaultBreed.species = :species AND provider.id = :providerId', { species, providerId })
+      .where('providerDefaultBreed.species = :species AND provider.id = :providerId', {
+        species,
+        providerId,
+      })
       .getOne()
   }
 
   async findAllDefaultBreeds (
-    options?: FindManyOptions<ProviderDefaultBreed>
+    options?: FindManyOptions<ProviderDefaultBreed>,
   ): Promise<ProviderDefaultBreed[]> {
     return await this.providerDefaultBreedRepository.find(options)
   }
@@ -298,7 +304,7 @@ export class RefsService {
     const [speciesRef, breedRef, sexRef] = await Promise.all([
       this.findOneByCodeAndProvider(species, providerId),
       this.findOneByCodeAndProvider(breed, providerId),
-      this.findOneByCodeAndProvider(sex, providerId)
+      this.findOneByCodeAndProvider(sex, providerId),
     ])
 
     const mappedPatient = {
@@ -306,7 +312,7 @@ export class RefsService {
       ...patient,
       species: speciesRef?.code ?? species,
       breed: breedRef?.code ?? breed,
-      sex: sexRef?.code ?? sex
+      sex: sexRef?.code ?? sex,
     }
 
     if (weight !== undefined) {
@@ -336,7 +342,7 @@ export class RefsService {
       const newDefaultBreed = this.providerDefaultBreedRepository.create({
         species,
         defaultBreed,
-        provider: { id: providerId }
+        provider: { id: providerId },
       })
       await this.providerDefaultBreedRepository.save(newDefaultBreed)
       return newDefaultBreed

@@ -1,5 +1,13 @@
 import { Provider } from '../../providers/entities/provider.entity'
-import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm'
+import {
+  Column,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToMany,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm'
 import { Ref } from './ref.entity'
 
 @Entity()
@@ -19,7 +27,7 @@ export class ProviderRef {
 
   @Column({
     type: 'enum',
-    enum: ['species', 'breed', 'sex']
+    enum: ['species', 'breed', 'sex'],
   })
   type: 'species' | 'breed' | 'sex'
 
@@ -31,7 +39,6 @@ export class ProviderRef {
   @JoinColumn({ name: 'species', referencedColumnName: 'code' })
   speciesEntity: ProviderRef | null
 
-  @ManyToOne(() => Ref, { onDelete: 'SET NULL' })
-  @JoinColumn({ name: 'refId', referencedColumnName: 'id' })
-  ref: Ref | null
+  @ManyToMany(() => Ref, ref => ref.providerRef)
+  refs: Ref[]
 }

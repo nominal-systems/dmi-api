@@ -20,7 +20,8 @@ describe('RefsService', () => {
     findOne: jest.fn(entity => entity),
     create: jest.fn(entity => entity),
     save: jest.fn(entity => entity),
-    merge: jest.fn(entity => entity)
+    merge: jest.fn(entity => entity),
+    createQueryBuilder: jest.fn(),
   }
 
   const providerRefsRepositoryMock = {
@@ -34,13 +35,13 @@ describe('RefsService', () => {
       leftJoin: jest.fn().mockReturnThis(),
       select: jest.fn().mockReturnThis(),
       where: jest.fn().mockReturnThis(),
-      getOne: jest.fn().mockResolvedValue({})
-    }))
+      getOne: jest.fn().mockResolvedValue({}),
+    })),
   }
 
   const providersServiceMock = {
     findOneById: jest.fn(entity => entity),
-    update: jest.fn(entity => entity)
+    update: jest.fn(entity => entity),
     // mock your methods here
   }
 
@@ -51,16 +52,16 @@ describe('RefsService', () => {
       leftJoin: jest.fn().mockReturnThis(),
       select: jest.fn().mockReturnThis(),
       where: jest.fn().mockReturnThis(),
-      getOne: jest.fn().mockResolvedValue({})
-    }))
+      getOne: jest.fn().mockResolvedValue({}),
+    })),
   }
 
   const findOneByCodeAndProviderMock = jest.fn()
 
   const providerMock = {
     hashes: {
-      breed: ''
-    }
+      breed: '',
+    },
   } as unknown as Provider
 
   beforeEach(async () => {
@@ -69,21 +70,21 @@ describe('RefsService', () => {
         RefsService,
         {
           provide: ProvidersService,
-          useValue: providersServiceMock
+          useValue: providersServiceMock,
         },
         {
           provide: getRepositoryToken(Ref),
-          useValue: refsRepositoryMock
+          useValue: refsRepositoryMock,
         },
         {
           provide: getRepositoryToken(ProviderRef),
-          useValue: providerRefsRepositoryMock
+          useValue: providerRefsRepositoryMock,
         },
         {
           provide: getRepositoryToken(ProviderDefaultBreed),
-          useValue: providerDefaultBreedRepositoryMock
-        }
-      ]
+          useValue: providerDefaultBreedRepositoryMock,
+        },
+      ],
     }).compile()
 
     refsService = module.get<RefsService>(RefsService)
@@ -102,34 +103,35 @@ describe('RefsService', () => {
         name: 'Male',
         code: 'MALE',
         type: 'sex',
-        providerRefIds: [1, 2]
+        providerRefIds: [1, 2],
       }
 
       const mockNewRef = {
         name: 'Male',
         code: 'MALE',
         type: 'sex',
-        species: undefined
+        species: undefined,
+        providerRef: [{ id: 1 }, { id: 2 }],
       }
 
+      // Arrange mocks before invoking the service
       refsRepositoryMock.findOne.mockResolvedValue(undefined)
-      providerRefsRepositoryMock.findOne.mockResolvedValue({
-        id: 1,
-        code: 'DACHSHUND',
-        name: 'Dachshund',
-        species: 'CANINE',
-        type: 'breed',
-        provider: {
-          id: 'idexx'
-        }
-      })
-      const result = await refsService.createRefs(createDto)
-      refsRepositoryMock.create.mockResolvedValue(mockNewRef)
+      refsRepositoryMock.create.mockReturnValue(mockNewRef)
       refsRepositoryMock.save.mockResolvedValue(mockNewRef)
+      providerRefsRepositoryMock.findByIds.mockResolvedValueOnce([{ id: 1 }, { id: 2 }])
+      refsService.findOneById = jest.fn().mockResolvedValue(mockNewRef)
+
+      const result = await refsService.createRefs(createDto)
 
       expect(result).toEqual(mockNewRef)
-      expect(refsRepository.create).toHaveBeenCalledWith(mockNewRef)
-      expect(refsRepository.save).toHaveBeenCalledWith(mockNewRef)
+      expect(refsRepository.create).toHaveBeenCalledWith({
+        name: 'Male',
+        code: 'MALE',
+        type: 'sex',
+        species: undefined,
+      })
+      expect(providerRefsRepositoryMock.findByIds).toHaveBeenCalledWith([1, 2])
+      expect(refsRepository.save).toHaveBeenCalled()
     })
   })
   describe('updateRefs()', () => {
@@ -139,7 +141,7 @@ describe('RefsService', () => {
         name: 'Salchicha',
         code: 'SALCHICHA',
         type: 'breed',
-        providerRefIds: [430]
+        providerRefIds: [430],
       }
       const existingRef = {
         id: 2,
@@ -157,11 +159,11 @@ describe('RefsService', () => {
               species: 'CANINE',
               type: 'breed',
               provider: {
-                id: 'idexx'
-              }
-            }
-          }
-        ]
+                id: 'idexx',
+              },
+            },
+          },
+        ],
       }
 
       refsService.findOneById = jest.fn().mockResolvedValue(existingRef)
@@ -181,21 +183,21 @@ describe('RefsService', () => {
       sex: 'UNKNOWN',
       species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
       breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec',
-      birthdate: '2022-08-15'
+      birthdate: '2022-08-15',
     } as CreateOrderDtoPatient
     const idexxPatient = {
       name: 'Medicalnotes_author_test',
       sex: 'UNKNOWN',
       species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
       breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec',
-      birthdate: '2022-08-15'
+      birthdate: '2022-08-15',
     } as CreateOrderDtoPatient
     const zoetisPatient = {
       name: 'Medicalnotes_author_test',
       sex: 'UNKNOWN',
       species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
       breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec',
-      birthdate: '2022-08-15'
+      birthdate: '2022-08-15',
     } as CreateOrderDtoPatient
     it('Antech: should map patient refs', async () => {
       findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'U' })
@@ -206,7 +208,7 @@ describe('RefsService', () => {
       expect(antechPatient).toEqual(expect.objectContaining({
         sex: 'U',
         species: '41',
-        breed: '163'
+        breed: '163',
       }))
     })
     it('Antech: should map existing patient refs only', async () => {
@@ -214,14 +216,14 @@ describe('RefsService', () => {
         name: 'Medicalnotes_author_test',
         sex: 'UNKNOWN',
         species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
-        birthdate: '2022-08-15'
+        birthdate: '2022-08-15',
       } as CreateOrderDtoPatient
       findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'U' })
       findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: '41' })
       await refsService.mapPatientRefs('antech', patient)
       expect(patient).toEqual(expect.objectContaining({
         sex: 'U',
-        species: '41'
+        species: '41',
       }))
     })
     it('Idexx: should map patient refs', async () => {
@@ -233,7 +235,7 @@ describe('RefsService', () => {
       expect(idexxPatient).toEqual(expect.objectContaining({
         sex: 'UNKNOWN',
         species: 'CANINE',
-        breed: 'SCHIPPERKE'
+        breed: 'SCHIPPERKE',
       }))
     })
     it('Idexx: should map existing patient refs only', async () => {
@@ -241,14 +243,14 @@ describe('RefsService', () => {
         name: 'Medicalnotes_author_test',
         sex: 'UNKNOWN',
         species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
-        birthdate: '2022-08-15'
+        birthdate: '2022-08-15',
       } as CreateOrderDtoPatient
       findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'UNKNOWN' })
       findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'CANINE' })
       await refsService.mapPatientRefs('idexx', patient)
       expect(patient).toEqual(expect.objectContaining({
         sex: 'UNKNOWN',
-        species: 'CANINE'
+        species: 'CANINE',
       }))
     })
     it('Zoetis: should map patient refs', async () => {
@@ -259,13 +261,13 @@ describe('RefsService', () => {
         leftJoin: jest.fn().mockReturnThis(),
         select: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
-        getOne: jest.fn().mockResolvedValueOnce(undefined)
+        getOne: jest.fn().mockResolvedValueOnce(undefined),
       })
       await refsService.mapPatientRefs('zoetis', zoetisPatient)
       expect(zoetisPatient).toEqual(expect.objectContaining({
         sex: 'UNKNOWN',
         species: 'DOG',
-        breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec'
+        breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec',
       }))
     })
     it('Zoetis: should map existing patient refs only', async () => {
@@ -273,14 +275,14 @@ describe('RefsService', () => {
         name: 'Medicalnotes_author_test',
         sex: 'UNKNOWN',
         species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
-        birthdate: '2022-08-15'
+        birthdate: '2022-08-15',
       } as CreateOrderDtoPatient
       findOneByCodeAndProviderMock.mockResolvedValueOnce(undefined)
       findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'DOG' })
       await refsService.mapPatientRefs('zoetis', patient)
       expect(patient).toEqual(expect.objectContaining({
         sex: 'UNKNOWN',
-        species: 'DOG'
+        species: 'DOG',
       }))
     })
     it('should use the default breed if the breed is not found', async () => {
@@ -289,7 +291,7 @@ describe('RefsService', () => {
         name: 'Miso',
         sex: 'MALE',
         species: 'DOG',
-        breed: 'foo'
+        breed: 'foo',
       }
 
       // The breed 'foo' shouldn't be found, and the default breed for the species 'DOG' is 'DEFAULT_DOG_BREED'
@@ -305,12 +307,12 @@ describe('RefsService', () => {
         leftJoin: jest.fn().mockReturnThis(),
         select: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
-        getOne: jest.fn().mockResolvedValueOnce({ defaultBreed: 'DEFAULT_DOG_BREED' })
+        getOne: jest.fn().mockResolvedValueOnce({ defaultBreed: 'DEFAULT_DOG_BREED' }),
       })
 
       await refsService.mapPatientRefs('provider', patient)
       expect(patient).toEqual(expect.objectContaining({
-        breed: 'DEFAULT_DOG_BREED'
+        breed: 'DEFAULT_DOG_BREED',
       }))
     })
     it('should not use the default breed if the breed is found', async () => {
@@ -319,7 +321,7 @@ describe('RefsService', () => {
         name: 'Miso',
         sex: 'MALE',
         species: 'DOG',
-        breed: 'JACK_RUSSELL_TERRIER'
+        breed: 'JACK_RUSSELL_TERRIER',
       }
 
       // The breed should be found
@@ -329,7 +331,7 @@ describe('RefsService', () => {
 
       await refsService.mapPatientRefs('provider', patient)
       expect(patient).toEqual(expect.objectContaining({
-        breed: 'JACK_RUSSELL_TERRIER'
+        breed: 'JACK_RUSSELL_TERRIER',
       }))
     })
     it('should use the default breed if no breed is provided', async () => {
@@ -337,7 +339,7 @@ describe('RefsService', () => {
         id: '1',
         name: 'Miso',
         sex: 'MALE',
-        species: 'DOG'
+        species: 'DOG',
       }
 
       // The default breed for the species 'DOG' is 'DEFAULT_DOG_BREED'
@@ -345,16 +347,43 @@ describe('RefsService', () => {
         leftJoin: jest.fn().mockReturnThis(),
         select: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
-        getOne: jest.fn().mockResolvedValueOnce({ defaultBreed: 'DEFAULT_DOG_BREED' })
+        getOne: jest.fn().mockResolvedValueOnce({ defaultBreed: 'DEFAULT_DOG_BREED' }),
       })
 
       await refsService.mapPatientRefs('provider', patient as CreateOrderDtoPatient)
       expect(patient).toEqual(expect.objectContaining({
-        breed: 'DEFAULT_DOG_BREED'
+        breed: 'DEFAULT_DOG_BREED',
       }))
     })
   })
   describe('mapPatientReferences()', () => {
+    it('should map multiple species to a single provider code', async () => {
+      // First run: species = 'HAMSTER'
+      const dmiOrderHamster = { patient: { species: 'HAMSTER' } as CreateOrderDtoPatient }
+      const providerPatientHamster = { species: 'HAMSTER' } as Patient
+      findOneByCodeAndProviderMock
+        .mockResolvedValueOnce({ code: 'RODENT' })
+        .mockResolvedValueOnce({ code: 'HAMSTER' })
+        .mockResolvedValueOnce(undefined)
+        .mockResolvedValueOnce(undefined)
+
+      const mappedHamster = await refsService.mapPatientReferences(dmiOrderHamster, providerPatientHamster, 'provider')
+      expect(providerPatientHamster.species).toBe('RODENT')
+      expect(mappedHamster.species).toBe('HAMSTER')
+
+      // Second run: species = 'GUINEA_PIG'
+      const dmiOrderGuineaPig = { patient: { species: 'GUINEA_PIG' } as CreateOrderDtoPatient }
+      const providerPatientGuineaPig = { species: 'GUINEA_PIG' } as Patient
+      findOneByCodeAndProviderMock
+        .mockResolvedValueOnce({ code: 'RODENT' })
+        .mockResolvedValueOnce({ code: 'GUINEA_PIG' })
+        .mockResolvedValueOnce(undefined)
+        .mockResolvedValueOnce(undefined)
+
+      const mappedGuineaPig = await refsService.mapPatientReferences(dmiOrderGuineaPig, providerPatientGuineaPig, 'provider')
+      expect(providerPatientGuineaPig.species).toBe('RODENT')
+      expect(mappedGuineaPig.species).toBe('GUINEA_PIG')
+    })
     describe('Antech', () => {
       it('should map patient coming as dmi refs', async () => {
         const createOrderDto = {
@@ -363,13 +392,13 @@ describe('RefsService', () => {
             sex: 'b81354c6-9dca-46d1-91cb-b41c03ee3184',
             species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
             breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec',
-            birthdate: '2022-08-15'
-          } as CreateOrderDtoPatient
+            birthdate: '2022-08-15',
+          } as CreateOrderDtoPatient,
         }
         const providerPatient = {
           sex: 'b81354c6-9dca-46d1-91cb-b41c03ee3184',
           species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
-          breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec'
+          breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec',
         } as Patient
         findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'U' })
         findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: '41' })
@@ -383,12 +412,12 @@ describe('RefsService', () => {
           birthdate: '2022-08-15',
           sex: 'b81354c6-9dca-46d1-91cb-b41c03ee3184',
           species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
-          breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec'
+          breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec',
         }))
         expect(providerPatient).toEqual(expect.objectContaining({
           sex: 'U',
           species: '41',
-          breed: '163'
+          breed: '163',
         }))
       })
       it('should map patient coming as provider refs', async () => {
@@ -398,13 +427,13 @@ describe('RefsService', () => {
             sex: 'U',
             species: '41',
             breed: '163',
-            birthdate: '2022-08-15'
-          } as CreateOrderDtoPatient
+            birthdate: '2022-08-15',
+          } as CreateOrderDtoPatient,
         }
         const providerPatient = {
           sex: 'U',
           species: '41',
-          breed: '163'
+          breed: '163',
         } as Patient
         findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'U' })
         findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: '41' })
@@ -418,12 +447,12 @@ describe('RefsService', () => {
           birthdate: '2022-08-15',
           sex: 'b81354c6-9dca-46d1-91cb-b41c03ee3184',
           species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
-          breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec'
+          breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec',
         }))
         expect(providerPatient).toEqual(expect.objectContaining({
           sex: 'U',
           species: '41',
-          breed: '163'
+          breed: '163',
         }))
       })
     })
@@ -435,13 +464,13 @@ describe('RefsService', () => {
             sex: 'b81354c6-9dca-46d1-91cb-b41c03ee3184',
             species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
             breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec',
-            birthdate: '2022-08-15'
-          } as CreateOrderDtoPatient
+            birthdate: '2022-08-15',
+          } as CreateOrderDtoPatient,
         }
         const providerPatient = {
           sex: 'b81354c6-9dca-46d1-91cb-b41c03ee3184',
           species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
-          breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec'
+          breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec',
         } as Patient
         findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'UNKNOWN' })
         findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'CANINE' })
@@ -456,12 +485,12 @@ describe('RefsService', () => {
           birthdate: '2022-08-15',
           sex: 'b81354c6-9dca-46d1-91cb-b41c03ee3184',
           species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
-          breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec'
+          breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec',
         }))
         expect(providerPatient).toEqual(expect.objectContaining({
           sex: 'UNKNOWN',
           species: 'CANINE',
-          breed: 'SCHIPPERKE'
+          breed: 'SCHIPPERKE',
         }))
       })
       it('should map patient coming as provider refs', async () => {
@@ -471,13 +500,13 @@ describe('RefsService', () => {
             sex: 'UNKNOWN',
             species: 'CANINE',
             breed: 'SCHIPPERKE',
-            birthdate: '2022-08-15'
-          } as CreateOrderDtoPatient
+            birthdate: '2022-08-15',
+          } as CreateOrderDtoPatient,
         }
         const providerPatient = {
           sex: 'UNKNOWN',
           species: 'CANINE',
-          breed: 'SCHIPPERKE'
+          breed: 'SCHIPPERKE',
         } as Patient
         findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'UNKNOWN' })
         findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'CANINE' })
@@ -491,12 +520,12 @@ describe('RefsService', () => {
           birthdate: '2022-08-15',
           sex: 'b81354c6-9dca-46d1-91cb-b41c03ee3184',
           species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
-          breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec'
+          breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec',
         }))
         expect(providerPatient).toEqual(expect.objectContaining({
           sex: 'UNKNOWN',
           species: 'CANINE',
-          breed: 'SCHIPPERKE'
+          breed: 'SCHIPPERKE',
         }))
       })
     })
@@ -508,13 +537,13 @@ describe('RefsService', () => {
             sex: 'b81354c6-9dca-46d1-91cb-b41c03ee3184',
             species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
             breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec',
-            birthdate: '2022-08-15'
-          } as CreateOrderDtoPatient
+            birthdate: '2022-08-15',
+          } as CreateOrderDtoPatient,
         }
         const providerPatient = {
           sex: 'b81354c6-9dca-46d1-91cb-b41c03ee3184',
           species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
-          breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec'
+          breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec',
         } as Patient
         findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'UNKNOWN' })
         findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'DOG' })
@@ -526,7 +555,7 @@ describe('RefsService', () => {
           leftJoin: jest.fn().mockReturnThis(),
           select: jest.fn().mockReturnThis(),
           where: jest.fn().mockReturnThis(),
-          getOne: jest.fn().mockResolvedValueOnce(undefined)
+          getOne: jest.fn().mockResolvedValueOnce(undefined),
         })
         const patient = await refsService.mapPatientReferences(createOrderDto, providerPatient, 'zoetis')
         expect(patient).toEqual(expect.objectContaining({
@@ -534,12 +563,12 @@ describe('RefsService', () => {
           birthdate: '2022-08-15',
           sex: 'b81354c6-9dca-46d1-91cb-b41c03ee3184',
           species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
-          breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec'
+          breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec',
         }))
         expect(providerPatient).toEqual(expect.objectContaining({
           sex: 'UNKNOWN',
           species: 'DOG',
-          breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec'
+          breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec',
         }))
       })
       it('should map patient coming as provider refs', async () => {
@@ -549,13 +578,13 @@ describe('RefsService', () => {
             sex: 'UNKNOWN',
             species: 'DOG',
             breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec',
-            birthdate: '2022-08-15'
-          } as CreateOrderDtoPatient
+            birthdate: '2022-08-15',
+          } as CreateOrderDtoPatient,
         }
         const providerPatient = {
           sex: 'UNKNOWN',
           species: 'DOG',
-          breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec'
+          breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec',
         } as Patient
         findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'UNKNOWN' })
         findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'DOG' })
@@ -567,7 +596,7 @@ describe('RefsService', () => {
           leftJoin: jest.fn().mockReturnThis(),
           select: jest.fn().mockReturnThis(),
           where: jest.fn().mockReturnThis(),
-          getOne: jest.fn().mockResolvedValueOnce(undefined)
+          getOne: jest.fn().mockResolvedValueOnce(undefined),
         })
         const patient = await refsService.mapPatientReferences(createOrderDto, providerPatient, 'zoetis')
         expect(patient).toEqual(expect.objectContaining({
@@ -575,12 +604,12 @@ describe('RefsService', () => {
           birthdate: '2022-08-15',
           sex: 'b81354c6-9dca-46d1-91cb-b41c03ee3184',
           species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
-          breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec'
+          breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec',
         }))
         expect(providerPatient).toEqual(expect.objectContaining({
           sex: 'UNKNOWN',
           species: 'DOG',
-          breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec'
+          breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec',
         }))
       })
     })
@@ -593,7 +622,7 @@ describe('RefsService', () => {
           leftJoin: jest.fn().mockReturnThis(),
           select: jest.fn().mockReturnThis(),
           where: jest.fn().mockReturnThis(),
-          getOne: jest.fn().mockResolvedValueOnce(mockData)
+          getOne: jest.fn().mockResolvedValueOnce(mockData),
         })
         const defaultBreed = await refsService.findDefaultBreedBySpecies('36c3cde0-bd6b-11eb-9610-302432eba3e9', 'antech')
         expect(defaultBreed?.defaultBreed).toEqual('163')
@@ -606,7 +635,7 @@ describe('RefsService', () => {
           leftJoin: jest.fn().mockReturnThis(),
           select: jest.fn().mockReturnThis(),
           where: jest.fn().mockReturnThis(),
-          getOne: jest.fn().mockResolvedValueOnce(mockData)
+          getOne: jest.fn().mockResolvedValueOnce(mockData),
         })
 
         const defaultBreed = await refsService.findDefaultBreedBySpecies('36c3cde0-bd6b-11eb-9610-302432eba3e9', 'idexx')
@@ -617,12 +646,17 @@ describe('RefsService', () => {
   describe('findOneProviderRefByCodeAndProvider()', () => {
     describe('Idexx', () => {
       it('should find provider ref', async () => {
-        const mockData = { code: 'SCHIPPERKE', species: 'DOG', provider: { id: 'idexx' }, type: 'breed' }
+        const mockData = {
+          code: 'SCHIPPERKE',
+          species: 'DOG',
+          provider: { id: 'idexx' },
+          type: 'breed',
+        }
         providerRefsRepositoryMock.createQueryBuilder.mockReturnValue({
           leftJoin: jest.fn().mockReturnThis(),
           select: jest.fn().mockReturnThis(),
           where: jest.fn().mockReturnThis(),
-          getOne: jest.fn().mockResolvedValueOnce(mockData)
+          getOne: jest.fn().mockResolvedValueOnce(mockData),
         })
         const providerBreed = await refsService.findOneProviderRefByCodeAndProvider('SCHIPPERKE', 'idexx')
         expect(providerBreed?.code).toEqual('SCHIPPERKE')
@@ -636,19 +670,19 @@ describe('RefsService', () => {
           {
             code: 'JACK_RUSSELL_TERRIER',
             name: 'Jack Russell Terrier',
-            species: 'DOG'
-          }
-        ]
+            species: 'DOG',
+          },
+        ],
       }
       providerRefsRepositoryMock.findOne.mockResolvedValueOnce({
         code: 'JACK_RUSSELL_TERRIER',
-        type: 'breed'
+        type: 'breed',
       })
       await refsService.syncProviderRefs(providerMock, providerBreedList, 'breed')
       expect(providerRefsRepositoryMock.save).toBeCalledWith(expect.objectContaining({
         code: 'JACK_RUSSELL_TERRIER',
         name: 'Jack Russell Terrier',
-        species: 'DOG'
+        species: 'DOG',
       }))
     })
     it('should skip if breed\'s species is already set', async () => {
@@ -657,15 +691,15 @@ describe('RefsService', () => {
           {
             code: 'JACK_RUSSELL_TERRIER',
             name: 'Jack Russell Terrier',
-            species: 'DOG'
-          }
-        ]
+            species: 'DOG',
+          },
+        ],
       }
       providerRefsRepositoryMock.findOne.mockResolvedValueOnce({
         code: 'JACK_RUSSELL_TERRIER',
         name: 'Jack Russell Terrier',
         type: 'breed',
-        species: 'DOG'
+        species: 'DOG',
       })
       await refsService.syncProviderRefs(providerMock, providerBreedList, 'breed')
       expect(providerRefsRepositoryMock.save).not.toBeCalled()
@@ -675,14 +709,14 @@ describe('RefsService', () => {
         items: [
           {
             code: 'DOG',
-            name: 'Dog'
-          }
-        ]
+            name: 'Dog',
+          },
+        ],
       }
       providerRefsRepositoryMock.findOne.mockResolvedValueOnce({
         code: 'DOG',
         name: 'Dog',
-        type: 'species'
+        type: 'species',
       })
       await refsService.syncProviderRefs(providerMock, providerBreedList, 'species')
       expect(providerRefsRepositoryMock.save).not.toBeCalled()
