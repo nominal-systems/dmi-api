@@ -508,7 +508,7 @@ export class AdminController {
   @Post('refs/:id/mapping')
   async updateRefMapping (
     @Param('id') refId: string,
-    @Body() mapping: { providerRefId: string },
+    @Body() mapping: { providerRefId: string | null; providerId?: string },
   ): Promise<any> {
     // Find Ref
     const ref = await this.refsService.findOneById(refId)
@@ -516,6 +516,21 @@ export class AdminController {
       throw new BadRequestException(`The Ref ${refId} doesn't exist`)
     }
 
+    // If providerRefId is null, unset mapping for the specified provider
+    if (mapping.providerRefId === null || mapping.providerRefId === undefined) {
+      if (mapping.providerId === undefined || mapping.providerId === null) {
+        throw new BadRequestException('providerId is required to unset a mapping')
+      }
+
+      try {
+        await this.refsService.unsetMapping(ref.id, mapping.providerId)
+        return { ok: true }
+      } catch (error) {
+        throw new BadRequestException(error.message)
+      }
+    }
+
+    // Otherwise, set mapping to the provided ProviderRef
     // Find ProviderRef
     const providerRef = await this.providerRefService.findOneById(mapping.providerRefId)
     if (providerRef === undefined) {
@@ -614,6 +629,42 @@ export class AdminController {
     }
     try {
       await this.refsService.setDefaultBreed(providerId, species, breed)
+    } catch (error) {
+      throw new BadRequestException(error.message)
+    }
+
+    return { status: 'OK' }
+  }
+
+  @Get('providers/:providerId/mappingDefaultBreed')
+  async getMappingDefaultBreed (
+    @Param('providerId') providerId: string,
+    @Query('refSpecies') refSpecies: string,
+    @Query('providerSpecies') providerSpecies: string,
+  ): Promise<any> {
+    try {
+      return await this.refsService.findMappingDefaultBreed(refSpecies, providerSpecies, providerId)
+    } catch (error) {
+      throw new BadRequestException(error.message)
+    }
+  }
+
+  @Put('providers/:providerId/mappingDefaultBreed')
+  async setMappingDefaultBreed (
+    @Param('providerId') providerId: string,
+    @Query('refSpecies') refSpecies: string,
+    @Query('providerSpecies') providerSpecies: string,
+    @Query('breed') breed?: string,
+  ): Promise<any> {
+    const provider = await this.providersService.findOneById(providerId)
+
+    if (provider === undefined) {
+      throw new BadRequestException(`The provider ${providerId} doesn't exist`)
+    }
+    try {
+      // If breed is an empty string or not provided, clear the mapping-level default
+      const normalizedBreed = breed !== undefined && breed.trim() !== '' ? breed : null
+      await this.refsService.setMappingDefaultBreed(providerId, refSpecies, providerSpecies, normalizedBreed)
     } catch (error) {
       throw new BadRequestException(error.message)
     }

@@ -9,6 +9,7 @@ import { Provider } from '../providers/entities/provider.entity'
 import { CreateOrderDtoPatient } from '../orders/dtos/create-order.dto'
 import { PaginationDto } from '../common/dtos/pagination.dto'
 import { ProviderDefaultBreed } from './entities/providerDefaultBreed.entity'
+import { ProviderSpeciesMappingDefaultBreed } from './entities/providerSpeciesMappingDefaultBreed.entity'
 import { Patient } from '../orders/entities/patient.entity'
 import { Breed, ReferenceDataResponse, Sex, Species } from '@nominal-systems/dmi-engine-common'
 
@@ -21,6 +22,7 @@ export class RefsService {
     @InjectRepository(ProviderRef) private readonly providerRefRepository: Repository<ProviderRef>,
     @InjectRepository(Ref) private readonly refRepository: Repository<Ref>,
     @InjectRepository(ProviderDefaultBreed) private readonly providerDefaultBreedRepository: Repository<ProviderDefaultBreed>,
+    @InjectRepository(ProviderSpeciesMappingDefaultBreed) private readonly providerSpeciesMappingDefaultBreedRepository: Repository<ProviderSpeciesMappingDefaultBreed>,
   ) {
   }
 
@@ -254,6 +256,25 @@ export class RefsService {
       .getOne()
   }
 
+  async findMappingDefaultBreed (
+    refSpecies: string,
+    providerSpecies: string,
+    providerId: string,
+  ): Promise<ProviderSpeciesMappingDefaultBreed | undefined> {
+    return await this.providerSpeciesMappingDefaultBreedRepository.createQueryBuilder('mapping')
+      .leftJoin('mapping.provider', 'provider', 'provider.id = mapping.provider')
+      .leftJoin('mapping.refSpecies', 'ref')
+      .leftJoin('mapping.providerSpecies', 'pSpecies')
+      .leftJoin('mapping.defaultBreed', 'breed')
+      .select(['mapping', 'provider.id', 'breed.id', 'breed.code', 'breed.name'])
+      .where('ref.code = :refSpecies AND pSpecies.code = :providerSpecies AND provider.id = :providerId', {
+        refSpecies,
+        providerSpecies,
+        providerId,
+      })
+      .getOne()
+  }
+
   async findAllDefaultBreeds (
     options?: FindManyOptions<ProviderDefaultBreed>,
   ): Promise<ProviderDefaultBreed[]> {
@@ -264,6 +285,9 @@ export class RefsService {
     const attributesToMap = ['sex', 'species', 'breed']
 
     const mappedPatient: Partial<CreateOrderDtoPatient> = {}
+    // Track which mapping was used for species to support per-mapping default breed precedence
+    let originalRefSpeciesForMapping: string | undefined
+    let mappedProviderSpeciesForMapping: string | undefined
 
     for (const attribute of attributesToMap) {
       if (patient[attribute] !== undefined && patient[attribute] !== null) {
@@ -271,23 +295,49 @@ export class RefsService {
 
         if (result !== undefined) {
           mappedPatient[attribute] = result.code
-        } else if (attribute === 'breed') {
-          const defaultBreed = await this.findDefaultBreedBySpecies(mappedPatient.species as string, providerId)
-          if (defaultBreed !== undefined) {
-            mappedPatient[attribute] = defaultBreed.defaultBreed
-          } else {
-            mappedPatient[attribute] = patient[attribute]
+          if (attribute === 'species') {
+            originalRefSpeciesForMapping = patient[attribute]
+            mappedProviderSpeciesForMapping = result.code
           }
+        } else if (attribute === 'breed') {
+          // Breed not mapped: try mapping-level default first, then provider-level default
+          let mappedBreed: string | undefined
+          if (originalRefSpeciesForMapping !== undefined && mappedProviderSpeciesForMapping !== undefined) {
+            const mappingDefault = await this.findMappingDefaultBreed(
+              originalRefSpeciesForMapping,
+              mappedProviderSpeciesForMapping,
+              providerId,
+            )
+            mappedBreed = (mappingDefault as any)?.defaultBreed?.code ?? (mappingDefault as any)?.defaultBreed ?? undefined
+          }
+
+          if (mappedBreed === undefined) {
+            const defaultBreed = await this.findDefaultBreedBySpecies(mappedPatient.species as string, providerId)
+            mappedBreed = defaultBreed?.defaultBreed
+          }
+
+          mappedPatient[attribute] = mappedBreed ?? (patient[attribute] as any)
         } else {
           mappedPatient[attribute] = patient[attribute]
         }
       } else if (attribute === 'breed') {
-        const defaultBreed = await this.findDefaultBreedBySpecies(mappedPatient.species as string, providerId)
-        if (defaultBreed !== undefined) {
-          mappedPatient[attribute] = defaultBreed.defaultBreed
-        } else {
-          mappedPatient[attribute] = patient[attribute]
+        // No breed provided: try mapping-level default first, then provider-level default
+        let mappedBreed: string | undefined
+        if (originalRefSpeciesForMapping !== undefined && mappedProviderSpeciesForMapping !== undefined) {
+          const mappingDefault = await this.findMappingDefaultBreed(
+            originalRefSpeciesForMapping,
+            mappedProviderSpeciesForMapping,
+            providerId,
+          )
+          mappedBreed = (mappingDefault as any)?.defaultBreed?.code ?? (mappingDefault as any)?.defaultBreed ?? undefined
         }
+
+        if (mappedBreed === undefined) {
+          const defaultBreed = await this.findDefaultBreedBySpecies(mappedPatient.species as string, providerId)
+          mappedBreed = defaultBreed?.defaultBreed
+        }
+
+        mappedPatient[attribute] = mappedBreed ?? (patient[attribute] as any)
       }
     }
 
@@ -367,5 +417,72 @@ export class RefsService {
 
     this.logger.log(`Updated mapping for ${ref.type} Ref/${ref.id} (${ref.name}) to ProviderRef/${providerRef.id} (${providerRef.name})`)
     return await this.refRepository.save(ref)
+  }
+
+  async unsetMapping (refId: number, providerId: string): Promise<Ref> {
+    const ref = await this.refRepository.findOne(refId, { relations: ['providerRef', 'providerRef.provider'] })
+    if (ref === undefined) {
+      throw new NotFoundException('Ref not found')
+    }
+
+    const before = ref.providerRef.length
+    ref.providerRef = ref.providerRef.filter((pr) => pr.provider?.id !== providerId)
+    if (ref.providerRef.length === before) {
+      // Nothing to unset; treat as success to keep idempotency
+      return ref
+    }
+
+    this.logger.log(`Unset mapping for ${ref.type} Ref/${ref.id} (${ref.name}) for Provider/${providerId}`)
+    return await this.refRepository.save(ref)
+  }
+
+  async setMappingDefaultBreed (
+    providerId: string,
+    refSpecies: string,
+    providerSpecies: string,
+    defaultBreed: string | null,
+  ): Promise<ProviderSpeciesMappingDefaultBreed> {
+    // Ensure provider species exists for provider
+    const providerSpeciesExists = await this.findOneProviderRefByCodeAndProvider(providerSpecies, providerId)
+    if (providerSpeciesExists === undefined) {
+      throw new NotFoundException('Provider species not found')
+    }
+    // Ensure ref species exists
+    const refSpeciesExists = await this.refRepository.findOne({ where: { code: refSpecies, type: 'species' } })
+    if (refSpeciesExists === undefined) {
+      throw new NotFoundException('Ref species not found')
+    }
+    // If defaultBreed provided, ensure it exists as a provider breed for this provider
+    let breedExists: ProviderRef | undefined
+    if (defaultBreed !== null) {
+      breedExists = await this.findOneProviderRefByCodeAndProvider(defaultBreed, providerId)
+      if (breedExists === undefined || breedExists.type !== 'breed') {
+        throw new NotFoundException('Breed not found')
+      }
+    }
+
+    let mapping = await this.providerSpeciesMappingDefaultBreedRepository.createQueryBuilder('mapping')
+      .leftJoin('mapping.provider', 'provider', 'provider.id = mapping.provider')
+      .leftJoin('mapping.refSpecies', 'ref')
+      .leftJoin('mapping.providerSpecies', 'pSpecies')
+      .where('ref.code = :refSpecies AND pSpecies.code = :providerSpecies AND provider.id = :providerId', {
+        refSpecies,
+        providerSpecies,
+        providerId,
+      })
+      .getOne()
+
+    if (mapping === undefined) {
+      mapping = this.providerSpeciesMappingDefaultBreedRepository.create({
+        refSpecies: { id: (refSpeciesExists as any).id },
+        providerSpecies: { id: (providerSpeciesExists as any).id },
+        defaultBreed: breedExists !== undefined ? ({ id: breedExists.id } as any) : null,
+        provider: { id: providerId } as any,
+      })
+    } else {
+      mapping.defaultBreed = breedExists !== undefined ? ({ id: breedExists.id } as any) : null
+    }
+    await this.providerSpeciesMappingDefaultBreedRepository.save(mapping)
+    return mapping
   }
 }

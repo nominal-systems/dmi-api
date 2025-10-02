@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { AdminController } from './admin.controller'
-import { ProviderConfigurationsService } from '../providers/services/provider-configurations.service'
+import {
+  ProviderConfigurationsService,
+} from '../providers/services/provider-configurations.service'
 import { IntegrationsService } from '../integrations/integrations.service'
 import { EventSubscriptionService } from '../events/services/event-subscription.service'
 import { OrganizationsService } from '../organizations/services/organizations.service'
@@ -20,7 +22,9 @@ import { PaginationResult } from '../common/classes/pagination-result'
 import { ProviderExternalRequests } from '../providers/entities/provider-external-requests.entity'
 import { ArgumentMetadata, BadRequestException, ValidationPipe } from '@nestjs/common'
 import { PAGINATION_PAGE_LIMIT } from '../common/constants/pagination.constant'
-import { InternalEventLoggingService } from '../internal-event-logging/internal-event-logging.service'
+import {
+  InternalEventLoggingService,
+} from '../internal-event-logging/internal-event-logging.service'
 import { OidcAuthGuard } from '../common/guards/oidc-auth.guard'
 import { AdminJwtAuthGuard } from '../common/guards/admin-jwt-auth.guard'
 import { OktaJwtAuthGuard } from '../common/guards/okta-jwt-auth.guard'
@@ -34,6 +38,10 @@ describe('AdminController', () => {
   }
 
   beforeEach(async () => {
+    const refsServiceMock = {
+      findMappingDefaultBreed: jest.fn(),
+      setMappingDefaultBreed: jest.fn(),
+    }
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AdminController],
       providers: [
@@ -91,7 +99,7 @@ describe('AdminController', () => {
         },
         {
           provide: RefsService,
-          useValue: {},
+          useValue: refsServiceMock,
         },
         {
           provide: ProvidersService,
@@ -117,6 +125,7 @@ describe('AdminController', () => {
     }).compile()
 
     adminController = module.get<AdminController>(AdminController)
+    ;(adminController as any).refsService = refsServiceMock
   })
 
   it('should be defined', () => {
@@ -185,6 +194,53 @@ describe('AdminController', () => {
       expect(transformedQuery).toBeInstanceOf(ExternalRequestsQueryDto)
       expect(transformedQuery.limit).toBe(PAGINATION_PAGE_LIMIT)
       expect(transformedQuery.page).toBe(1)
+    })
+  })
+
+  describe('mapping default breed endpoints', () => {
+    it('getMappingDefaultBreed should return mapping entry', async () => {
+      const mapping = {
+          refSpecies: 'HAMSTER',
+          providerSpecies: 'RODENT',
+          defaultBreed: 'GOLDEN_HAMSTER',
+        }
+      ;(adminController as any).refsService.findMappingDefaultBreed.mockResolvedValueOnce(mapping)
+
+      const res = await adminController.getMappingDefaultBreed('provider', 'HAMSTER', 'RODENT')
+      expect((adminController as any).refsService.findMappingDefaultBreed).toHaveBeenCalledWith(
+        'HAMSTER',
+        'RODENT',
+        'provider',
+      )
+      expect(res).toBe(mapping)
+    })
+
+    it('setMappingDefaultBreed should set mapping and return OK', async () => {
+      ;(adminController as any).providersService.findOneById = jest.fn().mockResolvedValue({ id: 'provider' })
+      ;(adminController as any).refsService.setMappingDefaultBreed = jest.fn().mockResolvedValue({})
+
+      const res = await adminController.setMappingDefaultBreed('provider', 'MOUSE', 'RODENT', 'MOUSE')
+      expect((adminController as any).refsService.setMappingDefaultBreed).toHaveBeenCalledWith(
+        'provider',
+        'MOUSE',
+        'RODENT',
+        'MOUSE',
+      )
+      expect(res).toEqual({ status: 'OK' })
+    })
+
+    it('setMappingDefaultBreed should clear mapping default when breed omitted', async () => {
+      ;(adminController as any).providersService.findOneById = jest.fn().mockResolvedValue({ id: 'provider' })
+      ;(adminController as any).refsService.setMappingDefaultBreed = jest.fn().mockResolvedValue({})
+
+      const res = await adminController.setMappingDefaultBreed('provider', 'GUINEA_PIG', 'RODENT')
+      expect((adminController as any).refsService.setMappingDefaultBreed).toHaveBeenCalledWith(
+        'provider',
+        'GUINEA_PIG',
+        'RODENT',
+        null,
+      )
+      expect(res).toEqual({ status: 'OK' })
     })
   })
 })

@@ -9,6 +9,9 @@ import { CreateRefsDTO } from './dtos/create-refs.dto'
 import { CreateOrderDtoPatient } from '../orders/dtos/create-order.dto'
 import { Patient } from '../orders/entities/patient.entity'
 import { ProviderDefaultBreed } from './entities/providerDefaultBreed.entity'
+import {
+  ProviderSpeciesMappingDefaultBreed,
+} from './entities/providerSpeciesMappingDefaultBreed.entity'
 import { Provider } from '../providers/entities/provider.entity'
 
 describe('RefsService', () => {
@@ -56,6 +59,17 @@ describe('RefsService', () => {
     })),
   }
 
+  const providerSpeciesMappingDefaultBreedRepositoryMock = {
+    create: jest.fn(entity => entity),
+    save: jest.fn(entity => entity),
+    createQueryBuilder: jest.fn(() => ({
+      leftJoin: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      getOne: jest.fn().mockResolvedValue(undefined),
+    })),
+  }
+
   const findOneByCodeAndProviderMock = jest.fn()
 
   const providerMock = {
@@ -83,6 +97,10 @@ describe('RefsService', () => {
         {
           provide: getRepositoryToken(ProviderDefaultBreed),
           useValue: providerDefaultBreedRepositoryMock,
+        },
+        {
+          provide: getRepositoryToken(ProviderSpeciesMappingDefaultBreed),
+          useValue: providerSpeciesMappingDefaultBreedRepositoryMock,
         },
       ],
     }).compile()
@@ -315,6 +333,36 @@ describe('RefsService', () => {
         breed: 'DEFAULT_DOG_BREED',
       }))
     })
+    it('should use mapping-level default when breed is unmapped', async () => {
+      const patient = {
+        id: '1',
+        name: 'Nibbles',
+        sex: 'MALE',
+        species: 'HAMSTER',
+        breed: 'UNKNOWN_BREED',
+      } as unknown as CreateOrderDtoPatient
+
+      // Species mapping returns provider species RODENT
+      // First call in mapPatientRefs is for sex; skip by returning undefined so it uses original
+      findOneByCodeAndProviderMock.mockResolvedValueOnce(undefined)
+      // Species mapping
+      findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'RODENT' })
+      // Breed mapping not found
+      findOneByCodeAndProviderMock.mockResolvedValueOnce(undefined)
+
+      providerSpeciesMappingDefaultBreedRepositoryMock.createQueryBuilder.mockReturnValue({
+        leftJoin: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValueOnce({ defaultBreed: 'GOLDEN_HAMSTER' }),
+      })
+
+      await refsService.mapPatientRefs('provider', patient)
+      expect(patient).toEqual(expect.objectContaining({
+        species: 'RODENT',
+        breed: 'GOLDEN_HAMSTER',
+      }))
+    })
     it('should not use the default breed if the breed is found', async () => {
       const patient = {
         id: '1',
@@ -353,6 +401,77 @@ describe('RefsService', () => {
       await refsService.mapPatientRefs('provider', patient as CreateOrderDtoPatient)
       expect(patient).toEqual(expect.objectContaining({
         breed: 'DEFAULT_DOG_BREED',
+      }))
+    })
+    it('should use mapping-level default breed when breed missing', async () => {
+      const patient = { species: 'HAMSTER' } as unknown as CreateOrderDtoPatient
+      // Species maps to provider species RODENT
+      findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'RODENT' })
+      // No direct breed mapping call needed since breed is missing
+
+      providerSpeciesMappingDefaultBreedRepositoryMock.createQueryBuilder.mockReturnValue({
+        leftJoin: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValueOnce({ defaultBreed: 'GOLDEN_HAMSTER' }),
+      })
+
+      await refsService.mapPatientRefs('provider', patient)
+      expect(patient).toEqual(expect.objectContaining({
+        species: 'RODENT',
+        breed: 'GOLDEN_HAMSTER',
+      }))
+    })
+    it('should fall back to provider-level default when mapping-level default missing', async () => {
+      const patient = { species: 'GUINEA_PIG' } as unknown as CreateOrderDtoPatient
+      // Species maps to provider species RODENT
+      findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'RODENT' })
+
+      // No mapping-level default
+      providerSpeciesMappingDefaultBreedRepositoryMock.createQueryBuilder.mockReturnValue({
+        leftJoin: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValueOnce(undefined),
+      })
+      // Provider-level default exists for RODENT
+      providerDefaultBreedRepositoryMock.createQueryBuilder.mockReturnValue({
+        leftJoin: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValueOnce({ defaultBreed: 'OTHER_RODENT' }),
+      })
+
+      await refsService.mapPatientRefs('provider', patient)
+      expect(patient).toEqual(expect.objectContaining({
+        species: 'RODENT',
+        breed: 'OTHER_RODENT',
+      }))
+    })
+    it('should prefer mapping-level default over provider-level default', async () => {
+      const patient = { species: 'MOUSE' } as unknown as CreateOrderDtoPatient
+      // Species maps to provider species RODENT
+      findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'RODENT' })
+
+      // Mapping-level default exists
+      providerSpeciesMappingDefaultBreedRepositoryMock.createQueryBuilder.mockReturnValue({
+        leftJoin: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValueOnce({ defaultBreed: 'MOUSE' }),
+      })
+      // Provider-level default would be OTHER_RODENT if used
+      providerDefaultBreedRepositoryMock.createQueryBuilder.mockReturnValue({
+        leftJoin: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValueOnce({ defaultBreed: 'OTHER_RODENT' }),
+      })
+
+      await refsService.mapPatientRefs('provider', patient)
+      expect(patient).toEqual(expect.objectContaining({
+        species: 'RODENT',
+        breed: 'MOUSE',
       }))
     })
   })
