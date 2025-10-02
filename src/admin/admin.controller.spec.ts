@@ -216,7 +216,7 @@ describe('AdminController', () => {
     })
 
     it('setMappingDefaultBreed should set mapping and return OK', async () => {
-      ;(adminController as any).providersService.findOneById = jest.fn().mockResolvedValue({ id: 'provider' })
+      (adminController as any).providersService.findOneById = jest.fn().mockResolvedValue({ id: 'provider' })
       ;(adminController as any).refsService.setMappingDefaultBreed = jest.fn().mockResolvedValue({})
 
       const res = await adminController.setMappingDefaultBreed('provider', 'MOUSE', 'RODENT', 'MOUSE')
@@ -230,7 +230,7 @@ describe('AdminController', () => {
     })
 
     it('setMappingDefaultBreed should clear mapping default when breed omitted', async () => {
-      ;(adminController as any).providersService.findOneById = jest.fn().mockResolvedValue({ id: 'provider' })
+      (adminController as any).providersService.findOneById = jest.fn().mockResolvedValue({ id: 'provider' })
       ;(adminController as any).refsService.setMappingDefaultBreed = jest.fn().mockResolvedValue({})
 
       const res = await adminController.setMappingDefaultBreed('provider', 'GUINEA_PIG', 'RODENT')
