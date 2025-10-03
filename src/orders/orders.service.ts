@@ -221,7 +221,7 @@ export class OrdersService {
 
     const order = this.ordersRepository.create(createOrderDto)
 
-    const providerPatient = createOrderDto.patient
+    const providerPatient = order.patient
     order.patient = await this.refsService.mapPatientReferences(order, providerPatient, providerId)
     const { sex, species, breed } = providerPatient
 
