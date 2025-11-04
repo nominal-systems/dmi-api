@@ -64,9 +64,30 @@ Create parallel collections to enable a staged migration:
 
 3) Create indexes used by the app
 - Although Cosmos auto‑indexes, create explicit indexes used by queries/sorts to maintain behavior and performance:
-  - Events: `db.events_v2.createIndex({ seq: -1 })`, `db.events_v2.createIndex({ providerId: 1 })`, `db.events_v2.createIndex({ integrationId: 1 })`, `db.events_v2.createIndex({ practiceId: 1 })`, `db.events_v2.createIndex({ accessionId: 1 })`, `db.events_v2.createIndex({ createdAt: -1 })`.
-  - External requests: `db.external_requests_v2.createIndex({ createdAt: -1 })`, `db.external_requests_v2.createIndex({ provider: 1 })`, `db.external_requests_v2.createIndex({ status: 1 })`, `db.external_requests_v2.createIndex({ method: 1 })`, `db.external_requests_v2.createIndex({ accessionIds: 1 })`.
-  - Internal events: `db.internal_events_v2.createIndex({ createdAt: -1 })`, `db.internal_events_v2.createIndex({ pattern: 1 })`, `db.internal_events_v2.createIndex({ accessionIds: 1 })`.
+
+  - Events:
+```
+db.events_v2.createIndex({ seq: -1 })
+db.events_v2.createIndex({ providerId: 1 })
+db.events_v2.createIndex({ integrationId: 1 })
+db.events_v2.createIndex({ practiceId: 1 })
+db.events_v2.createIndex({ accessionId: 1 })
+db.events_v2.createIndex({ createdAt: -1 })
+```
+  - External requests:
+```
+db.external_requests_v2.createIndex({ createdAt: -1 })
+db.external_requests_v2.createIndex({ provider: 1 })
+db.external_requests_v2.createIndex({ status: 1 })
+db.external_requests_v2.createIndex({ method: 1 })
+db.external_requests_v2.createIndex({ accessionIds: 1 })
+```
+  - Internal events:
+```
+db.internal_events_v2.createIndex({ createdAt: -1 })
+db.internal_events_v2.createIndex({ pattern: 1 })
+db.internal_events_v2.createIndex({ accessionIds: 1 })
+```
 
 4) Backfill data
 - Run the provided script `scripts/mongo-shard-migrate.js` (preferred) to copy in batches from old → new collections while preserving `_id`:
