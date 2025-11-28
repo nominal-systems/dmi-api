@@ -1,5 +1,6 @@
 import { Test } from '@nestjs/testing'
-import { INestApplication } from '@nestjs/common'
+import { INestApplication, ValidationPipe } from '@nestjs/common'
+import * as request from 'supertest'
 
 import { OrdersController } from '../../src/orders/orders.controller'
 import { OrdersService } from '../../src/orders/orders.service'
@@ -8,11 +9,12 @@ import {
   InternalEventLoggingInterceptor,
 } from '../../src/internal-event-logging/internal-event-logging.interceptor'
 
-describe('OrdersController events (e2e)', () => {
+describe('OrdersController (e2e)', () => {
   let app: INestApplication
   const ordersServiceMock = {
     handleExternalOrders: jest.fn(),
     handleExternalOrderResults: jest.fn(),
+    createOrder: jest.fn(),
   }
 
   beforeAll(async () => {
@@ -27,6 +29,12 @@ describe('OrdersController events (e2e)', () => {
       .compile()
 
     app = moduleFixture.createNestApplication()
+    app.useGlobalPipes(
+      new ValidationPipe({
+        transform: true,
+        transformOptions: { enableImplicitConversion: true },
+      }),
+    )
     await app.init()
   })
 
@@ -50,4 +58,29 @@ describe('OrdersController events (e2e)', () => {
     })
   })
 
+  describe('createOrder()', () => {
+    it('should return 400 when weight units are invalid', async () => {
+      const payload = {
+        integrationId: 'idexx',
+        patient: {
+          name: 'Fluffy',
+          sex: 'F',
+          species: 'CAT',
+          weight: { measurement: 10, units: 'oz' },
+        },
+        client: { firstName: 'Jane', lastName: 'Doe' },
+        veterinarian: { firstName: 'John', lastName: 'Smith' },
+        testCodes: [{ code: 'CBC' }],
+      }
+
+      const response = await request(app.getHttpServer())
+        .post('/orders')
+        .send(payload)
+        .expect(400)
+
+      expect(response.body.message).toEqual(
+        expect.arrayContaining([expect.stringContaining('units must be one of: kg, lb')]),
+      )
+    })
+  })
 })

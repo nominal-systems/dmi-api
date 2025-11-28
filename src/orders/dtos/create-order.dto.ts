@@ -1,6 +1,6 @@
 import { Type } from 'class-transformer'
-import { ArrayNotEmpty, IsNotEmpty, IsObject, IsOptional, ValidateNested } from 'class-validator'
-import { PatientWeight } from '../../common/typings/patient-weight.interface'
+import { ArrayNotEmpty, IsEnum, IsNotEmpty, IsObject, IsOptional, ValidateNested } from 'class-validator'
+import { PatientWeight, WeightUnits } from '../../common/typings/patient-weight.interface'
 import { ContactDto } from '../../common/dtos/contact.dto'
 
 export class CreateOrderDtoClient {
@@ -38,6 +38,14 @@ export class CreateIdentifierDto {
   value: string
 }
 
+export class CreateOrderDtoPatientWeight implements PatientWeight {
+  @IsNotEmpty()
+  measurement: number
+
+  @IsEnum(WeightUnits, { message: 'units must be one of: kg, lb' })
+  units: WeightUnits
+}
+
 export class CreateOrderDtoPatient {
   id: string
 
@@ -60,10 +68,10 @@ export class CreateOrderDtoPatient {
   @IsOptional()
   birthdate?: string
 
-  @IsNotEmpty()
+  @ValidateNested()
   @IsOptional()
-  @IsObject()
-  weight?: PatientWeight
+  @Type(() => CreateOrderDtoPatientWeight)
+  weight?: CreateOrderDtoPatientWeight
 }
 
 export class CreateOrderDto {
