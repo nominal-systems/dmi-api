@@ -49,6 +49,7 @@ describe('IntegrationsService', () => {
   }
   const clientProxyMock = {
     send: jest.fn(),
+    emit: jest.fn(),
   }
   const providersRepositoryMock = {
     findOne: jest.fn((id) => {
@@ -168,6 +169,64 @@ describe('IntegrationsService', () => {
           integrationOptions: { apiKey: ' secret ' },
         }),
       ).rejects.toThrow(BadRequestException)
+    })
+  })
+
+  describe('update()', () => {
+    const baseIntegration = {
+      id: 'integration-id',
+      practiceId: 'practice-id',
+      providerConfigurationId: 'provider-configuration-id',
+      providerConfiguration: {
+        id: 'provider-configuration-id',
+        providerId: 'idexx',
+        configurationOptions: {},
+      },
+      integrationOptions: {},
+    }
+
+    beforeEach(() => {
+      integrationRepositoryMock.update.mockClear()
+      clientProxyMock.emit.mockClear()
+    })
+
+    it('should not update jobs when integration is NEW', async () => {
+      integrationRepositoryMock.findOne.mockResolvedValue({
+        ...baseIntegration,
+        status: IntegrationStatus.NEW,
+      })
+
+      await integrationsService.update(baseIntegration.id, {
+        integrationOptions: { username: 'user', password: 'pass' },
+      })
+
+      expect(clientProxyMock.emit).not.toHaveBeenCalled()
+    })
+
+    it('should not update jobs when integration is STOPPED', async () => {
+      integrationRepositoryMock.findOne.mockResolvedValue({
+        ...baseIntegration,
+        status: IntegrationStatus.STOPPED,
+      })
+
+      await integrationsService.update(baseIntegration.id, {
+        integrationOptions: { username: 'user', password: 'pass' },
+      })
+
+      expect(clientProxyMock.emit).not.toHaveBeenCalled()
+    })
+
+    it('should update jobs when integration is RUNNING', async () => {
+      integrationRepositoryMock.findOne.mockResolvedValue({
+        ...baseIntegration,
+        status: IntegrationStatus.RUNNING,
+      })
+
+      await integrationsService.update(baseIntegration.id, {
+        integrationOptions: { username: 'user', password: 'pass' },
+      })
+
+      expect(clientProxyMock.emit).toHaveBeenCalledTimes(1)
     })
   })
 })

@@ -111,7 +111,13 @@ export class IntegrationsService {
     await this.integrationsRepository.update({ id: integrationId }, { ...integrationUpdate })
 
     this.logger.log(`Updated Integration: [${integration.id}]`)
-    await this.updateJobs(integrationId, integration.providerConfiguration, newIntegrationOptions)
+    if (integration.status === IntegrationStatus.RUNNING) {
+      await this.updateJobs(integrationId, integration.providerConfiguration, newIntegrationOptions)
+    } else {
+      this.logger.log(
+        `Skipping jobs update for integration ${integration.id} because status is ${integration.status}`,
+      )
+    }
 
     return await this.findOne({ id: integrationId })
   }
