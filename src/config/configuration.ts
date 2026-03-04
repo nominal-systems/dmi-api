@@ -11,6 +11,14 @@ export default (): AppConfig => ({
     username: process.env.ADMIN_USERNAME ?? 'admin',
     password: process.env.ADMIN_PASSWORD ?? 'admin',
   },
+  redis: {
+    host: process.env.REDIS_HOST ?? '',
+    port: Number(process.env.REDIS_PORT ?? 6379),
+    password: process.env.REDIS_PASSWORD ?? '',
+    db: Number(process.env.REDIS_DB ?? 0),
+    keyPrefix: process.env.REDIS_SESSION_KEY_PREFIX ?? 'dmi:sess:',
+    sessionTtlSeconds: Number(process.env.REDIS_SESSION_TTL_SECONDS ?? 1800),
+  },
   activeMQ: {
     protocol: process.env.ACTIVEMQ_PROTOCOL ?? 'mqtt',
     hostname: process.env.ACTIVEMQ_HOSTNAME ?? 'localhost',

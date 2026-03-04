@@ -109,6 +109,12 @@ The following environment variables are accepted to configure the application:
 | `BASE_URL`                  | Base URL used when generating redirect URIs.                                                                   |
 | `JWT_SECRET_KEY`            | Symmetric key for signing/verifying the [JWT](https://jwt.io/) token for authentication.                       |
 | `SECRET_KEY`                | The raw key used for AES-256 CTR database encryption.                                                          |
+| `REDIS_HOST`                | Redis host used for shared Admin UI session storage.                                                            |
+| `REDIS_PORT`                | Redis port used for shared Admin UI session storage.                                                            |
+| `REDIS_PASSWORD`            | Redis password used for shared Admin UI session storage.                                                        |
+| `REDIS_DB`                  | Redis database index used for shared Admin UI session storage.                                                  |
+| `REDIS_SESSION_KEY_PREFIX`  | Prefix used for session keys in Redis.                                                                          |
+| `REDIS_SESSION_TTL_SECONDS` | Default TTL for session entries in Redis.                                                                       |
 | `ADMIN_AUTH_STRATEGY`       | Authentication strategy for the Admin UI. Supported values: `jwt`, `okta`.                                     |
 | `ADMIN_USERNAME`            | The admin user name.                                                                                           |
 | `ADMIN_PASSWORD`            | The admin user password.                                                                                       |

@@ -6,6 +6,7 @@ export interface AppConfig {
   port: number
   secretKey: string
   admin: AdminConfig
+  redis: RedisConfig
   activeMQ: ActiveMQConfig
   typeorm: TypeOrmModuleOptions
   mongoose: MongooseConfig
@@ -19,6 +20,15 @@ export interface ActiveMQConfig {
   port: number
   username: string
   password: string
+}
+
+export interface RedisConfig {
+  host: string
+  port: number
+  password: string
+  db: number
+  keyPrefix: string
+  sessionTtlSeconds: number
 }
 
 export interface MongooseConfig {
