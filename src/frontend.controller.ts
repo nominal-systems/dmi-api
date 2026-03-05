@@ -88,6 +88,8 @@ export class FrontendController {
   }
 
   private async sendFile (res: FastifyReply, filename: string): Promise<void> {
+    if (res.sent) return
+
     const filePath = join(__dirname, '..', 'public', filename)
     const fileContent = readFileSync(filePath, 'utf-8')
     await res.type('text/html').send(fileContent)

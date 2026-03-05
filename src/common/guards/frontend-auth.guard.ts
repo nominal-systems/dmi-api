@@ -26,9 +26,9 @@ export class FrontendAuthGuard implements CanActivate {
       if (request.isAuthenticated?.()) return true
 
       // Otherwise redirect to Okta login
-      const redirectUrl = `${baseUrl}${encodeURIComponent(request.url)}`
+      const redirectUrl = encodeURIComponent(`${baseUrl}${request.url}`)
       response.redirect(`${baseUrl}/auth/login?redirect=${redirectUrl}`)
-      return false
+      return true
     }
 
     // JWT Mode
@@ -42,7 +42,7 @@ export class FrontendAuthGuard implements CanActivate {
       } catch {}
       const redirectUrl = encodeURIComponent(request.url)
       response.redirect(`${baseUrl}/ui/login?redirect=${redirectUrl}`)
-      return false
+      return true
     }
 
     // Fallback: deny
