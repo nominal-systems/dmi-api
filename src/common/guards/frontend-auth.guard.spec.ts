@@ -23,7 +23,7 @@ describe('FrontendAuthGuard', () => {
   })
 
   it('allows authenticated Okta requests with a profile username', () => {
-    ;(configService.get as jest.Mock).mockImplementation((key: string) => {
+    (configService.get as jest.Mock).mockImplementation((key: string) => {
       if (key === 'admin.authStrategy') return 'okta'
       if (key === 'baseUrl') return 'http://localhost:4000'
       return undefined
@@ -43,7 +43,7 @@ describe('FrontendAuthGuard', () => {
   })
 
   it('redirects unauthenticated Okta requests to /auth/login', () => {
-    ;(configService.get as jest.Mock).mockImplementation((key: string) => {
+    (configService.get as jest.Mock).mockImplementation((key: string) => {
       if (key === 'admin.authStrategy') return 'okta'
       if (key === 'baseUrl') return 'http://localhost:4000'
       return undefined
@@ -65,7 +65,7 @@ describe('FrontendAuthGuard', () => {
   })
 
   it('does not treat missing Okta profile as authenticated', () => {
-    ;(configService.get as jest.Mock).mockImplementation((key: string) => {
+    (configService.get as jest.Mock).mockImplementation((key: string) => {
       if (key === 'admin.authStrategy') return 'okta'
       if (key === 'baseUrl') return 'http://localhost:4000'
       return undefined
@@ -86,7 +86,7 @@ describe('FrontendAuthGuard', () => {
   })
 
   it('redirects unauthenticated JWT requests to /ui/login', () => {
-    ;(configService.get as jest.Mock).mockImplementation((key: string) => {
+    (configService.get as jest.Mock).mockImplementation((key: string) => {
       if (key === 'admin.authStrategy') return 'jwt'
       if (key === 'baseUrl') return 'http://localhost:4000'
       return undefined
