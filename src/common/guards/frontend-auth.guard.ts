@@ -16,6 +16,7 @@ export class FrontendAuthGuard implements CanActivate {
     const response = context.switchToHttp().getResponse<FastifyReply>()
     const strategy = this.configService.get<string>('admin.authStrategy')
     const baseUrl = this.configService.get<string>('baseUrl', '')
+    const oktaUser = request.user as { profile?: { username?: string } } | undefined
 
     // Allow public access to the login page
     if (request.url.startsWith('/ui/login')) return true
@@ -23,9 +24,10 @@ export class FrontendAuthGuard implements CanActivate {
     // -- OIDC Mode --
     if (strategy === 'okta') {
       // Allow if session-based auth
-      if (request.isAuthenticated?.()) return true
+      if (request.isAuthenticated?.() && oktaUser?.profile?.username) return true
 
       // Otherwise redirect to Okta login
+      ;(request as any).__frontendAuthRedirected = true
       const redirectUrl = encodeURIComponent(`${baseUrl}${request.url}`)
       response.redirect(`${baseUrl}/auth/login?redirect=${redirectUrl}`)
       return true
@@ -40,6 +42,7 @@ export class FrontendAuthGuard implements CanActivate {
           return true
         }
       } catch {}
+      ;(request as any).__frontendAuthRedirected = true
       const redirectUrl = encodeURIComponent(request.url)
       response.redirect(`${baseUrl}/ui/login?redirect=${redirectUrl}`)
       return true
