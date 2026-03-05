@@ -42,7 +42,7 @@ export class FrontendAuthGuard implements CanActivate {
           return true
         }
       } catch {}
-      ;(request as any).__frontendAuthRedirected = true
+      (request as any).__frontendAuthRedirected = true
       const redirectUrl = encodeURIComponent(request.url)
       response.redirect(`${baseUrl}/ui/login?redirect=${redirectUrl}`)
       return true
