@@ -42,8 +42,10 @@ export async function registerFastifyPlugins (app: INestApplication): Promise<vo
         }
       }
 
-      if (req.session && req.session.passport) {
-        req.user = req.session.passport.user || req.session.passport
+      if (req.session?.passport?.user?.profile?.username) {
+        req.user = req.session.passport.user
+      } else if (req.session?.passport?.profile?.username) {
+        req.user = req.session.passport
       }
     }
   )
