@@ -80,35 +80,24 @@ export class ProviderResultUtils {
     existingOrder: Order,
     extractedOrder: Order
   ): boolean {
-    // Check integrationId
-    if (existingOrder.integrationId && extractedOrder.integrationId) {
-      if (existingOrder.integrationId !== extractedOrder.integrationId) {
-        return false
-      }
-    }
+    // Check integrationId — must be present and equal on both sides
+    if (!existingOrder.integrationId || !extractedOrder.integrationId) return false
+    if (existingOrder.integrationId !== extractedOrder.integrationId) return false
 
-    // Check patient name
-    if (existingOrder.patient?.name && extractedOrder.patient?.name) {
-      if (existingOrder.patient.name !== extractedOrder.patient.name) {
-        return false
-      }
-    }
+    // Check patient name — must be present and equal on both sides
+    if (!existingOrder.patient?.name || !extractedOrder.patient?.name) return false
+    if (existingOrder.patient.name !== extractedOrder.patient.name) return false
 
-    // Check patient ID (from identifiers)
+    // Check patient ID — if present on either side, both must have it and match
     const existingPatientId = this.getIdentifierValue(existingOrder.patient?.identifier, PimsIdentifiers.PatientID)
     const extractedPatientId = this.getIdentifierValue(extractedOrder.patient?.identifier, PimsIdentifiers.PatientID)
-    if (existingPatientId && extractedPatientId) {
-      if (existingPatientId !== extractedPatientId) {
-        return false
-      }
+    if (existingPatientId || extractedPatientId) {
+      if (!existingPatientId || !extractedPatientId || existingPatientId !== extractedPatientId) return false
     }
 
-    // Check client last name
-    if (existingOrder.client?.lastName && extractedOrder.client?.lastName) {
-      if (existingOrder.client.lastName !== extractedOrder.client.lastName) {
-        return false
-      }
-    }
+    // Check client last name — must be present and equal on both sides
+    if (!existingOrder.client?.lastName || !extractedOrder.client?.lastName) return false
+    if (existingOrder.client.lastName !== extractedOrder.client.lastName) return false
 
     return true
   }

@@ -1791,7 +1791,10 @@ describe('ReportsService', () => {
         // #2: update report only
         jest.spyOn(ordersServiceMock, 'findOneByExternalId')
           .mockReturnValueOnce({
-            externalId: '123'
+            externalId: '20230330_155319_8501',
+            integrationId: 'idexx',
+            patient: { name: 'Toby', identifier: [] },
+            client: { lastName: 'Kastorff' }
           })
         jest.spyOn(reportsService, 'findReportsByExternalOrderIds')
           .mockResolvedValueOnce([])

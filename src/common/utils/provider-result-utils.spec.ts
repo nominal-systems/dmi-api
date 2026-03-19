@@ -99,33 +99,39 @@ describe('ProviderResultUtils', () => {
     })
 
     it('should return false when client last name differs', () => {
-      const existing = buildOrder({ integrationId: 'int-1', patientName: 'Toby', clientLastName: 'Smith' })
-      const extracted = buildOrder({ integrationId: 'int-1', patientName: 'Toby', clientLastName: 'Jones' })
+      const existing = buildOrder({ integrationId: 'int-1', patientName: 'Toby', patientId: '123', clientLastName: 'Smith' })
+      const extracted = buildOrder({ integrationId: 'int-1', patientName: 'Toby', patientId: '123', clientLastName: 'Jones' })
       expect(ProviderResultUtils.isMatchingOrder(existing, extracted)).toBe(false)
     })
 
-    it('should skip patient name check when either side is missing', () => {
+    it('should return false when patient name is missing on either side', () => {
       const existing = buildOrder({ integrationId: 'int-1' })
       const extracted = buildOrder({ integrationId: 'int-1', patientName: 'Toby' })
-      expect(ProviderResultUtils.isMatchingOrder(existing, extracted)).toBe(true)
+      expect(ProviderResultUtils.isMatchingOrder(existing, extracted)).toBe(false)
     })
 
-    it('should skip patient ID check when either side is missing', () => {
+    it('should return false when patient ID is present on one side but missing on the other', () => {
       const existing = buildOrder({ integrationId: 'int-1', patientName: 'Toby' })
-      const extracted = buildOrder({ integrationId: 'int-1', patientName: 'Toby', patientId: '123' })
-      expect(ProviderResultUtils.isMatchingOrder(existing, extracted)).toBe(true)
+      const extracted = buildOrder({ integrationId: 'int-1', patientName: 'Toby', patientId: '123', clientLastName: 'Smith' })
+      expect(ProviderResultUtils.isMatchingOrder(existing, extracted)).toBe(false)
     })
 
-    it('should skip client last name check when either side is missing', () => {
+    it('should skip patient ID check when absent on both sides', () => {
       const existing = buildOrder({ integrationId: 'int-1', patientName: 'Toby', clientLastName: 'Smith' })
-      const extracted = buildOrder({ integrationId: 'int-1', patientName: 'Toby' })
+      const extracted = buildOrder({ integrationId: 'int-1', patientName: 'Toby', clientLastName: 'Smith' })
       expect(ProviderResultUtils.isMatchingOrder(existing, extracted)).toBe(true)
     })
 
-    it('should return true when no fields are present to compare', () => {
+    it('should return false when client last name is missing on either side', () => {
+      const existing = buildOrder({ integrationId: 'int-1', patientName: 'Toby', patientId: '123', clientLastName: 'Smith' })
+      const extracted = buildOrder({ integrationId: 'int-1', patientName: 'Toby', patientId: '123' })
+      expect(ProviderResultUtils.isMatchingOrder(existing, extracted)).toBe(false)
+    })
+
+    it('should return false when no fields are present to compare', () => {
       const existing = new Order()
       const extracted = new Order()
-      expect(ProviderResultUtils.isMatchingOrder(existing, extracted)).toBe(true)
+      expect(ProviderResultUtils.isMatchingOrder(existing, extracted)).toBe(false)
     })
   })
 })
