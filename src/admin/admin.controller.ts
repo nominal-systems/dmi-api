@@ -266,6 +266,12 @@ export class AdminController {
       })
     }
 
+    if (params.search !== undefined) {
+      queryBuilder.andWhere('practice.name LIKE :search', {
+        search: `%${params.search}%`,
+      })
+    }
+
     const [data, total] = await queryBuilder.getManyAndCount()
 
     return {

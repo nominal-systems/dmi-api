@@ -21,4 +21,8 @@ export class IntegrationsSearch extends PaginationDto {
   @IsOptional()
   @IsString()
   practices: string
+
+  @IsOptional()
+  @IsString()
+  search: string
 }
