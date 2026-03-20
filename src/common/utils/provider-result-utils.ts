@@ -1,4 +1,4 @@
-import { OrderStatus, ProviderResult, ResultStatus } from '@nominal-systems/dmi-engine-common'
+import { OrderStatus, PimsIdentifiers, ProviderResult, ResultStatus } from '@nominal-systems/dmi-engine-common'
 import { Order } from '../../orders/entities/order.entity'
 import { Test } from '../../orders/entities/test.entity'
 import { Patient } from '../../orders/entities/patient.entity'
@@ -74,5 +74,38 @@ export class ProviderResultUtils {
           })
       )
     )
+  }
+
+  static isMatchingOrder (
+    existingOrder: Order,
+    extractedOrder: Order
+  ): boolean {
+    // Check integrationId — must be present and equal on both sides
+    if (!existingOrder.integrationId || !extractedOrder.integrationId) return false
+    if (existingOrder.integrationId !== extractedOrder.integrationId) return false
+
+    // Check patient name — must be present and equal on both sides
+    if (!existingOrder.patient?.name || !extractedOrder.patient?.name) return false
+    if (existingOrder.patient.name !== extractedOrder.patient.name) return false
+
+    // Check patient ID — if present on either side, both must have it and match
+    const existingPatientId = this.getIdentifierValue(existingOrder.patient?.identifier, PimsIdentifiers.PatientID)
+    const extractedPatientId = this.getIdentifierValue(extractedOrder.patient?.identifier, PimsIdentifiers.PatientID)
+    if (existingPatientId || extractedPatientId) {
+      if (!existingPatientId || !extractedPatientId || existingPatientId !== extractedPatientId) return false
+    }
+
+    // Check client last name — must be present and equal on both sides
+    if (!existingOrder.client?.lastName || !extractedOrder.client?.lastName) return false
+    if (existingOrder.client.lastName !== extractedOrder.client.lastName) return false
+
+    return true
+  }
+
+  private static getIdentifierValue (
+    identifiers: Identifier[] | undefined,
+    system: string
+  ): string | undefined {
+    return identifiers?.find(id => id.system === system)?.value
   }
 }

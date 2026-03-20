@@ -19,7 +19,8 @@ const typeormConfig: TypeOrmModuleOptions = {
     migrationsDir: 'src/migrations'
   },
   logging: Boolean(process.env.DATABASE_LOGGING ?? false),
-  dropSchema: false
+  dropSchema: false,
+  timezone: 'Z'
 }
 
 export default typeormConfig

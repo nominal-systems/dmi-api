@@ -168,6 +168,7 @@ export class ReportsService {
 
     // Create orders for orphan results
     const dummyOrders: Order[] = []
+    this.logger.debug(`Orphan results count: ${orphanResults.length}, externalOrderIds: ${JSON.stringify(externalOrderIds)}`)
     for (const orphanResult of orphanResults) {
       const extractedOrder: Order = ProviderResultUtils.extractOrderFromOrphanResult(orphanResult, integrationId)
 
@@ -176,6 +177,15 @@ export class ReportsService {
       try {
         order = await this.ordersService.findOneByExternalId(extractedOrder.externalId)
       } catch (err) {
+        order = null
+      }
+
+      this.logger.debug(`Orphan externalId=${extractedOrder.externalId}, existingOrder=${order?.id}, existingPatient=${order?.patient?.name}, extractedPatient=${extractedOrder.patient?.name}, existingClient=${order?.client?.lastName}, extractedClient=${extractedOrder.client?.lastName}`)
+
+      // Validate that the existing order matches the incoming result data
+      // TODO (LG): Remove log
+      if (order != null && !ProviderResultUtils.isMatchingOrder(order, extractedOrder)) {
+        this.logger.warn(`Orphan result externalId ${extractedOrder.externalId} matched order ${order.id} but patient/client data does not match. Creating new order.`)
         order = null
       }
 
