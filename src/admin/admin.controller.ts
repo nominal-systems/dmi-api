@@ -181,6 +181,14 @@ export class AdminController {
     if (query.endDate !== undefined) {
       options.createdAt = { ...options.createdAt, $lte: new Date(query.endDate) }
     }
+    if (query.search !== undefined) {
+      const matchingPractices = await this.practicesRepository
+        .createQueryBuilder('practice')
+        .where('practice.name LIKE :search', { search: `%${query.search}%` })
+        .select('practice.id')
+        .getMany()
+      options.practiceId = { $in: matchingPractices.map((p) => p.id) }
+    }
     const { page, limit } = query
 
     const data = await this.eventsService.find(options, { page, limit })

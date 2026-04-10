@@ -16,4 +16,7 @@ export class EventsQueryDto extends IntersectionType(DateRangeDto, PaginationDto
   @IsOptional()
   @Transform(({ value }) => value.split(','))
   types?: string[]
+
+  @IsOptional()
+  search?: string
 }
