@@ -9,6 +9,10 @@ export class ProviderRawDataDto {
   @IsString()
   accessionIds?: string[]
 
+  @IsOptional()
+  @IsString()
+  integrationId?: string
+
   @IsNotEmpty()
   @IsNumber()
   status: number
