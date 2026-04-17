@@ -17,6 +17,7 @@ import { Order } from '../orders/entities/order.entity'
 import { HttpException, HttpStatus } from '@nestjs/common'
 import { ExternalResultEventData } from '../common/typings/internal-event-data.interface'
 import { TestResultItemInterpretationCode } from '@nominal-systems/dmi-engine-common/lib/interfaces/results.interface'
+import { FEATURE_FLAG_PROVIDER } from '../feature-flags/feature-flag.interface'
 
 const repositoryMockFactory: () => MockUtils<Repository<any>> = jest.fn(() => ({
   findOne: jest.fn(entity => entity),
@@ -77,6 +78,10 @@ describe('ReportsService', () => {
         {
           provide: EventsService,
           useValue: eventsServiceMock
+        },
+        {
+          provide: FEATURE_FLAG_PROVIDER,
+          useValue: { isEnabled: jest.fn().mockReturnValue(false) }
         }
       ]
     }).compile()
