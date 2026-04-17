@@ -132,6 +132,18 @@ The following environment variables are accepted to configure the application:
 | `OKTA_CLIENT_SECRET`        | Client secret for Okta when using `okta` admin auth strategy.                                                  |
 | `OKTA_ISSUER`               | Issuer URL used to validate Okta access tokens.                                                                |
 | `OKTA_AUDIENCE`             | Expected audience for Okta access tokens.                                                                      |
+| `STATSIG_SERVER_SECRET_KEY` | Server secret key for Statsig feature flag evaluation. If not set, Statsig is disabled and all flags default to `false` (legacy behavior). |
+| `STATSIG_ENVIRONMENT`       | Statsig environment tier. Supported values: `development`, `staging`, `production`. Defaults to `development`. |
+
+## Feature Flags
+
+Feature flags are managed via [Statsig](https://statsig.com) and configured through the `STATSIG_SERVER_SECRET_KEY` environment variable. If Statsig is not configured, all flags default to `false` and the application falls back to legacy behavior.
+
+Flags are evaluated with `integrationId` as context, allowing targeted rollouts per integration from the Statsig dashboard.
+
+| Flag | Gate name | Description |
+|------|-----------|-------------|
+| Test result matching by name | `dmi_api_test_result_match_by_name` | When enabled, matches incoming `TestResultSet`s against existing DB records by `(code, name)` instead of `(code, seq)`. Fixes panels where the provider returns sub-results in a different order across polling batches. |
 
 ## Admin UI
 
