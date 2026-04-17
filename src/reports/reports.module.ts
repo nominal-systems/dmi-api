@@ -11,6 +11,7 @@ import { OrdersModule } from '../orders/orders.module'
 import { InternalEventLoggingModule } from '../internal-event-logging/internal-event-logging.module'
 import { FEATURE_FLAG_PROVIDER } from '../feature-flags/feature-flag.interface'
 import { StatsigFeatureFlagProvider } from '../feature-flags/statsig-feature-flag.provider'
+import { EnvFeatureFlagProvider } from '../feature-flags/env-feature-flag.provider'
 
 @Module({
   imports: [
@@ -23,7 +24,10 @@ import { StatsigFeatureFlagProvider } from '../feature-flags/statsig-feature-fla
   controllers: [ReportsController],
   providers: [
     ReportsService,
-    { provide: FEATURE_FLAG_PROVIDER, useClass: StatsigFeatureFlagProvider }
+{
+      provide: FEATURE_FLAG_PROVIDER,
+      useClass: process.env.STATSIG_ENABLED === 'true' ? StatsigFeatureFlagProvider : EnvFeatureFlagProvider
+    }
   ],
   exports: [ReportsService]
 })
