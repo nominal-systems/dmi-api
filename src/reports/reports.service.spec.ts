@@ -8,7 +8,13 @@ import { TestResult } from './entities/test-result.entity'
 import { IntegrationsService } from '../integrations/integrations.service'
 import { EventsService } from '../events/services/events.service'
 import { OrdersService } from '../orders/orders.service'
-import { OrderStatus, ProviderResult, ReportStatus, TestResultItemStatus } from '@nominal-systems/dmi-engine-common'
+import {
+  OrderStatus,
+  ProviderResult,
+  ReportStatus,
+  TestResultItemInterpretationCode,
+  TestResultItemStatus
+} from '@nominal-systems/dmi-engine-common'
 import { reportRepositoryMockFactory } from './test/report.repository.mock'
 import { EventNamespace } from '../events/constants/event-namespace.enum'
 import { EventType } from '../events/constants/event-type.enum'
@@ -16,7 +22,6 @@ import { FileUtils } from '../common/utils/file-utils'
 import { Order } from '../orders/entities/order.entity'
 import { HttpException, HttpStatus } from '@nestjs/common'
 import { ExternalResultEventData } from '../common/typings/internal-event-data.interface'
-import { TestResultItemInterpretationCode } from '@nominal-systems/dmi-engine-common/lib/interfaces/results.interface'
 
 const repositoryMockFactory: () => MockUtils<Repository<any>> = jest.fn(() => ({
   findOne: jest.fn(entity => entity),
