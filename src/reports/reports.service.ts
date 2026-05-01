@@ -25,6 +25,7 @@ import { ProviderResultUtils } from '../common/utils/provider-result-utils'
 import { isNullOrEmpty } from '../common/utils/shared.utils'
 import { Attachment as AttachmentEntity } from '../common/entities/attachment.entity'
 import { ExternalResultEventData } from '../common/typings/internal-event-data.interface'
+import { FEATURE_FLAG_PROVIDER, FeatureFlagProvider, TEST_RESULT_MATCH_BY_NAME_FLAG } from '../feature-flags/feature-flag.interface'
 
 @Injectable()
 export class ReportsService {
@@ -35,7 +36,8 @@ export class ReportsService {
     @InjectRepository(TestResult) private readonly testResultRepository: Repository<TestResult>,
     @Inject(forwardRef(() => OrdersService)) private readonly ordersService: OrdersService,
     @Inject(IntegrationsService) private readonly integrationsService: IntegrationsService,
-    @Inject(EventsService) private readonly eventsService: EventsService
+    @Inject(EventsService) private readonly eventsService: EventsService,
+    @Inject(FEATURE_FLAG_PROVIDER) private readonly featureFlags: FeatureFlagProvider
   ) {
   }
 
@@ -328,6 +330,9 @@ export class ReportsService {
     }
 
     // Build test results set
+    const integrationId = report.order?.integrationId
+    const matchByName = this.featureFlags.isEnabled(TEST_RESULT_MATCH_BY_NAME_FLAG, { integrationId })
+
     const createdTestResults: TestResult[] = []
     const updatedTestResults: TestResult[] = []
     for (const providerTestResult of providerTestResults) {
@@ -337,7 +342,9 @@ export class ReportsService {
         this.logger.warn(`Multiple test result item status for test result '${providerTestResult.code}'`)
       }
 
-      const existingTestResult = report.testResultsSet.find(testResult => testResult.code === providerTestResult.code && testResult.seq === providerTestResult.seq)
+      const existingTestResult = matchByName
+        ? report.testResultsSet.find(testResult => testResult.code === providerTestResult.code && testResult.name === providerTestResult.name)
+        : report.testResultsSet.find(testResult => testResult.code === providerTestResult.code && testResult.seq === providerTestResult.seq)
 
       if (existingTestResult != null) {
         existingTestResult.seq = providerTestResult.seq

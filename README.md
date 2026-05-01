@@ -132,6 +132,21 @@ The following environment variables are accepted to configure the application:
 | `OKTA_CLIENT_SECRET`        | Client secret for Okta when using `okta` admin auth strategy.                                                  |
 | `OKTA_ISSUER`               | Issuer URL used to validate Okta access tokens.                                                                |
 | `OKTA_AUDIENCE`             | Expected audience for Okta access tokens.                                                                      |
+| `STATSIG_ENABLED`           | When `true`, use Statsig as the feature-flag provider; otherwise use the env-based provider. Defaults to `false`.                              |
+| `STATSIG_SERVER_SECRET_KEY` | Server secret key for Statsig feature flag evaluation. Required when `STATSIG_ENABLED=true`; if missing, Statsig stays uninitialized and all gates return `false` (legacy behavior). |
+| `STATSIG_ENVIRONMENT`       | Statsig environment tier. Supported values: `development`, `staging`, `production`. Defaults to `development`.                                 |
+| `TEST_RESULT_MATCH_BY_NAME` | Env-mode override for the `dmi_api_test_result_match_by_name` flag. Only consulted when `STATSIG_ENABLED` is not `true`.                       |
+
+## Feature Flags
+
+Feature flags resolve through one of two providers, selected at startup by the `STATSIG_ENABLED` environment variable:
+
+- **Statsig** (`STATSIG_ENABLED=true`) — flags are evaluated against [Statsig](https://statsig.com) using `STATSIG_SERVER_SECRET_KEY`. `integrationId` is passed as user context, allowing targeted rollouts per integration from the Statsig dashboard. If initialization fails (missing key, network error), all gates return `false` and the app falls back to legacy behavior.
+- **Env** (default) — flags are read from environment variables (one per flag, see the table below). Suitable for local development and environments where Statsig is not configured.
+
+| Flag | Gate name | Env-mode variable | Description |
+|------|-----------|-------------------|-------------|
+| Test result matching by name | `dmi_api_test_result_match_by_name` | `TEST_RESULT_MATCH_BY_NAME` | When enabled, matches incoming `TestResultSet`s against existing DB records by `(code, name)` instead of `(code, seq)`. Fixes panels where the provider returns sub-results in a different order across polling batches. |
 
 ## Admin UI
 
