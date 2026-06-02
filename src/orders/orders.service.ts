@@ -590,6 +590,16 @@ export class OrdersService {
 
       try {
         const order = await this.findOneByExternalId(externalOrderId)
+
+        // Validate that the existing order matches the incoming result data
+        if (result.order != null && order.patient?.name) {
+          const extractedOrder = ProviderResultUtils.extractOrderFromOrphanResult(result, integrationId)
+          if (!ProviderResultUtils.isMatchingOrder(order, extractedOrder)) {
+            this.logger.warn(`Skipping order update for ${order.id}: patient/client mismatch (externalId=${externalOrderId})`)
+            continue
+          }
+        }
+
         const updated = await this.updateOrderFromResults(order, result)
         if (updated) {
           updatedOrders.push(order)
