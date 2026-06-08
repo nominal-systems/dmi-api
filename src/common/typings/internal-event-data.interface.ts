@@ -1,4 +1,4 @@
-import { Order as ExternalOrder } from '@nominal-systems/dmi-engine-common/lib/interfaces/provider-service'
+import { Order as ExternalOrder } from '@nominal-systems/dmi-engine-common'
 import { ProviderResult } from '@nominal-systems/dmi-engine-common'
 
 export interface InternalEventData {
