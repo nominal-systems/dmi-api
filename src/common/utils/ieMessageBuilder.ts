@@ -6,7 +6,6 @@ interface IntergrationEngineOutgoingMessageData {
   integrationOptions?: any
   payload?: any
   autoSubmitOrder?: boolean
-  integrationId?: string
 }
 
 interface IntegrationEngineResultsData {

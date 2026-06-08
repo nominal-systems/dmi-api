@@ -337,7 +337,7 @@ export class ProvidersService {
   async saveProviderRawData (
     data: ProviderRawDataDto
   ): Promise<void> {
-    const { body, url, method, provider, status, payload, headers, integrationId } = data
+    const { body, url, method, provider, status, payload, headers } = data
 
     let accessionIds
     if (data.accessionIds !== undefined) {
@@ -348,7 +348,6 @@ export class ProvidersService {
       createdAt: new Date(),
       provider,
       accessionIds,
-      integrationId,
       status,
       method,
       url,
