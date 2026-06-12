@@ -16,7 +16,7 @@ import { FileUtils } from '../common/utils/file-utils'
 import { Order } from '../orders/entities/order.entity'
 import { HttpException, HttpStatus } from '@nestjs/common'
 import { ExternalResultEventData } from '../common/typings/internal-event-data.interface'
-import { TestResultItemInterpretationCode } from '@nominal-systems/dmi-engine-common/lib/interfaces/results.interface'
+import { TestResultItemInterpretationCode } from '@nominal-systems/dmi-engine-common'
 import { FEATURE_FLAG_PROVIDER } from '../feature-flags/feature-flag.interface'
 
 const repositoryMockFactory: () => MockUtils<Repository<any>> = jest.fn(() => ({
