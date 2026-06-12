@@ -261,6 +261,7 @@ export class OrdersService {
           integrationOptions,
           providerConfiguration: configurationOptions,
           autoSubmitOrder,
+          integrationId: integration.id,
         },
       })
       this.logger.log(`Sending '${messagePattern}' to '${providerId}' provider`)

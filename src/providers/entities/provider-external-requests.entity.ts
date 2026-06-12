@@ -13,6 +13,9 @@ export class ProviderExternalRequests {
     accessionIds?: string[]
 
     @Prop({ index: true })
+    integrationId?: string
+
+    @Prop({ index: true })
     status: number
 
     @Prop()
