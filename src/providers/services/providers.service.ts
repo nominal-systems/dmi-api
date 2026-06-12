@@ -33,6 +33,7 @@ import { isNullOrEmpty } from '../../common/utils/shared.utils'
 @Injectable()
 export class ProvidersService {
   private readonly logger = new Logger(ProvidersService.name)
+  private readonly practiceIdCache = new Map<string, string>()
 
   constructor (
     @InjectRepository(Provider)
@@ -344,7 +345,7 @@ export class ProvidersService {
   async saveProviderRawData (
     data: ProviderRawDataDto
   ): Promise<void> {
-    const { body, url, method, provider, status, payload, headers } = data
+    const { body, url, method, provider, status, payload, headers, integrationId } = data
 
     let accessionIds
     if (data.accessionIds !== undefined) {
@@ -360,6 +361,14 @@ export class ProvidersService {
       url,
       headers: nestKeys(headers),
       body: nestKeys(body) // Nest keys to ensure MongoDB safety
+    }
+
+    if (integrationId !== undefined) {
+      rawData.integrationId = integrationId
+      const practiceId = await this.resolvePracticeId(integrationId)
+      if (practiceId !== undefined) {
+        rawData.practiceId = practiceId
+      }
     }
 
     if (payload !== undefined) {
@@ -381,6 +390,27 @@ export class ProvidersService {
         })
       }
     })
+  }
+
+  // The integration → practice relationship is immutable, so resolved pairs
+  // are cached for the lifetime of the process.
+  private async resolvePracticeId (integrationId: string): Promise<string | undefined> {
+    const cached = this.practiceIdCache.get(integrationId)
+    if (cached !== undefined) {
+      return cached
+    }
+
+    try {
+      const integration = await this.integrationsService.findOne({
+        id: integrationId,
+        options: { withDeleted: true }
+      })
+      this.practiceIdCache.set(integrationId, integration.practiceId)
+      return integration.practiceId
+    } catch (error) {
+      this.logger.warn(`Could not resolve practice for integration ${integrationId}`)
+      return undefined
+    }
   }
 
   async findAllExternalRequests (

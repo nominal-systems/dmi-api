@@ -721,6 +721,12 @@ export class AdminController {
     if (query.method !== undefined) {
       options.method = { $in: query.method }
     }
+    if (query.integrationId !== undefined) {
+      options.integrationId = { $in: query.integrationId }
+    }
+    if (query.practiceId !== undefined) {
+      options.practiceId = { $in: query.practiceId }
+    }
 
     if (query.startDate !== undefined) {
       options.createdAt = { $gte: new Date(query.startDate) }
@@ -747,6 +753,12 @@ export class AdminController {
     }
     if (query.endDate !== undefined) {
       options.createdAt = { ...options.createdAt, $lte: new Date(query.endDate) }
+    }
+    if (query.integrationId !== undefined) {
+      options.integrationId = { $in: query.integrationId }
+    }
+    if (query.practiceId !== undefined) {
+      options.practiceId = { $in: query.practiceId }
     }
     options.status = {
       $gte: 400,
