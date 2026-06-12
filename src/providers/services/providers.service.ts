@@ -88,6 +88,7 @@ export class ProvidersService {
       resource: Resource.Services,
       operation: Operation.List,
       data: {
+        integrationId,
         integrationOptions,
         providerConfiguration: configurationOptions,
         payload: labRequisitionParameters
@@ -118,6 +119,7 @@ export class ProvidersService {
       resource: Resource.Services,
       operation: Operation.Get,
       data: {
+        integrationId,
         integrationOptions,
         providerConfiguration: configurationOptions,
         payload: { labRequisitionParameters, code }
@@ -144,6 +146,7 @@ export class ProvidersService {
       resource: Resource.Devices,
       operation: Operation.List,
       data: {
+        integrationId,
         integrationOptions,
         providerConfiguration: configurationOptions
       }
@@ -175,6 +178,7 @@ export class ProvidersService {
       resource: 'refs',
       operation: 'version',
       data: {
+        integrationId,
         integrationOptions,
         providerConfiguration: configurationOptions
       }
@@ -201,6 +205,7 @@ export class ProvidersService {
       resource: 'breeds',
       operation: 'list',
       data: {
+        integrationId,
         integrationOptions,
         providerConfiguration: configurationOptions
       }
@@ -227,6 +232,7 @@ export class ProvidersService {
       resource: 'sexes',
       operation: 'list',
       data: {
+        integrationId,
         integrationOptions,
         providerConfiguration: configurationOptions
       }
@@ -253,6 +259,7 @@ export class ProvidersService {
       resource: 'species',
       operation: 'list',
       data: {
+        integrationId,
         integrationOptions,
         providerConfiguration: configurationOptions
       }
