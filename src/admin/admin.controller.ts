@@ -62,7 +62,7 @@ import { ExternalRequestsQueryDto } from './dtos/external-requests-query.dto'
 import { ExternalRequestsStatsDto } from './dtos/external-requests-stats.dto'
 import { EventsQueryDto } from './dtos/events-query.dto'
 import { EventsStatsDto } from './dtos/events-stats.dto'
-import { PracticesQueryDto } from '../practices/dto/practice-search-query-params.dto'
+import { AdminPracticesQueryDto } from './dtos/practices-query.dto'
 import { OrdersStatsDto } from './dtos/orders-stats.dto'
 import {
   InternalEventLoggingService,
@@ -775,7 +775,7 @@ export class AdminController {
 
   @Get('/practices')
   async getPractices (
-    @Query() query: PracticesQueryDto & PaginationDto,
+    @Query() query: AdminPracticesQueryDto,
   ): Promise<PaginationResult<Practice>> {
     const take = query.limit !== undefined ? query.limit : PAGINATION_PAGE_LIMIT
     const skip = query.page !== undefined ? (query.page - 1) * take : 0
