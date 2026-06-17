@@ -12,7 +12,8 @@ import {
   UseGuards,
   UseInterceptors
 } from '@nestjs/common'
-import { EventPattern } from '@nestjs/microservices'
+import { SharedEventPattern } from '@nominal-systems/dmi-engine-common'
+import { SHARED_SUBSCRIPTION_GROUP } from '../common/constants/api.constant'
 import { DisableGuards } from '../common/decorators/disable-guards.decorator'
 import { Organization } from '../common/decorators/organization.decorator'
 import { ApiGuard } from '../common/guards/api.guard'
@@ -129,14 +130,14 @@ export class OrdersController {
     return await this.ordersService.cancelOrder(organization, id)
   }
 
-  @EventPattern('external_orders')
+  @SharedEventPattern(SHARED_SUBSCRIPTION_GROUP, 'external_orders')
   @DisableGuards(ApiGuard)
   @UseInterceptors(InternalEventLoggingInterceptor)
   async handleExternalOrders (data: ExternalOrdersEventData): Promise<void> {
     await this.ordersService.handleExternalOrders(data)
   }
 
-  @EventPattern('external_order_results')
+  @SharedEventPattern(SHARED_SUBSCRIPTION_GROUP, 'external_order_results')
   @DisableGuards(ApiGuard)
   @UseInterceptors(InternalEventLoggingInterceptor)
   async handleExternalOrderResults (data: ExternalResultEventData): Promise<void> {
