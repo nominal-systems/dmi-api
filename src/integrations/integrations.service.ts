@@ -209,6 +209,7 @@ export class IntegrationsService {
           resource: Resource.Integration,
           operation: Operation.Remove,
           data: {
+            integrationId: integration.id,
             payload: {
               integrationId: integration.id,
             },
@@ -236,6 +237,7 @@ export class IntegrationsService {
         resource: Resource.Integration,
         operation: Operation.Create,
         data: {
+          integrationId,
           integrationOptions: integrationOptions,
           providerConfiguration: providerConfiguration.configurationOptions,
           payload: {
@@ -260,6 +262,7 @@ export class IntegrationsService {
       resource: Resource.Integration,
       operation: Operation.Update,
       data: {
+        integrationId,
         integrationOptions: integrationOptions,
         providerConfiguration: providerConfiguration.configurationOptions,
         payload: {
@@ -278,6 +281,7 @@ export class IntegrationsService {
         resource: Resource.Integration,
         operation: Operation.Test,
         data: {
+          integrationId: integration.id,
           integrationOptions: integration.integrationOptions,
           providerConfiguration: integration.providerConfiguration.configurationOptions,
           payload: null,

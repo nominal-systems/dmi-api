@@ -35,7 +35,7 @@ const providerOptionRepositoryMock = {}
 
 describe('ProvidersService', () => {
   let service: ProvidersService
-  // let integrationsService: IntegrationsService
+  let integrationsService: IntegrationsService
   // let clientProxy: ClientProxy
   let providerExternalRequestsModel: Model<ProviderExternalRequestDocument>
 
@@ -74,7 +74,7 @@ describe('ProvidersService', () => {
     }).compile()
 
     service = module.get<ProvidersService>(ProvidersService)
-    // integrationsService = module.get<IntegrationsService>(IntegrationsService)
+    integrationsService = module.get<IntegrationsService>(IntegrationsService)
     // clientProxy = module.get<ClientProxy>(ClientProxy)
     providerExternalRequestsModel = module.get<Model<any>>(getModelToken('ProviderExternalRequests'))
   })
@@ -163,6 +163,95 @@ describe('ProvidersService', () => {
       )
 
       createSpy.mockRestore()
+    })
+    it('should resolve and save the practiceId when integrationId is present', async () => {
+      const createSpy = jest.spyOn(providerExternalRequestsModel, 'create')
+      const findOneSpy = jest.spyOn(integrationsService, 'findOne').mockResolvedValue({
+        id: 'integration-1',
+        practiceId: 'practice-1'
+      } as unknown as Integration)
+
+      const data = {
+        headers: { 'Content-Type': 'application/json' },
+        body: { some: 'data' },
+        url: 'http://example.com',
+        method: 'GET',
+        provider: 'test-provider',
+        status: 200,
+        integrationId: 'integration-1',
+        payload: undefined
+      }
+
+      await service.saveProviderRawData(data)
+
+      expect(findOneSpy).toHaveBeenCalledWith({
+        id: 'integration-1',
+        options: { withDeleted: true }
+      })
+      expect(createSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          integrationId: 'integration-1',
+          practiceId: 'practice-1'
+        }),
+        expect.any(Function)
+      )
+
+      createSpy.mockRestore()
+      findOneSpy.mockRestore()
+    })
+    it('should cache the integration → practice lookup', async () => {
+      const findOneSpy = jest.spyOn(integrationsService, 'findOne').mockResolvedValue({
+        id: 'integration-1',
+        practiceId: 'practice-1'
+      } as unknown as Integration)
+
+      const data = {
+        headers: {},
+        body: {},
+        url: 'http://example.com',
+        method: 'GET',
+        provider: 'test-provider',
+        status: 200,
+        integrationId: 'integration-1',
+        payload: undefined
+      }
+
+      await service.saveProviderRawData(data)
+      await service.saveProviderRawData(data)
+
+      expect(findOneSpy).toHaveBeenCalledTimes(1)
+
+      findOneSpy.mockRestore()
+    })
+    it('should save the integrationId without practiceId when the integration cannot be resolved', async () => {
+      const createSpy = jest.spyOn(providerExternalRequestsModel, 'create')
+      const findOneSpy = jest.spyOn(integrationsService, 'findOne')
+        .mockRejectedValue(new Error('The integration was not found'))
+
+      const data = {
+        headers: {},
+        body: {},
+        url: 'http://example.com',
+        method: 'GET',
+        provider: 'test-provider',
+        status: 200,
+        integrationId: 'missing-integration',
+        payload: undefined
+      }
+
+      await service.saveProviderRawData(data)
+
+      expect(createSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          integrationId: 'missing-integration'
+        }),
+        expect.any(Function)
+      )
+      const saved = createSpy.mock.calls[0][0] as any
+      expect(saved.practiceId).toBeUndefined()
+
+      createSpy.mockRestore()
+      findOneSpy.mockRestore()
     })
   })
   describe('checkLabRequisitionParameters()', () => {

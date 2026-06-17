@@ -12,4 +12,10 @@ export class ExternalRequestsQueryDto extends IntersectionType(DateRangeDto, Pag
 
   @Transform(({ value }) => value.split(','))
   status?: string[]
+
+  @Transform(({ value }) => value.split(','))
+  integrationId?: string[]
+
+  @Transform(({ value }) => value.split(','))
+  practiceId?: string[]
 }

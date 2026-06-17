@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { IE_MESSAGE_VERSION } from '../constants/api.constant'
 
 interface IntergrationEngineOutgoingMessageData {
+  integrationId?: string
   providerConfiguration?: any
   integrationOptions?: any
   payload?: any
