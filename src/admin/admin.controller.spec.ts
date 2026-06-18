@@ -243,4 +243,66 @@ describe('AdminController', () => {
       expect(res).toEqual({ status: 'OK' })
     })
   })
+
+  describe('updateRefMapping()', () => {
+    let refsService: any
+    let providerRefService: any
+
+    beforeEach(() => {
+      refsService = (adminController as any).refsService
+      refsService.findOneById = jest.fn().mockResolvedValue({ id: 1 })
+      refsService.setMapping = jest.fn().mockResolvedValue({})
+      refsService.unsetMapping = jest.fn().mockResolvedValue({})
+      providerRefService = (adminController as any).providerRefService
+      providerRefService.findOneById = jest.fn()
+    })
+
+    it('sets a mapping when a providerRefId is provided', async () => {
+      providerRefService.findOneById.mockResolvedValue({ id: 430 })
+
+      const res = await adminController.updateRefMapping('ref-1', { providerRefId: 430 })
+
+      expect(providerRefService.findOneById).toHaveBeenCalledWith(430)
+      expect(refsService.setMapping).toHaveBeenCalledWith(1, 430)
+      expect(refsService.unsetMapping).not.toHaveBeenCalled()
+      expect(res).toEqual({ ok: true })
+    })
+
+    it('unsets a mapping when providerRefId is null', async () => {
+      const res = await adminController.updateRefMapping('ref-1', {
+        providerRefId: null,
+        providerId: 'idexx',
+      })
+
+      expect(refsService.unsetMapping).toHaveBeenCalledWith(1, 'idexx')
+      expect(refsService.setMapping).not.toHaveBeenCalled()
+      expect(providerRefService.findOneById).not.toHaveBeenCalled()
+      expect(res).toEqual({ ok: true })
+    })
+
+    it('throws BadRequest when unsetting without a providerId', async () => {
+      await expect(
+        adminController.updateRefMapping('ref-1', { providerRefId: null }),
+      ).rejects.toBeInstanceOf(BadRequestException)
+      expect(refsService.unsetMapping).not.toHaveBeenCalled()
+    })
+
+    it('throws BadRequest when the ProviderRef does not exist', async () => {
+      providerRefService.findOneById.mockResolvedValue(undefined)
+
+      await expect(
+        adminController.updateRefMapping('ref-1', { providerRefId: 999 }),
+      ).rejects.toBeInstanceOf(BadRequestException)
+      expect(refsService.setMapping).not.toHaveBeenCalled()
+    })
+
+    it('wraps setMapping errors in a BadRequest', async () => {
+      providerRefService.findOneById.mockResolvedValue({ id: 430 })
+      refsService.setMapping.mockRejectedValue(new Error('boom'))
+
+      await expect(
+        adminController.updateRefMapping('ref-1', { providerRefId: 430 }),
+      ).rejects.toBeInstanceOf(BadRequestException)
+    })
+  })
 })

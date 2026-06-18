@@ -38,10 +38,7 @@ import { ResultsModule } from './results/results.module'
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
-        ...configService.get('mongoose'),
-        useCreateIndex: true,
-        useUnifiedTopology: true,
-        useFindAndModify: false
+        ...configService.get('mongoose')
       }),
       inject: [ConfigService]
     }),

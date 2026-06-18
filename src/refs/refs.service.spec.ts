@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { RefsService } from './refs.service'
 import { ProvidersService } from '../providers/services/providers.service'
 import { getRepositoryToken } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { In, Repository } from 'typeorm'
 import { Ref } from './entities/ref.entity'
 import { ProviderRef } from './entities/providerRef.entity'
 import { CreateRefsDTO } from './dtos/create-refs.dto'
@@ -33,7 +33,7 @@ describe('RefsService', () => {
     save: jest.fn(entity => entity),
     update: jest.fn(entity => entity),
     delete: jest.fn(entity => entity),
-    findByIds: jest.fn(entity => entity),
+    findBy: jest.fn(entity => entity),
     createQueryBuilder: jest.fn(() => ({
       leftJoin: jest.fn().mockReturnThis(),
       select: jest.fn().mockReturnThis(),
@@ -133,10 +133,10 @@ describe('RefsService', () => {
       }
 
       // Arrange mocks before invoking the service
-      refsRepositoryMock.findOne.mockResolvedValue(undefined)
+      refsRepositoryMock.findOne.mockResolvedValue(null)
       refsRepositoryMock.create.mockReturnValue(mockNewRef)
       refsRepositoryMock.save.mockResolvedValue(mockNewRef)
-      providerRefsRepositoryMock.findByIds.mockResolvedValueOnce([{ id: 1 }, { id: 2 }])
+      providerRefsRepositoryMock.findBy.mockResolvedValueOnce([{ id: 1 }, { id: 2 }])
       refsService.findOneById = jest.fn().mockResolvedValue(mockNewRef)
 
       const result = await refsService.createRefs(createDto)
@@ -148,7 +148,7 @@ describe('RefsService', () => {
         type: 'sex',
         species: undefined,
       })
-      expect(providerRefsRepositoryMock.findByIds).toHaveBeenCalledWith([1, 2])
+      expect(providerRefsRepositoryMock.findBy).toHaveBeenCalledWith({ id: In([1, 2]) })
       expect(refsRepository.save).toHaveBeenCalled()
     })
   })

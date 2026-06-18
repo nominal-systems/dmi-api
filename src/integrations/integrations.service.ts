@@ -2,8 +2,8 @@ import { BadRequestException, Inject, Injectable, Logger, NotFoundException } fr
 import { ConfigService } from '@nestjs/config'
 import { ClientProxy } from '@nestjs/microservices'
 import { InjectRepository } from '@nestjs/typeorm'
-import { FindManyOptions, In, Repository, SelectQueryBuilder } from 'typeorm'
-import { FindOneOfTypeOptions } from '../common/typings/find-one-of-type-options.interface'
+import { FindManyOptions, In, Repository } from 'typeorm'
+import { FindOneOfTypeOptions, toFindOneOptions } from '../common/typings/find-one-of-type-options.interface'
 import { encrypt } from '../common/utils/crypto.utils'
 import ieMessageBuilder from '../common/utils/ieMessageBuilder'
 import { Organization } from '../organizations/entities/organization.entity'
@@ -38,7 +38,7 @@ export class IntegrationsService {
   }
 
   async findOne(args: FindOneOfTypeOptions<Integration>): Promise<Integration> {
-    const integration = await this.integrationsRepository.findOne(args.id, args.options)
+    const integration = await this.integrationsRepository.findOne(toFindOneOptions(args))
 
     if (integration == null) {
       throw new NotFoundException('The integration was not found')
@@ -139,19 +139,11 @@ export class IntegrationsService {
     // Find the integration
     const integration = await this.findOne({
       options: {
-        where: (qb: SelectQueryBuilder<Integration>) => {
-          qb.where('integration.id = :integrationId', {
-            integrationId,
-          }).andWhere('providerConfiguration.organizationId = :organizationId', {
-            organizationId: organization.id,
-          })
+        where: {
+          id: integrationId as any,
+          providerConfiguration: { organizationId: organization.id },
         },
-        join: {
-          alias: 'integration',
-          leftJoinAndSelect: {
-            providerConfiguration: 'integration.providerConfiguration',
-          },
-        },
+        relations: ['providerConfiguration'],
       },
     })
 
@@ -291,12 +283,12 @@ export class IntegrationsService {
     createIntegrationDto: CreateIntegrationDto,
   ): Promise<void> {
     const providerConfiguration = await this.providerConfigurationRepository.findOne({
-      id: createIntegrationDto.providerConfigurationId,
+      where: { id: createIntegrationDto.providerConfigurationId },
     })
-    const provider = await this.providerRepository.findOne(
-      <string>providerConfiguration?.providerId,
-      { relations: ['options'] },
-    )
+    const provider = await this.providerRepository.findOne({
+      where: { id: providerConfiguration?.providerId },
+      relations: ['options'],
+    })
     if (provider == null) {
       throw new BadRequestException("The provider doesn't exist")
     }

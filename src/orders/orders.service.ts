@@ -8,11 +8,11 @@ import {
 } from '@nestjs/common'
 import { ClientProxy } from '@nestjs/microservices'
 import { InjectRepository } from '@nestjs/typeorm'
-import { FindManyOptions, In, Repository, SelectQueryBuilder } from 'typeorm'
+import { FindManyOptions, In, Repository } from 'typeorm'
 import { IntegrationsService } from '../integrations/integrations.service'
 import { CreateOrderDto } from './dtos/create-order.dto'
 import { Order } from './entities/order.entity'
-import { FindOneOfTypeOptions } from '../common/typings/find-one-of-type-options.interface'
+import { FindOneOfTypeOptions, toFindOneOptions } from '../common/typings/find-one-of-type-options.interface'
 import { Organization } from '../organizations/entities/organization.entity'
 import { ConfigService } from '@nestjs/config'
 import ieMessageBuilder from '../common/utils/ieMessageBuilder'
@@ -83,54 +83,43 @@ export class OrdersService {
       date_end: dateEnd,
     }: OrderSearchQueryParams,
   ): Promise<Order[]> {
-    return await this.findAll({
-      where: (qb: SelectQueryBuilder<Order>) => {
-        qb.where('providerConfiguration.organizationId = :organizationId', {
-          organizationId: organizationId,
-        })
+    const qb = this.ordersRepository
+      .createQueryBuilder('order')
+      .leftJoin('order.integration', 'integration')
+      .leftJoin('integration.providerConfiguration', 'providerConfiguration')
+      .leftJoinAndSelect('order.patient', 'patient')
+      .leftJoinAndSelect('patient.identifier', 'identifier')
+      .leftJoinAndSelect('order.tests', 'tests')
+      .where('providerConfiguration.organizationId = :organizationId', {
+        organizationId,
+      })
 
-        if (status != null) {
-          qb.andWhere('order.status LIKE :status', {
-            status: `%${status}%`,
-          })
-        }
+    if (status != null) {
+      qb.andWhere('order.status LIKE :status', { status: `%${status}%` })
+    }
 
-        if (providerId != null) {
-          qb.andWhere('providerConfiguration.providerId LIKE :providerId', {
-            providerId: `%${providerId}%`,
-          })
-        }
+    if (providerId != null) {
+      qb.andWhere('providerConfiguration.providerId LIKE :providerId', {
+        providerId: `%${providerId}%`,
+      })
+    }
 
-        if (dateStart != null && dateEnd != null) {
-          qb.andWhere('order.createdAt BETWEEN :dateStart AND :dateEnd', {
-            dateStart,
-            dateEnd,
-          })
-        } else {
-          if (dateStart != null && dateEnd == null) {
-            qb.andWhere('order.createdAt > :dateStart', {
-              dateStart,
-            })
-          } else if (dateEnd != null) {
-            qb.andWhere('order.createdAt < :dateEnd', {
-              dateEnd,
-            })
-          }
-        }
-      },
-      join: {
-        alias: 'order',
-        leftJoin: {
-          integration: 'order.integration',
-          providerConfiguration: 'integration.providerConfiguration',
-        },
-      },
-      relations: ['patient', 'patient.identifier', 'tests'],
-    })
+    if (dateStart != null && dateEnd != null) {
+      qb.andWhere('order.createdAt BETWEEN :dateStart AND :dateEnd', {
+        dateStart,
+        dateEnd,
+      })
+    } else if (dateStart != null && dateEnd == null) {
+      qb.andWhere('order.createdAt > :dateStart', { dateStart })
+    } else if (dateEnd != null) {
+      qb.andWhere('order.createdAt < :dateEnd', { dateEnd })
+    }
+
+    return await qb.getMany()
   }
 
   async findOne(args: FindOneOfTypeOptions<Order>): Promise<Order> {
-    const order = await this.ordersRepository.findOne(args.id, args.options)
+    const order = await this.ordersRepository.findOne(toFindOneOptions(args))
 
     if (order == null) {
       throw new NotFoundException('The order was not found')
@@ -389,20 +378,9 @@ export class OrdersService {
   }: OrderTestCancelOrAddParams): Promise<Order> {
     const order = await this.findOne({
       options: {
-        where: (qb: SelectQueryBuilder<Order>) => {
-          qb.where('order.id = :orderId', { orderId }).andWhere(
-            'providerConfiguration.organizationId = :organizationId',
-            {
-              organizationId,
-            },
-          )
-        },
-        join: {
-          alias: 'order',
-          leftJoin: {
-            integration: 'order.integration',
-            providerConfiguration: 'integration.providerConfiguration',
-          },
+        where: {
+          id: orderId,
+          integration: { providerConfiguration: { organizationId } },
         },
       },
     })
@@ -440,22 +418,11 @@ export class OrdersService {
   }: OrderTestCancelOrAddParams): Promise<void> {
     const order = await this.findOne({
       options: {
-        where: (qb: SelectQueryBuilder<Order>) => {
-          qb.where('order.id = :orderId', { orderId }).andWhere(
-            'providerConfiguration.organizationId = :organizationId',
-            {
-              organizationId,
-            },
-          )
+        where: {
+          id: orderId,
+          integration: { providerConfiguration: { organizationId } },
         },
-        join: {
-          alias: 'order',
-          leftJoinAndSelect: {
-            integration: 'order.integration',
-            providerConfiguration: 'integration.providerConfiguration',
-            tests: 'order.tests',
-          },
-        },
+        relations: ['integration', 'integration.providerConfiguration', 'tests'],
       },
     })
 

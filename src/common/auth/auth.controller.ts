@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common'
 import { FastifyReply, FastifyRequest } from 'fastify'
 import { ConfigService } from '@nestjs/config'
-import fastifyPassport from 'fastify-passport'
+import fastifyPassport from '@fastify/passport'
 import { AdminUserCredentialsDto } from '../../users/dtos/admin-user-credentials.dto'
 import { JwtService } from '@nestjs/jwt'
 
@@ -132,7 +132,7 @@ export class AuthController {
 
       this.logger.debug(
         `User authenticated: ${JSON.stringify(
-          req.user.profile.username,
+          req.user.profile?.username,
         )}. Redirecting to ${redirectUrl}`,
       )
 

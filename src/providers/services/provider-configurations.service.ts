@@ -7,7 +7,7 @@ import { ProviderConfiguration } from '../entities/provider-configuration.entity
 import * as createValidator from 'is-my-json-valid'
 import { ConfigService } from '@nestjs/config'
 import { encrypt } from '../../common/utils/crypto.utils'
-import { FindOneOfTypeOptions } from '../../common/typings/find-one-of-type-options.interface'
+import { FindOneOfTypeOptions, toFindOneOptions } from '../../common/typings/find-one-of-type-options.interface'
 import { Integration } from '../../integrations/entities/integration.entity'
 import { IntegrationsService } from '../../integrations/integrations.service'
 import { IntegrationStatus } from '../../integrations/constants/integration-status.enum'
@@ -36,7 +36,7 @@ export class ProviderConfigurationsService {
   }
 
   async findOne(args: FindOneOfTypeOptions<ProviderConfiguration>): Promise<ProviderConfiguration> {
-    const providerConfig = await this.providerConfigurationRepository.findOne(args.id, args.options)
+    const providerConfig = await this.providerConfigurationRepository.findOne(toFindOneOptions(args))
 
     if (providerConfig == null) {
       throw new NotFoundException('The provider configuration was not found')

@@ -59,7 +59,10 @@ export class ProvidersService {
   async findOneById (
     providerId: string
   ): Promise<Provider> {
-    const provider = await this.providerRepository.findOne(providerId, { relations: ['options', 'labRequisitionParameters'] })
+    const provider = await this.providerRepository.findOne({
+      where: { id: providerId },
+      relations: ['options', 'labRequisitionParameters']
+    })
     if (provider == null) {
       throw new NotFoundException('The provider doesn\'t exist')
     }

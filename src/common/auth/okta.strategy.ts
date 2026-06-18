@@ -1,5 +1,5 @@
 import { Injectable, Logger, UnauthorizedException } from '@nestjs/common'
-import fastifyPassport from 'fastify-passport'
+import fastifyPassport from '@fastify/passport'
 import { Strategy } from 'passport-openidconnect'
 import { ConfigService } from '@nestjs/config'
 import { PassportStrategy } from '@nestjs/passport'

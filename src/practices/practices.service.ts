@@ -1,7 +1,7 @@
 import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { FindManyOptions, Repository, SelectQueryBuilder } from 'typeorm'
-import { FindOneOfTypeOptions } from '../common/typings/find-one-of-type-options.interface'
+import { FindManyOptions, Repository } from 'typeorm'
+import { FindOneOfTypeOptions, toFindOneOptions } from '../common/typings/find-one-of-type-options.interface'
 import { Organization } from '../organizations/entities/organization.entity'
 import { CreatePracticeDto } from './dto/create-practice.dto'
 import { Practice } from './entities/practice.entity'
@@ -23,26 +23,24 @@ export class PracticesService {
       integration_id: integrationId
     }: PracticesQueryDto
   ): Promise<Practice[]> {
-    return await this.findAll({
-      where: (qb: SelectQueryBuilder<Practice>) => {
-        qb.where('organizationId = :organizationId', {
-          organizationId: organizationId
-        })
+    const qb = this.practicesRepository
+      .createQueryBuilder('practice')
+      .leftJoinAndSelect('practice.identifier', 'identifier')
+      .leftJoinAndSelect('practice.integrations', 'integrations')
+      .where('practice.organizationId = :organizationId', {
+        organizationId
+      })
 
-        if (integrationId != null) {
-          qb.andWhere('integration.id = :integrationId', {
-            integrationId: integrationId
-          })
-        }
-      },
-      join: {
-        alias: 'practice',
-        leftJoin: {
-          integration: 'practice.integrations'
-        }
-      },
-      relations: ['identifier', 'integrations']
-    })
+    if (integrationId != null) {
+      qb
+        .leftJoin('practice.integrations', 'integration')
+        .andWhere(
+          'integration.id = :integrationId',
+          { integrationId }
+        )
+    }
+
+    return await qb.getMany()
   }
 
   async findAll (options?: FindManyOptions<Practice>): Promise<Practice[]> {
@@ -50,10 +48,7 @@ export class PracticesService {
   }
 
   async findOne (args: FindOneOfTypeOptions<Practice>): Promise<Practice> {
-    const practice = await this.practicesRepository.findOne(
-      args.id,
-      args.options
-    )
+    const practice = await this.practicesRepository.findOne(toFindOneOptions(args))
 
     if (practice == null) {
       throw new NotFoundException('The practice was not found')

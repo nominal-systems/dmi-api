@@ -1,13 +1,12 @@
 import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { ProvidersService } from '../providers/services/providers.service'
 import { InjectRepository } from '@nestjs/typeorm'
-import { FindManyOptions, Repository } from 'typeorm'
+import { In, Repository } from 'typeorm'
 import { Ref } from './entities/ref.entity'
 import { ProviderRef } from './entities/providerRef.entity'
 import { CreateRefsDTO } from './dtos/create-refs.dto'
 import { Provider } from '../providers/entities/provider.entity'
 import { CreateOrderDtoPatient } from '../orders/dtos/create-order.dto'
-import { PaginationDto } from '../common/dtos/pagination.dto'
 import { ProviderDefaultBreed } from './entities/providerDefaultBreed.entity'
 import { ProviderSpeciesMappingDefaultBreed } from './entities/providerSpeciesMappingDefaultBreed.entity'
 import { Patient } from '../orders/entities/patient.entity'
@@ -41,7 +40,7 @@ export class RefsService {
           },
         })
 
-        if (existingItem === undefined) {
+        if (existingItem === null) {
           const newItem = this.providerRefRepository.create({
             code: item.code,
             name: item.name,
@@ -117,33 +116,10 @@ export class RefsService {
     return await this.refRepository.find({ where: { type: 'sex' }, select, relations })
   }
 
-  async getRefs (
-    type: 'sexes' | 'species' | 'breeds',
-    paginationDto: PaginationDto,
-  ): Promise<Ref[]> {
-    const { page, limit } = paginationDto
-    const take = limit
-    const skip = (page - 1) * take
-
-    return await this.refRepository.find({
-      where: { type: type },
-      select: ['id', 'name', 'code', 'type', 'providerRef'],
-      relations: ['providerRef', 'providerRef.provider'],
-      skip,
-      take,
-    })
-  }
-
-  async countRefs (
-    type: 'sexes' | 'species' | 'breeds',
-  ): Promise<number> {
-    return await this.refRepository.count({ where: { type: type } })
-  }
-
   async createRefs (refDto: CreateRefsDTO): Promise<Ref> {
     const existingRef = await this.refRepository.findOne({ where: { code: refDto.code } })
 
-    if (existingRef !== undefined) {
+    if (existingRef !== null) {
       throw new ConflictException('Ref already exists')
     }
     const newRef = this.refRepository.create({
@@ -155,7 +131,7 @@ export class RefsService {
     await this.refRepository.save(newRef)
 
     if (refDto.providerRefIds?.length > 0) {
-      const providerRefs = await this.providerRefRepository.findByIds(refDto.providerRefIds)
+      const providerRefs = await this.providerRefRepository.findBy({ id: In(refDto.providerRefIds) })
       if (providerRefs.length !== refDto.providerRefIds.length) {
         throw new NotFoundException('One or more provider refs not found')
       }
@@ -172,7 +148,7 @@ export class RefsService {
       throw new NotFoundException(`Ref with ID ${id} not found`)
     }
     if (updateRefDto.providerRefIds !== undefined && updateRefDto.providerRefIds.length > 0) {
-      existingRef.providerRef = await this.providerRefRepository.findByIds(updateRefDto.providerRefIds)
+      existingRef.providerRef = await this.providerRefRepository.findBy({ id: In(updateRefDto.providerRefIds) })
     }
     await this.refRepository.merge(existingRef, updateRefDto)
     await this.refRepository.save(existingRef)
@@ -180,8 +156,8 @@ export class RefsService {
   }
 
   async deleteRefs (id: string): Promise<void> {
-    const ref = await this.refRepository.findOne(id, { relations: ['providerRef'] })
-    if (ref === undefined) {
+    const ref = await this.refRepository.findOne({ where: { id: id as any }, relations: ['providerRef'] })
+    if (ref === null) {
       throw new NotFoundException(`Ref with ID ${id} not found`)
     }
     await this.refRepository.remove(ref)
@@ -195,7 +171,7 @@ export class RefsService {
       .where('ref.id = :id', { id })
       .getOne()
 
-    if (ref === undefined) {
+    if (ref === null) {
       throw new NotFoundException('Ref not found')
     }
 
@@ -211,7 +187,7 @@ export class RefsService {
     if (providerRef) {
       return result?.providerRef[0]
     } else {
-      return result
+      return result ?? undefined
     }
   }
 
@@ -223,7 +199,7 @@ export class RefsService {
         code,
         provider: provider,
       })
-      .getOne()
+      .getOne() ?? undefined
   }
 
   async findProvidersMappedRefs (): Promise<any> {
@@ -253,7 +229,7 @@ export class RefsService {
         species,
         providerId,
       })
-      .getOne()
+      .getOne() ?? undefined
   }
 
   async findMappingDefaultBreed (
@@ -272,13 +248,7 @@ export class RefsService {
         providerSpecies,
         providerId,
       })
-      .getOne()
-  }
-
-  async findAllDefaultBreeds (
-    options?: FindManyOptions<ProviderDefaultBreed>,
-  ): Promise<ProviderDefaultBreed[]> {
-    return await this.providerDefaultBreedRepository.find(options)
+      .getOne() ?? undefined
   }
 
   async mapPatientRefs (providerId: string, patient: CreateOrderDtoPatient): Promise<void> {
@@ -400,12 +370,12 @@ export class RefsService {
   }
 
   async setMapping (refId: number, providerRefId: number): Promise<Ref> {
-    const ref = await this.refRepository.findOne(refId, { relations: ['providerRef', 'providerRef.provider'] })
-    if (ref === undefined) {
+    const ref = await this.refRepository.findOne({ where: { id: refId }, relations: ['providerRef', 'providerRef.provider'] })
+    if (ref === null) {
       throw new NotFoundException('Ref not found')
     }
-    const providerRef = await this.providerRefRepository.findOne(providerRefId, { relations: ['provider'] })
-    if (providerRef === undefined) {
+    const providerRef = await this.providerRefRepository.findOne({ where: { id: providerRefId }, relations: ['provider'] })
+    if (providerRef === null) {
       throw new NotFoundException('Provider ref not found')
     }
 
@@ -420,8 +390,8 @@ export class RefsService {
   }
 
   async unsetMapping (refId: number, providerId: string): Promise<Ref> {
-    const ref = await this.refRepository.findOne(refId, { relations: ['providerRef', 'providerRef.provider'] })
-    if (ref === undefined) {
+    const ref = await this.refRepository.findOne({ where: { id: refId }, relations: ['providerRef', 'providerRef.provider'] })
+    if (ref === null) {
       throw new NotFoundException('Ref not found')
     }
 
@@ -449,7 +419,7 @@ export class RefsService {
     }
     // Ensure ref species exists
     const refSpeciesExists = await this.refRepository.findOne({ where: { code: refSpecies, type: 'species' } })
-    if (refSpeciesExists === undefined) {
+    if (refSpeciesExists === null) {
       throw new NotFoundException('Ref species not found')
     }
     // If defaultBreed provided, ensure it exists as a provider breed for this provider
@@ -470,7 +440,7 @@ export class RefsService {
         providerSpecies,
         providerId,
       })
-      .getOne()
+      .getOne() ?? undefined
 
     if (mapping === undefined) {
       mapping = this.providerSpeciesMappingDefaultBreedRepository.create({
