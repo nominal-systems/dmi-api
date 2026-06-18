@@ -33,12 +33,12 @@ describe('ReportsService', () => {
     findOrdersByExternalIds: jest.fn().mockImplementation((orders) => orders),
     findOneByExternalId: jest.fn().mockImplementation((order) => order),
     getOrderFromProvider: jest.fn().mockImplementation((order) => order),
-    createOrderForResult: jest.fn().mockImplementation((integrationId, result) => {
+    createOrderForResult: jest.fn().mockImplementation(() => {
       return {}
     }),
     saveOrder: jest.fn().mockImplementation((order) => order),
     createExternalOrder: jest.fn().mockImplementation((integrationId, order) => order),
-    updateOrderStatusFromResults: jest.fn().mockImplementation((order, results) => order)
+    updateOrderStatusFromResults: jest.fn().mockImplementation((order) => order)
   }
   const integrationsServiceMock = {
     findById: jest.fn().mockImplementation((integrationId) => {

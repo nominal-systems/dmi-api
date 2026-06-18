@@ -61,7 +61,7 @@ export class ReportsService {
 
   async getReport (
     id: string,
-    organization: Organization
+    _organization: Organization
   ): Promise<Report> {
     // TODO(gb): actually check the user can access this report (i.e. belongs to the organization)
     const report = await this.reportsRepository.createQueryBuilder('report')

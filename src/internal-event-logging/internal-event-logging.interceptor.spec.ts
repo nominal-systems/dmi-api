@@ -5,7 +5,6 @@ import { OrdersService } from '../orders/orders.service'
 
 describe('InternalEventLoggingInterceptor', () => {
   let interceptor: InternalEventLoggingInterceptor
-  let eventLoggingService: InternalEventLoggingService
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -27,7 +26,6 @@ describe('InternalEventLoggingInterceptor', () => {
     }).compile()
 
     interceptor = module.get<InternalEventLoggingInterceptor>(InternalEventLoggingInterceptor)
-    eventLoggingService = module.get<InternalEventLoggingService>(InternalEventLoggingService)
   })
 
   describe('extractAccessionIds', () => {

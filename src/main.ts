@@ -16,8 +16,6 @@ const loaded = loadEnv()
 Logger.log(`Loaded environment configuration from ${loaded.join(', ')}`)
 
 /* eslint-disable @typescript-eslint/no-floating-promises */
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const { version } = require('../package.json')
 
 async function bootstrap (): Promise<void> {
   // Create the application

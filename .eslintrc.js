@@ -20,9 +20,10 @@ module.exports = {
     '@typescript-eslint/no-explicit-any': 'off',
     '@typescript-eslint/indent': 'off',
     '@typescript-eslint/consistent-type-assertions': 'off',
-    // @typescript-eslint v6 promotes this to 'error' in recommended; keep it at
-    // 'warn' to match the pre-upgrade severity (pre-existing unused vars remain
-    // visible without failing lint).
-    '@typescript-eslint/no-unused-vars': 'warn'
+    '@typescript-eslint/no-unused-vars': ['error', {
+      argsIgnorePattern: '^_',
+      varsIgnorePattern: '^_',
+      ignoreRestSiblings: true
+    }]
   }
 }
