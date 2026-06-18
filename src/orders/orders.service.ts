@@ -162,7 +162,7 @@ export class OrdersService {
   ): Promise<any> {
     const {
       externalId,
-      integration: { providerConfiguration, integrationOptions },
+      integration: { id: integrationId, providerConfiguration, integrationOptions },
     } = await this.findOne({
       id: orderId,
       options: {
@@ -178,6 +178,7 @@ export class OrdersService {
       resource: 'orders',
       operation: format === 'json' ? 'results' : 'results.pdf',
       data: {
+        integrationId,
         payload: { id: externalId },
         integrationOptions,
         providerConfiguration: providerConfiguration.configurationOptions,
@@ -246,6 +247,7 @@ export class OrdersService {
         resource: 'orders',
         operation: 'create',
         data: {
+          integrationId: integration.id,
           payload: providerOrder,
           integrationOptions,
           providerConfiguration: configurationOptions,
@@ -330,7 +332,7 @@ export class OrdersService {
     })
     const {
       externalId,
-      integration: { providerConfiguration, integrationOptions },
+      integration: { id: integrationId, providerConfiguration, integrationOptions },
     } = order
 
     if (organization.id !== providerConfiguration.organizationId) {
@@ -342,6 +344,7 @@ export class OrdersService {
       resource: 'orders',
       operation: 'cancel',
       data: {
+        integrationId,
         providerConfiguration: configurationOptions,
         integrationOptions,
         payload: {
@@ -387,13 +390,14 @@ export class OrdersService {
 
     const {
       externalId,
-      integration: { providerConfiguration, integrationOptions },
+      integration: { id: integrationId, providerConfiguration, integrationOptions },
     } = order
 
     const { message, messagePattern } = ieMessageBuilder(providerConfiguration.providerId, {
       resource: 'orders',
       operation: 'tests.add',
       data: {
+        integrationId,
         providerConfiguration: providerConfiguration.configurationOptions,
         integrationOptions,
         payload: {
@@ -428,13 +432,14 @@ export class OrdersService {
 
     const {
       externalId,
-      integration: { providerConfiguration, integrationOptions },
+      integration: { id: integrationId, providerConfiguration, integrationOptions },
     } = order
 
     const { message, messagePattern } = ieMessageBuilder(providerConfiguration.providerId, {
       resource: 'orders',
       operation: 'tests.cancel',
       data: {
+        integrationId,
         providerConfiguration: providerConfiguration.configurationOptions,
         integrationOptions,
         payload: {
@@ -621,7 +626,7 @@ export class OrdersService {
       const {
         externalId,
         requisitionId,
-        integration: { providerConfiguration, integrationOptions },
+        integration: { id: integrationId, providerConfiguration, integrationOptions },
       } = order
 
       if (providerConfiguration.organizationId !== organization.id) {
@@ -633,6 +638,7 @@ export class OrdersService {
         resource: EventNamespace.ORDERS,
         operation: Operation.Manifest,
         data: {
+          integrationId,
           providerConfiguration: configurationOptions,
           integrationOptions,
           payload: {
@@ -683,12 +689,14 @@ export class OrdersService {
     externalId: string,
     providerConfiguration: ProviderConfiguration,
     integrationOptions: IntegrationOptions,
+    integrationId?: string,
   ): Promise<ExternalOrder> {
     this.logger.debug(`Getting order ${externalId} from ${providerConfiguration.providerId}`)
     const { message, messagePattern } = ieMessageBuilder(providerConfiguration.providerId, {
       resource: Resource.Orders,
       operation: Operation.Get,
       data: {
+        integrationId,
         payload: { id: externalId },
         integrationOptions,
         providerConfiguration: providerConfiguration.configurationOptions,
