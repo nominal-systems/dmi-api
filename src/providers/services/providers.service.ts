@@ -28,7 +28,7 @@ import { ProviderOption } from '../entities/provider-option.entity'
 import { ProviderOptionDto } from '../dtos/provider-option.dto'
 import { nestKeys } from '../../common/utils/nest-keys'
 import { PaginationDto } from '../../common/dtos/pagination.dto'
-import { isNullOrEmpty } from '../../common/utils/shared.utils'
+import { isNullOrEmpty, stringifyId } from '../../common/utils/shared.utils'
 
 @Injectable()
 export class ProvidersService {
@@ -419,7 +419,8 @@ export class ProvidersService {
   async findAllExternalRequests (
     query: FilterQuery<ProviderExternalRequestDocument>
   ): Promise<ProviderExternalRequests[]> {
-    return await this.providerExternalRequestsModel.find(query, { __v: 0 }, { lean: true })
+    const docs = await this.providerExternalRequestsModel.find(query, { __v: 0 }, { lean: true })
+    return docs.map(stringifyId)
   }
 
   async findExternalRequests (
@@ -427,12 +428,13 @@ export class ProvidersService {
     paginationDto: PaginationDto
   ): Promise<ProviderExternalRequests[]> {
     const { page, limit } = paginationDto
-    return await this.providerExternalRequestsModel.find(query, { __v: 0, body: 0, payload: 0 }, {
+    const docs = await this.providerExternalRequestsModel.find(query, { __v: 0, body: 0, payload: 0 }, {
       limit,
       skip: (page - 1) * limit,
       sort: { createdAt: -1 },
       lean: true
     })
+    return docs.map(stringifyId)
   }
 
   async findExternalRequestById (
@@ -442,7 +444,7 @@ export class ProvidersService {
     if (doc === null) {
       throw new NotFoundException(`The external request ${id} doesn't exist`)
     } else {
-      return doc
+      return stringifyId(doc)
     }
   }
 
