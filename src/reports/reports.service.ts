@@ -2,7 +2,7 @@ import { forwardRef, Inject, Injectable, Logger, NotFoundException } from '@nest
 import { InjectRepository } from '@nestjs/typeorm'
 import { FindManyOptions, Repository } from 'typeorm'
 import { Report } from './entities/report.entity'
-import { FindOneOfTypeOptions } from '../common/typings/find-one-of-type-options.interface'
+import { FindOneOfTypeOptions, toFindOneOptions } from '../common/typings/find-one-of-type-options.interface'
 import { Order } from '../orders/entities/order.entity'
 import {
   Attachment,
@@ -50,7 +50,7 @@ export class ReportsService {
   async findOne (
     args: FindOneOfTypeOptions<Report>
   ): Promise<Report> {
-    const report = await this.reportsRepository.findOne(args.id, args.options)
+    const report = await this.reportsRepository.findOne(toFindOneOptions(args))
 
     if (report == null) {
       throw new NotFoundException('Report not found')
@@ -61,7 +61,7 @@ export class ReportsService {
 
   async getReport (
     id: string,
-    organization: Organization
+    _organization: Organization
   ): Promise<Report> {
     // TODO(gb): actually check the user can access this report (i.e. belongs to the organization)
     const report = await this.reportsRepository.createQueryBuilder('report')

@@ -1,12 +1,12 @@
 import { Controller, Get, Param, Res, UseInterceptors } from '@nestjs/common'
 import { ReportsService } from './reports.service'
-import { EventPattern } from '@nestjs/microservices'
 import { DisableGuards } from '../common/decorators/disable-guards.decorator'
 import { ApiGuard } from '../common/guards/api.guard'
 import { Organization } from '../common/decorators/organization.decorator'
 import { Organization as OrganizationEntity } from '../organizations/entities/organization.entity'
 import { Report } from './entities/report.entity'
-import { Attachment } from '@nominal-systems/dmi-engine-common'
+import { Attachment, SharedEventPattern } from '@nominal-systems/dmi-engine-common'
+import { SHARED_SUBSCRIPTION_GROUP } from '../common/constants/api.constant'
 import { Response } from 'express'
 import { ExternalResultEventData } from '../common/typings/internal-event-data.interface'
 import { InternalEventLoggingInterceptor } from '../internal-event-logging/internal-event-logging.interceptor'
@@ -48,7 +48,7 @@ export class ReportsController {
     res.send(data)
   }
 
-  @EventPattern('external_results')
+  @SharedEventPattern(SHARED_SUBSCRIPTION_GROUP, 'external_results')
   @UseInterceptors(InternalEventLoggingInterceptor)
   @DisableGuards(ApiGuard)
   async handleExternalResults (data: ExternalResultEventData): Promise<void> {

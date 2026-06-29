@@ -1,5 +1,5 @@
 import { INestApplicationContext } from '@nestjs/common'
-import fastifyPassport from 'fastify-passport'
+import fastifyPassport from '@fastify/passport'
 import { AdminConfig, AppConfig } from '../../config/config.interface'
 import { ConfigService } from '@nestjs/config'
 

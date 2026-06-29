@@ -8,7 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { Organization } from '../organizations/entities/organization.entity'
 import { TokenResponseDto } from './dtos/token-response.dto'
-import { FindOneOfTypeOptions } from '../common/typings/find-one-of-type-options.interface'
+import { FindOneOfTypeOptions, toFindOneOptions } from '../common/typings/find-one-of-type-options.interface'
 import { DBErrorCodes } from '../common/constants/db-error-codes.enum'
 import { UserPasswordDto } from './dtos/user-password.dto'
 
@@ -22,7 +22,7 @@ export class UsersService {
   ) {}
 
   async findOne (args: FindOneOfTypeOptions<User>): Promise<User> {
-    const user = await this.usersRepository.findOne(args.id, args.options)
+    const user = await this.usersRepository.findOne(toFindOneOptions(args))
 
     if (user == null) {
       throw new NotFoundException('The user was not found')

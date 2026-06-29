@@ -121,7 +121,6 @@ The following environment variables are accepted to configure the application:
 | `DATABASE_SYNCHRONIZE`      | Synchronize database schema on startup (development).                                                          |
 | `DATABASE_RUN_MIGRATIONS`   | Whether to run database migrations on application startup. Should be set to `true` in productive environments. |
 | `DATABASE_LOGGING`          | Enable TypeORM logging.                                                                                        |
-| `VERIFY_INTEGRATION_STATUS` | Check integration status for all integrations on startup.                                                      |
 | `MONGO_URI`                 | MongoDB connection URI string.                                                                                 |
 | `ACTIVEMQ_PROTOCOL`         | ActiveMQ protocol. Supported values: `mqtt`.                                                                   |
 | `ACTIVEMQ_HOSTNAME`         | ActiveMQ broker host.                                                                                          |

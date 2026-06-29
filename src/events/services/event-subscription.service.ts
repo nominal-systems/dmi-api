@@ -6,8 +6,9 @@ import { CreateEventSubscriptionDto } from '../dto/create-event-subscription.dto
 import { Event } from '../entities/event.entity'
 import { EventHubProducerClient } from '@azure/event-hubs'
 import { AzureNamedKeyCredential } from '@azure/core-auth'
-import { FindOneOfTypeOptions } from '../../common/typings/find-one-of-type-options.interface'
+import { FindOneOfTypeOptions, toFindOneOptions } from '../../common/typings/find-one-of-type-options.interface'
 import { IntegrationsService } from '../../integrations/integrations.service'
+import { EventType } from '../constants/event-type.enum'
 
 @Injectable()
 export class EventSubscriptionService {
@@ -28,10 +29,7 @@ export class EventSubscriptionService {
   }
 
   async findOne (args: FindOneOfTypeOptions<EventSubscription>): Promise<EventSubscription> {
-    const eventSubscription = await this.eventSubscriptionRepository.findOne(
-      args.id,
-      args.options
-    )
+    const eventSubscription = await this.eventSubscriptionRepository.findOne(toFindOneOptions(args))
 
     if (eventSubscription == null) {
       throw new NotFoundException('The event subscription was not found')
@@ -91,7 +89,7 @@ export class EventSubscriptionService {
     // Find event subscriptions for organization/event type
     const subscriptions = await this.eventSubscriptionRepository.find({
       where: {
-        event_type: event.type,
+        event_type: event.type as EventType,
         organizationId: integration.practice.organizationId
       }
     })

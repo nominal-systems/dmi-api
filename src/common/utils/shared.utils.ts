@@ -43,3 +43,13 @@ export function isJson (item: any): boolean {
 
   return isObject(item)
 }
+
+// Converts a lean Mongo document's ObjectId `_id` to a string so it survives the
+// global ClassSerializerInterceptor (instanceToPlain turns an ObjectId into `{}`).
+// Only use on lean/plain results — not on hydrated Mongoose documents.
+export function stringifyId<T extends { _id?: any }> (doc: T): T {
+  if (doc?._id == null) {
+    return doc
+  }
+  return { ...doc, _id: String(doc._id) }
+}

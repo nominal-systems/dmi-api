@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { FindOneOfTypeOptions } from '../../common/typings/find-one-of-type-options.interface'
+import { FindOneOfTypeOptions, toFindOneOptions } from '../../common/typings/find-one-of-type-options.interface'
 import { User } from '../../users/entity/user.entity'
 import { UsersService } from '../../users/users.service'
 import { CreateInvitationDTO } from '../dtos/create-invitation.dto'
@@ -22,10 +22,7 @@ export class InvitationsService {
   ) {}
 
   async findOne (args: FindOneOfTypeOptions<Invitation>): Promise<Invitation> {
-    const invitation = await this.invitationsRepository.findOne(
-      args.id,
-      args.options
-    )
+    const invitation = await this.invitationsRepository.findOne(toFindOneOptions(args))
 
     if (invitation == null) {
       throw new NotFoundException('The invitation was not found')

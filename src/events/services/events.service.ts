@@ -8,6 +8,7 @@ import { AddEventDto } from '../dto/add-event.dto'
 import { EventsQueryDto } from '../dto/events-query.dto'
 import { ModuleRef } from '@nestjs/core'
 import { EventSubscriptionService } from './event-subscription.service'
+import { stringifyId } from '../../common/utils/shared.utils'
 import { PaginationDto } from '../../common/dtos/pagination.dto'
 
 @Injectable()
@@ -29,14 +30,16 @@ export class EventsService implements OnModuleInit {
   async findById (
     id: string
   ): Promise<Event> {
-    return await this.eventModel.findById(id, { __v: 0 }, { lean: true }) as Event
+    const doc = await this.eventModel.findById(id, { __v: 0 }, { lean: true })
+    return (doc != null ? stringifyId(doc) : doc) as Event
   }
 
   async findAll (
     query: FilterQuery<EventDocument>,
     options: QueryOptions = { lean: true }
   ): Promise<Event[]> {
-    return await this.eventModel.find(query, { __v: 0 }, options)
+    const docs = await this.eventModel.find(query, { __v: 0 }, options)
+    return docs.map(stringifyId)
   }
 
   async find (
@@ -45,12 +48,13 @@ export class EventsService implements OnModuleInit {
   ): Promise<Event[]> {
     const { page, limit } = paginationDto
 
-    return await this.eventModel.find(query, { __v: 0, data: 0 }, {
+    const docs = await this.eventModel.find(query, { __v: 0, data: 0 }, {
       limit: limit,
       skip: (page - 1) * limit,
       sort: { seq: -1 },
       lean: true
     })
+    return docs.map(stringifyId)
   }
 
   async count (

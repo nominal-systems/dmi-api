@@ -1,8 +1,8 @@
 import { INestApplication } from '@nestjs/common'
 import { FastifyInstance } from 'fastify'
-import fastifyCookie from 'fastify-cookie'
-import fastifySession from 'fastify-session'
-import fastifyPassport from 'fastify-passport'
+import fastifyCookie from '@fastify/cookie'
+import fastifySession from '@fastify/session'
+import fastifyPassport from '@fastify/passport'
 import { ConfigService } from '@nestjs/config'
 import { AppConfig } from '../../config/config.interface'
 
@@ -12,7 +12,7 @@ export async function registerFastifyPlugins (app: INestApplication): Promise<vo
 
   await fastify.register(fastifyCookie)
   await fastify.register(fastifySession, {
-    secret: configService.get('secretKey'),
+    secret: configService.get<string>('secretKey') as string,
     cookie: {
       secure: process.env.NODE_ENV === 'production',
       maxAge: 30 * 60 * 1000 // 30 minutes
@@ -37,7 +37,7 @@ export async function registerFastifyPlugins (app: INestApplication): Promise<vo
       }
 
       if (req.session && typeof req.session.set !== 'function') {
-        req.session.set = function(key: string, value: any) {
+        (req.session as any).set = function(key: string, value: any) {
           this[key] = value
         }
       }

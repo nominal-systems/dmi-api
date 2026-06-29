@@ -13,13 +13,14 @@ export class ProviderRefService {
   }
 
   async findOneById (
-    id: string
+    id: number
   ): Promise<ProviderRef> {
-    const providerRef = await this.providerRefRepository.findOne(id, {
+    const providerRef = await this.providerRefRepository.findOne({
+      where: { id },
       relations: ['provider']
     })
 
-    if (providerRef === undefined) {
+    if (providerRef === null) {
       throw new NotFoundException('ProviderRef not found')
     }
 

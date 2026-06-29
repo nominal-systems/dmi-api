@@ -1,10 +1,10 @@
-import { IsEnum, IsNotEmpty, ValidationArguments } from 'class-validator'
+import { IsEnum, IsNotEmpty } from 'class-validator'
 import { InvitationStatus } from '../entities/invitation.entity'
 
 export class UpdateInvitationDTO {
   @IsNotEmpty()
   @IsEnum(InvitationStatus, {
-    message: (validationArgs: ValidationArguments) => {
+    message: () => {
       const statusesInSingleString = Object.values(InvitationStatus)
         .map(status => `'${status}'`)
         .join(', ')

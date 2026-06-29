@@ -62,6 +62,7 @@ import { ExternalRequestsQueryDto } from './dtos/external-requests-query.dto'
 import { ExternalRequestsStatsDto } from './dtos/external-requests-stats.dto'
 import { EventsQueryDto } from './dtos/events-query.dto'
 import { EventsStatsDto } from './dtos/events-stats.dto'
+import { UpdateRefMappingDto } from '../refs/dtos/update-ref-mapping.dto'
 import { AdminPracticesQueryDto } from './dtos/practices-query.dto'
 import { OrdersStatsDto } from './dtos/orders-stats.dto'
 import {
@@ -355,7 +356,7 @@ export class AdminController {
 
     const integration = await queryBuilder.getOne()
 
-    if (integration === undefined) {
+    if (integration === null) {
       throw new NotFoundException('Integration not found')
     }
 
@@ -522,7 +523,7 @@ export class AdminController {
   @Post('refs/:id/mapping')
   async updateRefMapping (
     @Param('id') refId: string,
-    @Body() mapping: { providerRefId: string | null; providerId?: string },
+    @Body() mapping: UpdateRefMappingDto,
   ): Promise<any> {
     // Find Ref
     const ref = await this.refsService.findOneById(refId)

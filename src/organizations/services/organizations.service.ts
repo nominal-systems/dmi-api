@@ -1,7 +1,7 @@
 import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { FindOneOfTypeOptions } from '../../common/typings/find-one-of-type-options.interface'
+import { FindOneOfTypeOptions, toFindOneOptions } from '../../common/typings/find-one-of-type-options.interface'
 import keyGenerator from '../../common/utils/keyGenerator'
 import { Integration } from '../../integrations/entities/integration.entity'
 import { User } from '../../users/entity/user.entity'
@@ -24,10 +24,7 @@ export class OrganizationsService {
   async findOne (
     args: FindOneOfTypeOptions<Organization>
   ): Promise<Organization> {
-    const organization = await this.organizationsRepository.findOne(
-      args.id,
-      args.options
-    )
+    const organization = await this.organizationsRepository.findOne(toFindOneOptions(args))
 
     if (organization == null) {
       throw new NotFoundException("The organization doesn't exist")
@@ -43,7 +40,8 @@ export class OrganizationsService {
   async getOrganizationsKeys (
     organizationId: string
   ): Promise<OrganizationKeys> {
-    const result = await this.organizationsRepository.findOne(organizationId, {
+    const result = await this.organizationsRepository.findOne({
+      where: { id: organizationId },
       select: ['testKey', 'prodKey']
     })
 

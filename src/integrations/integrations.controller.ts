@@ -1,6 +1,5 @@
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Res, UseGuards } from '@nestjs/common'
 import { Response } from 'express'
-import { SelectQueryBuilder } from 'typeorm'
 import { Organization } from '../common/decorators/organization.decorator'
 import { ApiGuard } from '../common/guards/api.guard'
 import { Organization as OrganizationEntity } from '../organizations/entities/organization.entity'
@@ -19,16 +18,8 @@ export class IntegrationsController {
     @Organization() organization: OrganizationEntity
   ): Promise<Integration[]> {
     return await this.integrationsService.findAll({
-      where: (qb: SelectQueryBuilder<Integration>) => {
-        qb.where('providerConfiguration.organizationId = :organizationId', {
-          organizationId: organization.id
-        })
-      },
-      join: {
-        alias: 'integration',
-        leftJoin: {
-          providerConfiguration: 'integration.providerConfiguration'
-        }
+      where: {
+        providerConfiguration: { organizationId: organization.id }
       }
     })
   }
@@ -40,21 +31,11 @@ export class IntegrationsController {
   ): Promise<Integration> {
     return await this.integrationsService.findOne({
       options: {
-        where: (qb: SelectQueryBuilder<Integration>) => {
-          qb.where('integration.id = :id', { id }).andWhere(
-            'providerConfiguration.organizationId = :organizationId',
-            {
-              organizationId: organization.id
-            }
-          )
+        where: {
+          id: id as any,
+          providerConfiguration: { organizationId: organization.id }
         },
-        join: {
-          alias: 'integration',
-          leftJoinAndSelect: {
-            practice: 'integration.practice',
-            providerConfiguration: 'integration.providerConfiguration'
-          }
-        }
+        relations: ['practice', 'providerConfiguration']
       }
     })
   }

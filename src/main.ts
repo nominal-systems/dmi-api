@@ -5,7 +5,6 @@ import { NestFactory, Reflector } from '@nestjs/core'
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify'
 import { AppModule } from './app.module'
 import { AppConfig } from './config/config.interface'
-import { IntegrationsService } from './integrations/integrations.service'
 import { registerFastifyPlugins } from './common/plugins/fastify-plugins'
 import { registerPassportStrategies } from './common/plugins/register-passport-strategies'
 import { registerStaticAssets } from './common/plugins/static-assets'
@@ -16,8 +15,6 @@ const loaded = loadEnv()
 Logger.log(`Loaded environment configuration from ${loaded.join(', ')}`)
 
 /* eslint-disable @typescript-eslint/no-floating-promises */
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const { version } = require('../package.json')
 
 async function bootstrap (): Promise<void> {
   // Create the application
@@ -41,12 +38,6 @@ async function bootstrap (): Promise<void> {
   )
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)))
   app.enableCors()
-
-  // Ensure integration status
-  const integrationsService = app.get(IntegrationsService)
-  if (process.env.VERIFY_INTEGRATION_STATUS === 'true') {
-    await integrationsService.ensureStatusAll()
-  }
 
   // Start the application
   const PORT = configService.get<number>('port', 3000)
