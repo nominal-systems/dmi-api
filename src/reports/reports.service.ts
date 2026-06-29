@@ -136,7 +136,7 @@ export class ReportsService {
     const createdOrders: Order[] = []
 
     // Update existing reports with new results
-    const existingReports = await this.findReportsByExternalOrderIds(externalOrderIds)
+    const existingReports = await this.findReportsByExternalOrderIds(externalOrderIds, integrationId)
     for (const report of existingReports) {
       const resultsForReport = results.filter(result => result.orderId === report.order.externalId)
       const updated = await this.updateReportResults(report, resultsForReport)
@@ -177,18 +177,25 @@ export class ReportsService {
       // Finding if order exists and saving order are done in parallel to improve performance.
       let order: Order | null
       try {
-        order = await this.ordersService.findOneByExternalId(extractedOrder.externalId)
+        order = await this.ordersService.findOneByExternalId(extractedOrder.externalId, integrationId)
       } catch (err) {
         order = null
       }
 
       this.logger.debug(`Orphan externalId=${extractedOrder.externalId}, existingOrder=${order?.id}, existingPatient=${order?.patient?.name}, extractedPatient=${extractedOrder.patient?.name}, existingClient=${order?.client?.lastName}, extractedClient=${extractedOrder.client?.lastName}`)
 
-      // Validate that the existing order matches the incoming result data
-      // TODO (LG): Remove log
-      if (order != null && !ProviderResultUtils.isMatchingOrder(order, extractedOrder)) {
-        this.logger.warn(`Orphan result externalId ${extractedOrder.externalId} matched order ${order.id} but patient/client data does not match. Creating new order.`)
-        order = null
+      // Reconcile into the existing order only when the patient/client identity
+      // matches AND the order's externalId wasn't reused for a different episode
+      // beyond the match window (issue #307). Otherwise create a new order so a
+      // reused placeholder/pet-name externalId doesn't blend distinct patients.
+      if (order != null) {
+        const mismatch = !ProviderResultUtils.isMatchingOrder(order, extractedOrder)
+        const staleReuse = ProviderResultUtils.isStaleOrphanMatch(order)
+        if (mismatch || staleReuse) {
+          const reason = mismatch ? 'patient/client mismatch' : 'stale orphan externalId reuse'
+          this.logger.warn(`Orphan result externalId ${extractedOrder.externalId} matched order ${order.id} but ${reason}. Creating new order.`)
+          order = null
+        }
       }
 
       if (order == null) {
@@ -196,7 +203,7 @@ export class ReportsService {
         dummyOrders.push(order)
       }
       const patient = order.patient !== null ? order.patient : extractedOrder.patient
-      let report = await this.findReportByExternalOrderId(order.externalId)
+      let report = await this.findReportByExternalOrderId(order.externalId, integrationId)
       if (report == null) {
         report = new Report()
         report.order = order
@@ -276,10 +283,11 @@ export class ReportsService {
   }
 
   async findReportsByExternalOrderIds (
-    externalOrderIds: string[]
+    externalOrderIds: string[],
+    integrationId?: string
   ): Promise<Report[]> {
     if (externalOrderIds.length === 0) return []
-    return await this.reportsRepository.createQueryBuilder('report')
+    const query = this.reportsRepository.createQueryBuilder('report')
       .leftJoinAndSelect('report.order', 'order')
       .leftJoinAndSelect('order.veterinarian', 'veterinarian')
       .leftJoinAndSelect('order.patient', 'patient')
@@ -292,15 +300,22 @@ export class ReportsService {
       .leftJoinAndSelect('reportPatient.identifier', 'reportPatientIdentifier')
       .leftJoinAndSelect('testResult.observations', 'observation')
       .where('order.externalId IN (:...externalOrderIds)', { externalOrderIds })
+    // Scope by integration when known so a colliding externalId at a different OU
+    // can't bind this OU's results onto another OU's report (issue #307).
+    if (integrationId != null) {
+      query.andWhere('order.integrationId = :integrationId', { integrationId })
+    }
+    return await query
       .orderBy('testResult.seq', 'ASC')
       .addOrderBy('observation.seq', 'ASC')
       .getMany()
   }
 
   async findReportByExternalOrderId (
-    externalOrderId: string
+    externalOrderId: string,
+    integrationId?: string
   ): Promise<Report | undefined> {
-    const reports = await this.findReportsByExternalOrderIds([externalOrderId])
+    const reports = await this.findReportsByExternalOrderIds([externalOrderId], integrationId)
     if (reports.length === 1) {
       return reports[0]
     }

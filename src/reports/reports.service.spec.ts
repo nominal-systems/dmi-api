@@ -2646,4 +2646,42 @@ describe('ReportsService', () => {
       })
     })
   })
+
+  describe('integration-scoped report lookups (issue #307)', () => {
+    const makeQbSpy = (): any => {
+      const qb: any = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        addOrderBy: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue([])
+      }
+      ;(reportsRepositoryMock.createQueryBuilder as jest.Mock).mockReturnValue(qb)
+      return qb
+    }
+
+    it('scopes the report query by integrationId when provided', async () => {
+      const qb = makeQbSpy()
+      await reportsService.findReportsByExternalOrderIds(['1'], 'integration-A')
+      expect(qb.andWhere).toHaveBeenCalledWith(
+        'order.integrationId = :integrationId',
+        { integrationId: 'integration-A' }
+      )
+    })
+
+    it('does NOT scope by integration when integrationId is omitted (back-compat for admin lookups)', async () => {
+      const qb = makeQbSpy()
+      await reportsService.findReportsByExternalOrderIds(['1'])
+      expect(qb.andWhere).not.toHaveBeenCalled()
+    })
+
+    it('findReportByExternalOrderId forwards integrationId to the scoped lookup', async () => {
+      const spy = jest
+        .spyOn(reportsService, 'findReportsByExternalOrderIds')
+        .mockResolvedValueOnce([])
+      await reportsService.findReportByExternalOrderId('1', 'integration-A')
+      expect(spy).toHaveBeenCalledWith(['1'], 'integration-A')
+    })
+  })
 })
