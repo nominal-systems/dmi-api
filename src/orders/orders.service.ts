@@ -589,13 +589,19 @@ export class OrdersService {
       if (result == null) continue
 
       try {
-        const order = await this.findOneByExternalId(externalOrderId)
+        const order = await this.findOneByExternalId(externalOrderId, integrationId)
 
-        // Validate that the existing order matches the incoming result data
+        // Validate that the existing order matches the incoming result data, and
+        // that we are not reconciling into a stale orphan order whose externalId
+        // (e.g. a placeholder "1" or a pet name typed as the ID) was reused for a
+        // different episode beyond the match window (issue #307).
         if (result.order != null && order.patient?.name) {
           const extractedOrder = ProviderResultUtils.extractOrderFromOrphanResult(result, integrationId)
-          if (!ProviderResultUtils.isMatchingOrder(order, extractedOrder)) {
-            this.logger.warn(`Skipping order update for ${order.id}: patient/client mismatch (externalId=${externalOrderId})`)
+          const mismatch = !ProviderResultUtils.isMatchingOrder(order, extractedOrder)
+          const staleReuse = ProviderResultUtils.isStaleOrphanMatch(order)
+          if (mismatch || staleReuse) {
+            const reason = mismatch ? 'patient/client mismatch' : 'stale orphan externalId reuse'
+            this.logger.warn(`Skipping order update for ${order.id}: ${reason} (externalId=${externalOrderId})`)
             continue
           }
         }
@@ -682,10 +688,17 @@ export class OrdersService {
     return manifest
   }
 
-  async findOneByExternalId(externalId: string): Promise<Order> {
+  async findOneByExternalId(externalId: string, integrationId?: string): Promise<Order> {
+    // Scope the lookup by integration when known so a colliding externalId at a
+    // different OU can't be returned (issue #307). Callers without an
+    // integration context (e.g. admin tooling) keep the global lookup.
+    const scope = integrationId != null ? { integrationId } : {}
     return await this.findOne({
       options: {
-        where: [{ externalId: externalId }, { requisitionId: externalId }],
+        where: [
+          { externalId: externalId, ...scope },
+          { requisitionId: externalId, ...scope },
+        ],
         relations: [
           'patient',
           'patient.identifier',

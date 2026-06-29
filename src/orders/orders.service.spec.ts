@@ -1113,6 +1113,69 @@ describe('OrdersService', () => {
           }),
         )
       })
+
+      it('skips update for a stale same-OU orphan externalId reuse (pet-name-as-ID)', async () => {
+        // Same OU and the patient/client coincide (the ID is the pet name), but
+        // the existing orphan order was last touched outside the match window —
+        // i.e. a different episode reusing the same externalId.
+        const orderA = buildExistingOrder(INTEGRATION_A, 'Rex', 'Anderson')
+        orderA.orphan = true // created from an orphan result
+        orderA.updatedAt = new Date(Date.now() - 120 * 60_000)
+        jest.spyOn(ordersService, 'findOneByExternalId').mockResolvedValueOnce(orderA)
+        const updateSpy = jest
+          .spyOn(ordersService, 'updateOrderFromResults')
+          .mockResolvedValue(true)
+
+        await ordersService.handleExternalOrderResults({
+          integrationId: INTEGRATION_A,
+          results: [buildIncomingResultForA()],
+        })
+
+        expect(updateSpy).not.toHaveBeenCalled()
+        expect(eventsServiceMock.addEvent).not.toHaveBeenCalledWith(
+          expect.objectContaining({
+            namespace: EventNamespace.ORDERS,
+            type: EventType.ORDER_UPDATED,
+          }),
+        )
+      })
+
+      it('updates a recent same-OU orphan match within the window', async () => {
+        const orderA = buildExistingOrder(INTEGRATION_A, 'Rex', 'Anderson')
+        orderA.orphan = true // created from an orphan result
+        orderA.updatedAt = new Date() // within the match window
+        jest.spyOn(ordersService, 'findOneByExternalId').mockResolvedValueOnce(orderA)
+        const updateSpy = jest
+          .spyOn(ordersService, 'updateOrderFromResults')
+          .mockResolvedValue(true)
+
+        await ordersService.handleExternalOrderResults({
+          integrationId: INTEGRATION_A,
+          results: [buildIncomingResultForA()],
+        })
+
+        expect(updateSpy).toHaveBeenCalledTimes(1)
+      })
+
+      it('still updates a legitimate provider-fetched order (orphan=false) even when a day old', async () => {
+        // #307 review #1: provider-fetched orders never set requisitionId; they
+        // must NOT be treated as stale orphans, so slow lab results that arrive
+        // hours/days later still reconcile to them.
+        const orderA = buildExistingOrder(INTEGRATION_A, 'Rex', 'Anderson')
+        orderA.orphan = false // provider-fetched / submitted — not an orphan
+        orderA.updatedAt = new Date(Date.now() - 24 * 60 * 60_000)
+        jest.spyOn(ordersService, 'findOneByExternalId').mockResolvedValueOnce(orderA)
+        const updateSpy = jest
+          .spyOn(ordersService, 'updateOrderFromResults')
+          .mockResolvedValue(true)
+
+        await ordersService.handleExternalOrderResults({
+          integrationId: INTEGRATION_A,
+          results: [buildIncomingResultForA()],
+        })
+
+        expect(updateSpy).toHaveBeenCalledTimes(1)
+      })
     })
   })
 })
