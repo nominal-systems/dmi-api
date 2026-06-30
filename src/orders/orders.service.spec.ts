@@ -8,7 +8,13 @@ import { Repository } from 'typeorm'
 import { ReportsService } from '../reports/reports.service'
 import { IntegrationsService } from '../integrations/integrations.service'
 import { EventsService } from '../events/services/events.service'
-import { FileUtils, ProviderError, ProviderResult } from '@nominal-systems/dmi-engine-common'
+import {
+  FileUtils,
+  OrderStatus,
+  ProviderError,
+  ProviderResult,
+  ResultStatus,
+} from '@nominal-systems/dmi-engine-common'
 import * as fs from 'fs'
 import * as path from 'path'
 import { EventNamespace } from '../events/constants/event-namespace.enum'
@@ -984,6 +990,191 @@ describe('OrdersService', () => {
             }),
           }),
         )
+      })
+    })
+
+    // Regression for https://github.com/nominal-systems/dmi-api/issues/307
+    // User-typed externalIds ("1", "1234", "jax", ...) collide across OUs.
+    // findOneByExternalId matches by externalId globally, so a result for one
+    // patient could resolve to a different patient's order at another OU and
+    // emit a wrong-patient ORDER_UPDATED. The patient/client guard added in
+    // PR #286 must skip the update when the resolved order does not match the
+    // incoming result's integration/patient/client identity.
+    describe('cross-OU externalId collision (issue #307)', () => {
+      // Two orders at different OUs share the same user-typed externalId.
+      // The incoming result legitimately belongs to integration A's patient.
+      const SHARED_EXTERNAL_ID = '1'
+      const INTEGRATION_A = 'integration-a'
+      const INTEGRATION_B = 'integration-b'
+
+      const buildIncomingResultForA = (): ProviderResult =>
+        ({
+          id: 'result-a',
+          orderId: SHARED_EXTERNAL_ID,
+          status: ResultStatus.COMPLETED,
+          order: {
+            externalId: SHARED_EXTERNAL_ID,
+            status: OrderStatus.COMPLETED,
+            patient: {
+              name: 'Rex',
+              species: 'Canine',
+              sex: 'M',
+              breed: 'Beagle',
+              identifier: [],
+            },
+            client: { firstName: 'Alice', lastName: 'Anderson', identifier: [] },
+            veterinarian: { firstName: 'Dana', lastName: 'Vetson' },
+            tests: [],
+            editable: false,
+          },
+          testResults: [
+            {
+              seq: 1,
+              code: 'CBC',
+              name: 'Complete Blood Count',
+              items: [
+                { seq: 1, code: 'HCT', name: 'Hematocrit', status: 'DONE', valueString: '45' },
+              ],
+            },
+          ],
+        }) as unknown as ProviderResult
+
+      const buildExistingOrder = (
+        integrationId: string,
+        patientName: string,
+        clientLastName: string,
+      ): Order =>
+        ({
+          id: `order-${integrationId}`,
+          integrationId,
+          externalId: SHARED_EXTERNAL_ID,
+          status: OrderStatus.SUBMITTED,
+          patient: { name: patientName, identifier: [] },
+          client: { lastName: clientLastName, identifier: [] },
+        }) as unknown as Order
+
+      it('does not update a colliding order belonging to a different OU/patient', async () => {
+        // The global externalId lookup resolves to integration B's order, but
+        // the incoming result carries integration A's patient identity.
+        const orderB = buildExistingOrder(INTEGRATION_B, 'Whiskers', 'Brown')
+        const statusBefore = orderB.status
+        jest.spyOn(ordersService, 'findOneByExternalId').mockResolvedValueOnce(orderB)
+        const updateSpy = jest
+          .spyOn(ordersService, 'updateOrderFromResults')
+          .mockResolvedValue(false)
+
+        await ordersService.handleExternalOrderResults({
+          integrationId: INTEGRATION_A,
+          results: [buildIncomingResultForA()],
+        })
+
+        // B's order must be left untouched...
+        expect(updateSpy).not.toHaveBeenCalled()
+        expect(orderB.status).toBe(statusBefore)
+        // ...and no wrong-patient ORDER_UPDATED event may be emitted.
+        expect(eventsServiceMock.addEvent).not.toHaveBeenCalledWith(
+          expect.objectContaining({
+            namespace: EventNamespace.ORDERS,
+            type: EventType.ORDER_UPDATED,
+          }),
+        )
+      })
+
+      it('updates the matching order at the correct OU', async () => {
+        // The global externalId lookup resolves to integration A's own order,
+        // which matches the incoming result's patient/client identity.
+        const orderA = buildExistingOrder(INTEGRATION_A, 'Rex', 'Anderson')
+        jest.spyOn(ordersService, 'findOneByExternalId').mockResolvedValueOnce(orderA)
+        const updateSpy = jest
+          .spyOn(ordersService, 'updateOrderFromResults')
+          .mockResolvedValue(true)
+
+        await ordersService.handleExternalOrderResults({
+          integrationId: INTEGRATION_A,
+          results: [buildIncomingResultForA()],
+        })
+
+        // A's order is the one updated...
+        expect(updateSpy).toHaveBeenCalledTimes(1)
+        expect(updateSpy).toHaveBeenCalledWith(
+          orderA,
+          expect.objectContaining({ orderId: SHARED_EXTERNAL_ID }),
+        )
+        // ...and a correctly-scoped ORDER_UPDATED event is emitted for it.
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(
+          expect.objectContaining({
+            namespace: EventNamespace.ORDERS,
+            type: EventType.ORDER_UPDATED,
+            integrationId: INTEGRATION_A,
+            data: expect.objectContaining({
+              orderId: orderA.id,
+              order: orderA,
+            }),
+          }),
+        )
+      })
+
+      it('skips update for a stale same-OU orphan externalId reuse (pet-name-as-ID)', async () => {
+        // Same OU and the patient/client coincide (the ID is the pet name), but
+        // the existing orphan order was last touched outside the match window —
+        // i.e. a different episode reusing the same externalId.
+        const orderA = buildExistingOrder(INTEGRATION_A, 'Rex', 'Anderson')
+        orderA.orphan = true // created from an orphan result
+        orderA.updatedAt = new Date(Date.now() - 120 * 60_000)
+        jest.spyOn(ordersService, 'findOneByExternalId').mockResolvedValueOnce(orderA)
+        const updateSpy = jest
+          .spyOn(ordersService, 'updateOrderFromResults')
+          .mockResolvedValue(true)
+
+        await ordersService.handleExternalOrderResults({
+          integrationId: INTEGRATION_A,
+          results: [buildIncomingResultForA()],
+        })
+
+        expect(updateSpy).not.toHaveBeenCalled()
+        expect(eventsServiceMock.addEvent).not.toHaveBeenCalledWith(
+          expect.objectContaining({
+            namespace: EventNamespace.ORDERS,
+            type: EventType.ORDER_UPDATED,
+          }),
+        )
+      })
+
+      it('updates a recent same-OU orphan match within the window', async () => {
+        const orderA = buildExistingOrder(INTEGRATION_A, 'Rex', 'Anderson')
+        orderA.orphan = true // created from an orphan result
+        orderA.updatedAt = new Date() // within the match window
+        jest.spyOn(ordersService, 'findOneByExternalId').mockResolvedValueOnce(orderA)
+        const updateSpy = jest
+          .spyOn(ordersService, 'updateOrderFromResults')
+          .mockResolvedValue(true)
+
+        await ordersService.handleExternalOrderResults({
+          integrationId: INTEGRATION_A,
+          results: [buildIncomingResultForA()],
+        })
+
+        expect(updateSpy).toHaveBeenCalledTimes(1)
+      })
+
+      it('still updates a legitimate provider-fetched order (orphan=false) even when a day old', async () => {
+        // #307 review #1: provider-fetched orders never set requisitionId; they
+        // must NOT be treated as stale orphans, so slow lab results that arrive
+        // hours/days later still reconcile to them.
+        const orderA = buildExistingOrder(INTEGRATION_A, 'Rex', 'Anderson')
+        orderA.orphan = false // provider-fetched / submitted — not an orphan
+        orderA.updatedAt = new Date(Date.now() - 24 * 60 * 60_000)
+        jest.spyOn(ordersService, 'findOneByExternalId').mockResolvedValueOnce(orderA)
+        const updateSpy = jest
+          .spyOn(ordersService, 'updateOrderFromResults')
+          .mockResolvedValue(true)
+
+        await ordersService.handleExternalOrderResults({
+          integrationId: INTEGRATION_A,
+          results: [buildIncomingResultForA()],
+        })
+
+        expect(updateSpy).toHaveBeenCalledTimes(1)
       })
     })
   })

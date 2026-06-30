@@ -16,6 +16,7 @@ describe('ProviderResultUtils', () => {
         {
           integrationId: 'integration A',
           status: OrderStatus.COMPLETED,
+          orphan: true,
           tests: [
             { code: 'fBNP' }
           ]
@@ -132,6 +133,85 @@ describe('ProviderResultUtils', () => {
       const existing = new Order()
       const extracted = new Order()
       expect(ProviderResultUtils.isMatchingOrder(existing, extracted)).toBe(false)
+    })
+  })
+
+  describe('match window (issue #307)', () => {
+    const mkOrphanOrder = (externalId: string, ageMinutes: number): Order => {
+      const o = new Order()
+      o.externalId = externalId
+      o.orphan = true // created from an orphan result
+      o.updatedAt = new Date(Date.now() - ageMinutes * 60_000)
+      return o
+    }
+
+    it('treats an order with orphan=true as an orphan order', () => {
+      const o = new Order(); o.externalId = '1'; o.orphan = true
+      expect(ProviderResultUtils.isOrphanOrder(o)).toBe(true)
+    })
+
+    it('does NOT treat a submitted/provider-fetched order (orphan unset) as an orphan', () => {
+      const o = new Order(); o.externalId = 'Jax' // orphan defaults to undefined/false
+      expect(ProviderResultUtils.isOrphanOrder(o)).toBe(false)
+    })
+
+    it('does NOT treat a provider-fetched order (no requisitionId, orphan=false) as an orphan', () => {
+      // Regression for #307 review #1: provider-fetched orders never set
+      // requisitionId, so the old requisitionId heuristic wrongly windowed them.
+      const o = new Order(); o.externalId = '117571776'; o.orphan = false
+      expect(ProviderResultUtils.isOrphanOrder(o)).toBe(false)
+    })
+
+    it('orphan match within the window is NOT stale', () => {
+      expect(ProviderResultUtils.isStaleOrphanMatch(mkOrphanOrder('1', 5))).toBe(false)
+    })
+
+    it('orphan match beyond the window IS stale', () => {
+      expect(ProviderResultUtils.isStaleOrphanMatch(mkOrphanOrder('1', 120))).toBe(true)
+    })
+
+    it('provider-fetched order (no requisitionId, orphan=false) is never stale even when old', () => {
+      // Regression for #307 review #1: a legitimate slow lab result must still
+      // reconcile to a provider-fetched order created hours/days earlier.
+      const o = new Order()
+      o.externalId = '117571776' // unique provider order id, no requisitionId
+      o.orphan = false
+      o.updatedAt = new Date(Date.now() - 24 * 60 * 60_000) // a day old
+      expect(ProviderResultUtils.isStaleOrphanMatch(o)).toBe(false)
+    })
+
+    it('submitted order (with requisitionId) is never stale even when old', () => {
+      const o = new Order()
+      o.externalId = 'Jax'
+      o.requisitionId = 'VOY-1772927557555'
+      o.updatedAt = new Date(Date.now() - 24 * 60 * 60_000)
+      expect(ProviderResultUtils.isStaleOrphanMatch(o)).toBe(false)
+    })
+
+    it('an orphan order without timestamps is never stale', () => {
+      const o = new Order(); o.externalId = '1'; o.orphan = true
+      expect(ProviderResultUtils.isStaleOrphanMatch(o)).toBe(false)
+    })
+
+    it('respects an explicit window and now at the boundary', () => {
+      const o = new Order(); o.externalId = '1'; o.orphan = true
+      o.updatedAt = new Date(1_000_000)
+      const windowMs = 60 * 60_000
+      expect(ProviderResultUtils.isStaleOrphanMatch(o, windowMs, 1_000_000 + windowMs)).toBe(false)
+      expect(ProviderResultUtils.isStaleOrphanMatch(o, windowMs, 1_000_000 + windowMs + 1)).toBe(true)
+    })
+
+    it('getMatchWindowMs defaults to 60 minutes and honours ORDER_MATCH_WINDOW_MINUTES', () => {
+      const prev = process.env.ORDER_MATCH_WINDOW_MINUTES
+      delete process.env.ORDER_MATCH_WINDOW_MINUTES
+      expect(ProviderResultUtils.getMatchWindowMs()).toBe(60 * 60_000)
+      process.env.ORDER_MATCH_WINDOW_MINUTES = '30'
+      expect(ProviderResultUtils.getMatchWindowMs()).toBe(30 * 60_000)
+      if (prev === undefined) {
+        delete process.env.ORDER_MATCH_WINDOW_MINUTES
+      } else {
+        process.env.ORDER_MATCH_WINDOW_MINUTES = prev
+      }
     })
   })
 })

@@ -76,6 +76,13 @@ export class Order {
   @Column({ default: false })
   editable: boolean
 
+  // True when the order was created from an orphan result (matched only by a
+  // user-controlled, potentially non-unique externalId). Used to scope the
+  // externalId match window so it never applies to submitted/provider-fetched
+  // orders, which carry a unique externalId/requisitionId (issue #307).
+  @Column({ default: false })
+  orphan: boolean
+
   @Column('json', { nullable: true })
   labRequisitionInfo?: Record<string, any>
 
