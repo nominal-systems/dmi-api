@@ -2,6 +2,8 @@ import { forwardRef, Module } from '@nestjs/common'
 import { EventsService } from './services/events.service'
 import { EventsController } from './controllers/events.controller'
 import { Event, EventSchema } from './entities/event.entity'
+import { EventDelivery, EventDeliverySchema } from './entities/event-delivery.entity'
+import { EventDeliveryService } from './services/event-delivery.service'
 import { getConnectionToken, MongooseModule } from '@nestjs/mongoose'
 import { OrganizationsModule } from '../organizations/organizations.module'
 import { OrdersModule } from '../orders/orders.module'
@@ -28,6 +30,10 @@ import { IntegrationsModule } from '../integrations/integrations.module'
           return schema
         },
         inject: [getConnectionToken()]
+      },
+      {
+        name: EventDelivery.name,
+        useFactory: () => EventDeliverySchema
       }
     ]),
     TypeOrmModule.forFeature([EventSubscription]),
@@ -39,11 +45,13 @@ import { IntegrationsModule } from '../integrations/integrations.module'
   controllers: [EventsController, EventSubscriptionsController],
   providers: [
     EventsService,
-    EventSubscriptionService
+    EventSubscriptionService,
+    EventDeliveryService
   ],
   exports: [
     EventsService,
-    EventSubscriptionService
+    EventSubscriptionService,
+    EventDeliveryService
   ]
 })
 export class EventsModule {}

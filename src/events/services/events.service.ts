@@ -7,7 +7,7 @@ import { Event, EventDocument } from '../entities/event.entity'
 import { AddEventDto } from '../dto/add-event.dto'
 import { EventsQueryDto } from '../dto/events-query.dto'
 import { ModuleRef } from '@nestjs/core'
-import { EventSubscriptionService } from './event-subscription.service'
+import { EventDeliveryService } from './event-delivery.service'
 import { stringifyId } from '../../common/utils/shared.utils'
 import { PaginationDto } from '../../common/dtos/pagination.dto'
 
@@ -19,7 +19,7 @@ export class EventsService implements OnModuleInit {
   constructor (
     private readonly moduleRef: ModuleRef,
     @InjectModel(Event.name) private readonly eventModel: Model<EventDocument>,
-    @Inject(EventSubscriptionService) private readonly eventSubscriptionService: EventSubscriptionService
+    @Inject(EventDeliveryService) private readonly eventDeliveryService: EventDeliveryService
   ) {
   }
 
@@ -68,7 +68,11 @@ export class EventsService implements OnModuleInit {
   ): Promise<Event> {
     this.logger.debug(`Event: '${eventDto.type}'`)
     const event = await this.eventModel.create(eventDto)
-    await this.eventSubscriptionService.notifySubscriptions(event)
+    try {
+      await this.eventDeliveryService.enqueue(event)
+    } catch (error) {
+      this.logger.error(`Failed to enqueue event '${event.type}' for delivery`, error)
+    }
     return event
   }
 

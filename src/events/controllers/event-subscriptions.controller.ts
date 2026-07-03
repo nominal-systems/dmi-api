@@ -3,6 +3,7 @@ import { ApiGuard } from '../../common/guards/api.guard'
 import { CreateEventSubscriptionDto } from '../dto/create-event-subscription.dto'
 import { EventSubscription } from '../entities/event-subscription.entity'
 import { EventSubscriptionService } from '../services/event-subscription.service'
+import { EventDeliveryService } from '../services/event-delivery.service'
 import { Organization } from '../../common/decorators/organization.decorator'
 import { Organization as OrganizationEntity } from '../../organizations/entities/organization.entity'
 
@@ -12,7 +13,8 @@ export class EventSubscriptionsController {
   private readonly logger = new Logger(EventSubscriptionsController.name)
 
   constructor (
-    private readonly eventSubscriptionService: EventSubscriptionService
+    private readonly eventSubscriptionService: EventSubscriptionService,
+    private readonly eventDeliveryService: EventDeliveryService
   ) {}
 
   @Get()
@@ -56,5 +58,6 @@ export class EventSubscriptionsController {
     @Param('id') subscriptionId: string
   ): Promise<void> {
     await this.eventSubscriptionService.delete(organization.id, subscriptionId)
+    this.eventDeliveryService.invalidateSubscription(subscriptionId)
   }
 }
