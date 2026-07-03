@@ -1,5 +1,5 @@
 ## STAGE: Base ##
-FROM node:20-alpine as base
+FROM node:24-alpine as base
 WORKDIR /app
 ARG GHP_TOKEN
 
@@ -27,7 +27,7 @@ ENV NODE_ENV=seed
 CMD ["npm", "run", "seed"]
 
 ## STAGE: Development ##
-FROM node:14-alpine as development
+FROM node:24-alpine as development
 ENV NODE_ENV=development
 WORKDIR /app
 
@@ -45,7 +45,7 @@ RUN npm run build &&\
     npm prune --production
 
 ## STAGE: Production ##
-FROM node:14-alpine as production
+FROM node:24-alpine as production
 WORKDIR /app
 ENV NODE_ENV=production
 
