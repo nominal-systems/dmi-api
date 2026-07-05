@@ -5,6 +5,7 @@ import { Model } from 'mongoose'
 import * as fs from 'fs'
 import * as path from 'path'
 import { ProviderExternalRequestDocument } from '../entities/provider-external-requests.entity'
+import { buildExternalRequestPartitionKey, ProviderExternalRequestV3Document } from '../entities/provider-external-requests-v3.entity'
 import { Test, TestingModule } from '@nestjs/testing'
 import { getModelToken } from '@nestjs/mongoose'
 import { ConfigService } from '@nestjs/config'
@@ -38,6 +39,7 @@ describe('ProvidersService', () => {
   let integrationsService: IntegrationsService
   // let clientProxy: ClientProxy
   let providerExternalRequestsModel: Model<ProviderExternalRequestDocument>
+  let providerExternalRequestsV3Model: Model<ProviderExternalRequestV3Document>
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -57,7 +59,8 @@ describe('ProvidersService', () => {
           useValue: providerConfigurationRepositoryMock
         },
         { provide: ClientProxy, useValue: {} },
-        { provide: getModelToken('ProviderExternalRequests'), useValue: { create: jest.fn() } },
+        { provide: getModelToken('ProviderExternalRequests'), useValue: { create: jest.fn(), countDocuments: jest.fn() } },
+        { provide: getModelToken('ProviderExternalRequestsV3'), useValue: { create: jest.fn(), countDocuments: jest.fn() } },
         {
           provide: getRepositoryToken(Provider),
           useValue: providersRepositoryMock
@@ -77,6 +80,7 @@ describe('ProvidersService', () => {
     integrationsService = module.get<IntegrationsService>(IntegrationsService)
     // clientProxy = module.get<ClientProxy>(ClientProxy)
     providerExternalRequestsModel = module.get<Model<any>>(getModelToken('ProviderExternalRequests'))
+    providerExternalRequestsV3Model = module.get<Model<any>>(getModelToken('ProviderExternalRequestsV3'))
   })
 
   afterEach(() => {
@@ -85,7 +89,7 @@ describe('ProvidersService', () => {
 
   describe('saveProviderRawData', () => {
     it('should save the correct raw data having a JSON body', async () => {
-      const createSpy = jest.spyOn(providerExternalRequestsModel, 'create')
+      const createSpy = jest.spyOn(providerExternalRequestsV3Model, 'create')
       const data = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', '..', 'test', 'externalRequests', 'results.json'), 'utf8'))
 
       await service.saveProviderRawData(data)
@@ -97,13 +101,14 @@ describe('ProvidersService', () => {
         url: data.url,
         method: data.method,
         provider: data.provider,
-        status: data.status
+        status: data.status,
+        partitionKey: expect.stringMatching(new RegExp(`^${String(data.provider)}:na:\\d{8}$`))
       }, expect.any(Function))
 
       createSpy.mockRestore()
     })
     it('should save the correct raw data having a XML body', async () => {
-      const createSpy = jest.spyOn(providerExternalRequestsModel, 'create')
+      const createSpy = jest.spyOn(providerExternalRequestsV3Model, 'create')
       const data = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', '..', 'test', 'externalRequests', 'results.json'), 'utf8'))
       data.body = fs.readFileSync(path.join(__dirname, '..', '..', '..', 'test', 'externalRequests', 'results.xml'), 'utf8')
       await service.saveProviderRawData(data)
@@ -115,13 +120,14 @@ describe('ProvidersService', () => {
         url: data.url,
         method: data.method,
         provider: data.provider,
-        status: data.status
+        status: data.status,
+        partitionKey: expect.stringMatching(new RegExp(`^${String(data.provider)}:na:\\d{8}$`))
       }, expect.any(Function))
 
       createSpy.mockRestore()
     })
     it('should save the payload when defined', async () => {
-      const createSpy = jest.spyOn(providerExternalRequestsModel, 'create')
+      const createSpy = jest.spyOn(providerExternalRequestsV3Model, 'create')
       const data = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', '..', 'test', 'externalRequests', 'result-payload.json'), 'utf8'))
 
       await service.saveProviderRawData(data)
@@ -134,13 +140,14 @@ describe('ProvidersService', () => {
         method: data.method,
         provider: data.provider,
         status: data.status,
-        payload: data.payload
+        payload: data.payload,
+        partitionKey: expect.stringMatching(new RegExp(`^${String(data.provider)}:na:\\d{8}$`))
       }, expect.any(Function))
 
       createSpy.mockRestore()
     })
     it('should remove duplicate accession IDs before saving', async () => {
-      const createSpy = jest.spyOn(providerExternalRequestsModel, 'create')
+      const createSpy = jest.spyOn(providerExternalRequestsV3Model, 'create')
 
       const data = {
         headers: { 'Content-Type': 'application/json' },
@@ -165,7 +172,7 @@ describe('ProvidersService', () => {
       createSpy.mockRestore()
     })
     it('should resolve and save the practiceId when integrationId is present', async () => {
-      const createSpy = jest.spyOn(providerExternalRequestsModel, 'create')
+      const createSpy = jest.spyOn(providerExternalRequestsV3Model, 'create')
       const findOneSpy = jest.spyOn(integrationsService, 'findOne').mockResolvedValue({
         id: 'integration-1',
         practiceId: 'practice-1'
@@ -191,7 +198,8 @@ describe('ProvidersService', () => {
       expect(createSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           integrationId: 'integration-1',
-          practiceId: 'practice-1'
+          practiceId: 'practice-1',
+          partitionKey: expect.stringMatching(/^test-provider:practice-1:\d{8}$/)
         }),
         expect.any(Function)
       )
@@ -224,7 +232,7 @@ describe('ProvidersService', () => {
       findOneSpy.mockRestore()
     })
     it('should save the integrationId without practiceId when the integration cannot be resolved', async () => {
-      const createSpy = jest.spyOn(providerExternalRequestsModel, 'create')
+      const createSpy = jest.spyOn(providerExternalRequestsV3Model, 'create')
       const findOneSpy = jest.spyOn(integrationsService, 'findOne')
         .mockRejectedValue(new Error('The integration was not found'))
 
@@ -243,7 +251,8 @@ describe('ProvidersService', () => {
 
       expect(createSpy).toHaveBeenCalledWith(
         expect.objectContaining({
-          integrationId: 'missing-integration'
+          integrationId: 'missing-integration',
+          partitionKey: expect.stringMatching(/^test-provider:missing-integration:\d{8}$/)
         }),
         expect.any(Function)
       )
@@ -252,6 +261,26 @@ describe('ProvidersService', () => {
 
       createSpy.mockRestore()
       findOneSpy.mockRestore()
+    })
+  })
+  describe('buildExternalRequestPartitionKey', () => {
+    it('should scope the key to provider, practice and UTC day', () => {
+      const createdAt = new Date('2026-07-05T23:59:59.999Z')
+      expect(buildExternalRequestPartitionKey('idexx', 'practice-42', createdAt))
+        .toEqual('idexx:practice-42:20260705')
+    })
+    it('should fall back to na when no practice or integration is available', () => {
+      const createdAt = new Date('2026-01-02T00:00:00.000Z')
+      expect(buildExternalRequestPartitionKey('zoetis', undefined, createdAt))
+        .toEqual('zoetis:na:20260102')
+    })
+  })
+  describe('countExternalRequests', () => {
+    it('should sum counts from v3 and the draining v2 collection', async () => {
+      jest.spyOn(providerExternalRequestsV3Model, 'countDocuments').mockResolvedValue(7 as never)
+      jest.spyOn(providerExternalRequestsModel, 'countDocuments').mockResolvedValue(5 as never)
+
+      expect(await service.countExternalRequests({ provider: 'idexx' })).toEqual(12)
     })
   })
   describe('checkLabRequisitionParameters()', () => {

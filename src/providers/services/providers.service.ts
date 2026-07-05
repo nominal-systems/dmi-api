@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { BadRequestException, Inject, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common'
 import { ClientProxy } from '@nestjs/microservices'
 import { IntegrationsService } from '../../integrations/integrations.service'
 import ieMessageBuilder from '../../common/utils/ieMessageBuilder'
@@ -17,6 +17,13 @@ import {
   ProviderExternalRequestDocument,
   ProviderExternalRequests
 } from '../entities/provider-external-requests.entity'
+import {
+  buildExternalRequestPartitionKey,
+  EXTERNAL_REQUESTS_V3_COLLECTION,
+  EXTERNAL_REQUESTS_V3_SHARD_KEY,
+  ProviderExternalRequestsV3,
+  ProviderExternalRequestV3Document
+} from '../entities/provider-external-requests-v3.entity'
 import { FilterQuery, Model } from 'mongoose'
 import { InjectModel } from '@nestjs/mongoose'
 import { ProviderRawDataDto } from '../dtos/provider-raw-data.dto'
@@ -30,8 +37,12 @@ import { nestKeys } from '../../common/utils/nest-keys'
 import { PaginationDto } from '../../common/dtos/pagination.dto'
 import { isNullOrEmpty, stringifyId } from '../../common/utils/shared.utils'
 
+// Matches the TTL on external_requests_v2 (ttl_ts_30d). Cosmos evaluates it
+// against the internal `_ts` (last-modified) timestamp.
+const EXTERNAL_REQUESTS_TTL_SECONDS = Number(process.env.EXTERNAL_REQUESTS_TTL_SECONDS ?? 2592000)
+
 @Injectable()
-export class ProvidersService {
+export class ProvidersService implements OnModuleInit {
   private readonly logger = new Logger(ProvidersService.name)
   private readonly practiceIdCache = new Map<string, string>()
 
@@ -40,9 +51,46 @@ export class ProvidersService {
     private readonly providerRepository: Repository<Provider>,
     private readonly integrationsService: IntegrationsService,
     @InjectModel(ProviderExternalRequests.name) private readonly providerExternalRequestsModel: Model<ProviderExternalRequestDocument>,
+    @InjectModel(ProviderExternalRequestsV3.name) private readonly providerExternalRequestsV3Model: Model<ProviderExternalRequestV3Document>,
     @Inject('ACTIVEMQ') private readonly client: ClientProxy,
     @InjectRepository(ProviderOption) private readonly providerOptionRepository: Repository<ProviderOption>
   ) {
+  }
+
+  async onModuleInit (): Promise<void> {
+    await this.ensureExternalRequestsV3Collection()
+  }
+
+  // Cosmos creates unsharded collections implicitly on first write; an
+  // unsharded external_requests_v3 would put every document in a single
+  // 30 GB-capped partition, silently reintroducing the 1014 storms. Creating
+  // it here with an explicit shard key makes that impossible. Idempotent, and
+  // a no-op (with a warning) on non-Cosmos MongoDB.
+  private async ensureExternalRequestsV3Collection (): Promise<void> {
+    const db = this.providerExternalRequestsV3Model.db.db
+    try {
+      await db.command({
+        customAction: 'CreateCollection',
+        collection: EXTERNAL_REQUESTS_V3_COLLECTION,
+        shardKey: EXTERNAL_REQUESTS_V3_SHARD_KEY
+      })
+      this.logger.log(`Created sharded collection ${EXTERNAL_REQUESTS_V3_COLLECTION} (shard key: ${EXTERNAL_REQUESTS_V3_SHARD_KEY})`)
+    } catch (error) {
+      const message: string = error?.message ?? String(error)
+      if (message.includes('already exists')) {
+        // expected on every boot after the first
+      } else {
+        this.logger.warn(`Could not ensure sharded collection ${EXTERNAL_REQUESTS_V3_COLLECTION} (non-Cosmos MongoDB?): ${message}`)
+      }
+    }
+    try {
+      await db.collection(EXTERNAL_REQUESTS_V3_COLLECTION).createIndex(
+        { _ts: 1 },
+        { expireAfterSeconds: EXTERNAL_REQUESTS_TTL_SECONDS, name: 'ttl_ts_30d' }
+      )
+    } catch (error) {
+      this.logger.warn(`Could not ensure TTL index on ${EXTERNAL_REQUESTS_V3_COLLECTION}: ${error?.message ?? String(error)}`)
+    }
   }
 
   async findAll (
@@ -355,15 +403,17 @@ export class ProvidersService {
       accessionIds = [...new Set(data.accessionIds)]
     }
 
-    const rawData: ProviderExternalRequests = {
-      createdAt: new Date(),
+    const createdAt = new Date()
+    const rawData: ProviderExternalRequestsV3 = {
+      createdAt,
       provider,
       accessionIds,
       status,
       method,
       url,
       headers: nestKeys(headers),
-      body: nestKeys(body) // Nest keys to ensure MongoDB safety
+      body: nestKeys(body), // Nest keys to ensure MongoDB safety
+      partitionKey: buildExternalRequestPartitionKey(provider, undefined, createdAt)
     }
 
     if (integrationId !== undefined) {
@@ -372,20 +422,21 @@ export class ProvidersService {
       if (practiceId !== undefined) {
         rawData.practiceId = practiceId
       }
+      rawData.partitionKey = buildExternalRequestPartitionKey(provider, practiceId ?? integrationId, createdAt)
     }
 
     if (payload !== undefined) {
       rawData.payload = payload
     }
 
-    this.providerExternalRequestsModel.create(rawData, (error) => {
+    this.providerExternalRequestsV3Model.create(rawData, (error) => {
       if (error != null && error.name === 'MongoError') {
         this.logger.error(error.message)
         this.logger.warn(`Could not save external request (${method} ${url}) to the database, saving without the body`)
 
         // TODO(gb): implement a better fallback strategy than just removing the body
         delete rawData.body
-        this.providerExternalRequestsModel.create(rawData, (error) => {
+        this.providerExternalRequestsV3Model.create(rawData, (error) => {
           if (error != null && error.name === 'MongoError') {
             this.logger.error(error.message)
             this.logger.warn('Could not save external request (without the body) to database')
@@ -416,11 +467,17 @@ export class ProvidersService {
     }
   }
 
+  // external_requests_v2 is being drained by its 30-day TTL after the move to
+  // the practice-level-sharded external_requests_v3; reads merge both
+  // collections until v2 is empty and the v2 model can be removed.
   async findAllExternalRequests (
     query: FilterQuery<ProviderExternalRequestDocument>
   ): Promise<ProviderExternalRequests[]> {
-    const docs = await this.providerExternalRequestsModel.find(query, { __v: 0 }, { lean: true })
-    return docs.map(stringifyId)
+    const [v3Docs, v2Docs] = await Promise.all([
+      this.providerExternalRequestsV3Model.find(query, { __v: 0 }, { lean: true }),
+      this.providerExternalRequestsModel.find(query, { __v: 0 }, { lean: true })
+    ])
+    return [...v3Docs, ...v2Docs].map(stringifyId)
   }
 
   async findExternalRequests (
@@ -428,19 +485,31 @@ export class ProvidersService {
     paginationDto: PaginationDto
   ): Promise<ProviderExternalRequests[]> {
     const { page, limit } = paginationDto
-    const docs = await this.providerExternalRequestsModel.find(query, { __v: 0, body: 0, payload: 0 }, {
-      limit,
-      skip: (page - 1) * limit,
-      sort: { createdAt: -1 },
-      lean: true
-    })
-    return docs.map(stringifyId)
+    // Each collection is over-fetched up to the requested page's end, then the
+    // merged result is re-sorted and sliced, so pagination stays globally
+    // correct while both collections hold data.
+    const fetchUpToPageEnd = async (model: Model<any>): Promise<any[]> =>
+      await model.find(query, { __v: 0, body: 0, payload: 0 }, {
+        limit: page * limit,
+        sort: { createdAt: -1 },
+        lean: true
+      })
+    const [v3Docs, v2Docs] = await Promise.all([
+      fetchUpToPageEnd(this.providerExternalRequestsV3Model),
+      fetchUpToPageEnd(this.providerExternalRequestsModel)
+    ])
+    const merged = [...v3Docs, ...v2Docs].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    )
+    const skip = (page - 1) * limit
+    return merged.slice(skip, skip + limit).map(stringifyId)
   }
 
   async findExternalRequestById (
     id: string
   ): Promise<ProviderExternalRequestDocument> {
-    const doc = await this.providerExternalRequestsModel.findById(id, { __v: 0 }, { lean: true }).exec()
+    const doc = await this.providerExternalRequestsV3Model.findById(id, { __v: 0 }, { lean: true }).exec() ??
+      await this.providerExternalRequestsModel.findById(id, { __v: 0 }, { lean: true }).exec()
     if (doc === null) {
       throw new NotFoundException(`The external request ${id} doesn't exist`)
     } else {
@@ -451,7 +520,11 @@ export class ProvidersService {
   async countExternalRequests (
     options: FilterQuery<ProviderExternalRequestDocument>
   ): Promise<number> {
-    return await this.providerExternalRequestsModel.countDocuments(options)
+    const [v3Count, v2Count] = await Promise.all([
+      this.providerExternalRequestsV3Model.countDocuments(options),
+      this.providerExternalRequestsModel.countDocuments(options)
+    ])
+    return v3Count + v2Count
   }
 
   async update (
@@ -463,7 +536,7 @@ export class ProvidersService {
   async externalRequestsStats (
     query: FilterQuery<ProviderExternalRequestDocument>
   ): Promise<any> {
-    return await this.providerExternalRequestsModel.aggregate([
+    const pipeline = [
       {
         $match: query
       },
@@ -490,6 +563,21 @@ export class ProvidersService {
           count: 1
         }
       }
+    ]
+    const [v3Stats, v2Stats] = await Promise.all([
+      this.providerExternalRequestsV3Model.aggregate(pipeline),
+      this.providerExternalRequestsModel.aggregate(pipeline)
     ])
+    const byBucket = new Map<string, any>()
+    for (const row of [...v3Stats, ...v2Stats]) {
+      const key = `${String(row.provider)}:${String(row.year)}-${String(row.month)}-${String(row.day)}T${String(row.hour)}`
+      const existing = byBucket.get(key)
+      if (existing === undefined) {
+        byBucket.set(key, { ...row })
+      } else {
+        existing.count += row.count
+      }
+    }
+    return Array.from(byBucket.values())
   }
 }
