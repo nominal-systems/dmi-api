@@ -12,6 +12,7 @@ import activeMQClientProvider from '../common/providers/activemq-client.provider
 import { Integration } from '../integrations/entities/integration.entity'
 import { getConnectionToken, MongooseModule } from '@nestjs/mongoose'
 import { ProviderExternalRequests, ProviderExternalRequestsSchema } from './entities/provider-external-requests.entity'
+import { ProviderExternalRequestsV3, ProviderExternalRequestsV3Schema } from './entities/provider-external-requests-v3.entity'
 import { Provider } from './entities/provider.entity'
 import { ProviderOption } from './entities/provider-option.entity'
 
@@ -23,6 +24,13 @@ import { ProviderOption } from './entities/provider-option.entity'
         name: ProviderExternalRequests.name,
         useFactory: () => {
           return ProviderExternalRequestsSchema
+        },
+        inject: [getConnectionToken()]
+      },
+      {
+        name: ProviderExternalRequestsV3.name,
+        useFactory: () => {
+          return ProviderExternalRequestsV3Schema
         },
         inject: [getConnectionToken()]
       }
