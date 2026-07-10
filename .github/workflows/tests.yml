@@ -1,0 +1,74 @@
+name: Tests
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '20.x'
+
+jobs:
+  unit:
+    name: Lint and unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      # .npmrc resolves @nominal-systems/* from GitHub Packages.
+      - name: Install dependencies
+        run: npm ci
+        env:
+          GHP_TOKEN: ${{ secrets.GHP_TOKEN }}
+
+      # `npm run lint` passes --fix, which mutates the tree. CI must not.
+      - name: Lint
+        run: npx eslint "{src,apps,libs,test}/**/*.ts"
+
+      - name: Unit tests
+        run: npm test
+
+  harness:
+    name: Integration harness
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      # Belt and braces alongside the eslint no-restricted-imports rule: the harness is a black
+      # box, and a stray import from src/ would silently couple it to the internals it tests.
+      - name: Assert the harness imports nothing from src/
+        run: |
+          if grep -rEn "(from|require\()[[:space:]]*'[^']*\.\./src/" test/harness; then
+            echo "::error::test/harness must not import from dmi-api src/"
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: npm ci
+        env:
+          GHP_TOKEN: ${{ secrets.GHP_TOKEN }}
+
+      # Brings up MySQL/Mongo/ActiveMQ via test/harness/docker-compose.harness.yml, runs the
+      # migrations, builds and boots the app, polls /health, then runs the scenarios.
+      - name: Integration harness
+        run: npm run test:harness
+
+      - name: Dump container logs on failure
+        if: failure()
+        run: docker compose -f test/harness/docker-compose.harness.yml logs --no-color --tail=200
