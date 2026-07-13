@@ -99,9 +99,15 @@ export class ProviderResultUtils {
       if (!existingPatientId || !extractedPatientId || existingPatientId !== extractedPatientId) return false
     }
 
-    // Check client last name — must be present and equal on both sides
-    if (!existingOrder.client?.lastName || !extractedOrder.client?.lastName) return false
-    if (existingOrder.client.lastName !== extractedOrder.client.lastName) return false
+    // Check client last name — if present on either side, both must have it and
+    // match. Absent on both sides is compatible: in-house analyzer results never
+    // carry a client, so requiring one would reject every same-run reconciliation
+    // and mint a new orphan order per poll.
+    const existingLastName = existingOrder.client?.lastName
+    const extractedLastName = extractedOrder.client?.lastName
+    if (existingLastName || extractedLastName) {
+      if (!existingLastName || !extractedLastName || existingLastName !== extractedLastName) return false
+    }
 
     return true
   }
