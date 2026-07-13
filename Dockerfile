@@ -5,8 +5,12 @@ ARG GHP_TOKEN
 
 COPY package*.json .npmrc ./
 
+# npm is pinned to 11.x: npm 12 enforces the install-scripts policy and blocks
+# argon2's node-pre-gyp install (no allowScripts config here yet), producing an
+# image without the native binding that crashes at boot. Move to npm 12 only
+# together with an allowScripts approval for argon2/sqlite3/msgpackr-extract.
 RUN apk add --no-cache --virtual build-base &&\
-    npm install -g npm node-gyp &&\
+    npm install -g npm@11 node-gyp &&\
     npm install &&\
     apk del build-base &&\
     npm un -g node-gyp &&\
