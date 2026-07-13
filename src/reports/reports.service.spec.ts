@@ -1796,6 +1796,7 @@ describe('ReportsService', () => {
         // #2: update report only
         jest.spyOn(ordersServiceMock, 'findOneByExternalId')
           .mockReturnValueOnce({
+            id: 'order-1',
             externalId: '20230330_155319_8501',
             integrationId: 'idexx',
             patient: { name: 'Toby', identifier: [] },
@@ -1803,9 +1804,10 @@ describe('ReportsService', () => {
           })
         jest.spyOn(reportsService, 'findReportsByExternalOrderIds')
           .mockResolvedValueOnce([])
-          .mockResolvedValueOnce([{
+        jest.spyOn(reportsService, 'findReportByOrderId')
+          .mockResolvedValueOnce({
             testResultsSet: []
-          } as unknown as Report])
+          } as unknown as Report)
         await reportsService.handleExternalResults({
           integrationId: 'idexx',
           results: externalResults
@@ -1867,16 +1869,20 @@ describe('ReportsService', () => {
         //   - Report should be updated and patient should be set
         const externalResultsB = FileUtils.loadFile('test/idexx/external_results-02b.json')
         const existingOrder = {
+          id: 'order-hope',
           integrationId: 'e025ab13-d6e6-4602-a935-72c2a8c8718e',
           externalId: '20230619_135522_8720',
           status: 'PARTIAL',
           patient: {
             name: 'Hope'
+          },
+          client: {
+            lastName: 'Larsen'
           }
         } as unknown as Order
         ordersServiceMock.findOneByExternalId.mockResolvedValueOnce(existingOrder)
         ordersServiceMock.getOrderFromProvider.mockResolvedValueOnce(null)
-        jest.spyOn(reportsService, 'findReportByExternalOrderId').mockImplementationOnce(async () => {
+        jest.spyOn(reportsService, 'findReportByOrderId').mockImplementationOnce(async () => {
           return {
             order: existingOrder,
             testResultsSet: []
@@ -1929,12 +1935,18 @@ describe('ReportsService', () => {
         // #2: update report for patient Baxter (Serology only), create report for Ty (Chemistry only)
         ordersServiceMock.findOneByExternalId
           .mockResolvedValueOnce({
+            id: 'order-baxter',
+            integrationId: 'e025ab13-d6e6-4602-a935-72c2a8c8718e',
+            externalId: '20230722_134823_8836',
             patient: {
               name: 'Baxter'
+            },
+            client: {
+              lastName: 'Bauguess'
             }
           })
           .mockResolvedValueOnce(null)
-        jest.spyOn(reportsService, 'findReportByExternalOrderId').mockImplementationOnce(async () => {
+        jest.spyOn(reportsService, 'findReportByOrderId').mockImplementationOnce(async () => {
           return {
             order: {
               externalId: '20230722_134823_8836',
@@ -2017,6 +2029,36 @@ describe('ReportsService', () => {
               ])
             })
           })
+        }))
+      })
+      it('should not reuse another order\'s report when the identity guard refuses the externalId match', async () => {
+        // A reused/typed externalId (e.g. a placeholder requisition id entered on
+        // an analyzer) can resolve to an order for a different patient. The guard
+        // refuses the order — the report lookup must not sneak the results onto
+        // that refused order's report through the shared externalId.
+        const externalResultsB = FileUtils.loadFile('test/idexx/external_results-02b.json')
+        ordersServiceMock.findOneByExternalId.mockResolvedValueOnce({
+          id: 'order-other-patient',
+          integrationId: 'e025ab13-d6e6-4602-a935-72c2a8c8718e',
+          externalId: '20230619_135522_8720',
+          patient: { name: 'Tinkerbell' },
+          client: { lastName: 'Bolland' }
+        } as unknown as Order)
+        const byOrderId = jest.spyOn(reportsService, 'findReportByOrderId')
+        const byExternalOrderId = jest.spyOn(reportsService, 'findReportByExternalOrderId')
+        await reportsService.handleExternalResults(externalResultsB)
+
+        // Fresh order + fresh report; no report lookup that could cross patients
+        expect(ordersServiceMock.saveOrder).toHaveBeenCalled()
+        expect(byOrderId).not.toHaveBeenCalled()
+        expect(byExternalOrderId).not.toHaveBeenCalled()
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
+          namespace: EventNamespace.REPORTS,
+          type: EventType.REPORT_CREATED
+        }))
+        expect(eventsServiceMock.addEvent).not.toHaveBeenCalledWith(expect.objectContaining({
+          namespace: EventNamespace.REPORTS,
+          type: EventType.REPORT_UPDATED
         }))
       })
       it('should set veterinarian for reports of test results', async () => {
@@ -2624,19 +2666,16 @@ describe('ReportsService', () => {
         const orphanResultsData = Object.assign({}, externalResult)
         // @ts-expect-error - trying to simulate orphan results
         delete orphanResultsData.results[0].orderId
-        jest.spyOn(reportsService, 'findReportByExternalOrderId').mockResolvedValueOnce({
-          order: {
-            externalId: 'WP-123'
-          },
-          testResultsSet: []
-        } as unknown as Report)
+        // A result with no order information reconciles into nothing: it gets a
+        // fresh order and a fresh report rather than reusing one by externalId.
+        ordersServiceMock.findOneByExternalId.mockResolvedValueOnce(null)
         await reportsService.handleExternalResults(externalResult)
 
         // TODO(gb): test that the PDF has in fact been attached to the report
 
         // It should not include the PDF data in the report event
         expect(eventsServiceMock.addEvent).toBeCalledWith(expect.objectContaining({
-          type: EventType.REPORT_UPDATED,
+          type: EventType.REPORT_CREATED,
           data: expect.objectContaining({
             report: expect.not.objectContaining({
               presentedForm: expect.any(Object)

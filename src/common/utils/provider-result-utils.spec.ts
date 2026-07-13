@@ -123,10 +123,16 @@ describe('ProviderResultUtils', () => {
       expect(ProviderResultUtils.isMatchingOrder(existing, extracted)).toBe(true)
     })
 
-    it('should return false when client last name is missing on either side', () => {
+    it('should return false when client last name is present on one side but missing on the other', () => {
       const existing = buildOrder({ integrationId: 'int-1', patientName: 'Toby', patientId: '123', clientLastName: 'Smith' })
       const extracted = buildOrder({ integrationId: 'int-1', patientName: 'Toby', patientId: '123' })
       expect(ProviderResultUtils.isMatchingOrder(existing, extracted)).toBe(false)
+    })
+
+    it('should skip the client check when absent on both sides (in-house analyzer results carry no client)', () => {
+      const existing = buildOrder({ integrationId: 'int-1', patientName: 'Toby', patientId: '123' })
+      const extracted = buildOrder({ integrationId: 'int-1', patientName: 'Toby', patientId: '123' })
+      expect(ProviderResultUtils.isMatchingOrder(existing, extracted)).toBe(true)
     })
 
     it('should return false when no fields are present to compare', () => {

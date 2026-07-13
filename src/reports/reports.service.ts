@@ -1,6 +1,6 @@
 import { forwardRef, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { FindManyOptions, Repository } from 'typeorm'
+import { FindManyOptions, Repository, SelectQueryBuilder } from 'typeorm'
 import { Report } from './entities/report.entity'
 import { FindOneOfTypeOptions, toFindOneOptions } from '../common/typings/find-one-of-type-options.interface'
 import { Order } from '../orders/entities/order.entity'
@@ -198,12 +198,19 @@ export class ReportsService {
         }
       }
 
+      const reconciledIntoExisting = order != null
       if (order == null) {
         order = await this.ordersService.saveOrder(extractedOrder)
         dummyOrders.push(order)
       }
       const patient = order.patient !== null ? order.patient : extractedOrder.patient
-      let report = await this.findReportByExternalOrderId(order.externalId, integrationId)
+      // Reuse only the report that belongs to the order we reconciled into.
+      // Resolving the report by externalId here can return a report attached to
+      // an order the guard above just refused, filing this result's observations
+      // onto another patient's report.
+      let report = reconciledIntoExisting
+        ? await this.findReportByOrderId(order.id)
+        : null
       if (report == null) {
         report = new Report()
         report.order = order
@@ -282,12 +289,8 @@ export class ReportsService {
     this.logger.log(`external_results -> Got ${results.length} results from ${integration.providerConfiguration.providerId}: ${createdReports.length} reports created, ${updatedReports.length} reports updated, orders ${[...createdOrders, ...dummyOrders].length} orders created`)
   }
 
-  async findReportsByExternalOrderIds (
-    externalOrderIds: string[],
-    integrationId?: string
-  ): Promise<Report[]> {
-    if (externalOrderIds.length === 0) return []
-    const query = this.reportsRepository.createQueryBuilder('report')
+  private reportGraphQuery (): SelectQueryBuilder<Report> {
+    return this.reportsRepository.createQueryBuilder('report')
       .leftJoinAndSelect('report.order', 'order')
       .leftJoinAndSelect('order.veterinarian', 'veterinarian')
       .leftJoinAndSelect('order.patient', 'patient')
@@ -299,16 +302,34 @@ export class ReportsService {
       .leftJoinAndSelect('report.patient', 'reportPatient')
       .leftJoinAndSelect('reportPatient.identifier', 'reportPatientIdentifier')
       .leftJoinAndSelect('testResult.observations', 'observation')
+      .orderBy('testResult.seq', 'ASC')
+      .addOrderBy('observation.seq', 'ASC')
+  }
+
+  async findReportsByExternalOrderIds (
+    externalOrderIds: string[],
+    integrationId?: string
+  ): Promise<Report[]> {
+    if (externalOrderIds.length === 0) return []
+    const query = this.reportGraphQuery()
       .where('order.externalId IN (:...externalOrderIds)', { externalOrderIds })
     // Scope by integration when known so a colliding externalId at a different OU
     // can't bind this OU's results onto another OU's report (issue #307).
     if (integrationId != null) {
       query.andWhere('order.integrationId = :integrationId', { integrationId })
     }
-    return await query
-      .orderBy('testResult.seq', 'ASC')
-      .addOrderBy('observation.seq', 'ASC')
+    return await query.getMany()
+  }
+
+  async findReportByOrderId (orderId: string): Promise<Report | undefined> {
+    const reports = await this.reportGraphQuery()
+      .where('order.id = :orderId', { orderId })
       .getMany()
+    if (reports.length === 1) {
+      return reports[0]
+    }
+
+    return undefined
   }
 
   async findReportByExternalOrderId (
