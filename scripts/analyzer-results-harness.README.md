@@ -62,6 +62,7 @@ Every flag has an env-var equivalent; flags win. See `--help`.
 | s2 | One run polled three times: PARTIAL → PARTIAL → FINAL for the same patient/id | Exactly **one** order, one report ending FINAL with all analytes | **FAIL** — one orphan order per poll (3 orders) |
 | s4 | Run with **no** typed id (diagnosticSetId only) | One order + one report (classic unmatched path, unchanged) | PASS (unchanged behavior) |
 | s5 | Re-sends an id from a run **>60 min old** (requires `--reuse-prefix <old prefix>`) | A **new** order/report — the match window still refuses stale reuse | n/a (guards the fix's relaxation) |
+| s6 | Same requisition id **and same pet name** sent to **two different hospitals** (requires `--integration-b <id>`) | Two separate orders, one per hospital, each with its own report — no cross-hospital merge | PASS (integration scoping predates the fix) |
 
 Recommended sequence for the DEV sign-off:
 
@@ -73,6 +74,11 @@ Recommended sequence for the DEV sign-off:
 5. Ask the Voyager side to confirm the s1/s2/s4 runs appear in **VH Unmatched**
    with the correct patient names (`Harness Fixture-A/B/C/D`) — that closes the
    loop on the user-visible symptom, which is not observable from DMI.
+
+s6 note: every lookup in this path (order, report, identity guard) is scoped by
+integrationId, so hospital isolation is provider-agnostic — the second
+integration does not need to be an IDEXX one, any integration of the same
+organization works as "hospital B".
 
 ## Notes
 

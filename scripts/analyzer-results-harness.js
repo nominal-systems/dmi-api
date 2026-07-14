@@ -44,6 +44,7 @@ const config = {
   apiBase: (args.api ?? process.env.HARNESS_API_BASE ?? 'https://devv2.dmi.voyager.marsvh.com/dmi').replace(/\/$/, ''),
   apiKey: args.apiKey ?? process.env.HARNESS_API_KEY ?? '',
   integrationId: args.integration ?? process.env.HARNESS_INTEGRATION_ID ?? '',
+  integrationIdB: args.integrationB ?? process.env.HARNESS_INTEGRATION_ID_B ?? '',
   scenario: (args.scenario ?? 'all').toLowerCase(),
   prefix: args.prefix ?? `HARNESS-${new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14)}`,
   reusePrefix: args.reusePrefix ?? '',
@@ -63,7 +64,8 @@ Options:
   --api <base>              dmi-api base url (default: DEV)                  [HARNESS_API_BASE]
   --api-key <key>           x-api-key for verification calls                 [HARNESS_API_KEY]
   --integration <id>        integration id the results belong to (required)  [HARNESS_INTEGRATION_ID]
-  --scenario <s>            s1 | s2 | s4 | s5 | all   (default: all = s1,s2,s4)
+  --integration-b <id>      s6 only: a SECOND integration (another hospital) [HARNESS_INTEGRATION_ID_B]
+  --scenario <s>            s1 | s2 | s4 | s5 | s6 | all   (default: all = s1,s2,s4)
   --prefix <p>              externalId prefix for this run (default: HARNESS-<timestamp>)
   --reuse-prefix <p>        s5 only: prefix of a run executed >60 min ago
   --settle <seconds>        wait after each publish before verifying (default 20)
@@ -245,6 +247,51 @@ function buildScenarios (cfg) {
       }
     },
 
+    s6: {
+      title: 'S6 — same requisition id AND same pet name at two different hospitals (must stay two separate orders)',
+      steps: [
+        {
+          publish: analyzerResult({
+            requisitionId: `${p}-R6`,
+            diagnosticSetId: diagnosticSetId(p, 'S6A'),
+            patientName: 'Harness Fixture-E',
+            status: 'COMPLETED',
+            testCodes: ['GLU']
+          }),
+          note: 'hospital A: final result, requisition id R6, patient Fixture-E'
+        },
+        {
+          publish: analyzerResult({
+            requisitionId: `${p}-R6`,
+            diagnosticSetId: diagnosticSetId(p, 'S6B'),
+            patientName: 'Harness Fixture-E',
+            status: 'COMPLETED',
+            testCodes: ['ALB']
+          }),
+          integrationId: cfg.integrationIdB,
+          note: 'hospital B: same requisition id, same pet name — different integration'
+        }
+      ],
+      verify: async (api, cfg) => {
+        const orders = await ordersByExternalId(api, `${p}-R6`)
+        assert(orders.length === 2, `expected 2 orders (one per hospital) with externalId ${p}-R6, found ${orders.length}`)
+        const a = orders.find(o => o.integrationId === cfg.integrationId)
+        const b = orders.find(o => o.integrationId === cfg.integrationIdB)
+        assert(a != null, 'order at hospital A not found')
+        assert(b != null, 'order at hospital B not found — the runs were merged across hospitals')
+        const reportA = await reportForOrder(api, a.id)
+        const reportB = await reportForOrder(api, b.id)
+        assert(reportA != null, 'hospital A must have its own report')
+        assert(reportB != null, 'hospital B must have its own report')
+        const aCodes = observationCodes(reportA)
+        const bCodes = observationCodes(reportB)
+        assert(aCodes.includes('GLU') && !aCodes.includes('ALB'),
+          `hospital A report has wrong observations: ${aCodes.join(',')}`)
+        assert(bCodes.includes('ALB') && !bCodes.includes('GLU'),
+          `hospital B report has wrong observations: ${bCodes.join(',')} — results crossed hospitals`)
+      }
+    },
+
     s5: {
       title: 'S5 — stale externalId reuse after the match window (needs --reuse-prefix of a run >60 min old)',
       steps: [
@@ -381,6 +428,10 @@ async function main () {
     console.error('s5 requires --reuse-prefix <prefix of a harness run executed more than 60 minutes ago>')
     process.exit(2)
   }
+  if (requested.includes('s6') && !config.integrationIdB) {
+    console.error('s6 requires --integration-b / HARNESS_INTEGRATION_ID_B (a second integration = the other hospital)')
+    process.exit(2)
+  }
 
   console.log('Config:', JSON.stringify(maskedConfig(config), null, 2))
   console.log(`Run prefix: ${config.prefix} (all orders this run creates carry it in their externalId)\n`)
@@ -391,9 +442,10 @@ async function main () {
       console.log(`\n=== ${sc.title} [dry run] ===`)
       sc.steps.forEach((step, i) => {
         const payload = step.publishFactory != null ? step.publishFactory(config) : step.publish
+        const stepIntegration = step.integrationId || config.integrationId || '<integration-id>'
         console.log(`\n-- step ${i + 1}: ${step.note}`)
         console.log(`   would publish to topics 'external_order_results' + 'external_results':`)
-        console.log(JSON.stringify({ pattern: 'external_results', data: { integrationId: config.integrationId || '<integration-id>', results: [payload] } }, null, 2))
+        console.log(JSON.stringify({ pattern: 'external_results', data: { integrationId: stepIntegration, results: [payload] } }, null, 2))
       })
       console.log(`\n-- then verify via GET ${config.apiBase}/orders and /orders/:id/report`)
     }
@@ -417,7 +469,7 @@ async function main () {
       for (const [i, step] of sc.steps.entries()) {
         const payload = step.publishFactory != null ? step.publishFactory(config) : step.publish
         console.log(`-- step ${i + 1}: ${step.note}`)
-        await publishResults(client, config.integrationId, [payload])
+        await publishResults(client, step.integrationId || config.integrationId, [payload])
         console.log(`   published (requisition/link id: ${payload.orderId}); settling ${config.settleSeconds}s…`)
         await sleep(config.settleSeconds * 1000)
       }
