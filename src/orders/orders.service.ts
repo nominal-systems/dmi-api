@@ -44,6 +44,7 @@ import {
   ExternalOrdersEventData,
   ExternalResultEventData,
 } from '../common/typings/internal-event-data.interface'
+import { NamedLockService, orderLockKey } from '../common/services/named-lock.service'
 
 interface OrderTestCancelOrAddParams {
   orderId: string
@@ -65,6 +66,7 @@ export class OrdersService {
     @Inject(EventsService) private readonly eventsService: EventsService,
     @Inject(RefsService) private readonly refsService: RefsService,
     @Inject(ProvidersService) private readonly providersService: ProvidersService,
+    @Inject(NamedLockService) private readonly namedLockService: NamedLockService,
     @Inject('ACTIVEMQ') private readonly client: ClientProxy,
   ) {
     this.nodeEnv = this.configService.get('nodeEnv')
@@ -461,7 +463,7 @@ export class OrdersService {
     const externalOrdersIds = orders.map((order) => order.externalId)
 
     // Handle existing orders
-    const existingOrders = await this.findOrdersByExternalIds(externalOrdersIds)
+    const existingOrders = await this.findOrdersByExternalIds(externalOrdersIds, integrationId)
     const updatedOrders: Order[] = []
     for (const existingOrder of existingOrders) {
       const externalOrder = orders.find((order) => order.externalId === existingOrder.externalId)
@@ -484,27 +486,53 @@ export class OrdersService {
     const mapper = new ExternalOrderMapper()
     const existingOrdersExternalIds = existingOrders.map((order) => order.externalId)
     const existingOrdersRequisitionIds = existingOrders.map((order) => order.requisitionId)
-    const nonExistingOrders = orders
-      .filter(
-        (order) =>
-          !existingOrdersExternalIds.includes(order.externalId) &&
-          !existingOrdersRequisitionIds.includes(order.externalId),
+    const nonExistingExternalOrders = orders.filter(
+      (order) =>
+        !existingOrdersExternalIds.includes(order.externalId) &&
+        !existingOrdersRequisitionIds.includes(order.externalId),
+    )
+
+    const newOrders: Order[] = []
+    for (const externalOrder of nonExistingExternalOrders) {
+      // Serialize find-or-create per (integrationId, externalId) so a concurrent
+      // external_results/external_orders handler can't insert the same order
+      // twice (issue #320).
+      const newOrder = await this.namedLockService.withLock(
+        orderLockKey(integrationId, externalOrder.externalId),
+        async () => {
+          // Re-check under the lock: the order may have been created between the
+          // batch lookup above and here.
+          let existing: Order | null = null
+          try {
+            existing = await this.findOneByExternalId(externalOrder.externalId, integrationId)
+          } catch (error) {
+            existing = null
+          }
+          if (existing != null) {
+            this.logger.debug(
+              `Order ${externalOrder.externalId} was created concurrently, skipping creation`,
+            )
+            return null
+          }
+          return await this.ordersRepository.save(
+            this.ordersRepository.create(mapper.mapOrder(externalOrder, integrationId)),
+          )
+        },
       )
-      .map((order) => mapper.mapOrder(order, integrationId))
-    const newOrders = this.ordersRepository.create(nonExistingOrders)
-    const allOrders = [...newOrders, ...updatedOrders]
+      if (newOrder != null) {
+        newOrders.push(newOrder)
+      }
+    }
 
     // Nothing to do, return
-    if (allOrders.length === 0) {
+    if (newOrders.length === 0 && updatedOrders.length === 0) {
       this.logger.debug(`Got ${orders.length} external orders: 0 created, 0 updated`)
       return
     }
 
     // Notify about new orders
     const integration = await this.integrationsService.findById(integrationId)
-    for (const order of newOrders) {
-      // TODO(gb): make this more efficient by saving in batch
-      const newOrder = await this.ordersRepository.save(order)
+    for (const newOrder of newOrders) {
       await this.eventsService.addEvent({
         namespace: EventNamespace.ORDERS,
         type: EventType.ORDER_CREATED,
@@ -684,7 +712,11 @@ export class OrdersService {
     })
   }
 
-  async findOrdersByExternalIds(externalIds: string[]): Promise<Order[]> {
+  async findOrdersByExternalIds(externalIds: string[], integrationId?: string): Promise<Order[]> {
+    // Scope by integration when known so a colliding externalId at a different
+    // OU can't cross-match another OU's orders (issues #307/#320). Callers
+    // without an integration context (e.g. event logging) keep the global lookup.
+    const scope = integrationId != null ? { integrationId } : {}
     return await this.findAll({
       relations: [
         'patient',
@@ -694,7 +726,10 @@ export class OrdersService {
         'tests',
         'client.identifier',
       ],
-      where: [{ externalId: In(externalIds) }, { requisitionId: In(externalIds) }],
+      where: [
+        { externalId: In(externalIds), ...scope },
+        { requisitionId: In(externalIds), ...scope },
+      ],
     })
   }
 

@@ -26,6 +26,7 @@ import { isNullOrEmpty } from '../common/utils/shared.utils'
 import { Attachment as AttachmentEntity } from '../common/entities/attachment.entity'
 import { ExternalResultEventData } from '../common/typings/internal-event-data.interface'
 import { FEATURE_FLAG_PROVIDER, FeatureFlagProvider, TEST_RESULT_MATCH_BY_NAME_FLAG } from '../feature-flags/feature-flag.interface'
+import { NamedLockService, orderLockKey } from '../common/services/named-lock.service'
 
 @Injectable()
 export class ReportsService {
@@ -37,7 +38,8 @@ export class ReportsService {
     @Inject(forwardRef(() => OrdersService)) private readonly ordersService: OrdersService,
     @Inject(IntegrationsService) private readonly integrationsService: IntegrationsService,
     @Inject(EventsService) private readonly eventsService: EventsService,
-    @Inject(FEATURE_FLAG_PROVIDER) private readonly featureFlags: FeatureFlagProvider
+    @Inject(FEATURE_FLAG_PROVIDER) private readonly featureFlags: FeatureFlagProvider,
+    @Inject(NamedLockService) private readonly namedLockService: NamedLockService
   ) {
   }
 
@@ -148,19 +150,47 @@ export class ReportsService {
     // Create external orders
     const externalOrders: ExternalOrder[] = []
     const nonExistingReportExternalOrderIds = arrayDiff(externalOrderIds, existingReports.map(report => report.order.externalId))
-    const nonExistingReportOrders = await this.ordersService.findOrdersByExternalIds(nonExistingReportExternalOrderIds)
+    const nonExistingReportOrders = await this.ordersService.findOrdersByExternalIds(nonExistingReportExternalOrderIds, integrationId)
     const nonExistingOrderExternalIds = arrayDiff(nonExistingReportExternalOrderIds, nonExistingReportOrders.map(order => order.externalId))
     for (const externalOrderId of nonExistingOrderExternalIds) {
       try {
+        // The provider fetch stays outside the lock: it can take seconds of HTTP
+        // and must not pin a pool connection while holding the lock.
         const externalOrder = await this.ordersService.getOrderFromProvider(externalOrderId, integration.providerConfiguration, integration.integrationOptions, integration.id)
         if (externalOrder == null) {
           this.logger.warn(`Order from provider not found -> External ID: ${externalOrderId}`)
           continue
         }
         this.logger.debug(`Getting order from provider -> External ID: ${externalOrderId}`)
-        const order = await this.ordersService.createExternalOrder(integrationId, externalOrder)
-        createdOrders.push(order)
-        const resultForOrder = results.filter(result => result.orderId === order.externalId)
+        // Serialize find-or-create per (integrationId, externalId) so a concurrent
+        // external_results/external_orders handler can't insert the same order
+        // twice (issue #320).
+        const { order, created } = await this.namedLockService.withLock(
+          orderLockKey(integrationId, externalOrderId),
+          async () => {
+            // Re-check under the lock: the order may have been created between
+            // the batch lookup above and here.
+            let existing: Order | null = null
+            try {
+              existing = await this.ordersService.findOneByExternalId(externalOrderId, integrationId)
+            } catch (error) {
+              existing = null
+            }
+            if (existing != null) {
+              return { order: existing, created: false }
+            }
+            return { order: await this.ordersService.createExternalOrder(integrationId, externalOrder), created: true }
+          }
+        )
+        if (created) {
+          createdOrders.push(order)
+        } else {
+          // The order was created concurrently by another handler: skip the
+          // ORDER_CREATED event but still create its report below.
+          this.logger.debug(`Order for external ID ${externalOrderId} was created concurrently, reusing Order/${order.id}`)
+          nonExistingReportOrders.push(order)
+        }
+        const resultForOrder = results.filter(result => result.orderId === externalOrderId)
         await this.ordersService.updateOrderFromResults(order, resultForOrder[0])
         externalOrders.push(externalOrder)
       } catch (error) {
@@ -174,35 +204,44 @@ export class ReportsService {
     for (const orphanResult of orphanResults) {
       const extractedOrder: Order = ProviderResultUtils.extractOrderFromOrphanResult(orphanResult, integrationId)
 
-      // Finding if order exists and saving order are done in parallel to improve performance.
-      let order: Order | null
-      try {
-        order = await this.ordersService.findOneByExternalId(extractedOrder.externalId, integrationId)
-      } catch (err) {
-        order = null
-      }
+      // Serialize find-or-create per (integrationId, externalId) so two concurrent
+      // handlers can't both miss the lookup and insert the same order twice
+      // (issue #320). The loser of the race sees the winner's order and the #307
+      // window logic below decides whether to reconcile into it or create a new one.
+      const { order, reconciledIntoExisting } = await this.namedLockService.withLock(
+        orderLockKey(integrationId, extractedOrder.externalId),
+        async () => {
+          let order: Order | null
+          try {
+            order = await this.ordersService.findOneByExternalId(extractedOrder.externalId, integrationId)
+          } catch (err) {
+            order = null
+          }
 
-      this.logger.debug(`Orphan externalId=${extractedOrder.externalId}, existingOrder=${order?.id}, existingPatient=${order?.patient?.name}, extractedPatient=${extractedOrder.patient?.name}, existingClient=${order?.client?.lastName}, extractedClient=${extractedOrder.client?.lastName}`)
+          this.logger.debug(`Orphan externalId=${extractedOrder.externalId}, existingOrder=${order?.id}, existingPatient=${order?.patient?.name}, extractedPatient=${extractedOrder.patient?.name}, existingClient=${order?.client?.lastName}, extractedClient=${extractedOrder.client?.lastName}`)
 
-      // Reconcile into the existing order only when the patient/client identity
-      // matches AND the order's externalId wasn't reused for a different episode
-      // beyond the match window (issue #307). Otherwise create a new order so a
-      // reused placeholder/pet-name externalId doesn't blend distinct patients.
-      if (order != null) {
-        const mismatch = !ProviderResultUtils.isMatchingOrder(order, extractedOrder)
-        const staleReuse = ProviderResultUtils.isStaleOrphanMatch(order)
-        if (mismatch || staleReuse) {
-          const reason = mismatch ? 'patient/client mismatch' : 'stale orphan externalId reuse'
-          this.logger.warn(`Orphan result externalId ${extractedOrder.externalId} matched order ${order.id} but ${reason}. Creating new order.`)
-          order = null
+          // Reconcile into the existing order only when the patient/client identity
+          // matches AND the order's externalId wasn't reused for a different episode
+          // beyond the match window (issue #307). Otherwise create a new order so a
+          // reused placeholder/pet-name externalId doesn't blend distinct patients.
+          if (order != null) {
+            const mismatch = !ProviderResultUtils.isMatchingOrder(order, extractedOrder)
+            const staleReuse = ProviderResultUtils.isStaleOrphanMatch(order)
+            if (mismatch || staleReuse) {
+              const reason = mismatch ? 'patient/client mismatch' : 'stale orphan externalId reuse'
+              this.logger.warn(`Orphan result externalId ${extractedOrder.externalId} matched order ${order.id} but ${reason}. Creating new order.`)
+              order = null
+            }
+          }
+
+          const reconciledIntoExisting = order != null
+          if (order == null) {
+            order = await this.ordersService.saveOrder(extractedOrder)
+            dummyOrders.push(order)
+          }
+          return { order, reconciledIntoExisting }
         }
-      }
-
-      const reconciledIntoExisting = order != null
-      if (order == null) {
-        order = await this.ordersService.saveOrder(extractedOrder)
-        dummyOrders.push(order)
-      }
+      )
       const patient = order.patient !== null ? order.patient : extractedOrder.patient
       // Reuse only the report that belongs to the order we reconciled into.
       // Resolving the report by externalId here can return a report attached to

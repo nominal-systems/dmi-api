@@ -18,6 +18,7 @@ import { HttpException, HttpStatus } from '@nestjs/common'
 import { ExternalResultEventData } from '../common/typings/internal-event-data.interface'
 import { TestResultItemInterpretationCode } from '@nominal-systems/dmi-engine-common'
 import { FEATURE_FLAG_PROVIDER } from '../feature-flags/feature-flag.interface'
+import { NamedLockService } from '../common/services/named-lock.service'
 
 const repositoryMockFactory: () => MockUtils<Repository<any>> = jest.fn(() => ({
   findOne: jest.fn(entity => entity),
@@ -38,6 +39,7 @@ describe('ReportsService', () => {
     }),
     saveOrder: jest.fn().mockImplementation((order) => order),
     createExternalOrder: jest.fn().mockImplementation((integrationId, order) => order),
+    updateOrderFromResults: jest.fn(),
     updateOrderStatusFromResults: jest.fn().mockImplementation((order) => order)
   }
   const integrationsServiceMock = {
@@ -53,6 +55,9 @@ describe('ReportsService', () => {
   }
   const eventsServiceMock = {
     addEvent: jest.fn()
+  }
+  const namedLockServiceMock = {
+    withLock: jest.fn(async (_key: string, fn: () => Promise<any>) => await fn())
   }
 
   beforeEach(async () => {
@@ -82,6 +87,10 @@ describe('ReportsService', () => {
         {
           provide: FEATURE_FLAG_PROVIDER,
           useValue: { isEnabled: jest.fn().mockReturnValue(false) }
+        },
+        {
+          provide: NamedLockService,
+          useValue: namedLockServiceMock
         }
       ]
     }).compile()
@@ -2100,6 +2109,35 @@ describe('ReportsService', () => {
           jest.clearAllMocks()
         }).not.toThrow()
       })
+      it('should reuse a concurrently created order instead of creating a duplicate (issue #320)', async () => {
+        const externalOrder = { externalId: 'EXT-1', status: 'COMPLETED' }
+        const existingOrder = { id: 'winner-order', externalId: 'EXT-1' } as unknown as Order
+        jest.spyOn(reportsService, 'findReportsByExternalOrderIds').mockResolvedValueOnce([])
+        ordersServiceMock.findOrdersByExternalIds.mockResolvedValueOnce([])
+        ordersServiceMock.getOrderFromProvider.mockResolvedValueOnce(externalOrder)
+        // The re-check under the lock finds the order the concurrent handler created
+        ordersServiceMock.findOneByExternalId.mockResolvedValueOnce(existingOrder)
+
+        await reportsService.handleExternalResults({
+          integrationId: 'idexx',
+          results: [{ id: 'r1', orderId: 'EXT-1', status: 'COMPLETED', testResults: [] }] as unknown as ProviderResult[]
+        })
+
+        expect(namedLockServiceMock.withLock).toHaveBeenCalledWith('order:idexx:EXT-1', expect.any(Function))
+        expect(ordersServiceMock.createExternalOrder).not.toHaveBeenCalled()
+        expect(eventsServiceMock.addEvent).not.toHaveBeenCalledWith(expect.objectContaining({
+          type: EventType.ORDER_CREATED
+        }))
+        // The result is still filed onto a report for the winner's order
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
+          namespace: EventNamespace.REPORTS,
+          type: EventType.REPORT_CREATED,
+          data: expect.objectContaining({
+            orderId: 'winner-order'
+          })
+        }))
+        jest.clearAllMocks()
+      })
     })
     describe('Antech', () => {
       it('should create orders/reports', async () => {
@@ -2517,6 +2555,8 @@ describe('ReportsService', () => {
         const results: ProviderResult[] = FileUtils.loadFile('test/heska/heska-results-batch-01.json')
         jest.spyOn(reportsService, 'findReportsByExternalOrderIds').mockResolvedValueOnce([])
         jest.spyOn(ordersServiceMock, 'findOrdersByExternalIds').mockResolvedValue([])
+        // The re-check under the find-or-create lock must miss for the order to be created
+        jest.spyOn(ordersServiceMock, 'findOneByExternalId').mockResolvedValueOnce(null)
         jest.spyOn(ordersServiceMock, 'getOrderFromProvider').mockResolvedValue({
           externalId: 'DMI-DR94877',
           status: 'COMPLETED'

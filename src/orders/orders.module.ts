@@ -16,6 +16,7 @@ import { ReportsModule } from '../reports/reports.module'
 import { RefsModule } from '../refs/refs.module'
 import { ProvidersModule } from '../providers/providers.module'
 import { InternalEventLoggingModule } from '../internal-event-logging/internal-event-logging.module'
+import { NamedLockService } from '../common/services/named-lock.service'
 
 @Module({
   imports: [
@@ -30,7 +31,7 @@ import { InternalEventLoggingModule } from '../internal-event-logging/internal-e
     InternalEventLoggingModule
   ],
   controllers: [OrdersController],
-  providers: [OrdersService],
+  providers: [OrdersService, NamedLockService],
   exports: [OrdersService]
 })
 export class OrdersModule {}

@@ -30,6 +30,8 @@ import { v4 as uuidv4 } from 'uuid'
 import { Patient } from './entities/patient.entity'
 import { ProvidersService } from '../providers/services/providers.service'
 import { ExternalOrdersEventData } from '../common/typings/internal-event-data.interface'
+import { NamedLockService } from '../common/services/named-lock.service'
+import { In } from 'typeorm'
 
 export const repositoryMockFactory: () => MockUtils<Repository<any>> = jest.fn(() => ({
   find: jest.fn((entity) => entity),
@@ -86,6 +88,10 @@ describe('OrdersService', () => {
     checkLabRequisitionParameters: jest.fn(),
   }
 
+  const namedLockServiceMock = {
+    withLock: jest.fn(async (_key: string, fn: () => Promise<any>) => await fn()),
+  }
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -121,6 +127,10 @@ describe('OrdersService', () => {
         {
           provide: ProvidersService,
           useValue: providerServiceMock,
+        },
+        {
+          provide: NamedLockService,
+          useValue: namedLockServiceMock,
         },
         {
           provide: 'ACTIVEMQ',
@@ -751,10 +761,9 @@ describe('OrdersService', () => {
         // 1. Create new orders
         // Setup: do not find existing orders, create new ones
         jest.spyOn(ordersRepositoryMock, 'find').mockResolvedValueOnce([])
+        jest.spyOn(ordersRepositoryMock, 'findOne').mockResolvedValue(null)
         // @ts-expect-error: compiler type error
-        ordersRepositoryMock.create.mockImplementationOnce((data) =>
-          data.map((item, index) => Object.assign(new Order(), { ...item, id: index })),
-        )
+        ordersRepositoryMock.create.mockImplementation((item) => Object.assign(new Order(), item))
         // @ts-expect-error: compiler type error
         ordersRepositoryMock.save.mockImplementation(async (entities) => entities)
 
@@ -817,10 +826,9 @@ describe('OrdersService', () => {
 
       it('should attach manifest to new orders', async () => {
         jest.spyOn(ordersRepositoryMock, 'find').mockResolvedValueOnce([])
+        jest.spyOn(ordersRepositoryMock, 'findOne').mockResolvedValue(null)
         // @ts-expect-error: compiler type error
-        ordersRepositoryMock.create.mockImplementationOnce((data) =>
-          data.map((item) => Object.assign(new Order(), item)),
-        )
+        ordersRepositoryMock.create.mockImplementation((item) => Object.assign(new Order(), item))
         // @ts-expect-error: compiler type error
         ordersRepositoryMock.save.mockImplementation(async (entities) => entities)
 
@@ -870,10 +878,9 @@ describe('OrdersService', () => {
 
       it('should not attach manifest if none provided', async () => {
         jest.spyOn(ordersRepositoryMock, 'find').mockResolvedValueOnce([])
+        jest.spyOn(ordersRepositoryMock, 'findOne').mockResolvedValue(null)
         // @ts-expect-error: compiler type error
-        ordersRepositoryMock.create.mockImplementationOnce((data) =>
-          data.map((item) => Object.assign(new Order(), item)),
-        )
+        ordersRepositoryMock.create.mockImplementation((item) => Object.assign(new Order(), item))
         // @ts-expect-error: compiler type error
         ordersRepositoryMock.save.mockImplementation(async (entities) => entities)
 
@@ -901,6 +908,73 @@ describe('OrdersService', () => {
           }),
         )
       })
+    })
+
+    describe('concurrent creation (issue #320)', () => {
+      it('should serialize order creation with a named lock per (integrationId, externalId)', async () => {
+        jest.spyOn(ordersRepositoryMock, 'find').mockResolvedValueOnce([])
+        jest.spyOn(ordersRepositoryMock, 'findOne').mockResolvedValue(null)
+        // @ts-expect-error: compiler type error
+        ordersRepositoryMock.create.mockImplementation((item) => Object.assign(new Order(), item))
+        // @ts-expect-error: compiler type error
+        ordersRepositoryMock.save.mockImplementation(async (entities) => entities)
+
+        await ordersService.handleExternalOrders({
+          integrationId: 'integration-1',
+          orders: [{ externalId: '123', status: 'SUBMITTED', tests: [] }] as any,
+        })
+
+        expect(namedLockServiceMock.withLock).toHaveBeenCalledWith(
+          'order:integration-1:123',
+          expect.any(Function),
+        )
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(
+          expect.objectContaining({ type: EventType.ORDER_CREATED }),
+        )
+      })
+
+      it('should not create a duplicate order when it was created concurrently', async () => {
+        // Batch lookup misses the order, but the re-check under the lock finds it:
+        // another handler created it while this one was waiting for the lock.
+        jest.spyOn(ordersRepositoryMock, 'find').mockResolvedValueOnce([])
+        jest.spyOn(ordersRepositoryMock, 'findOne').mockResolvedValue({
+          id: 'winner-order',
+          externalId: '123',
+        } as Order)
+
+        await ordersService.handleExternalOrders({
+          integrationId: 'integration-1',
+          orders: [{ externalId: '123', status: 'SUBMITTED', tests: [] }] as any,
+        })
+
+        expect(ordersRepositoryMock.save).not.toHaveBeenCalled()
+        expect(eventsServiceMock.addEvent).not.toHaveBeenCalled()
+      })
+    })
+  })
+
+  describe('findOrdersByExternalIds()', () => {
+    it('should scope the lookup by integration when known (issue #320)', async () => {
+      await ordersService.findOrdersByExternalIds(['A-1'], 'integration-1')
+
+      expect(ordersRepositoryMock.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: [
+            { externalId: In(['A-1']), integrationId: 'integration-1' },
+            { requisitionId: In(['A-1']), integrationId: 'integration-1' },
+          ],
+        }),
+      )
+    })
+
+    it('should keep the global lookup when no integration is given', async () => {
+      await ordersService.findOrdersByExternalIds(['A-1'])
+
+      expect(ordersRepositoryMock.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: [{ externalId: In(['A-1']) }, { requisitionId: In(['A-1']) }],
+        }),
+      )
     })
   })
 
