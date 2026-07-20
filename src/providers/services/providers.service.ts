@@ -430,16 +430,18 @@ export class ProvidersService implements OnModuleInit {
     }
 
     this.providerExternalRequestsV3Model.create(rawData, (error) => {
-      if (error != null && error.name === 'MongoError') {
-        this.logger.error(error.message)
-        this.logger.warn(`Could not save external request (${method} ${url}) to the database, saving without the body`)
+      // Any non-null error means the write failed. Do not filter by error.name:
+      // the mongoose 6 / driver 4 upgrade renamed server errors from 'MongoError'
+      // to 'MongoServerError', so the old check silently dropped every failed
+      // write (429 throttling, 413 oversized document, etc.) with no trace.
+      if (error != null) {
+        this.logger.error(`Could not save external request (${method} ${url}), saving without the body: ${error.message}`)
 
         // TODO(gb): implement a better fallback strategy than just removing the body
         delete rawData.body
         this.providerExternalRequestsV3Model.create(rawData, (error) => {
-          if (error != null && error.name === 'MongoError') {
-            this.logger.error(error.message)
-            this.logger.warn('Could not save external request (without the body) to database')
+          if (error != null) {
+            this.logger.error(`Could not save external request (${method} ${url}) without the body either: ${error.message}`)
           }
         })
       }

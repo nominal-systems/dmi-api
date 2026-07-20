@@ -262,6 +262,60 @@ describe('ProvidersService', () => {
       createSpy.mockRestore()
       findOneSpy.mockRestore()
     })
+    it('should log and retry without the body when a write error is reported (regression: MongoServerError)', async () => {
+      // mongoose 6 / driver 4 renamed server errors from MongoError to MongoServerError,
+      // which the old error.name check silently ignored, dropping the write with no trace.
+      const error = Object.assign(new Error('Request rate is large'), { name: 'MongoServerError', code: 16500 })
+      const bodies: any[] = []
+      const createSpy = jest.spyOn(providerExternalRequestsV3Model, 'create')
+        .mockImplementationOnce((data: any, cb: any) => { bodies.push(data.body); cb(error); return undefined as any })
+        .mockImplementationOnce((data: any, cb: any) => { bodies.push(data.body); cb(null); return undefined as any })
+      const loggerSpy = jest.spyOn((service as any).logger, 'error').mockImplementation(() => {})
+
+      const data = {
+        headers: { 'Content-Type': 'application/json' },
+        body: { some: 'data' },
+        url: 'http://example.com',
+        method: 'POST',
+        provider: 'test-provider',
+        status: 200,
+        payload: undefined
+      }
+
+      await service.saveProviderRawData(data)
+
+      expect(createSpy).toHaveBeenCalledTimes(2)
+      expect(bodies[0]).toBeDefined() // first attempt keeps the body
+      expect(bodies[1]).toBeUndefined() // fallback drops the body
+      expect(loggerSpy).toHaveBeenCalledTimes(1)
+
+      createSpy.mockRestore()
+      loggerSpy.mockRestore()
+    })
+    it('should log again when the body-less fallback write also fails', async () => {
+      const error = Object.assign(new Error('boom'), { name: 'MongoServerError' })
+      const createSpy = jest.spyOn(providerExternalRequestsV3Model, 'create')
+        .mockImplementation((_data: any, cb: any) => { cb(error); return undefined as any })
+      const loggerSpy = jest.spyOn((service as any).logger, 'error').mockImplementation(() => {})
+
+      const data = {
+        headers: {},
+        body: { some: 'data' },
+        url: 'http://example.com',
+        method: 'POST',
+        provider: 'test-provider',
+        status: 200,
+        payload: undefined
+      }
+
+      await service.saveProviderRawData(data)
+
+      expect(createSpy).toHaveBeenCalledTimes(2)
+      expect(loggerSpy).toHaveBeenCalledTimes(2)
+
+      createSpy.mockRestore()
+      loggerSpy.mockRestore()
+    })
   })
   describe('buildExternalRequestPartitionKey', () => {
     it('should scope the key to provider, practice and UTC day', () => {
