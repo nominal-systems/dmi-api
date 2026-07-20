@@ -5,12 +5,16 @@ import { NamedLockService, orderLockKey } from './named-lock.service'
 describe('NamedLockService', () => {
   let namedLockService: NamedLockService
 
+  const queryRunnerManager = { name: 'queryRunnerManager' }
+  const defaultManager = { name: 'defaultManager' }
   const queryRunnerMock = {
     query: jest.fn(),
-    release: jest.fn()
+    release: jest.fn(),
+    manager: queryRunnerManager
   }
   const dataSourceMock = {
     options: { type: 'mysql' },
+    manager: defaultManager,
     createQueryRunner: jest.fn(() => queryRunnerMock)
   }
 
@@ -60,6 +64,9 @@ describe('NamedLockService', () => {
         ['key-1']
       )
       expect(queryRunnerMock.release).toHaveBeenCalled()
+      // The critical section runs on the query runner that holds the lock, so
+      // the find-or-create reuses that single connection (issue #320).
+      expect(fn).toHaveBeenCalledWith(queryRunnerManager)
     })
 
     it('should run fn anyway when the lock wait times out', async () => {
@@ -108,6 +115,8 @@ describe('NamedLockService', () => {
 
       expect(result).toEqual('result')
       expect(dataSourceMock.createQueryRunner).not.toHaveBeenCalled()
+      // Without a lock connection, fn falls back to the default manager.
+      expect(fn).toHaveBeenCalledWith(defaultManager)
     })
   })
 })

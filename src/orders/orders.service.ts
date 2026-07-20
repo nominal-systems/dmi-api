@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common'
 import { ClientProxy } from '@nestjs/microservices'
 import { InjectRepository } from '@nestjs/typeorm'
-import { FindManyOptions, In, Repository } from 'typeorm'
+import { EntityManager, FindManyOptions, In, Repository } from 'typeorm'
 import { IntegrationsService } from '../integrations/integrations.service'
 import { CreateOrderDto } from './dtos/create-order.dto'
 import { Order } from './entities/order.entity'
@@ -76,6 +76,14 @@ export class OrdersService {
     return await this.ordersRepository.find(options)
   }
 
+  // Resolve the repository to use for a find-or-create: when running inside a
+  // NamedLockService critical section, the passed EntityManager is bound to the
+  // connection that already holds the lock, so reusing it keeps the section on a
+  // single pool connection instead of checking out a second one (issue #320).
+  private orderRepo(manager?: EntityManager): Repository<Order> {
+    return manager != null ? manager.getRepository(Order) : this.ordersRepository
+  }
+
   async searchOrders(
     organizationId: string,
     {
@@ -120,8 +128,8 @@ export class OrdersService {
     return await qb.getMany()
   }
 
-  async findOne(args: FindOneOfTypeOptions<Order>): Promise<Order> {
-    const order = await this.ordersRepository.findOne(toFindOneOptions(args))
+  async findOne(args: FindOneOfTypeOptions<Order>, manager?: EntityManager): Promise<Order> {
+    const order = await this.orderRepo(manager).findOne(toFindOneOptions(args))
 
     if (order == null) {
       throw new NotFoundException('The order was not found')
@@ -499,12 +507,12 @@ export class OrdersService {
       // twice (issue #320).
       const newOrder = await this.namedLockService.withLock(
         orderLockKey(integrationId, externalOrder.externalId),
-        async () => {
+        async (manager) => {
           // Re-check under the lock: the order may have been created between the
           // batch lookup above and here.
           let existing: Order | null = null
           try {
-            existing = await this.findOneByExternalId(externalOrder.externalId, integrationId)
+            existing = await this.findOneByExternalId(externalOrder.externalId, integrationId, manager)
           } catch (error) {
             existing = null
           }
@@ -514,9 +522,8 @@ export class OrdersService {
             )
             return null
           }
-          return await this.ordersRepository.save(
-            this.ordersRepository.create(mapper.mapOrder(externalOrder, integrationId)),
-          )
+          const repo = this.orderRepo(manager)
+          return await repo.save(repo.create(mapper.mapOrder(externalOrder, integrationId)))
         },
       )
       if (newOrder != null) {
@@ -689,7 +696,7 @@ export class OrdersService {
     return manifest
   }
 
-  async findOneByExternalId(externalId: string, integrationId?: string): Promise<Order> {
+  async findOneByExternalId(externalId: string, integrationId?: string, manager?: EntityManager): Promise<Order> {
     // Scope the lookup by integration when known so a colliding externalId at a
     // different OU can't be returned (issue #307). Callers without an
     // integration context (e.g. admin tooling) keep the global lookup.
@@ -709,7 +716,7 @@ export class OrdersService {
           'client.identifier',
         ],
       },
-    })
+    }, manager)
   }
 
   async findOrdersByExternalIds(externalIds: string[], integrationId?: string): Promise<Order[]> {
@@ -754,12 +761,11 @@ export class OrdersService {
     return await this.client.send(messagePattern, message).toPromise()
   }
 
-  async createExternalOrder(integrationId, externalOrder: ExternalOrder): Promise<Order> {
+  async createExternalOrder(integrationId, externalOrder: ExternalOrder, manager?: EntityManager): Promise<Order> {
+    const repo = this.orderRepo(manager)
     const mapper = new ExternalOrderMapper()
-    const createdOrders = this.ordersRepository.create(
-      mapper.mapOrder(externalOrder, integrationId),
-    )
-    return await this.ordersRepository.save(createdOrders)
+    const createdOrders = repo.create(mapper.mapOrder(externalOrder, integrationId))
+    return await repo.save(createdOrders)
   }
 
   async updateOrderFromResults(order: Order, result: ProviderResult): Promise<boolean> {
@@ -792,9 +798,10 @@ export class OrdersService {
     return order
   }
 
-  async saveOrder(order: Order): Promise<Order> {
-    const createdOrder = this.ordersRepository.create(order)
-    return await this.ordersRepository.save(createdOrder)
+  async saveOrder(order: Order, manager?: EntityManager): Promise<Order> {
+    const repo = this.orderRepo(manager)
+    const createdOrder = repo.create(order)
+    return await repo.save(createdOrder)
   }
 
   async countByProvider(start: Date, end: Date): Promise<any> {

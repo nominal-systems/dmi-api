@@ -167,19 +167,19 @@ export class ReportsService {
         // twice (issue #320).
         const { order, created } = await this.namedLockService.withLock(
           orderLockKey(integrationId, externalOrderId),
-          async () => {
+          async (manager) => {
             // Re-check under the lock: the order may have been created between
             // the batch lookup above and here.
             let existing: Order | null = null
             try {
-              existing = await this.ordersService.findOneByExternalId(externalOrderId, integrationId)
+              existing = await this.ordersService.findOneByExternalId(externalOrderId, integrationId, manager)
             } catch (error) {
               existing = null
             }
             if (existing != null) {
               return { order: existing, created: false }
             }
-            return { order: await this.ordersService.createExternalOrder(integrationId, externalOrder), created: true }
+            return { order: await this.ordersService.createExternalOrder(integrationId, externalOrder, manager), created: true }
           }
         )
         if (created) {
@@ -210,10 +210,10 @@ export class ReportsService {
       // window logic below decides whether to reconcile into it or create a new one.
       const { order, reconciledIntoExisting } = await this.namedLockService.withLock(
         orderLockKey(integrationId, extractedOrder.externalId),
-        async () => {
+        async (manager) => {
           let order: Order | null
           try {
-            order = await this.ordersService.findOneByExternalId(extractedOrder.externalId, integrationId)
+            order = await this.ordersService.findOneByExternalId(extractedOrder.externalId, integrationId, manager)
           } catch (err) {
             order = null
           }
@@ -236,7 +236,7 @@ export class ReportsService {
 
           const reconciledIntoExisting = order != null
           if (order == null) {
-            order = await this.ordersService.saveOrder(extractedOrder)
+            order = await this.ordersService.saveOrder(extractedOrder, manager)
             dummyOrders.push(order)
           }
           return { order, reconciledIntoExisting }

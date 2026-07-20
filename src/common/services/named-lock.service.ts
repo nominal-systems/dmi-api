@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { InjectDataSource } from '@nestjs/typeorm'
-import { DataSource } from 'typeorm'
+import { DataSource, EntityManager } from 'typeorm'
 
 /**
  * Lock key for order find-or-create sections. Using the same key format in
@@ -28,14 +28,18 @@ export class NamedLockService {
    * dedicated query runner is held for the duration of fn. If the process
    * dies while holding the lock, MySQL releases it when the connection drops.
    *
+   * fn receives the query runner's EntityManager and must run its critical-
+   * section queries through it, so the find-or-create reuses the connection
+   * already held for the lock instead of pinning a second pool connection.
+   *
    * If the lock cannot be acquired within the wait timeout, fn runs anyway
    * (graceful degradation to unserialized behavior, never worse than today).
    * On non-MySQL drivers (e.g. sqlite in tests) fn runs without locking.
    */
-  async withLock<T> (key: string, fn: () => Promise<T>): Promise<T> {
+  async withLock<T> (key: string, fn: (manager: EntityManager) => Promise<T>): Promise<T> {
     const driver = this.dataSource.options.type
     if (driver !== 'mysql' && driver !== 'mariadb') {
-      return await fn()
+      return await fn(this.dataSource.manager)
     }
 
     const queryRunner = this.dataSource.createQueryRunner()
@@ -53,7 +57,7 @@ export class NamedLockService {
       if (!acquired) {
         this.logger.warn(`Proceeding without named lock '${key}' after ${NamedLockService.LOCK_WAIT_SECONDS}s wait`)
       }
-      return await fn()
+      return await fn(queryRunner.manager)
     } finally {
       if (acquired) {
         try {
