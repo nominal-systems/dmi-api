@@ -12,6 +12,7 @@ import { InternalEventLoggingModule } from '../internal-event-logging/internal-e
 import { FEATURE_FLAG_PROVIDER } from '../feature-flags/feature-flag.interface'
 import { StatsigFeatureFlagProvider } from '../feature-flags/statsig-feature-flag.provider'
 import { EnvFeatureFlagProvider } from '../feature-flags/env-feature-flag.provider'
+import { NamedLockService } from '../common/services/named-lock.service'
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { EnvFeatureFlagProvider } from '../feature-flags/env-feature-flag.provid
   controllers: [ReportsController],
   providers: [
     ReportsService,
+    NamedLockService,
 {
       provide: FEATURE_FLAG_PROVIDER,
       useClass: process.env.STATSIG_ENABLED === 'true' ? StatsigFeatureFlagProvider : EnvFeatureFlagProvider
