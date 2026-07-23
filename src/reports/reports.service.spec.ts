@@ -2138,6 +2138,39 @@ describe('ReportsService', () => {
         }))
         jest.clearAllMocks()
       })
+      it('should not create an order when the re-check under the lock fails transiently (issue #320)', async () => {
+        // A transient error during the re-check is NOT "order missing":
+        // treating it as such would insert a duplicate of an order that may
+        // already exist.
+        const externalOrder = { externalId: 'EXT-1', status: 'COMPLETED' }
+        jest.spyOn(reportsService, 'findReportsByExternalOrderIds').mockResolvedValueOnce([])
+        ordersServiceMock.findOrdersByExternalIds.mockResolvedValueOnce([])
+        ordersServiceMock.getOrderFromProvider.mockResolvedValueOnce(externalOrder)
+        ordersServiceMock.findOneByExternalId.mockRejectedValueOnce(new Error('connection lost'))
+
+        await reportsService.handleExternalResults({
+          integrationId: 'idexx',
+          results: [{ id: 'r1', orderId: 'EXT-1', status: 'COMPLETED', testResults: [] }] as unknown as ProviderResult[]
+        })
+
+        expect(ordersServiceMock.createExternalOrder).not.toHaveBeenCalled()
+        expect(eventsServiceMock.addEvent).not.toHaveBeenCalledWith(expect.objectContaining({
+          type: EventType.ORDER_CREATED
+        }))
+        jest.clearAllMocks()
+      })
+      it('should propagate transient re-check errors for orphan results instead of creating a spurious order (issue #320)', async () => {
+        // A transient error during the orphan re-check under the lock is NOT
+        // "order missing": treating it as such would insert a spurious new
+        // order for the orphan result.
+        const externalResultsA = FileUtils.loadFile('test/idexx/external_results-02a.json')
+        ordersServiceMock.findOneByExternalId.mockRejectedValueOnce(new Error('connection lost'))
+
+        await expect(reportsService.handleExternalResults(externalResultsA)).rejects.toThrow('connection lost')
+
+        expect(ordersServiceMock.saveOrder).not.toHaveBeenCalled()
+        jest.clearAllMocks()
+      })
     })
     describe('Antech', () => {
       it('should create orders/reports', async () => {

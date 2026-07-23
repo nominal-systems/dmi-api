@@ -514,6 +514,10 @@ export class OrdersService {
           try {
             existing = await this.findOneByExternalId(externalOrder.externalId, integrationId, manager)
           } catch (error) {
+            // Only "not found" means missing: a transient error must abort the
+            // event instead of being treated as missing, which would insert a
+            // duplicate of an order that may already exist (issue #320 review).
+            if (!(error instanceof NotFoundException)) throw error
             existing = null
           }
           if (existing != null) {

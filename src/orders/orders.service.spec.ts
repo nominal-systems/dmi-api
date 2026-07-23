@@ -950,6 +950,24 @@ describe('OrdersService', () => {
         expect(ordersRepositoryMock.save).not.toHaveBeenCalled()
         expect(eventsServiceMock.addEvent).not.toHaveBeenCalled()
       })
+
+      it('should propagate transient re-check errors instead of treating them as a missing order', async () => {
+        // A transient error during the re-check under the lock is NOT "order
+        // missing": proceeding would insert a duplicate of an order that may
+        // already exist (issue #320 review).
+        jest.spyOn(ordersRepositoryMock, 'find').mockResolvedValueOnce([])
+        jest.spyOn(ordersRepositoryMock, 'findOne').mockRejectedValueOnce(new Error('connection lost'))
+
+        await expect(
+          ordersService.handleExternalOrders({
+            integrationId: 'integration-1',
+            orders: [{ externalId: '123', status: 'SUBMITTED', tests: [] }] as any,
+          }),
+        ).rejects.toThrow('connection lost')
+
+        expect(ordersRepositoryMock.save).not.toHaveBeenCalled()
+        expect(eventsServiceMock.addEvent).not.toHaveBeenCalled()
+      })
     })
   })
 

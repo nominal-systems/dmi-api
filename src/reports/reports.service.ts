@@ -174,6 +174,10 @@ export class ReportsService {
             try {
               existing = await this.ordersService.findOneByExternalId(externalOrderId, integrationId, manager)
             } catch (error) {
+              // Only "not found" means missing: a transient error must skip
+              // this order instead of being treated as missing, which would
+              // insert a duplicate (issue #320 review).
+              if (!(error instanceof NotFoundException)) throw error
               existing = null
             }
             if (existing != null) {
@@ -215,6 +219,10 @@ export class ReportsService {
           try {
             order = await this.ordersService.findOneByExternalId(extractedOrder.externalId, integrationId, manager)
           } catch (err) {
+            // Only "not found" means missing: a transient error must abort the
+            // event instead of being treated as missing, which would insert a
+            // spurious new order for the orphan result (issue #320 review).
+            if (!(err instanceof NotFoundException)) throw err
             order = null
           }
 
