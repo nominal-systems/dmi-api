@@ -15,6 +15,37 @@ import { IntegrationTestResponse, Operation, Resource } from '@nominal-systems/d
 import { IntegrationStatus } from './constants/integration-status.enum'
 import { Provider } from '../providers/entities/provider.entity'
 
+const DEFAULT_RESTART_CONCURRENCY = 5
+const DEFAULT_RESTART_ATTEMPTS = 3
+const DEFAULT_RESTART_BACKOFF_MS = 1000
+
+export interface EnsureStatusOptions {
+  /** Statuses to restart. Defaults to RUNNING only. */
+  statuses?: IntegrationStatus[]
+  /** Restrict to these providers (e.g. `idexx`), by provider id. */
+  providerIds?: string[]
+  /** Restrict to these integration ids. */
+  integrationIds?: string[]
+  concurrency?: number
+  attempts?: number
+  backoffMs?: number
+  /** Log what would be restarted without touching the engines or the database. */
+  dryRun?: boolean
+}
+
+export interface EnsureStatusFailure {
+  integrationId: string
+  providerId: string
+  error: string
+}
+
+export interface EnsureStatusSummary {
+  total: number
+  restarted: number
+  failures: EnsureStatusFailure[]
+  dryRun: boolean
+}
+
 @Injectable()
 export class IntegrationsService {
   private readonly logger = new Logger(IntegrationsService.name)
@@ -123,15 +154,31 @@ export class IntegrationsService {
   }
 
   async restart(integration: Integration): Promise<Error | undefined> {
+    const previousStatus = integration.status
     const responseStop = await this.doStop(integration)
-    if (responseStop?.message === undefined && integration.status === IntegrationStatus.RUNNING) {
-      await this.doStart(
-        integration.id,
-        integration.providerConfiguration,
-        integration.integrationOptions,
-      )
-    } else if (responseStop?.message !== undefined) {
+    if (responseStop?.message !== undefined) {
       return responseStop
+    }
+
+    if (previousStatus !== IntegrationStatus.RUNNING) {
+      return
+    }
+
+    const responseStart = await this.doStart(
+      integration.id,
+      integration.providerConfiguration,
+      integration.integrationOptions,
+    )
+
+    if (responseStart?.message !== undefined) {
+      // doStop() already persisted STOPPED. Restore the previous status so a re-run picks the
+      // integration up again: a RUNNING row whose jobs are missing is exactly what a restart pass
+      // is meant to repair, whereas a STOPPED row would be skipped from here on.
+      await this.integrationsRepository.update(integration.id, { status: previousStatus })
+      this.logger.warn(
+        `Failed to start integration ${integration.id}, restored status to ${previousStatus}`,
+      )
+      return responseStart
     }
   }
 
@@ -155,34 +202,144 @@ export class IntegrationsService {
     await this.doDelete(integration)
   }
 
-  async ensureStatusAll(): Promise<void> {
-    const integrations = await this.findAll({
-      where: {
-        status: In([IntegrationStatus.RUNNING, IntegrationStatus.STOPPED]),
-      },
-      relations: ['providerConfiguration'],
-    })
+  /**
+   * Restarts integrations so the engines re-register their repeatable polling jobs.
+   *
+   * Repeatable jobs live only in Redis and nothing re-creates them, so any Redis data loss (a
+   * cutover to a new instance, an eviction, a flush) leaves the integrations RUNNING in the
+   * database with no polling happening. This is the reconciliation pass for that state: it is
+   * idempotent and safe to re-run, since restarting an integration whose jobs already exist just
+   * replaces them.
+   */
+  async ensureStatusAll(options: EnsureStatusOptions = {}): Promise<EnsureStatusSummary> {
+    const statuses = options.statuses ?? [IntegrationStatus.RUNNING]
+    const concurrency = Math.max(1, options.concurrency ?? DEFAULT_RESTART_CONCURRENCY)
+    const attempts = Math.max(1, options.attempts ?? DEFAULT_RESTART_ATTEMPTS)
+    const backoffMs = Math.max(0, options.backoffMs ?? DEFAULT_RESTART_BACKOFF_MS)
 
-    const integrationStatusCounts = integrations.reduce(
-      (counts, integration) => {
-        counts[integration.status]++
-        return counts
-      },
-      { RUNNING: 0, STOPPED: 0 },
+    const integrations = this.filterIntegrations(
+      await this.findAll({
+        where: { status: In(statuses) },
+        relations: ['providerConfiguration'],
+      }),
+      options,
+    )
+
+    const statusCounts = integrations.reduce<Record<string, number>>((counts, integration) => {
+      counts[integration.status] = (counts[integration.status] ?? 0) + 1
+      return counts
+    }, {})
+
+    this.logger.log(
+      `Found ${integrations.length} integration(s) to restart: ${
+        Object.entries(statusCounts)
+          .map(([status, count]) => `${count} ${status}`)
+          .join(', ') || 'none'
+      }`,
+    )
+
+    if (options.dryRun === true) {
+      for (const integration of integrations) {
+        this.logger.log(
+          `[dry-run] Would restart integration ${integration.id} (provider ${integration.providerConfiguration.providerId}, status ${integration.status})`,
+        )
+      }
+      return { total: integrations.length, restarted: 0, failures: [], dryRun: true }
+    }
+
+    const failures: EnsureStatusFailure[] = []
+    let restarted = 0
+    let cursor = 0
+
+    const worker = async (): Promise<void> => {
+      while (cursor < integrations.length) {
+        const integration = integrations[cursor++]
+        const error = await this.restartWithRetry(integration, attempts, backoffMs)
+        if (error === undefined) {
+          restarted++
+          this.logger.log(
+            `Successfully restarted integration ${integration.id} (${
+              restarted + failures.length
+            }/${integrations.length})`,
+          )
+        } else {
+          failures.push({
+            integrationId: integration.id,
+            providerId: integration.providerConfiguration.providerId,
+            error: error.message,
+          })
+          this.logger.error(
+            `Error restarting integration ${integration.id}: ${error.message} (${
+              restarted + failures.length
+            }/${integrations.length})`,
+          )
+        }
+      }
+    }
+
+    await Promise.all(
+      Array.from({ length: Math.min(concurrency, integrations.length) }, async () => await worker()),
     )
 
     this.logger.log(
-      `Found: ${integrationStatusCounts.RUNNING} integrations RUNNING, ${integrationStatusCounts.STOPPED} integrations STOPPED`,
+      `Finished restarting integrations: ${restarted} succeeded, ${failures.length} failed`,
     )
 
-    for (const integration of integrations) {
-      const response = await this.restart(integration)
-      if (response?.message === undefined) {
-        this.logger.log(`Successfully restarted integration ${integration.id}`)
-      } else {
-        this.logger.error(`Error restarting integration ${integration.id}`)
+    return { total: integrations.length, restarted, failures, dryRun: false }
+  }
+
+  private filterIntegrations(
+    integrations: Integration[],
+    options: EnsureStatusOptions,
+  ): Integration[] {
+    const { providerIds, integrationIds } = options
+    return integrations.filter((integration) => {
+      if (
+        providerIds !== undefined &&
+        providerIds.length > 0 &&
+        !providerIds.includes(integration.providerConfiguration.providerId)
+      ) {
+        return false
+      }
+      if (
+        integrationIds !== undefined &&
+        integrationIds.length > 0 &&
+        !integrationIds.includes(integration.id)
+      ) {
+        return false
+      }
+      return true
+    })
+  }
+
+  private async restartWithRetry(
+    integration: Integration,
+    attempts: number,
+    backoffMs: number,
+  ): Promise<Error | undefined> {
+    let lastError: Error | undefined
+
+    for (let attempt = 1; attempt <= attempts; attempt++) {
+      try {
+        lastError = await this.restart(integration)
+      } catch (e) {
+        lastError = e instanceof Error ? e : new Error(String(e))
+      }
+
+      if (lastError === undefined) {
+        return undefined
+      }
+
+      if (attempt < attempts) {
+        const delay = backoffMs * Math.pow(2, attempt - 1)
+        this.logger.warn(
+          `Attempt ${attempt}/${attempts} to restart integration ${integration.id} failed (${lastError.message}), retrying in ${delay}ms`,
+        )
+        await new Promise((resolve) => setTimeout(resolve, delay))
       }
     }
+
+    return lastError
   }
 
   async doDelete(integration: Integration): Promise<void> {
