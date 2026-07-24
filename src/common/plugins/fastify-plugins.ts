@@ -1,4 +1,4 @@
-import { INestApplication, Logger } from '@nestjs/common'
+import { INestApplication } from '@nestjs/common'
 import { FastifyInstance } from 'fastify'
 import fastifyCookie from '@fastify/cookie'
 import fastifySession from '@fastify/session'
@@ -32,12 +32,11 @@ export async function registerFastifyPlugins (app: INestApplication): Promise<vo
       client: mongooseConnection.getClient() as unknown as MongoClient,
       collectionName: SESSIONS_COLLECTION,
       ttl: SESSION_MAX_AGE_MS / 1000,
-      // CosmosDB only honors TTL indexes on the system `_ts` field and rejects
-      // the `expires` TTL index connect-mongo would create — which would leave
-      // the store's collection promise rejected and crash the pod (unhandled
-      // rejection). Expired docs are cleaned up via the `_ts` index created
-      // below; stale sessions are rejected on read regardless (the store
-      // filters on `expires`, and @fastify/session checks the cookie expiry).
+      // CosmosDB only honors TTL on the system `_ts` field and rejects the
+      // `expires` TTL index connect-mongo would otherwise create at startup.
+      // Cleanup of expired docs is left to database provisioning (TTL on
+      // `_ts`); correctness never depends on it — the store filters on
+      // `expires` at read time and the session cookie expires regardless.
       autoRemove: 'disabled'
     }) as any,
     // Without this, every cookie-less request (all PIMS API traffic) would
@@ -50,25 +49,6 @@ export async function registerFastifyPlugins (app: INestApplication): Promise<vo
       maxAge: SESSION_MAX_AGE_MS
     }
   })
-
-  // Sliding session cleanup on CosmosDB: `_ts` is Cosmos' last-modified
-  // timestamp, updated on every session re-save, so docs expire 30 minutes
-  // after the last activity — matching the cookie maxAge. On plain MongoDB
-  // (local/dev) `_ts` does not exist, so this index is an inert no-op and
-  // sessions simply accumulate until they are rejected on read; do not
-  // "fix" this by indexing `expires`, Cosmos rejects TTL on that field.
-  // Best-effort: correctness never depends on this index, so a failure here
-  // must not take the pod down.
-  try {
-    await mongooseConnection.db
-      .collection(SESSIONS_COLLECTION)
-      .createIndex({ _ts: 1 }, { expireAfterSeconds: SESSION_MAX_AGE_MS / 1000 })
-  } catch (error) {
-    new Logger('SessionStore').warn(
-      `Could not create TTL index on '${SESSIONS_COLLECTION}': ${(error as Error).message}. ` +
-        'Expired session documents will not be cleaned up automatically.'
-    )
-  }
 
   await fastify.register(fastifyPassport.initialize())
 
