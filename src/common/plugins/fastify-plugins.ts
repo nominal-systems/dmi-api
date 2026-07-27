@@ -4,18 +4,49 @@ import fastifyCookie from '@fastify/cookie'
 import fastifySession from '@fastify/session'
 import fastifyPassport from '@fastify/passport'
 import { ConfigService } from '@nestjs/config'
+import { getConnectionToken } from '@nestjs/mongoose'
+import { Connection } from 'mongoose'
+import { MongoClient } from 'mongodb'
+// connect-mongo compiles to `module.exports = MongoStore` (export =); with
+// allowSyntheticDefaultImports and no esModuleInterop, a default import would
+// type-check but be undefined at runtime — import-require is the correct form.
+import MongoStore = require('connect-mongo')
 import { AppConfig } from '../../config/config.interface'
+
+const SESSION_MAX_AGE_MS = 30 * 60 * 1000 // 30 minutes
+const SESSIONS_COLLECTION = 'sessions'
 
 export async function registerFastifyPlugins (app: INestApplication): Promise<void> {
   const fastify = app.getHttpAdapter().getInstance() as FastifyInstance
   const configService = app.get<ConfigService<AppConfig>>(ConfigService)
+  const mongooseConnection = app.get<Connection>(getConnectionToken())
 
   await fastify.register(fastifyCookie)
   await fastify.register(fastifySession, {
     secret: configService.get<string>('secretKey') as string,
+    // Sessions must live outside pod memory so any replica can serve any
+    // request. Reuses the app's existing Mongo connection: mongoose 6 exposes a
+    // driver-v4 MongoClient while connect-mongo is typed against driver v5/v6,
+    // but the collection API surface the store uses is identical, hence the cast.
+    store: MongoStore.create({
+      client: mongooseConnection.getClient() as unknown as MongoClient,
+      collectionName: SESSIONS_COLLECTION,
+      ttl: SESSION_MAX_AGE_MS / 1000,
+      // CosmosDB only honors TTL on the system `_ts` field and rejects the
+      // `expires` TTL index connect-mongo would otherwise create at startup.
+      // Cleanup of expired docs is left to database provisioning (TTL on
+      // `_ts`); correctness never depends on it — the store filters on
+      // `expires` at read time and the session cookie expires regardless.
+      autoRemove: 'disabled'
+    }) as any,
+    // Without this, every cookie-less request (all PIMS API traffic) would
+    // persist a brand-new empty session to Mongo. Login flows modify the
+    // session, so they are still saved; rolling (default true) keeps re-saving
+    // active sessions, giving the sliding 30-minute expiry.
+    saveUninitialized: false,
     cookie: {
       secure: process.env.NODE_ENV === 'production',
-      maxAge: 30 * 60 * 1000 // 30 minutes
+      maxAge: SESSION_MAX_AGE_MS
     }
   })
 
