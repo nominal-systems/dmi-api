@@ -136,9 +136,11 @@ export class AuthController {
         )}. Redirecting to ${redirectUrl}`,
       )
 
-      if (req.session && req.session.passport && req.user) {
-        req.session.passport.user = req.user
-      }
+      // Note: fastify-passport stores the serialized user directly at `session.passport`, and
+      // `req.user` is that same object. Normalizing to `session.passport.user = req.user` here
+      // would make the object reference itself, which the MongoDB session store cannot
+      // serialize ("Converting circular structure to JSON"). The preHandler hook in
+      // fastify-plugins.ts already restores `req.user` from the flat `session.passport` shape.
 
       // Explicitly set status and perform redirect
       res.status(302)
