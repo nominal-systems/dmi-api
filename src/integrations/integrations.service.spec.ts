@@ -25,6 +25,7 @@ describe('IntegrationsService', () => {
     }),
   }
   const integrationRepositoryMock = {
+    find: jest.fn(),
     findOne: jest.fn((obj) => obj),
     softDelete: jest.fn(),
     update: jest.fn(),
@@ -227,6 +228,167 @@ describe('IntegrationsService', () => {
       })
 
       expect(clientProxyMock.emit).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  describe('restart()', () => {
+    const runningIntegration = {
+      id: 'integration-id',
+      status: IntegrationStatus.RUNNING,
+      providerConfiguration: {
+        id: 'provider-configuration-id',
+        providerId: 'idexx',
+        configurationOptions: {},
+      },
+      integrationOptions: {},
+    } as any
+
+    const resolves = (): any => ({ toPromise: async () => ({}) })
+    const rejects = (): any => ({
+      toPromise: async () => {
+        throw new Error('engine unreachable')
+      },
+    })
+
+    beforeEach(() => {
+      integrationRepositoryMock.update.mockClear()
+      clientProxyMock.send.mockReset()
+    })
+
+    it('should stop and start a RUNNING integration', async () => {
+      clientProxyMock.send.mockImplementation(resolves)
+
+      const response = await integrationsService.restart({ ...runningIntegration })
+
+      expect(response).toBeUndefined()
+      expect(clientProxyMock.send).toHaveBeenCalledTimes(2)
+      expect(integrationRepositoryMock.update).toHaveBeenLastCalledWith('integration-id', {
+        status: IntegrationStatus.RUNNING,
+      })
+    })
+
+    it('should not start an integration that was not RUNNING', async () => {
+      clientProxyMock.send.mockImplementation(resolves)
+
+      const response = await integrationsService.restart({
+        ...runningIntegration,
+        status: IntegrationStatus.STOPPED,
+      })
+
+      expect(response).toBeUndefined()
+      expect(clientProxyMock.send).toHaveBeenCalledTimes(1)
+    })
+
+    it('should restore the previous status when starting fails, so a re-run retries it', async () => {
+      clientProxyMock.send.mockImplementationOnce(resolves).mockImplementationOnce(rejects)
+
+      const response = await integrationsService.restart({ ...runningIntegration })
+
+      expect(response?.message).toContain('Error starting integration')
+      // doStop() persisted STOPPED, the failed start must not leave it there
+      expect(integrationRepositoryMock.update).toHaveBeenNthCalledWith(1, 'integration-id', {
+        status: IntegrationStatus.STOPPED,
+      })
+      expect(integrationRepositoryMock.update).toHaveBeenLastCalledWith('integration-id', {
+        status: IntegrationStatus.RUNNING,
+      })
+    })
+
+    it('should return the stop error without starting', async () => {
+      clientProxyMock.send.mockImplementation(rejects)
+
+      const response = await integrationsService.restart({ ...runningIntegration })
+
+      expect(response?.message).toContain('Error stopping integration')
+      expect(clientProxyMock.send).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  describe('ensureStatusAll()', () => {
+    const integrationOf = (id: string, providerId: string, status = IntegrationStatus.RUNNING): any => ({
+      id,
+      status,
+      providerConfiguration: { id: `${id}-config`, providerId, configurationOptions: {} },
+      integrationOptions: {},
+    })
+
+    beforeEach(() => {
+      integrationRepositoryMock.find.mockReset()
+      integrationRepositoryMock.update.mockClear()
+      clientProxyMock.send.mockReset()
+      clientProxyMock.send.mockImplementation(() => ({ toPromise: async () => ({}) }))
+    })
+
+    it('should only restart RUNNING integrations by default', async () => {
+      integrationRepositoryMock.find.mockResolvedValue([integrationOf('a', 'idexx')])
+
+      const summary = await integrationsService.ensureStatusAll()
+
+      expect(integrationRepositoryMock.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { status: expect.objectContaining({ _value: [IntegrationStatus.RUNNING] }) },
+        }),
+      )
+      expect(summary).toEqual({ total: 1, restarted: 1, failures: [], dryRun: false })
+    })
+
+    it('should restrict to the requested providers and integrations', async () => {
+      integrationRepositoryMock.find.mockResolvedValue([
+        integrationOf('a', 'idexx'),
+        integrationOf('b', 'zoetis'),
+        integrationOf('c', 'idexx'),
+      ])
+
+      const summary = await integrationsService.ensureStatusAll({
+        providerIds: ['idexx'],
+        integrationIds: ['c'],
+      })
+
+      expect(summary.total).toBe(1)
+      expect(summary.restarted).toBe(1)
+      expect(clientProxyMock.send).toHaveBeenCalledTimes(2)
+    })
+
+    it('should change nothing on a dry run', async () => {
+      integrationRepositoryMock.find.mockResolvedValue([
+        integrationOf('a', 'idexx'),
+        integrationOf('b', 'zoetis'),
+      ])
+
+      const summary = await integrationsService.ensureStatusAll({ dryRun: true })
+
+      expect(summary).toEqual({ total: 2, restarted: 0, failures: [], dryRun: true })
+      expect(clientProxyMock.send).not.toHaveBeenCalled()
+      expect(integrationRepositoryMock.update).not.toHaveBeenCalled()
+    })
+
+    it('should retry a failing integration and report it without stopping the run', async () => {
+      integrationRepositoryMock.find.mockResolvedValue([
+        integrationOf('a', 'idexx'),
+        integrationOf('b', 'zoetis'),
+      ])
+      clientProxyMock.send.mockImplementation((pattern: string) => ({
+        toPromise: async () => {
+          if (pattern.startsWith('zoetis')) {
+            throw new Error('engine unreachable')
+          }
+          return {}
+        },
+      }))
+
+      const summary = await integrationsService.ensureStatusAll({
+        concurrency: 1,
+        attempts: 2,
+        backoffMs: 0,
+      })
+
+      expect(summary.total).toBe(2)
+      expect(summary.restarted).toBe(1)
+      expect(summary.failures).toEqual([
+        { integrationId: 'b', providerId: 'zoetis', error: 'Error stopping integration b' },
+      ])
+      // 2 sends for the integration that worked, 1 per attempt for the one that did not
+      expect(clientProxyMock.send).toHaveBeenCalledTimes(4)
     })
   })
 })

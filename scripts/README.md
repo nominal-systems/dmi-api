@@ -1,3 +1,9 @@
+# Scripts
+
+- `mongo-shard-migrate.js` — copies documents into sharded Cosmos collections (below).
+- `verify-repeat-keys.py` — counts Bull repeatable-job registrations in a Redis instance, used to
+  verify a Redis cutover. See [docs/redis-cutover-job-reregistration.md](../docs/redis-cutover-job-reregistration.md).
+
 # Migration Script: mongo-shard-migrate.js
 
 This script copies documents from existing (unsharded) collections into new, sharded collections in Cosmos DB (Mongo API), preserving `_id` and running in batches.
