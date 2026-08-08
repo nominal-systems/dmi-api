@@ -521,6 +521,11 @@ export class ReportsService {
       observation.valueString = item.valueString
     }
 
+    // Units
+    if (item.units != null) {
+      observation.units = item.units
+    }
+
     // Reference Range
     if (item.referenceRange != null) {
       observation.referenceRange = item.referenceRange
