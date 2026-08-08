@@ -13,6 +13,7 @@ import { EventSubscriptionService } from './services/event-subscription.service'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { EventSubscription } from './entities/event-subscription.entity'
 import { IntegrationsModule } from '../integrations/integrations.module'
+import { PracticesModule } from '../practices/practices.module'
 
 @Module({
   imports: [
@@ -34,7 +35,8 @@ import { IntegrationsModule } from '../integrations/integrations.module'
     ConfigModule,
     OrganizationsModule,
     forwardRef(() => OrdersModule),
-    IntegrationsModule
+    IntegrationsModule,
+    PracticesModule
   ],
   controllers: [EventsController, EventSubscriptionsController],
   providers: [
