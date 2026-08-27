@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Res, UseInterceptors } from '@nestjs/common'
+import { Controller, Get, Param, Res, UseGuards, UseInterceptors } from '@nestjs/common'
 import { ReportsService } from './reports.service'
 import { DisableGuards } from '../common/decorators/disable-guards.decorator'
 import { ApiGuard } from '../common/guards/api.guard'
@@ -12,6 +12,7 @@ import { ExternalResultEventData } from '../common/typings/internal-event-data.i
 import { InternalEventLoggingInterceptor } from '../internal-event-logging/internal-event-logging.interceptor'
 
 @Controller('reports')
+@UseGuards(ApiGuard)
 export class ReportsController {
   constructor (private readonly reportsService: ReportsService) {
   }
@@ -29,7 +30,7 @@ export class ReportsController {
     @Organization() organization: OrganizationEntity,
     @Param('reportId') reportId: string
   ): Promise<Attachment[]> {
-    return await this.reportsService.getPresentedForm(reportId)
+    return await this.reportsService.getPresentedForm(reportId, organization)
   }
 
   @Get(':reportId/presentedForm/:attachmentId')
@@ -39,7 +40,7 @@ export class ReportsController {
     @Param('reportId') reportId: string,
     @Param('attachmentId') attachmentId: string
   ): Promise<void> {
-    const attachment = await this.reportsService.getPresentedFormAttachment(reportId, attachmentId)
+    const attachment = await this.reportsService.getPresentedFormAttachment(reportId, attachmentId, organization)
     const contentType = attachment.contentType == null ? 'application/octet-stream' : attachment.contentType
     const data = Buffer.from(attachment.data, 'base64')
 
