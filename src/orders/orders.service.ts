@@ -653,7 +653,7 @@ export class OrdersService {
   }
 
   async getOrderReport(organization: Organization, orderId: string): Promise<Report> {
-    return await this.reportsService.findForOrder(orderId)
+    return await this.reportsService.findForOrder(orderId, organization)
   }
 
   async getOrderManifest(organization: Organization, orderId: string): Promise<Attachment> {

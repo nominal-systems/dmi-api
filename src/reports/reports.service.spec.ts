@@ -2866,5 +2866,25 @@ describe('ReportsService', () => {
         ).resolves.toBe(attachment)
       })
     })
+
+    describe('findForOrder()', () => {
+      it('throws NotFoundException when no report exists for the order', async () => {
+        makeQbSpy({ entities: [], raw: [] })
+        await expect(reportsService.findForOrder('order-1', organization)).rejects.toThrow(
+          new NotFoundException("Report for order 'order-1' not found")
+        )
+      })
+
+      it('throws ForbiddenException when the order belongs to another organization', async () => {
+        makeQbSpy(found('org-2', { id: 'report-1' }))
+        await expect(reportsService.findForOrder('order-1', organization)).rejects.toThrow(ForbiddenException)
+      })
+
+      it('returns the report when the order belongs to the organization', async () => {
+        const report = { id: 'report-1' }
+        makeQbSpy(found('org-1', report))
+        await expect(reportsService.findForOrder('order-1', organization)).resolves.toBe(report)
+      })
+    })
   })
 })

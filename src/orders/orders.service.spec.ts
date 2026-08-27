@@ -48,6 +48,7 @@ describe('OrdersService', () => {
   }
   const reportsServiceMock = {
     registerForOrder: jest.fn(),
+    findForOrder: jest.fn(),
   }
   const integrationsServiceMock = {
     findById: jest.fn().mockImplementation((integrationId) => {
@@ -1268,6 +1269,17 @@ describe('OrdersService', () => {
 
         expect(updateSpy).toHaveBeenCalledTimes(1)
       })
+    })
+  })
+
+  describe('getOrderReport()', () => {
+    it('forwards the order id and organization to ReportsService.findForOrder', async () => {
+      const organization = { id: 'org-1' } as any
+      const report = { id: 'report-1' } as any
+      reportsServiceMock.findForOrder.mockResolvedValueOnce(report)
+
+      await expect(ordersService.getOrderReport(organization, 'order-1')).resolves.toBe(report)
+      expect(reportsServiceMock.findForOrder).toHaveBeenCalledWith('order-1', organization)
     })
   })
 })
