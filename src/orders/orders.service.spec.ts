@@ -25,7 +25,7 @@ import {
   CreateOrderDtoClient,
   CreateOrderDtoPatient,
 } from './dtos/create-order.dto'
-import { HttpException } from '@nestjs/common'
+import { ForbiddenException, HttpException } from '@nestjs/common'
 import { v4 as uuidv4 } from 'uuid'
 import { Patient } from './entities/patient.entity'
 import { ProvidersService } from '../providers/services/providers.service'
@@ -65,6 +65,7 @@ describe('OrdersService', () => {
         id: integrationId,
         providerConfiguration: {
           providerId: integrationId,
+          organizationId: 'org-1',
         },
         practice: {},
       }
@@ -150,6 +151,19 @@ describe('OrdersService', () => {
   })
 
   describe('createOrder()', () => {
+    const organization = { id: 'org-1' } as any
+
+    it('rejects an integration that belongs to another organization', async () => {
+      jest.spyOn(integrationsServiceMock, 'findOne').mockResolvedValueOnce({
+        providerConfiguration: { providerId: 'idexx', organizationId: 'other-org', configurationOptions: {} },
+        practice: {},
+      })
+      await expect(
+        ordersService.createOrder(organization, { integrationId: 'idexx' } as CreateOrderDto),
+      ).rejects.toThrow(ForbiddenException)
+      expect(eventsServiceMock.addEvent).not.toHaveBeenCalled()
+    })
+
     it('should save ref mappings, but send provider ref mappings', async () => {
       const DMI_SEX = 'a6de9d9e-e3b9-4cc5-bfb4-68e33a8684ba'
       const DMI_SPECIES = '36c3cde0-bd6b-11eb-9610-302432eba3e9'
@@ -222,7 +236,7 @@ describe('OrdersService', () => {
         technician: 'Dr. Doolittle',
         notes: 'This is a note.',
       }
-      const createdOrder = await ordersService.createOrder(createOrderDto)
+      const createdOrder = await ordersService.createOrder(organization, createOrderDto)
       expect(createdOrder.patient).toEqual(
         expect.objectContaining({
           sex: DMI_SEX,
@@ -257,6 +271,7 @@ describe('OrdersService', () => {
         jest.spyOn(integrationsServiceMock, 'findOne').mockResolvedValueOnce({
           providerConfiguration: {
             providerId: 'idexx',
+            organizationId: 'org-1',
             configurationOptions: { url: 'https://test.com' },
           },
           practice: {},
@@ -271,7 +286,7 @@ describe('OrdersService', () => {
         jest.spyOn(clientMock, 'send').mockReturnValue(customPromise)
         customPromise.toPromise.mockResolvedValueOnce({ status: 'COMPLETED' })
         jest.spyOn(reportsServiceMock, 'registerForOrder').mockReturnValue({ id: '1' })
-        const order = await ordersService.createOrder(orderDto)
+        const order = await ordersService.createOrder(organization, orderDto)
         expect(order).toEqual(
           expect.objectContaining({
             integrationId: 'idexx',
@@ -295,6 +310,7 @@ describe('OrdersService', () => {
         jest.spyOn(integrationsServiceMock, 'findOne').mockResolvedValueOnce({
           providerConfiguration: {
             providerId: 'idexx',
+            organizationId: 'org-1',
             configurationOptions: { url: 'https://test.com' },
           },
           practice: {},
@@ -326,7 +342,7 @@ describe('OrdersService', () => {
             status: 400,
           })
           jest.spyOn(reportsServiceMock, 'registerForOrder').mockReturnValue({ id: '1' })
-          await ordersService.createOrder(orderDto)
+          await ordersService.createOrder(organization, orderDto)
         } catch (error) {
           expect(error).toBeInstanceOf(HttpException)
           expect(error.getStatus()).toBe(400)
@@ -359,6 +375,7 @@ describe('OrdersService', () => {
         jest.spyOn(integrationsServiceMock, 'findOne').mockResolvedValueOnce({
           providerConfiguration: {
             providerId: 'antech',
+            organizationId: 'org-1',
             configurationOptions: { url: 'https://test.com' },
           },
           practice: {},
@@ -373,7 +390,7 @@ describe('OrdersService', () => {
         jest.spyOn(clientMock, 'send').mockReturnValue(customPromise)
         customPromise.toPromise.mockResolvedValueOnce({ status: 'COMPLETED' })
         jest.spyOn(reportsServiceMock, 'registerForOrder').mockReturnValue({ id: '1' })
-        const order = await ordersService.createOrder(orderDto)
+        const order = await ordersService.createOrder(organization, orderDto)
         expect(order).toEqual(
           expect.objectContaining({
             integrationId: 'antech',
@@ -397,6 +414,7 @@ describe('OrdersService', () => {
         jest.spyOn(integrationsServiceMock, 'findOne').mockResolvedValueOnce({
           providerConfiguration: {
             providerId: 'antech',
+            organizationId: 'org-1',
             configurationOptions: { url: 'https://test.com' },
           },
           practice: {},
@@ -423,7 +441,7 @@ describe('OrdersService', () => {
             },
           })
           jest.spyOn(reportsServiceMock, 'registerForOrder').mockReturnValue({ id: '1' })
-          await ordersService.createOrder(orderDto)
+          await ordersService.createOrder(organization, orderDto)
         } catch (error) {
           expect(error.name).toEqual(ProviderError.name)
           expect(error.response.error).toEqual(
@@ -447,6 +465,7 @@ describe('OrdersService', () => {
         jest.spyOn(integrationsServiceMock, 'findOne').mockResolvedValueOnce({
           providerConfiguration: {
             providerId: 'zoetis',
+            organizationId: 'org-1',
             configurationOptions: { url: 'https://test.com' },
           },
           practice: {},
@@ -461,7 +480,7 @@ describe('OrdersService', () => {
         jest.spyOn(clientMock, 'send').mockReturnValue(customPromise)
         customPromise.toPromise.mockResolvedValueOnce({ status: 'COMPLETED' })
         jest.spyOn(reportsServiceMock, 'registerForOrder').mockReturnValue({ id: '1' })
-        const order = await ordersService.createOrder(orderDto)
+        const order = await ordersService.createOrder(organization, orderDto)
         expect(order).toEqual(
           expect.objectContaining({
             integrationId: 'zoetis',
@@ -496,7 +515,7 @@ describe('OrdersService', () => {
         }
 
         jest.spyOn(integrationsServiceMock, 'findOne').mockResolvedValueOnce({
-          providerConfiguration: { providerId: 'idexx', configurationOptions: {} },
+          providerConfiguration: { providerId: 'idexx', organizationId: 'org-1', configurationOptions: {} },
           practice: {},
         })
 
@@ -514,7 +533,7 @@ describe('OrdersService', () => {
         })
         jest.spyOn(reportsServiceMock, 'registerForOrder').mockReturnValue({ id: '1' })
 
-        await ordersService.createOrder(orderDto)
+        await ordersService.createOrder(organization, orderDto)
 
         expect(sendSpy).toHaveBeenCalledWith(
           expect.any(String),
@@ -549,7 +568,7 @@ describe('OrdersService', () => {
         }
 
         jest.spyOn(integrationsServiceMock, 'findOne').mockResolvedValueOnce({
-          providerConfiguration: { providerId: 'antech', configurationOptions: {} },
+          providerConfiguration: { providerId: 'antech', organizationId: 'org-1', configurationOptions: {} },
           practice: {},
         })
         const mapSpy = jest
@@ -561,7 +580,7 @@ describe('OrdersService', () => {
         })
         jest.spyOn(reportsServiceMock, 'registerForOrder').mockReturnValue({ id: '1' })
 
-        await ordersService.createOrder(orderDto)
+        await ordersService.createOrder(organization, orderDto)
 
         // second arg is providerPatient; should equal the DTO patient object
         expect(mapSpy).toHaveBeenCalledWith(expect.any(Object), dtoPatient, 'antech')
@@ -583,7 +602,7 @@ describe('OrdersService', () => {
         }
 
         jest.spyOn(integrationsServiceMock, 'findOne').mockResolvedValueOnce({
-          providerConfiguration: { providerId: 'zoetis', configurationOptions: {} },
+          providerConfiguration: { providerId: 'zoetis', organizationId: 'org-1', configurationOptions: {} },
           practice: {},
         })
 
@@ -597,7 +616,7 @@ describe('OrdersService', () => {
         const sendSpy = jest.spyOn(clientMock, 'send').mockReturnValue({ toPromise })
         jest.spyOn(reportsServiceMock, 'registerForOrder').mockReturnValue({ id: '1' })
 
-        await ordersService.createOrder(orderDto)
+        await ordersService.createOrder(organization, orderDto)
 
         expect(sendSpy).toHaveBeenCalledWith(
           expect.any(String),
@@ -637,7 +656,7 @@ describe('OrdersService', () => {
         }
 
         jest.spyOn(integrationsServiceMock, 'findOne').mockResolvedValueOnce({
-          providerConfiguration: { providerId: 'idexx', configurationOptions: {} },
+          providerConfiguration: { providerId: 'idexx', organizationId: 'org-1', configurationOptions: {} },
           practice: {},
         })
 
@@ -654,7 +673,7 @@ describe('OrdersService', () => {
         const sendSpy = jest.spyOn(clientMock, 'send').mockReturnValue({ toPromise })
         jest.spyOn(reportsServiceMock, 'registerForOrder').mockReturnValue({ id: '1' })
 
-        await ordersService.createOrder(orderDto)
+        await ordersService.createOrder(organization, orderDto)
 
         expect(sendSpy).toHaveBeenCalledWith(
           expect.any(String),

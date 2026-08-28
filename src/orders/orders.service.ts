@@ -198,7 +198,11 @@ export class OrdersService {
     return await this.client.send(messagePattern, message).toPromise()
   }
 
-  async createOrder(createOrderDto: CreateOrderDto, autoSubmitOrder = false): Promise<Order> {
+  async createOrder(
+    organization: Organization,
+    createOrderDto: CreateOrderDto,
+    autoSubmitOrder = false,
+  ): Promise<Order> {
     // Find integration
     const integration = await this.integrationsService.findOne({
       id: createOrderDto.integrationId,
@@ -208,6 +212,10 @@ export class OrdersService {
     })
     const { providerConfiguration, integrationOptions } = integration
     const { configurationOptions, providerId } = providerConfiguration
+
+    if (providerConfiguration.organizationId !== organization.id) {
+      throw new ForbiddenException("You don't have access to this resource")
+    }
 
     if (
       createOrderDto.labRequisitionInfo !== null &&
