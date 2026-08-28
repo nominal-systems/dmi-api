@@ -325,7 +325,7 @@ export class AdminController {
     const integration = await this.integrationsService.findOne({
       id: integrationId,
       options: {
-        relations: ['practice', 'providerConfiguration'],
+        relations: ['practice', 'providerConfiguration', 'providerConfiguration.organization'],
       },
     })
 
@@ -333,7 +333,11 @@ export class AdminController {
       throw new Error('Integration not found')
     }
 
-    await this.integrationsService.update(integrationId, updateIntegration)
+    await this.integrationsService.update(
+      integration.providerConfiguration.organization,
+      integrationId,
+      updateIntegration,
+    )
 
     return await this.integrationsService.findById(integrationId)
   }
