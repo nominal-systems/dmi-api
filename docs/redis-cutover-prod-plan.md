@@ -44,7 +44,7 @@ Broker pre-flight is already satisfied: `cus.activemq.voyager.marsvh.com` (10.68
 **Artemis**, not Classic — it is silent on the OpenWire port, where an ActiveMQ Classic broker
 announces itself with a `WireFormatInfo` banner. That was the failure that blocked QA and QE for
 two weeks ([#349](https://github.com/nominal-systems/dmi-api/issues/349)); prod is not exposed to
-it. All six services already point at the same broker, so there is no split-broker problem either.
+it. All five in-scope services already point at the same broker, so there is no split-broker problem either.
 
 ## Version gap
 
@@ -61,37 +61,54 @@ The table above is retained as the rationale for why those versions are prerequi
 
 ## TLS support — a code prerequisite, not just config
 
-Prod connects on **6379 without TLS** today; the new instance is **TLS-only on 6380**. The engines
-handle that transition three different ways, so "set the variable everywhere" is not sufficient:
+Prod connects on **6379 without TLS** today; the new instance is **TLS-only on 6380**. When this
+plan was first written the engines handled that transition three different ways — the core engine
+inferred TLS from the port, idexx and zoetis read `REDIS_TLS_ENABLED` but defaulted to `false`, and
+antech had no TLS support at all. That inconsistency is what made "set the variable everywhere"
+insufficient, and it stayed hidden because the core engine's inference carried every non-prod
+cutover until idexx was moved to a TLS instance in UAT on 2026-08-10 and failed immediately.
 
-| Service | Reads `REDIS_TLS_ENABLED` | When unset | Ready for TLS-only 6380 |
-| --- | --- | --- | --- |
-| `dmiapi` | n/a — **does not use Redis at all** | — | n/a; its `REDIS_*` vars are vestigial |
-| `dmiengineapi` | yes, tri-state | **infers TLS from port 6380** | Yes, with no variable set |
-| `dmiidexxengineapi` | yes | **defaults to `false`** | Only if explicitly `true` |
-| `dmizoetisengineapi` | yes | **defaults to `false`** | Only if explicitly `true` |
-| `dmiantechengineapi` | **no — no TLS support at all** | — | **No. Code change required.** |
+Three PRs normalise every engine onto the core engine's resolver — `true` forces TLS on, `false`
+forces it off, and **unset infers TLS from port 6380**:
 
-That the core engine infers TLS from the port is why every non-prod cutover succeeded without
-anyone setting the variable — the gap stayed hidden until idexx was moved to a TLS instance in UAT
-on 2026-08-10 and failed immediately.
+| Repo | PR | Notes |
+| --- | --- | --- |
+| dmi-engine-idexx-integration | [#78](https://github.com/nominal-systems/dmi-engine-idexx-integration/pull/78) | Bull factory, cache client and health module; unit tests for all three states |
+| dmi-engine-zoetis-integration | [#37](https://github.com/nominal-systems/dmi-engine-zoetis-integration/pull/37) | Bull factory (its only client site) |
+| dmi-engine-antech-integration | [#55](https://github.com/nominal-systems/dmi-engine-antech-integration/pull/55) | Adds TLS where none existed (closes [#54](https://github.com/nominal-systems/dmi-engine-antech-integration/issues/54)); also repairs a latent cluster-mode bug, irrelevant here since clustering is off everywhere |
 
-Two actions before prod:
+Once merged and released:
 
-1. **Add `REDIS_TLS_ENABLED=true`** to the idexx and zoetis pipeline variable groups. Pod-level
-   changes are lost on the next deploy, so this must live in the variable group.
-2. **Add TLS support to `dmi-engine-antech-integration`** — tracked in
-   [dmi-engine-antech-integration#54](https://github.com/nominal-systems/dmi-engine-antech-integration/issues/54).
-   Its Redis config has no TLS option at all. The fix is to adopt `dmi-engine`'s tri-state plus
-   port-inference logic, so it needs no new variable and cannot be misconfigured the same way.
-   Until this ships, antech cannot leave `cc-rcs`, and therefore neither can the "no DMI keys
-   remain on `cc-rcs`" criterion be met. **This is now the sole remaining blocker for scheduling
-   the window** — w33 shipped on 17 Aug, so the version gap below is closed.
+| Service | TLS behaviour | Ready for TLS-only 6380 |
+| --- | --- | --- |
+| `dmiapi` | n/a — **does not use Redis at all**; its `REDIS_*` vars are vestigial | n/a |
+| every engine | infers from port 6380; `REDIS_TLS_ENABLED` exists only to override | Yes, with no variable set |
+
+**Consequences for the plan:**
+
+1. **Do not set `REDIS_TLS_ENABLED` anywhere.** Unset is correct on both 6379 and 6380 for every
+   engine, whereas a `true` that reaches a prod-scoped variable group would still break an engine
+   on `cc-rcs:6379`. Removing the variable retires the scoping hazard recorded on #359 mechanically
+   rather than by discipline. The `true` added for UAT idexx on 2026-08-10 should be **removed**
+   after the idexx release, not preserved.
+2. **Three engine promotions ride with the cutover, not one.** Prod runs idexx v1.2.7 and zoetis
+   v1.2.1, both pre-PR, so idexx, zoetis and antech all need post-merge builds deployed together
+   with the Redis variables. See step 2.
+3. **Antech's TLS path has no automated coverage.** The PR carries no tests, and the repo's e2e
+   spec cannot run outside an environment with a broker. Every non-prod antech engine still sits
+   on an old shared cache on port 6379, so the new code will never execute before prod unless we
+   make it: repoint one non-prod antech engine onto its environment's `*-dmi-*` TLS instance and
+   run the restart pass. That is a pre-flight item below — and it is the already-open "repoint
+   the remaining non-prod engines" work on #328, now with a reason to do it first.
 
 ## Pre-flight (T-7 to T-1)
 
-- [ ] **Engine TLS work shipped and deployed to non-prod** — antech TLS support merged; idexx and
-      zoetis carrying `REDIS_TLS_ENABLED=true` in their variable groups. See the section above.
+- [ ] **Engine TLS PRs merged, released and verified in non-prod** — idexx #78, zoetis #37,
+      antech #55. Idexx and zoetis verify themselves on release (UAT idexx already runs on a
+      TLS-only instance). **Antech needs a deliberate check**: repoint one non-prod antech engine
+      to its `*-dmi-*` instance, run the restart pass, and confirm `[redis] config … tls=true` in
+      its startup log plus live polling against the provider API. Then **remove
+      `REDIS_TLS_ENABLED`** from every variable group where it was set — see the TLS section.
 - [x] **Prod Redis instance provisioned and validated (2026-08-19)** — `voyager-prod-dmi-cus-rc`
       in `voyager-data-prod-rg-cus`: Premium P1, single node (`shardCount: null`), TLS-only on 6380
       (6379 closed, TLS 1.3 verified), `maxmemory-policy = noeviction`, public network access
@@ -131,7 +148,7 @@ work throughout (that path is request/response over MQTT and does not depend on 
 and provider-side orders and results that arrive during the gap are picked up on the first poll
 after re-registration. The visible effect is delay, not data loss.
 
-Expected gap: **10–15 minutes** — rollout of six deployments plus the re-registration pass.
+Expected gap: **10–15 minutes** — rollout of five deployments plus the re-registration pass.
 
 ## Cutover (T-0)
 
@@ -143,19 +160,20 @@ Expected gap: **10–15 minutes** — rollout of six deployments plus the re-reg
    - `REDIS_PORT` = `6380`
    - `REDIS_CLUSTER_ENABLED` = `false`
    - `REDIS_PASSWORD` = from K8s Secret (see pre-flight)
-   - `REDIS_TLS_ENABLED` = `true` on **idexx and zoetis** (they default to `false`; the core engine
-     infers it from the port and does not need it)
-   - `dmiapi` → `≥ 1.0.0.918`, `dmiengineapi` → `≥ 1.0.0.1080`, antech → the build carrying TLS
-     support
+   - `REDIS_TLS_ENABLED` — **not set** (every engine infers TLS from port 6380; see the TLS section)
+   - images: `dmiapi` ≥ `1.0.0.918` and `dmiengineapi` ≥ `1.0.0.1080` (both already in prod), plus
+     **idexx, zoetis and antech at their first post-TLS-PR builds** — prod runs pre-PR v1.2.7,
+     v1.2.1 and v1.5.1 today
    
    **All five in-scope services must move together.** A partial move is worse than none: in QA an
    intermediate state where only `dmiengineapi` had been repointed broke messaging outright. This
-   is precisely why the antech TLS work gates the window — without it antech cannot follow, and a
+   is precisely why the engine TLS work gates the window — without it antech cannot follow, and a
    cutover that leaves it behind is both a partial move and a failure of the "vacate `cc-rcs`"
    goal.
 
-3. **Confirm every pod is healthy on the new instance.** Engine logs should show
-   `[redis] connected host=<new> port=6380 cluster=false tls=true`. With dmi-engine#68 in place, a
+3. **Confirm every pod is healthy on the new instance.** The core engine logs
+   `[redis] connected host=<new> port=6380 cluster=false tls=true`; idexx, zoetis and antech log
+   `[redis] config host=<new> port=6380 cluster=false tls=true` at startup. With dmi-engine#68 in place, a
    wrong value produces a CrashLoopBackOff here rather than a silent failure — if that happens,
    fix the value and redeploy before continuing. Do not proceed to step 5 with any pod unhealthy.
 
@@ -223,8 +241,13 @@ short-lived Job in the namespace, since the instance is behind a private endpoin
 
 Cheap and complete, provided one rule is respected: **do not delete or flush DMI keys on `cc-rcs`
 until validation has passed.** The old repeatable jobs stay there untouched during the cutover, so
-reverting the variables and redeploying puts the engines straight back onto a warm instance with
-their jobs intact — no re-registration needed and polling resumes immediately.
+reverting `REDIS_HOST` and `REDIS_PORT` and redeploying puts the engines straight back onto a warm
+instance with their jobs intact — no re-registration needed and polling resumes immediately.
+
+Two properties keep this cheap. Every engine infers TLS from the port, so reverting to 6379 drops
+TLS automatically with no further variable change — this is why `REDIS_TLS_ENABLED` must not be
+set anywhere (see the TLS section). And the post-TLS-PR engine builds work unchanged against
+`cc-rcs:6379`, so **the images do not need to be rolled back**, only the two variables.
 
 Roll back if: pods will not come up healthy on the new instance, the re-registration pass fails for
 a material share of integrations and re-runs do not clear it, or polling cannot be confirmed within
