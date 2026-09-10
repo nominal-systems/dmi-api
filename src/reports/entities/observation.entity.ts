@@ -37,6 +37,9 @@ export class Observation {
   })
   valueQuantity?: ValueQuantity
 
+  @Column({ nullable: true })
+  units?: string
+
   // TODO(gb): add media
 
   @Column({

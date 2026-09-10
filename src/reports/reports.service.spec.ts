@@ -229,6 +229,44 @@ describe('ReportsService', () => {
         ]
       })
     })
+    it('should persist observation-level units for non-numeric results', () => {
+      const testResult = new TestResult()
+      testResult.observations = []
+      const items = [
+        {
+          code: '51001',
+          name: 'ALP',
+          status: TestResultItemStatus.DONE,
+          valueString: '< 20',
+          units: 'U/l',
+          referenceRange: [
+            {
+              type: 'NORMAL',
+              text: '0-229',
+              low: 0,
+              high: 229
+            }
+          ]
+        }
+      ]
+      reportsService.updateTestResultObservations(testResult, items)
+      expect(testResult.observations).toHaveLength(1)
+      expect(testResult.observations[0]).toEqual({
+        code: '51001',
+        name: 'ALP',
+        status: TestResultItemStatus.DONE,
+        valueString: '< 20',
+        units: 'U/l',
+        referenceRange: [
+          {
+            type: 'NORMAL',
+            text: '0-229',
+            low: 0,
+            high: 229
+          }
+        ]
+      })
+    })
     it('should update 1 test result with 2 equal items', () => {
       const testResult = new TestResult()
       testResult.observations = []
