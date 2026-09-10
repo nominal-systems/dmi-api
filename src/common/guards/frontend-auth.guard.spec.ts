@@ -22,7 +22,7 @@ describe('FrontendAuthGuard', () => {
     guard = new FrontendAuthGuard(configService, jwtService)
   })
 
-  it('allows authenticated Okta requests with a profile username', () => {
+  it('allows authenticated Okta requests with a profile username', async () => {
     (configService.get as jest.Mock).mockImplementation((key: string) => {
       if (key === 'admin.authStrategy') return 'okta'
       if (key === 'baseUrl') return 'http://localhost:4000'
@@ -36,13 +36,13 @@ describe('FrontendAuthGuard', () => {
     }
     const response = { redirect: jest.fn() }
 
-    const result = guard.canActivate(createContext(request, response))
+    const result = await guard.canActivate(createContext(request, response))
 
     expect(result).toBe(true)
     expect(response.redirect).not.toHaveBeenCalled()
   })
 
-  it('redirects unauthenticated Okta requests to /auth/login', () => {
+  it('redirects unauthenticated Okta requests to /auth/login', async () => {
     (configService.get as jest.Mock).mockImplementation((key: string) => {
       if (key === 'admin.authStrategy') return 'okta'
       if (key === 'baseUrl') return 'http://localhost:4000'
@@ -55,7 +55,7 @@ describe('FrontendAuthGuard', () => {
     }
     const response = { redirect: jest.fn() }
 
-    const result = guard.canActivate(createContext(request, response))
+    const result = await guard.canActivate(createContext(request, response))
 
     expect(result).toBe(true)
     expect(response.redirect).toHaveBeenCalledWith(
@@ -64,7 +64,7 @@ describe('FrontendAuthGuard', () => {
     expect(request.__frontendAuthRedirected).toBe(true)
   })
 
-  it('does not treat missing Okta profile as authenticated', () => {
+  it('does not treat missing Okta profile as authenticated', async () => {
     (configService.get as jest.Mock).mockImplementation((key: string) => {
       if (key === 'admin.authStrategy') return 'okta'
       if (key === 'baseUrl') return 'http://localhost:4000'
@@ -78,14 +78,14 @@ describe('FrontendAuthGuard', () => {
     }
     const response = { redirect: jest.fn() }
 
-    const result = guard.canActivate(createContext(request, response))
+    const result = await guard.canActivate(createContext(request, response))
 
     expect(result).toBe(true)
     expect(response.redirect).toHaveBeenCalled()
     expect(request.__frontendAuthRedirected).toBe(true)
   })
 
-  it('redirects unauthenticated JWT requests to /ui/login', () => {
+  it('redirects unauthenticated JWT requests to /ui/login', async () => {
     (configService.get as jest.Mock).mockImplementation((key: string) => {
       if (key === 'admin.authStrategy') return 'jwt'
       if (key === 'baseUrl') return 'http://localhost:4000'
@@ -101,7 +101,7 @@ describe('FrontendAuthGuard', () => {
     }
     const response = { redirect: jest.fn() }
 
-    const result = guard.canActivate(createContext(request, response))
+    const result = await guard.canActivate(createContext(request, response))
 
     expect(result).toBe(true)
     expect(response.redirect).toHaveBeenCalledWith(

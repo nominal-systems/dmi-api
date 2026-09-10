@@ -60,6 +60,22 @@ export class AuthController {
     return req.user?.profile ?? null
   }
 
+  /**
+   * True once something else has already committed a response on this reply.
+   *
+   * `reply.sent` alone is not enough: fastify-passport resolves its promise immediately
+   * after calling `reply.redirect()`, so control comes back here while that redirect is
+   * still travelling through the `onSend` hooks — and the MongoDB session store makes
+   * that leg async. `reply.sent` (which only tracks `raw.writableEnded`) and
+   * `raw.headersSent` are both still false in that window, so a second `send()` slips
+   * through and the two `writeHead` calls race. The loser throws ERR_HTTP_HEADERS_SENT
+   * from inside the hook chain, outside any try/catch, and takes the process down (#356).
+   * A staged `location` header is the synchronous signal that a redirect is on its way.
+   */
+  private replyAlreadyCommitted (res: FastifyReply): boolean {
+    return res.sent || res.raw.headersSent || res.getHeader('location') != null
+  }
+
   @Get('login')
   async login (@Req() req: FastifyRequest, @Res() res: FastifyReply): Promise<void> {
     // Capture the redirect query parameter and store it in the session.
@@ -85,6 +101,10 @@ export class AuthController {
       this.logger.error(error.message)
       this.logger.error(error.stack)
       this.logger.error('Full error:', error)
+      if (this.replyAlreadyCommitted(res)) {
+        this.logger.error('A response was already committed; not redirecting again')
+        return
+      }
       return await res.redirect(`${this.baseUrl}/ui/login?error=auth_failed`)
     }
   }
@@ -95,7 +115,7 @@ export class AuthController {
     this.logger.debug(`Query parameters: ${JSON.stringify(req.query)}`)
 
     // Check for Okta policy errors
-    const query = req.query as { error?: string; error_description?: string }
+    const query = req.query as { error?: string; error_description?: string; code?: string }
     if (query.error) {
       this.logger.error(`Okta authentication error: ${query.error}`)
       this.logger.error(`Error description: ${query.error_description}`)
@@ -104,6 +124,16 @@ export class AuthController {
           query.error_description || '',
         )}`,
       )
+    }
+
+    // Without an authorization code this is not a real Okta callback. Passport's OIDC
+    // strategy reads a code-less request as the *start* of an authorization flow and
+    // issues its own redirect to Okta, which then collides with the redirect this
+    // handler sends once it finds no user — an unauthenticated GET /auth/callback was
+    // enough to kill a replica (#356). Answer it here, before passport ever runs.
+    if (query.code == null || query.code === '') {
+      this.logger.warn('Callback received without an authorization code; redirecting to login')
+      return await res.redirect(`${this.baseUrl}/ui/login?error=auth_failed`)
     }
 
     try {
@@ -124,6 +154,13 @@ export class AuthController {
       this.logger.debug('Completing authentication...')
       await authenticate(req, res)
 
+      // `failureRedirect`, and any redirect the strategy issues itself, already answered
+      // the request. Anything we send now is a second response on the same reply (#356).
+      if (this.replyAlreadyCommitted(res)) {
+        this.logger.warn('Authentication committed its own response; not redirecting again')
+        return
+      }
+
       // At this point, the user should be authenticated and the session established
       if (req.user == null) {
         this.logger.error('Authentication completed but no user was set')
@@ -136,9 +173,11 @@ export class AuthController {
         )}. Redirecting to ${redirectUrl}`,
       )
 
-      if (req.session && req.session.passport && req.user) {
-        req.session.passport.user = req.user
-      }
+      // Note: fastify-passport stores the serialized user directly at `session.passport`, and
+      // `req.user` is that same object. Normalizing to `session.passport.user = req.user` here
+      // would make the object reference itself, which the MongoDB session store cannot
+      // serialize ("Converting circular structure to JSON"). The preHandler hook in
+      // fastify-plugins.ts already restores `req.user` from the flat `session.passport` shape.
 
       // Explicitly set status and perform redirect
       res.status(302)
@@ -149,6 +188,10 @@ export class AuthController {
       this.logger.error(error.message)
       this.logger.error(error.stack)
       this.logger.error('Full error:', error)
+      if (this.replyAlreadyCommitted(res)) {
+        this.logger.error('A response was already committed; not redirecting again')
+        return
+      }
       return await res.redirect(`${this.baseUrl}/ui/login?error=auth_failed`)
     }
   }

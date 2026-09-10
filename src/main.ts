@@ -14,6 +14,26 @@ import { registerMicroservices } from './common/plugins/microservices'
 const loaded = loadEnv()
 Logger.log(`Loaded environment configuration from ${loaded.join(', ')}`)
 
+// A response written twice surfaces as ERR_HTTP_HEADERS_SENT thrown from inside fastify's
+// async `onSend` chain, where no request-scoped try/catch can reach it. Losing the whole
+// replica to one malformed request is worse than dropping that request, so log and carry
+// on for that specific error; everything else keeps the previous fail-fast behaviour.
+function isSurvivable (err: unknown): boolean {
+  return (err as NodeJS.ErrnoException | undefined)?.code === 'ERR_HTTP_HEADERS_SENT'
+}
+
+function handleFatal (kind: string, err: unknown): void {
+  if (isSurvivable(err)) {
+    Logger.error(`Survivable ${kind}: ${(err as Error).message}`, (err as Error).stack)
+    return
+  }
+  Logger.error(`Fatal ${kind}:`, err instanceof Error ? err.stack : String(err))
+  process.exit(1)
+}
+
+process.on('uncaughtException', (err) => handleFatal('uncaughtException', err))
+process.on('unhandledRejection', (reason) => handleFatal('unhandledRejection', reason))
+
 /* eslint-disable @typescript-eslint/no-floating-promises */
 
 async function bootstrap (): Promise<void> {
