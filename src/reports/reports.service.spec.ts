@@ -14,7 +14,7 @@ import { EventNamespace } from '../events/constants/event-namespace.enum'
 import { EventType } from '../events/constants/event-type.enum'
 import { FileUtils } from '../common/utils/file-utils'
 import { Order } from '../orders/entities/order.entity'
-import { HttpException, HttpStatus } from '@nestjs/common'
+import { ForbiddenException, HttpException, HttpStatus, NotFoundException } from '@nestjs/common'
 import { ExternalResultEventData } from '../common/typings/internal-event-data.interface'
 import { TestResultItemInterpretationCode } from '@nominal-systems/dmi-engine-common'
 import { FEATURE_FLAG_PROVIDER } from '../feature-flags/feature-flag.interface'
@@ -2794,6 +2794,97 @@ describe('ReportsService', () => {
         .mockResolvedValueOnce([])
       await reportsService.findReportByExternalOrderId('1', 'integration-A')
       expect(spy).toHaveBeenCalledWith(['1'], 'integration-A')
+    })
+  })
+
+  describe('organization-scoped report reads', () => {
+    const organization = { id: 'org-1' } as any
+
+    const makeQbSpy = (result: { entities: unknown[], raw: unknown[] }): any => {
+      const qb: any = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        innerJoin: jest.fn().mockReturnThis(),
+        addSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        addOrderBy: jest.fn().mockReturnThis(),
+        getRawAndEntities: jest.fn().mockResolvedValue(result)
+      }
+      ;(reportsRepositoryMock.createQueryBuilder as jest.Mock).mockReturnValue(qb)
+      return qb
+    }
+
+    const found = (organizationId: string, report: unknown): { entities: unknown[], raw: unknown[] } => ({
+      entities: [report],
+      raw: [{ organizationId }]
+    })
+
+    describe('getReport()', () => {
+      it('throws NotFoundException when the report does not exist', async () => {
+        makeQbSpy({ entities: [], raw: [] })
+        await expect(reportsService.getReport('report-1', organization)).rejects.toThrow(NotFoundException)
+      })
+
+      it('throws ForbiddenException when the report belongs to another organization', async () => {
+        makeQbSpy(found('org-2', { id: 'report-1' }))
+        await expect(reportsService.getReport('report-1', organization)).rejects.toThrow(ForbiddenException)
+      })
+
+      it('returns the report when it belongs to the organization', async () => {
+        const report = { id: 'report-1' }
+        makeQbSpy(found('org-1', report))
+        await expect(reportsService.getReport('report-1', organization)).resolves.toBe(report)
+      })
+    })
+
+    describe('getPresentedForm()', () => {
+      it('throws ForbiddenException when the report belongs to another organization', async () => {
+        makeQbSpy(found('org-2', { id: 'report-1', presentedFrom: [] }))
+        await expect(reportsService.getPresentedForm('report-1', organization)).rejects.toThrow(ForbiddenException)
+      })
+
+      it('returns the presented form when the report belongs to the organization', async () => {
+        const presentedFrom = [{ id: 'attachment-1' }]
+        makeQbSpy(found('org-1', { id: 'report-1', presentedFrom }))
+        await expect(reportsService.getPresentedForm('report-1', organization)).resolves.toBe(presentedFrom)
+      })
+    })
+
+    describe('getPresentedFormAttachment()', () => {
+      it('throws ForbiddenException when the report belongs to another organization', async () => {
+        makeQbSpy(found('org-2', { id: 'report-1', presentedFrom: [{ id: 'attachment-1' }] }))
+        await expect(
+          reportsService.getPresentedFormAttachment('report-1', 'attachment-1', organization)
+        ).rejects.toThrow(ForbiddenException)
+      })
+
+      it('returns the matching attachment when the report belongs to the organization', async () => {
+        const attachment = { id: 'attachment-1' }
+        makeQbSpy(found('org-1', { id: 'report-1', presentedFrom: [attachment] }))
+        await expect(
+          reportsService.getPresentedFormAttachment('report-1', 'attachment-1', organization)
+        ).resolves.toBe(attachment)
+      })
+    })
+
+    describe('findForOrder()', () => {
+      it('throws NotFoundException when no report exists for the order', async () => {
+        makeQbSpy({ entities: [], raw: [] })
+        await expect(reportsService.findForOrder('order-1', organization)).rejects.toThrow(
+          new NotFoundException("Report for order 'order-1' not found")
+        )
+      })
+
+      it('throws ForbiddenException when the order belongs to another organization', async () => {
+        makeQbSpy(found('org-2', { id: 'report-1' }))
+        await expect(reportsService.findForOrder('order-1', organization)).rejects.toThrow(ForbiddenException)
+      })
+
+      it('returns the report when the order belongs to the organization', async () => {
+        const report = { id: 'report-1' }
+        makeQbSpy(found('org-1', report))
+        await expect(reportsService.findForOrder('order-1', organization)).resolves.toBe(report)
+      })
     })
   })
 })

@@ -1,4 +1,4 @@
-import { forwardRef, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { ForbiddenException, forwardRef, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { FindManyOptions, Repository, SelectQueryBuilder } from 'typeorm'
 import { Report } from './entities/report.entity'
@@ -63,24 +63,44 @@ export class ReportsService {
 
   async getReport (
     id: string,
-    _organization: Organization
+    organization: Organization
   ): Promise<Report> {
-    // TODO(gb): actually check the user can access this report (i.e. belongs to the organization)
-    const report = await this.reportsRepository.createQueryBuilder('report')
-      .leftJoinAndSelect('report.patient', 'patient')
-      .leftJoinAndSelect('report.testResultsSet', 'testResult')
-      .leftJoinAndSelect('testResult.observations', 'observation')
-      .leftJoinAndSelect('report.presentedFrom', 'presentedFrom')
-      .where('report.id = :id', { id })
-      .orderBy('testResult.seq', 'ASC')
-      .addOrderBy('observation.seq', 'ASC')
-      .getOne()
+    const report = await this.loadReportForOrganization(
+      this.reportsRepository.createQueryBuilder('report')
+        .leftJoinAndSelect('report.patient', 'patient')
+        .leftJoinAndSelect('report.testResultsSet', 'testResult')
+        .leftJoinAndSelect('testResult.observations', 'observation')
+        .leftJoinAndSelect('report.presentedFrom', 'presentedFrom')
+        .where('report.id = :id', { id })
+        .orderBy('testResult.seq', 'ASC')
+        .addOrderBy('observation.seq', 'ASC'),
+      organization.id
+    )
 
     if (report == null) {
       throw new NotFoundException(`Report '${id}' not found`)
     }
 
     return report
+  }
+
+  private async loadReportForOrganization (
+    qb: SelectQueryBuilder<Report>,
+    organizationId: string
+  ): Promise<Report | null> {
+    const { entities, raw } = await qb
+      .innerJoin('report.order', 'order')
+      .innerJoin('order.integration', 'integration')
+      .innerJoin('integration.providerConfiguration', 'providerConfiguration')
+      .addSelect('providerConfiguration.organizationId', 'organizationId')
+      .getRawAndEntities()
+
+    const report = entities[0]
+    if (report != null && raw[0]?.organizationId !== organizationId) {
+      throw new ForbiddenException("You don't have access to this resource")
+    }
+
+    return report ?? null
   }
 
   async registerForOrder (
@@ -91,17 +111,19 @@ export class ReportsService {
   }
 
   async findForOrder (
-    orderId: string
+    orderId: string,
+    organization: Organization
   ): Promise<Report> {
-    const report = await this.reportsRepository.createQueryBuilder('report')
-      .innerJoinAndSelect(Order, 'order', 'report.order = order.id')
-      .leftJoinAndSelect('report.patient', 'patient')
-      .leftJoinAndSelect('report.testResultsSet', 'testResult')
-      .leftJoinAndSelect('testResult.observations', 'observation')
-      .where('order.id = :orderId', { orderId })
-      .orderBy('testResult.seq', 'ASC')
-      .addOrderBy('observation.seq', 'ASC')
-      .getOne()
+    const report = await this.loadReportForOrganization(
+      this.reportsRepository.createQueryBuilder('report')
+        .leftJoinAndSelect('report.patient', 'patient')
+        .leftJoinAndSelect('report.testResultsSet', 'testResult')
+        .leftJoinAndSelect('testResult.observations', 'observation')
+        .where('report.orderId = :orderId', { orderId })
+        .orderBy('testResult.seq', 'ASC')
+        .addOrderBy('observation.seq', 'ASC'),
+      organization.id
+    )
 
     if (report == null) {
       throw new NotFoundException(`Report for order '${orderId}' not found`)
@@ -586,14 +608,17 @@ export class ReportsService {
   }
 
   async getPresentedForm (
-    reportId: string
+    reportId: string,
+    organization: Organization
   ): Promise<AttachmentEntity[]> {
-    const report = await this.reportsRepository.createQueryBuilder('report')
-      .leftJoinAndSelect('report.presentedFrom', 'presentedFrom')
-      .where('report.id = :reportId', { reportId })
-      .getOne()
+    const report = await this.loadReportForOrganization(
+      this.reportsRepository.createQueryBuilder('report')
+        .leftJoinAndSelect('report.presentedFrom', 'presentedFrom')
+        .where('report.id = :reportId', { reportId }),
+      organization.id
+    )
 
-    if (report === null || report === undefined) {
+    if (report == null) {
       throw new NotFoundException(`Report '${reportId}' not found`)
     }
 
@@ -606,14 +631,21 @@ export class ReportsService {
 
   async getPresentedFormAttachment (
     reportId: string,
-    attachmentId: string
+    attachmentId: string,
+    organization: Organization
   ): Promise<AttachmentEntity> {
-    const report = await this.reportsRepository.createQueryBuilder('report')
-      .leftJoinAndSelect('report.presentedFrom', 'presentedFrom')
-      .where('report.id = :reportId', { reportId })
-      .getOne()
+    const report = await this.loadReportForOrganization(
+      this.reportsRepository.createQueryBuilder('report')
+        .leftJoinAndSelect('report.presentedFrom', 'presentedFrom')
+        .where('report.id = :reportId', { reportId }),
+      organization.id
+    )
 
-    if (report == null || (report.presentedFrom == null)) {
+    if (report == null) {
+      throw new NotFoundException(`Report '${reportId}' not found`)
+    }
+
+    if (report.presentedFrom == null) {
       throw new NotFoundException(`Presented form for report '${reportId}' not found`)
     }
 
