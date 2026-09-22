@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events'
-import { GatewayTimeoutException } from '@nestjs/common'
+import { GatewayTimeoutException, Logger } from '@nestjs/common'
 import * as mqtt from 'mqtt'
 import { firstValueFrom } from 'rxjs'
 import { TimeoutClientMqtt } from './timeout-mqtt-client'
@@ -33,6 +33,8 @@ class FakeBroker extends EventEmitter {
   /** Topics for which a SUBSCRIBE packet actually reached the broker. */
   readonly subscribePackets: string[] = []
   readonly requests: PublishedRequest[] = []
+  /** Broker answers SUBSCRIBE with a failure grant (0x80). */
+  rejectSubscriptions = false
 
   subscribe = jest.fn((...args: any[]): FakeBroker => {
     const callback =
@@ -59,10 +61,14 @@ class FakeBroker extends EventEmitter {
 
     for (const topic of onTheWire) {
       this.subscribePackets.push(topic)
-      this.clientTopics.add(topic)
-      this.brokerSubscriptions.add(topic)
+      if (!this.rejectSubscriptions) {
+        this.clientTopics.add(topic)
+        this.brokerSubscriptions.add(topic)
+      }
     }
-    callback?.(null, onTheWire.map(topic => ({ topic, qos: 0 })))
+    // mqtt.js reports a rejected SUBACK as a 128 grant, not as an error.
+    const qos = this.rejectSubscriptions ? 128 : 0
+    callback?.(null, onTheWire.map(topic => ({ topic, qos })))
     return this
   })
 
@@ -217,6 +223,20 @@ describe('TimeoutClientMqtt (issue #366)', () => {
     await expect(Promise.all([first, second])).resolves.toEqual([{ n: 1 }, { n: 2 }])
     expect(broker.unsubscribe).not.toHaveBeenCalled()
     expect(broker.brokerSubscriptions.has(RESPONSE_CHANNEL)).toBe(true)
+  })
+
+  it('logs an error, not a success, when the broker rejects the re-subscribe', async () => {
+    const error = jest.spyOn(Logger.prototype, 'error').mockImplementation()
+    const warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation()
+
+    broker.rejectSubscriptions = true
+    await expect(send()).rejects.toBeInstanceOf(GatewayTimeoutException)
+
+    expect(error).toHaveBeenCalledWith(expect.stringContaining(RESPONSE_CHANNEL))
+    expect(warn).not.toHaveBeenCalled()
+
+    error.mockRestore()
+    warn.mockRestore()
   })
 
   it('still maps a missing response to GatewayTimeoutException', async () => {
