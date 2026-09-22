@@ -43,10 +43,11 @@ export class TimeoutClientMqtt extends ClientMqtt {
 
     this.mqttClient.subscribe(
       { [responseChannel]: { qos: 0 }, resubscribe: true } as any,
-      (err) => {
-        if (err != null) {
+      (err, granted) => {
+        // mqtt.js reports a rejected SUBACK as a 128 grant, not as an error.
+        if (err != null || granted?.some(grant => grant.qos === 128)) {
           this.mqttLogger.error(
-            `Failed to re-subscribe to ${responseChannel}: ${err.message}`
+            `Failed to re-subscribe to ${responseChannel}: ${err?.message ?? 'rejected by the broker'}`
           )
         } else {
           this.mqttLogger.warn(
