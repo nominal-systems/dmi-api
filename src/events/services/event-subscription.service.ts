@@ -94,6 +94,8 @@ export class EventSubscriptionService {
       }
     })
 
+    const serializedEvent = serializeEvent(event)
+
     // TODO(gb): optimize this by sending all subscriptions in one batch?
     for (const subscription of subscriptions) {
       try {
@@ -104,7 +106,7 @@ export class EventSubscriptionService {
         const eventData: Record<string, any> = event.data ?? {}
         const partitionKey: string | undefined = eventData.reportId ?? eventData.orderId ?? event.accessionId
         const eventDataBatch = await producer.createBatch({ ...(partitionKey != null && { partitionKey }) })
-        eventDataBatch.tryAdd({ body: event })
+        eventDataBatch.tryAdd({ body: serializedEvent })
         await producer.sendBatch(eventDataBatch)
         await producer.close()
         this.logger.log(`Notifying subscription: ${subscription.id} of event '${event.type}'`)
@@ -113,4 +115,21 @@ export class EventSubscriptionService {
       }
     }
   }
+}
+
+function serializeEvent (event: Event): Buffer {
+  const json = JSON.stringify(event, attachmentDataReplacer)
+  return Buffer.from(json, 'utf-8')
+}
+
+function attachmentDataReplacer (key: string, value: any): any {
+  const isAttachment = value != null && typeof value === 'object' &&
+    typeof value.data === 'string' && ('contentType' in value || 'uri' in value)
+
+  if (isAttachment) {
+    const { data, ...meta } = value
+    return meta
+  }
+
+  return value
 }
