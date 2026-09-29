@@ -12,7 +12,7 @@ export class Event {
   @Prop({ enum: EventNamespace })
   namespace: string
 
-  @Prop({ enum: EventType })
+  @Prop({ enum: EventType, index: true })
   type: string
 
   @Prop({ index: true })
@@ -21,7 +21,7 @@ export class Event {
   @Prop({ index: true })
   practiceId: string
 
-  @Prop()
+  @Prop({ index: true })
   integrationId: string
 
   @Prop({ index: true })
