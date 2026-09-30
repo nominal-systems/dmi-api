@@ -43,18 +43,21 @@ export class IntegrationsController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async createIntegration (
+    @Organization() organization: OrganizationEntity,
     @Body() createIntegrationDto: CreateIntegrationDto
   ): Promise<Integration> {
-    return await this.integrationsService.create(createIntegrationDto)
+    return await this.integrationsService.create(organization, createIntegrationDto)
   }
 
   @Patch(':id')
   @HttpCode(HttpStatus.OK)
   async updateIntegrationOptions (
+    @Organization() organization: OrganizationEntity,
     @Param('id') integrationId: string,
     @Body() updateIntegration: Pick<CreateIntegrationDto, 'integrationOptions'>
   ): Promise<Integration> {
     return await this.integrationsService.update(
+      organization,
       integrationId,
       updateIntegration
     )
@@ -72,22 +75,11 @@ export class IntegrationsController {
   @Post(':id/restart')
   @HttpCode(HttpStatus.OK)
   async restartIntegration (
+    @Organization() organization: OrganizationEntity,
     @Res() res: Response,
     @Param('id') integrationId: string
   ): Promise<void> {
-    const integration = await this.integrationsService.findOne({
-      id: integrationId,
-      options: {
-        join: {
-          alias: 'integration',
-          leftJoinAndSelect: {
-            practice: 'integration.practice',
-            providerConfiguration: 'integration.providerConfiguration'
-          }
-        }
-      }
-    })
-    const response = await this.integrationsService.restart(integration)
+    const response = await this.integrationsService.restartById(organization, integrationId)
     if (response?.message === undefined) {
       res.status(201).send('Integration restarted')
     } else {

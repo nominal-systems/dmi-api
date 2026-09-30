@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { FindManyOptions, Repository } from 'typeorm'
 import { Organization } from '../../organizations/entities/organization.entity'
@@ -75,6 +75,9 @@ export class ProviderConfigurationsService {
     if (providerConfig == null) {
       throw new NotFoundException("The provider configuration doesn't exist")
     }
+    if (providerConfig.organizationId !== organization.id) {
+      throw new ForbiddenException("You don't have access to this resource")
+    }
     await this.validateProviderConfiguration(providerId, providerConfigurationOptions)
     providerConfig.configurationOptions = encrypt(
       providerConfigurationOptions.configuration,
@@ -85,7 +88,6 @@ export class ProviderConfigurationsService {
       {
         providerId,
         configurationOptions: providerConfig.configurationOptions,
-        organization,
       },
     )
     this.logger.log(`Updated Provider Configuration -> Provider: '${providerId}'`)

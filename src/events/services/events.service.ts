@@ -10,6 +10,7 @@ import { ModuleRef } from '@nestjs/core'
 import { EventSubscriptionService } from './event-subscription.service'
 import { stringifyId } from '../../common/utils/shared.utils'
 import { PaginationDto } from '../../common/dtos/pagination.dto'
+import { PracticesService } from '../../practices/practices.service'
 
 @Injectable()
 export class EventsService implements OnModuleInit {
@@ -19,7 +20,8 @@ export class EventsService implements OnModuleInit {
   constructor (
     private readonly moduleRef: ModuleRef,
     @InjectModel(Event.name) private readonly eventModel: Model<EventDocument>,
-    @Inject(EventSubscriptionService) private readonly eventSubscriptionService: EventSubscriptionService
+    @Inject(EventSubscriptionService) private readonly eventSubscriptionService: EventSubscriptionService,
+    private readonly practicesService: PracticesService
   ) {
   }
 
@@ -76,11 +78,21 @@ export class EventsService implements OnModuleInit {
     organization: Organization,
     eventsQueryDto: EventsQueryDto,
     paginationDto: PaginationDto
-  ): Promise<Event[]> {
+  ): Promise<{ total: number, data: Event[] }> {
     const { seq } = eventsQueryDto
     const { page, limit } = paginationDto
-    const query: FilterQuery<EventDocument> = { seq: { $gt: seq } }
     const skip = (page - 1) * limit
+
+    const practices = await this.practicesService.findAll({
+      select: ['id'],
+      where: { organizationId: organization.id }
+    })
+    const practiceIds = practices.map((practice) => practice.id)
+
+    const query: FilterQuery<EventDocument> = {
+      seq: { $gt: seq },
+      practiceId: { $in: practiceIds }
+    }
     const options: QueryOptions = {
       lean: true,
       sort: {
@@ -90,7 +102,12 @@ export class EventsService implements OnModuleInit {
       skip
     }
 
-    return await this.findAll(query, options)
+    const [total, data] = await Promise.all([
+      this.count(query),
+      this.findAll(query, options)
+    ])
+
+    return { total, data }
   }
 
   async stats (

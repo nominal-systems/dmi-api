@@ -7,9 +7,10 @@ import { Organization } from '../organizations/entities/organization.entity'
 import { ProviderConfiguration } from '../providers/entities/provider-configuration.entity'
 import { Provider } from '../providers/entities/provider.entity'
 import { IntegrationStatus } from './constants/integration-status.enum'
-import { BadRequestException } from '@nestjs/common'
+import { BadRequestException, NotFoundException } from '@nestjs/common'
+import { Practice } from '../practices/entities/practice.entity'
 
-const organization = {} as Organization
+const organization = { id: 'org-1' } as Organization
 
 describe('IntegrationsService', () => {
   let integrationsService: IntegrationsService
@@ -60,6 +61,9 @@ describe('IntegrationsService', () => {
       }
     }),
   }
+  const practiceRepositoryMock = {
+    findOne: jest.fn(() => ({ id: 'practiceId', organizationId: 'org-1' })),
+  }
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -80,6 +84,10 @@ describe('IntegrationsService', () => {
         {
           provide: getRepositoryToken(Provider),
           useValue: providersRepositoryMock,
+        },
+        {
+          provide: getRepositoryToken(Practice),
+          useValue: practiceRepositoryMock,
         },
         {
           provide: 'ACTIVEMQ',
@@ -137,12 +145,26 @@ describe('IntegrationsService', () => {
   describe('create()', () => {
     it('should create an integration in NEW state and do not start it', async () => {
       integrationRepositoryMock.findOne.mockResolvedValue({ undefined })
-      const integration = await integrationsService.create({
+      const integration = await integrationsService.create(organization, {
         practiceId: 'practiceId',
         providerConfigurationId: 'providerConfigurationId',
         integrationOptions: {},
       })
       expect(integration.status).toBe(IntegrationStatus.NEW)
+    })
+
+    it('rejects a practice or provider configuration owned by another organization', async () => {
+      ;(practiceRepositoryMock.findOne as jest.Mock).mockResolvedValueOnce(null)
+      integrationRepositoryMock.save.mockClear()
+
+      await expect(
+        integrationsService.create(organization, {
+          practiceId: 'someone-elses-practice',
+          providerConfigurationId: 'providerConfigurationId',
+          integrationOptions: {},
+        }),
+      ).rejects.toThrow(NotFoundException)
+      expect(integrationRepositoryMock.save).not.toHaveBeenCalled()
     })
 
     it('should reject integration options with leading or trailing whitespace', async () => {
@@ -164,7 +186,7 @@ describe('IntegrationsService', () => {
       })
 
       await expect(
-        integrationsService.create({
+        integrationsService.create(organization, {
           practiceId: 'practiceId',
           providerConfigurationId: 'providerConfigurationId',
           integrationOptions: { apiKey: ' secret ' },
@@ -191,13 +213,24 @@ describe('IntegrationsService', () => {
       clientProxyMock.emit.mockClear()
     })
 
+    it('rejects an integration owned by another organization', async () => {
+      integrationRepositoryMock.findOne.mockResolvedValue(undefined)
+
+      await expect(
+        integrationsService.update(organization, baseIntegration.id, {
+          integrationOptions: { username: 'user', password: 'pass' },
+        }),
+      ).rejects.toThrow(NotFoundException)
+      expect(integrationRepositoryMock.update).not.toHaveBeenCalled()
+    })
+
     it('should not update jobs when integration is NEW', async () => {
       integrationRepositoryMock.findOne.mockResolvedValue({
         ...baseIntegration,
         status: IntegrationStatus.NEW,
       })
 
-      await integrationsService.update(baseIntegration.id, {
+      await integrationsService.update(organization, baseIntegration.id, {
         integrationOptions: { username: 'user', password: 'pass' },
       })
 
@@ -210,7 +243,7 @@ describe('IntegrationsService', () => {
         status: IntegrationStatus.STOPPED,
       })
 
-      await integrationsService.update(baseIntegration.id, {
+      await integrationsService.update(organization, baseIntegration.id, {
         integrationOptions: { username: 'user', password: 'pass' },
       })
 
@@ -223,7 +256,7 @@ describe('IntegrationsService', () => {
         status: IntegrationStatus.RUNNING,
       })
 
-      await integrationsService.update(baseIntegration.id, {
+      await integrationsService.update(organization, baseIntegration.id, {
         integrationOptions: { username: 'user', password: 'pass' },
       })
 
@@ -301,6 +334,42 @@ describe('IntegrationsService', () => {
 
       expect(response?.message).toContain('Error stopping integration')
       expect(clientProxyMock.send).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  describe('restartById()', () => {
+    const runningIntegration = {
+      id: 'integration-id',
+      status: IntegrationStatus.RUNNING,
+      providerConfiguration: {
+        id: 'provider-configuration-id',
+        providerId: 'idexx',
+        configurationOptions: {},
+      },
+      integrationOptions: {},
+    } as any
+
+    beforeEach(() => {
+      clientProxyMock.send.mockReset()
+    })
+
+    it('rejects an integration owned by another organization', async () => {
+      integrationRepositoryMock.findOne.mockResolvedValue(undefined)
+
+      await expect(integrationsService.restartById(organization, 'integration-id')).rejects.toThrow(
+        NotFoundException,
+      )
+      expect(clientProxyMock.send).not.toHaveBeenCalled()
+    })
+
+    it('restarts an integration owned by the organization', async () => {
+      integrationRepositoryMock.findOne.mockResolvedValue({ ...runningIntegration })
+      clientProxyMock.send.mockImplementation(() => ({ toPromise: async () => ({}) }))
+
+      const response = await integrationsService.restartById(organization, 'integration-id')
+
+      expect(response).toBeUndefined()
+      expect(clientProxyMock.send).toHaveBeenCalledTimes(2)
     })
   })
 

@@ -8,6 +8,7 @@ import { TestResult } from './entities/test-result.entity'
 import { Observation } from './entities/observation.entity'
 import { IntegrationsModule } from '../integrations/integrations.module'
 import { OrdersModule } from '../orders/orders.module'
+import { OrganizationsModule } from '../organizations/organizations.module'
 import { InternalEventLoggingModule } from '../internal-event-logging/internal-event-logging.module'
 import { FEATURE_FLAG_PROVIDER } from '../feature-flags/feature-flag.interface'
 import { StatsigFeatureFlagProvider } from '../feature-flags/statsig-feature-flag.provider'
@@ -19,6 +20,7 @@ import { NamedLockService } from '../common/services/named-lock.service'
     EventsModule,
     IntegrationsModule,
     InternalEventLoggingModule,
+    OrganizationsModule,
     forwardRef(() => OrdersModule),
     TypeOrmModule.forFeature([Report, TestResult, Observation])
   ],

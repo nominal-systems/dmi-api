@@ -6,7 +6,7 @@ import { ConfigService } from '@nestjs/config'
 import { getRepositoryToken } from '@nestjs/typeorm'
 import { ProviderConfiguration } from '../entities/provider-configuration.entity'
 import { Integration } from '../../integrations/entities/integration.entity'
-import { BadRequestException } from '@nestjs/common'
+import { BadRequestException, ForbiddenException } from '@nestjs/common'
 import { Organization } from '../../organizations/entities/organization.entity'
 import { IntegrationStatus } from '../../integrations/constants/integration-status.enum'
 
@@ -66,10 +66,23 @@ describe('ProviderConfigurationsService', () => {
     )
   })
 
+  it('rejects updating a provider configuration owned by another organization', async () => {
+    providerConfigurationRepositoryMock.findOne.mockResolvedValue({
+      id: 'config',
+      organizationId: 'other-org',
+    })
+
+    await expect(
+      service.update({ id: 'org-1' } as any, 'provider', 'config', { configuration: {} }),
+    ).rejects.toThrow(ForbiddenException)
+    expect(providerConfigurationRepositoryMock.update).not.toHaveBeenCalled()
+  })
+
   it('should update jobs only for running integrations', async () => {
     providersServiceMock.findOneById.mockResolvedValue({ configurationOptions: [] })
     providerConfigurationRepositoryMock.findOne.mockResolvedValue({
       id: 'config',
+      organizationId: 'org-1',
       organization: {} as Organization,
     })
     const runningIntegration = {
@@ -79,7 +92,7 @@ describe('ProviderConfigurationsService', () => {
     }
     integrationsRepositoryMock.find.mockResolvedValue([runningIntegration])
 
-    await service.update({} as Organization, 'provider', 'config', { configuration: {} })
+    await service.update({ id: 'org-1' } as any, 'provider', 'config', { configuration: {} })
 
     expect(integrationsRepositoryMock.find).toHaveBeenCalledWith({
       where: { providerConfigurationId: 'config', status: IntegrationStatus.RUNNING },

@@ -14,10 +14,14 @@ export const reportRepositoryMockFactory: () => Partial<Repository<Report>> = ()
   // @ts-expect-error: compiler type error
   createQueryBuilder: jest.fn(() => ({
     leftJoinAndSelect: jest.fn().mockReturnThis(),
+    innerJoin: jest.fn().mockReturnThis(),
+    addSelect: jest.fn().mockReturnThis(),
     where: jest.fn().mockReturnThis(),
     andWhere: jest.fn().mockReturnThis(),
     orderBy: jest.fn().mockReturnThis(),
     addOrderBy: jest.fn().mockReturnThis(),
-    getMany: jest.fn().mockResolvedValue([])
+    getMany: jest.fn().mockResolvedValue([]),
+    getOne: jest.fn().mockResolvedValue(null),
+    getRawAndEntities: jest.fn().mockResolvedValue({ entities: [], raw: [] })
   }))
 })

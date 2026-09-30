@@ -14,6 +14,7 @@ import { Integration } from '../../integrations/entities/integration.entity'
 import { ProviderConfiguration } from '../entities/provider-configuration.entity'
 import { Provider } from '../entities/provider.entity'
 import { ProviderOption } from '../entities/provider-option.entity'
+import { Practice } from '../../practices/entities/practice.entity'
 
 const configServiceMock = {
   get: jest.fn()
@@ -64,6 +65,10 @@ describe('ProvidersService', () => {
         {
           provide: getRepositoryToken(Provider),
           useValue: providersRepositoryMock
+        },
+        {
+          provide: getRepositoryToken(Practice),
+          useValue: {}
         },
         {
           provide: 'ACTIVEMQ',

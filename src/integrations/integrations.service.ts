@@ -14,6 +14,7 @@ import * as createValidator from 'is-my-json-valid'
 import { IntegrationTestResponse, Operation, Resource } from '@nominal-systems/dmi-engine-common'
 import { IntegrationStatus } from './constants/integration-status.enum'
 import { Provider } from '../providers/entities/provider.entity'
+import { Practice } from '../practices/entities/practice.entity'
 
 const DEFAULT_RESTART_CONCURRENCY = 5
 const DEFAULT_RESTART_ATTEMPTS = 3
@@ -59,6 +60,8 @@ export class IntegrationsService {
     private readonly providerConfigurationRepository: Repository<ProviderConfiguration>,
     @InjectRepository(Provider)
     private readonly providerRepository: Repository<Provider>,
+    @InjectRepository(Practice)
+    private readonly practiceRepository: Repository<Practice>,
     @Inject('ACTIVEMQ') private readonly client: ClientProxy,
   ) {
     this.secretKey = this.configService.get('secretKey') ?? ''
@@ -87,7 +90,26 @@ export class IntegrationsService {
     })
   }
 
-  async create(createIntegrationDto: CreateIntegrationDto): Promise<Integration> {
+  async create(
+    organization: Organization,
+    createIntegrationDto: CreateIntegrationDto,
+  ): Promise<Integration> {
+    const ownedProviderConfiguration = await this.providerConfigurationRepository.findOne({
+      where: {
+        id: createIntegrationDto.providerConfigurationId,
+        organizationId: organization.id,
+      },
+    })
+    const ownedPractice = await this.practiceRepository.findOne({
+      where: {
+        id: createIntegrationDto.practiceId,
+        organizationId: organization.id,
+      },
+    })
+    if (ownedProviderConfiguration == null || ownedPractice == null) {
+      throw new NotFoundException('The practice or providerConfiguration was not found')
+    }
+
     try {
       await this.validateIntegrationOptions(createIntegrationDto)
 
@@ -114,17 +136,19 @@ export class IntegrationsService {
   }
 
   async update(
+    organization: Organization,
     integrationId: string,
     integrationUpdate: Pick<CreateIntegrationDto, 'integrationOptions'>,
   ): Promise<any> {
     const integration = await this.findOne({
-      id: integrationId,
-      options: { relations: ['providerConfiguration', 'practice'] },
+      options: {
+        where: {
+          id: integrationId as any,
+          providerConfiguration: { organizationId: organization.id },
+        },
+        relations: ['providerConfiguration', 'practice'],
+      },
     })
-
-    if (integration == null) {
-      throw new NotFoundException("The integration doesn't exist")
-    }
 
     const newIntegrationOptions = integrationUpdate.integrationOptions
     const updatedIntegration = {
@@ -180,6 +204,22 @@ export class IntegrationsService {
       )
       return responseStart
     }
+  }
+
+  async restartById(
+    organization: Organization,
+    integrationId: string,
+  ): Promise<Error | undefined> {
+    const integration = await this.findOne({
+      options: {
+        where: {
+          id: integrationId as any,
+          providerConfiguration: { organizationId: organization.id },
+        },
+        relations: ['practice', 'providerConfiguration'],
+      },
+    })
+    return await this.restart(integration)
   }
 
   async delete(organization: Organization, integrationId: string): Promise<void> {
