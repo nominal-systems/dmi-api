@@ -195,6 +195,57 @@ describe('RefsService', () => {
       // assert other expected method calls
     })
   })
+  describe('findOneByCodeAndProvider()', () => {
+    const queryBuilderMock = (result: unknown) => ({
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      getOne: jest.fn().mockResolvedValue(result),
+    })
+
+    beforeEach(() => {
+      // The outer beforeEach replaces the method with a mock; these tests exercise the real query
+      refsService.findOneByCodeAndProvider = RefsService.prototype.findOneByCodeAndProvider
+    })
+
+    it('should restrict both the ref and the provider ref to the type when given', async () => {
+      const breed = { code: '43', type: 'breed', species: '1' }
+      const qb = queryBuilderMock({ code: 'dmi-airedale', type: 'breed', providerRef: [breed] })
+      refsRepositoryMock.createQueryBuilder.mockReturnValueOnce(qb)
+
+      const result = await refsService.findOneByCodeAndProvider('43', 'antech', true, 'breed')
+
+      expect(result).toBe(breed)
+      expect(qb.leftJoinAndSelect).toHaveBeenNthCalledWith(
+        1,
+        'ref.providerRef',
+        'providerRef',
+        'providerRef.provider = :provider AND providerRef.type = :type',
+        { provider: 'antech', type: 'breed' },
+      )
+      expect(qb.where).toHaveBeenCalledWith(
+        '(ref.code = :code AND ref.type = :type) OR providerRef.code = :code',
+        { code: '43', type: 'breed' },
+      )
+    })
+
+    it('should not filter by type when none is given', async () => {
+      const ref = { code: 'dmi-avian', type: 'species', providerRef: [] }
+      const qb = queryBuilderMock(ref)
+      refsRepositoryMock.createQueryBuilder.mockReturnValueOnce(qb)
+
+      const result = await refsService.findOneByCodeAndProvider('43', 'antech')
+
+      expect(result).toBe(ref)
+      expect(qb.leftJoinAndSelect).toHaveBeenNthCalledWith(
+        1,
+        'ref.providerRef',
+        'providerRef',
+        'providerRef.provider = :provider',
+        { provider: 'antech' },
+      )
+      expect(qb.where).toHaveBeenCalledWith('ref.code = :code OR providerRef.code = :code', { code: '43' })
+    })
+  })
   describe('mapPatientRefs()', () => {
     const antechPatient = {
       name: 'Medicalnotes_author_test',
@@ -474,6 +525,22 @@ describe('RefsService', () => {
         breed: 'MOUSE',
       }))
     })
+    it('should look each attribute up by its own type', async () => {
+      const patient = {
+        sex: 'dmi-sex',
+        species: 'dmi-species',
+        breed: 'dmi-breed',
+      } as CreateOrderDtoPatient
+      findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: 'U' })
+      findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: '41' })
+      findOneByCodeAndProviderMock.mockResolvedValueOnce({ code: '163' })
+
+      await refsService.mapPatientRefs('antech', patient)
+
+      expect(findOneByCodeAndProviderMock).toHaveBeenNthCalledWith(1, 'dmi-sex', 'antech', true, 'sex')
+      expect(findOneByCodeAndProviderMock).toHaveBeenNthCalledWith(2, 'dmi-species', 'antech', true, 'species')
+      expect(findOneByCodeAndProviderMock).toHaveBeenNthCalledWith(3, 'dmi-breed', 'antech', true, 'breed')
+    })
   })
   describe('mapPatientReferences()', () => {
     it('should map multiple species to a single provider code', async () => {
@@ -572,6 +639,31 @@ describe('RefsService', () => {
           sex: 'U',
           species: '41',
           breed: '163',
+        }))
+      })
+      it('should look the stored refs up by their own type', async () => {
+        // Antech's '43' is both a species (Avian) and a breed (Airedale Terrier)
+        const createOrderDto = {
+          patient: { sex: 'U', species: '43', breed: '1335' } as CreateOrderDtoPatient,
+        }
+        const providerPatient = { sex: 'U', species: '43', breed: '1335' } as Patient
+        findOneByCodeAndProviderMock
+          .mockResolvedValueOnce({ code: 'U' })
+          .mockResolvedValueOnce({ code: '43' })
+          .mockResolvedValueOnce({ code: '1335' })
+          .mockResolvedValueOnce({ code: 'dmi-avian' })
+          .mockResolvedValueOnce({ code: 'dmi-bird-unknown' })
+          .mockResolvedValueOnce({ code: 'dmi-sex-unknown' })
+
+        const patient = await refsService.mapPatientReferences(createOrderDto, providerPatient, 'antech')
+
+        expect(findOneByCodeAndProviderMock).toHaveBeenNthCalledWith(4, '43', 'antech', false, 'species')
+        expect(findOneByCodeAndProviderMock).toHaveBeenNthCalledWith(5, '1335', 'antech', false, 'breed')
+        expect(findOneByCodeAndProviderMock).toHaveBeenNthCalledWith(6, 'U', 'antech', false, 'sex')
+        expect(patient).toEqual(expect.objectContaining({
+          sex: 'dmi-sex-unknown',
+          species: 'dmi-avian',
+          breed: 'dmi-bird-unknown',
         }))
       })
     })

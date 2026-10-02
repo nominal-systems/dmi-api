@@ -178,12 +178,27 @@ export class RefsService {
     return ref
   }
 
-  async findOneByCodeAndProvider (code: string, provider?: string, providerRef = false): Promise<Ref | ProviderRef | undefined> {
-    const result = await this.refRepository.createQueryBuilder('ref')
-      .leftJoinAndSelect('ref.providerRef', 'providerRef', 'providerRef.provider = :provider', { provider })
-      .leftJoinAndSelect('providerRef.provider', 'provider')
-      .where('ref.code = :code OR providerRef.code = :code', { code })
-      .getOne()
+  async findOneByCodeAndProvider (
+    code: string,
+    provider?: string,
+    providerRef = false,
+    type?: 'species' | 'breed' | 'sex',
+  ): Promise<Ref | ProviderRef | undefined> {
+    // Provider codes repeat across types (Antech's '43' is both a species and a breed),
+    // so callers that know which kind of ref they want pass the type to keep them apart.
+    const query = this.refRepository.createQueryBuilder('ref')
+    if (type === undefined) {
+      query
+        .leftJoinAndSelect('ref.providerRef', 'providerRef', 'providerRef.provider = :provider', { provider })
+        .leftJoinAndSelect('providerRef.provider', 'provider')
+        .where('ref.code = :code OR providerRef.code = :code', { code })
+    } else {
+      query
+        .leftJoinAndSelect('ref.providerRef', 'providerRef', 'providerRef.provider = :provider AND providerRef.type = :type', { provider, type })
+        .leftJoinAndSelect('providerRef.provider', 'provider')
+        .where('(ref.code = :code AND ref.type = :type) OR providerRef.code = :code', { code, type })
+    }
+    const result = await query.getOne()
     if (providerRef) {
       return result?.providerRef[0]
     } else {
@@ -252,7 +267,7 @@ export class RefsService {
   }
 
   async mapPatientRefs (providerId: string, patient: CreateOrderDtoPatient): Promise<void> {
-    const attributesToMap = ['sex', 'species', 'breed']
+    const attributesToMap: Array<'sex' | 'species' | 'breed'> = ['sex', 'species', 'breed']
 
     const mappedPatient: Partial<CreateOrderDtoPatient> = {}
     // Track which mapping was used for species to support per-mapping default breed precedence
@@ -261,7 +276,7 @@ export class RefsService {
 
     for (const attribute of attributesToMap) {
       if (patient[attribute] !== undefined && patient[attribute] !== null) {
-        const result = await this.findOneByCodeAndProvider(patient[attribute], providerId, true)
+        const result = await this.findOneByCodeAndProvider(patient[attribute], providerId, true, attribute)
 
         if (result !== undefined) {
           mappedPatient[attribute] = result.code
@@ -322,9 +337,9 @@ export class RefsService {
       breed = providerPatient.breed
     }
     const [speciesRef, breedRef, sexRef] = await Promise.all([
-      this.findOneByCodeAndProvider(species, providerId),
-      this.findOneByCodeAndProvider(breed, providerId),
-      this.findOneByCodeAndProvider(sex, providerId),
+      this.findOneByCodeAndProvider(species, providerId, false, 'species'),
+      this.findOneByCodeAndProvider(breed, providerId, false, 'breed'),
+      this.findOneByCodeAndProvider(sex, providerId, false, 'sex'),
     ])
 
     const mappedPatient = {
