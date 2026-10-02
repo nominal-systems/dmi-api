@@ -34,7 +34,7 @@ import { UpdateProviderDto } from '../dtos/update-provider.dto'
 import { ProviderOption } from '../entities/provider-option.entity'
 import { ProviderOptionDto } from '../dtos/provider-option.dto'
 import { nestKeys } from '../../common/utils/nest-keys'
-import { redactHeaders, redactObject, redactPayload } from '../../common/utils/redact'
+import { redactHeaders, redactObject, redactPayload, redactUrl } from '../../common/utils/redact'
 import { PaginationDto } from '../../common/dtos/pagination.dto'
 import { isNullOrEmpty, stringifyId } from '../../common/utils/shared.utils'
 
@@ -46,6 +46,9 @@ const EXTERNAL_REQUESTS_TTL_SECONDS = Number(process.env.EXTERNAL_REQUESTS_TTL_S
 // written before redaction was added on write are not served verbatim either.
 function redactExternalRequest<T> (doc: T): T {
   const redacted: any = { ...doc }
+  if (redacted.url !== undefined) {
+    redacted.url = redactUrl(redacted.url)
+  }
   if (redacted.headers !== undefined) {
     redacted.headers = redactHeaders(redacted.headers)
   }
@@ -427,8 +430,8 @@ export class ProvidersService implements OnModuleInit {
       accessionIds,
       status,
       method,
-      url,
       // Engines forward whatever their interceptor sees, credentials included
+      url: redactUrl(url),
       headers: nestKeys(redactHeaders(headers)),
       body: nestKeys(redactObject(body)), // Nest keys to ensure MongoDB safety
       partitionKey: buildExternalRequestPartitionKey(provider, undefined, createdAt)
@@ -453,13 +456,13 @@ export class ProvidersService implements OnModuleInit {
       // to 'MongoServerError', so the old check silently dropped every failed
       // write (429 throttling, 413 oversized document, etc.) with no trace.
       if (error != null) {
-        this.logger.error(`Could not save external request (${method} ${url}), saving without the body: ${error.message}`)
+        this.logger.error(`Could not save external request (${method} ${rawData.url}), saving without the body: ${error.message}`)
 
         // TODO(gb): implement a better fallback strategy than just removing the body
         delete rawData.body
         this.providerExternalRequestsV3Model.create(rawData, (error) => {
           if (error != null) {
-            this.logger.error(`Could not save external request (${method} ${url}) without the body either: ${error.message}`)
+            this.logger.error(`Could not save external request (${method} ${rawData.url}) without the body either: ${error.message}`)
           }
         })
       }

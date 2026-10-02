@@ -103,7 +103,7 @@ describe('ProvidersService', () => {
         createdAt: expect.any(Date),
         headers: data.headers,
         body: data.body,
-        url: data.url,
+        url: data.url.replace(/accessToken=[^&]+/, 'accessToken=***'), // the fixture's URL carries a token
         method: data.method,
         provider: data.provider,
         status: data.status,
@@ -122,7 +122,7 @@ describe('ProvidersService', () => {
         createdAt: expect.any(Date),
         headers: data.headers,
         body: data.body,
-        url: data.url,
+        url: data.url.replace(/accessToken=[^&]+/, 'accessToken=***'),
         method: data.method,
         provider: data.provider,
         status: data.status,
@@ -205,6 +205,58 @@ describe('ProvidersService', () => {
       }, expect.any(Function))
 
       createSpy.mockRestore()
+    })
+    it('should mask a credential in the URL query and keep the rest of the URL', async () => {
+      const createSpy = jest.spyOn(providerExternalRequestsV3Model, 'create')
+      const data = {
+        headers: { Accept: 'application/json' },
+        body: { tests: [] },
+        url: 'https://vendor.example.test/api/Tests/v6?accesstoken=dummy-url-token&userId=1&pageSize=2500',
+        method: 'GET',
+        provider: 'test-provider',
+        status: 200,
+        payload: undefined
+      }
+
+      await service.saveProviderRawData(data)
+
+      expect(createSpy).toHaveBeenCalledWith({
+        createdAt: expect.any(Date),
+        headers: { Accept: 'application/json' },
+        body: { tests: [] },
+        url: 'https://vendor.example.test/api/Tests/v6?accesstoken=***&userId=1&pageSize=2500',
+        method: 'GET',
+        provider: 'test-provider',
+        status: 200,
+        partitionKey: expect.stringMatching(/^test-provider:na:\d{8}$/)
+      }, expect.any(Function))
+
+      createSpy.mockRestore()
+    })
+    it('should not log a credential from the URL when the write fails', async () => {
+      const error = Object.assign(new Error('boom'), { name: 'MongoServerError' })
+      const createSpy = jest.spyOn(providerExternalRequestsV3Model, 'create')
+        .mockImplementation((_data: any, cb: any) => { cb(error); return undefined as any })
+      const loggerSpy = jest.spyOn((service as any).logger, 'error').mockImplementation(() => {})
+
+      await service.saveProviderRawData({
+        headers: {},
+        body: {},
+        url: 'https://vendor.example.test/api/Tests/v6?accesstoken=dummy-url-token&userId=1',
+        method: 'GET',
+        provider: 'test-provider',
+        status: 200,
+        payload: undefined
+      })
+
+      expect(loggerSpy).toHaveBeenCalledTimes(2)
+      for (const [message] of loggerSpy.mock.calls) {
+        expect(message).toContain('GET https://vendor.example.test/api/Tests/v6?accesstoken=***&userId=1')
+        expect(message).not.toContain('dummy-url-token')
+      }
+
+      createSpy.mockRestore()
+      loggerSpy.mockRestore()
     })
     it('should remove duplicate accession IDs before saving', async () => {
       const createSpy = jest.spyOn(providerExternalRequestsV3Model, 'create')
@@ -448,6 +500,19 @@ describe('ProvidersService', () => {
           { limit: 10, sort: { createdAt: -1 }, lean: true }
         )
       }
+    })
+
+    it('findExternalRequests should mask a credential in the URL query of a stored record', async () => {
+      const stored = {
+        ...listed(storedRequest(ID_V3, '2026-09-30T10:00:00.000Z')),
+        url: 'https://vendor.example.test/api/Tests/v6?accesstoken=dummy-url-token&userId=1&pageSize=2500'
+      }
+      jest.spyOn(providerExternalRequestsV3Model, 'find').mockResolvedValue([stored] as never)
+      jest.spyOn(providerExternalRequestsModel, 'find').mockResolvedValue([] as never)
+
+      const [record] = await service.findExternalRequests({ provider: 'test-provider' }, { page: 1, limit: 10 })
+
+      expect(record.url).toEqual('https://vendor.example.test/api/Tests/v6?accesstoken=***&userId=1&pageSize=2500')
     })
 
     it('findAllExternalRequests should mask credentials in every document of both collections', async () => {

@@ -6,7 +6,7 @@ const CIRCULAR = '[Circular]'
 
 const SENSITIVE_HEADER_NAMES = new Set(['authorization', 'proxy-authorization', 'cookie', 'set-cookie', 'x-api-key'])
 const SENSITIVE_HEADER_PARTS = ['token', 'secret', 'password', 'apikey', 'api-key']
-const SENSITIVE_KEY_NAMES = new Set(['pass', 'pwd'])
+const SENSITIVE_KEY_NAMES = new Set(['pass', 'pwd', 'signature'])
 const SENSITIVE_KEY_PARTS = ['password', 'token', 'secret', 'authorization', 'apikey', 'api_key', 'api-key']
 
 // Dotted keys are also checked segment by segment: nestKeys() turns
@@ -89,6 +89,11 @@ function redactFormString (text: string): string | undefined {
   if (!text.includes('=') || /\s/.test(text)) {
     return undefined
   }
+  return redactFormPairs(text)
+}
+
+// Masks the values of credential keys in `k=v&…`; every other pair is kept byte for byte.
+function redactFormPairs (text: string): string {
   return text
     .split('&')
     .map((pair) => {
@@ -100,6 +105,21 @@ function redactFormString (text: string): string | undefined {
       return isSensitiveKey(decodeFormComponent(key)) ? `${key}=${REDACTED}` : pair
     })
     .join('&')
+}
+
+// Masks credentials in a URL's query string; the path and the fragment are
+// kept as they are. No whitespace check here: engines store decoded URLs.
+export function redactUrl<T> (url: T): T {
+  if (typeof url !== 'string') {
+    return url
+  }
+  const queryStart = url.indexOf('?')
+  if (queryStart === -1) {
+    return url
+  }
+  const fragmentStart = url.indexOf('#', queryStart)
+  const queryEnd = fragmentStart === -1 ? url.length : fragmentStart
+  return (url.slice(0, queryStart + 1) + redactFormPairs(url.slice(queryStart + 1, queryEnd)) + url.slice(queryEnd)) as T
 }
 
 function decodeFormComponent (component: string): string {

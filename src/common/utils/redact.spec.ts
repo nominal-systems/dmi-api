@@ -1,5 +1,5 @@
 import { Types } from 'mongoose'
-import { redactHeaders, redactObject, redactPayload } from './redact'
+import { redactHeaders, redactObject, redactPayload, redactUrl } from './redact'
 
 describe('redactHeaders()', () => {
   it('should mask credential headers whatever their case and leave the others as they are', () => {
@@ -140,5 +140,44 @@ describe('redactPayload()', () => {
 
     expect(redactPayload(payload)).toEqual({ UserName: 'USER', Password: '***', ClinicID: '123456' })
     expect(payload).toEqual({ UserName: 'USER', Password: 'dummy-password', ClinicID: '123456' })
+  })
+})
+
+describe('redactUrl()', () => {
+  it('should mask accesstoken in the query and keep the path and the other pairs byte for byte', () => {
+    expect(redactUrl('https://vendor.example.test/api/Tests/v6?accesstoken=abc&userId=1&pageSize=2500'))
+      .toEqual('https://vendor.example.test/api/Tests/v6?accesstoken=***&userId=1&pageSize=2500')
+  })
+
+  it('should mask accessToken and signature whatever their case', () => {
+    expect(redactUrl('https://vendor.example.test/api/results?accessToken=abc&Signature=s1&clinicId=1'))
+      .toEqual('https://vendor.example.test/api/results?accessToken=***&Signature=***&clinicId=1')
+  })
+
+  it('should return a URL without a query as the same string', () => {
+    const url = 'https://vendor.example.test/oauth/token'
+
+    expect(redactUrl(url)).toBe(url)
+  })
+
+  it('should return a URL whose query has no credential byte for byte', () => {
+    const url = 'https://vendor.example.test/api/orders?status=final&from=2026-09-01T00%3A00%3A00Z&q=a+b'
+
+    expect(redactUrl(url)).toBe(url)
+  })
+
+  it('should mask a credential in a decoded query whose values contain spaces', () => {
+    expect(redactUrl('https://vendor.example.test/api/search?access_token=abc&q=hello world'))
+      .toEqual('https://vendor.example.test/api/search?access_token=***&q=hello world')
+  })
+
+  it('should leave the fragment as it is', () => {
+    expect(redactUrl('https://vendor.example.test/app?token=abc#/results?view=full&token=kept'))
+      .toEqual('https://vendor.example.test/app?token=***#/results?view=full&token=kept')
+  })
+
+  it('should return anything that is not a string as it is', () => {
+    expect(redactUrl(undefined)).toBeUndefined()
+    expect(redactUrl(null)).toBeNull()
   })
 })
