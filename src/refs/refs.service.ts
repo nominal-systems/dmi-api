@@ -284,6 +284,12 @@ export class RefsService {
             originalRefSpeciesForMapping = patient[attribute]
             mappedProviderSpeciesForMapping = result.code
           }
+          // A provider breed belongs to exactly one provider species, and providers refuse a breed
+          // sent under another species. When the breed resolves, its own species is what gets sent,
+          // whatever the patient's species is mapped to (breed is mapped last, so this wins).
+          if (attribute === 'breed' && typeof result.species === 'string' && result.species !== '') {
+            mappedPatient.species = result.species
+          }
         } else if (attribute === 'breed') {
           // Breed not mapped: try mapping-level default first, then provider-level default
           let mappedBreed: string | undefined

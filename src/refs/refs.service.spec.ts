@@ -541,6 +541,101 @@ describe('RefsService', () => {
       expect(findOneByCodeAndProviderMock).toHaveBeenNthCalledWith(2, 'dmi-species', 'antech', true, 'species')
       expect(findOneByCodeAndProviderMock).toHaveBeenNthCalledWith(3, 'dmi-breed', 'antech', true, 'breed')
     })
+    describe('species follows the mapped breed', () => {
+      // dmi 'Avian' is mapped to Antech V6 '53 Psittacine'; the hawk is mapped to '834 Raptor Red Tail Hawk',
+      // which belongs to '119 Raptor'
+      const birdPatient = (breed?: string): CreateOrderDtoPatient => ({
+        sex: 'dmi-sex-unknown',
+        species: 'dmi-avian',
+        ...(breed !== undefined ? { breed } : {}),
+      } as CreateOrderDtoPatient)
+
+      it('should send the resolved breed\'s own species instead of the mapped species', async () => {
+        const patient = birdPatient('dmi-red-tailed-hawk')
+        findOneByCodeAndProviderMock
+          .mockResolvedValueOnce({ code: 'U', type: 'sex' })
+          .mockResolvedValueOnce({ code: '53', type: 'species' })
+          .mockResolvedValueOnce({ code: '834', type: 'breed', species: '119' })
+
+        await refsService.mapPatientRefs('antech-v6', patient)
+
+        expect(patient).toEqual(expect.objectContaining({
+          sex: 'U',
+          species: '119',
+          breed: '834',
+        }))
+        expect(providerSpeciesMappingDefaultBreedRepositoryMock.createQueryBuilder).not.toHaveBeenCalled()
+        expect(providerDefaultBreedRepositoryMock.createQueryBuilder).not.toHaveBeenCalled()
+      })
+
+      it('should send the resolved breed\'s species when the species itself is unmapped', async () => {
+        const patient = birdPatient('dmi-red-tailed-hawk')
+        findOneByCodeAndProviderMock
+          .mockResolvedValueOnce(undefined)
+          .mockResolvedValueOnce(undefined)
+          .mockResolvedValueOnce({ code: '834', type: 'breed', species: '119' })
+
+        await refsService.mapPatientRefs('antech-v6', patient)
+
+        expect(patient).toEqual(expect.objectContaining({
+          species: '119',
+          breed: '834',
+        }))
+      })
+
+      it.each([
+        ['undefined', undefined],
+        ['null', null],
+        ['empty', ''],
+      ])('should keep the mapped species when the resolved breed\'s species is %s', async (_label, species) => {
+        const patient = birdPatient('dmi-red-tailed-hawk')
+        findOneByCodeAndProviderMock
+          .mockResolvedValueOnce({ code: 'U', type: 'sex' })
+          .mockResolvedValueOnce({ code: '53', type: 'species' })
+          .mockResolvedValueOnce({ code: '834', type: 'breed', species })
+
+        await refsService.mapPatientRefs('antech-v6', patient)
+
+        expect(patient).toEqual(expect.objectContaining({
+          species: '53',
+          breed: '834',
+        }))
+      })
+
+      it.each([
+        ['is unmapped', 'dmi-unmapped-bird'],
+        ['is missing', undefined],
+      ])('should keep the mapped species and use the mapping-level default when the breed %s', async (_label, breed) => {
+        const patient = birdPatient(breed)
+        findOneByCodeAndProviderMock
+          .mockResolvedValueOnce({ code: 'U', type: 'sex' })
+          .mockResolvedValueOnce({ code: '53', type: 'species' })
+        if (breed !== undefined) {
+          findOneByCodeAndProviderMock.mockResolvedValueOnce(undefined)
+        }
+        const mappingDefaultQuery = {
+          leftJoin: jest.fn().mockReturnThis(),
+          select: jest.fn().mockReturnThis(),
+          where: jest.fn().mockReturnThis(),
+          getOne: jest.fn().mockResolvedValueOnce({ defaultBreed: { id: 7, code: '736', name: 'African Grey' } }),
+        }
+        providerSpeciesMappingDefaultBreedRepositoryMock.createQueryBuilder.mockReturnValueOnce(mappingDefaultQuery)
+
+        await refsService.mapPatientRefs('antech-v6', patient)
+
+        expect(patient).toEqual(expect.objectContaining({
+          species: '53',
+          breed: '736',
+        }))
+        // The default is looked up for the species mapping the species step chose
+        expect(mappingDefaultQuery.where).toHaveBeenCalledWith(expect.any(String), {
+          refSpecies: 'dmi-avian',
+          providerSpecies: '53',
+          providerId: 'antech-v6',
+        })
+        expect(findOneByCodeAndProviderMock).toHaveBeenCalledTimes(breed !== undefined ? 3 : 2)
+      })
+    })
   })
   describe('mapPatientReferences()', () => {
     it('should map multiple species to a single provider code', async () => {
@@ -665,6 +760,45 @@ describe('RefsService', () => {
           species: 'dmi-avian',
           breed: 'dmi-bird-unknown',
         }))
+      })
+      it('should send the mapped breed\'s species but store the dmi refs', async () => {
+        const createOrderDto = {
+          patient: {
+            name: 'Hawk',
+            sex: 'dmi-sex-unknown',
+            species: 'dmi-avian',
+            breed: 'dmi-red-tailed-hawk',
+          } as CreateOrderDtoPatient,
+        }
+        const providerPatient = {
+          sex: 'dmi-sex-unknown',
+          species: 'dmi-avian',
+          breed: 'dmi-red-tailed-hawk',
+        } as Patient
+        findOneByCodeAndProviderMock
+          // mapPatientRefs: Avian is mapped to 53 Psittacine, the hawk to 834, a 119 Raptor breed
+          .mockResolvedValueOnce({ code: 'U', type: 'sex' })
+          .mockResolvedValueOnce({ code: '53', type: 'species' })
+          .mockResolvedValueOnce({ code: '834', type: 'breed', species: '119' })
+          // stored refs, looked up from the codes the order came with
+          .mockResolvedValueOnce({ code: 'dmi-avian' })
+          .mockResolvedValueOnce({ code: 'dmi-red-tailed-hawk' })
+          .mockResolvedValueOnce({ code: 'dmi-sex-unknown' })
+
+        const patient = await refsService.mapPatientReferences(createOrderDto, providerPatient, 'antech-v6')
+
+        expect(providerPatient).toEqual(expect.objectContaining({
+          sex: 'U',
+          species: '119',
+          breed: '834',
+        }))
+        expect(patient).toEqual(expect.objectContaining({
+          name: 'Hawk',
+          sex: 'dmi-sex-unknown',
+          species: 'dmi-avian',
+          breed: 'dmi-red-tailed-hawk',
+        }))
+        expect(findOneByCodeAndProviderMock).toHaveBeenNthCalledWith(4, 'dmi-avian', 'antech-v6', false, 'species')
       })
     })
     describe('Idexx', () => {
