@@ -27,6 +27,9 @@ export class RefsService {
 
   async syncProviderRefs (provider: Provider, mapList: ReferenceDataResponse<Sex | Breed | Species>, type: 'species' | 'breed' | 'sex'): Promise<void> {
     this.logger.log(`Found ${type} in ${provider.id}: ${mapList.items.length}`)
+    if (type === 'breed') {
+      this.assertOneSpeciesPerBreed(provider, mapList.items)
+    }
     if (provider.hashes === null || provider.hashes[type] !== mapList.hash) {
       let newRefsCount = 0
       let updatedRefsCount = 0
@@ -68,6 +71,32 @@ export class RefsService {
       await this.providersService.update(provider)
     } else {
       this.logger.log(`No ${type} to sync for ${provider.id}`)
+    }
+  }
+
+  // A patient is sent with its provider breed's own species (see mapPatientRefs), which only holds
+  // if every breed code belongs to one species. A breed list that files a code under several species
+  // is refused as a whole, rather than letting the sync keep whichever item happened to come last.
+  // Repeats with the same species are not a conflict, and an item without a species is not counted.
+  private assertOneSpeciesPerBreed (provider: Provider, items: Array<Sex | Breed | Species>): void {
+    const speciesByCode = new Map<string, Set<string>>()
+    for (const item of items) {
+      const species = 'species' in item ? item.species : undefined
+      if (species === undefined || species === null || species === '') {
+        continue
+      }
+      const seen = speciesByCode.get(item.code) ?? new Set<string>()
+      seen.add(String(species))
+      speciesByCode.set(item.code, seen)
+    }
+
+    const conflicts = [...speciesByCode]
+      .filter(([, species]) => species.size > 1)
+      .map(([code, species]) => `${code} (species ${[...species].join(', ')})`)
+    if (conflicts.length > 0) {
+      const message = `Refusing breed sync for ${provider.id}: breed codes listed under more than one species: ${conflicts.join('; ')}`
+      this.logger.error(message)
+      throw new Error(message)
     }
   }
 

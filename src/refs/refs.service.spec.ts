@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { RefsService } from './refs.service'
 import { ProvidersService } from '../providers/services/providers.service'
@@ -1065,6 +1066,85 @@ describe('RefsService', () => {
       })
       await refsService.syncProviderRefs(providerMock, providerBreedList, 'species')
       expect(providerRefsRepositoryMock.save).not.toBeCalled()
+    })
+    describe('one species per breed', () => {
+      const freshProvider = (): Provider => ({ id: 'antech-v6', hashes: { breed: 'old-hash' } } as unknown as Provider)
+      let loggerErrorSpy: jest.SpyInstance
+
+      beforeEach(() => {
+        loggerErrorSpy = jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined)
+        // Earlier tests queue findOne results that a hash short-circuit leaves unconsumed; drop them
+        providerRefsRepositoryMock.findOne.mockReset().mockImplementation(entity => entity)
+      })
+
+      afterEach(() => {
+        loggerErrorSpy.mockRestore()
+      })
+
+      it('should refuse a breed list that files one code under two species, and write nothing', async () => {
+        const provider = freshProvider()
+        const breedList = {
+          hash: 'new-hash',
+          items: [
+            { code: '834', name: 'Raptor Red Tail Hawk', species: '119' },
+            { code: '796', name: 'Parrot', species: '53' },
+            { code: '796', name: 'Parrot', species: '53' },
+            { code: '834', name: 'Raptor Red Tail Hawk', species: '53' },
+          ],
+        }
+
+        const sync = refsService.syncProviderRefs(provider, breedList, 'breed')
+
+        await expect(sync).rejects.toThrow(Error)
+        await expect(sync).rejects.toThrow(
+          'Refusing breed sync for antech-v6: breed codes listed under more than one species: 834 (species 119, 53)',
+        )
+        expect(loggerErrorSpy).toHaveBeenCalledWith(expect.stringContaining('834 (species 119, 53)'))
+        expect(providerRefsRepositoryMock.findOne).not.toHaveBeenCalled()
+        expect(providerRefsRepositoryMock.create).not.toHaveBeenCalled()
+        expect(providerRefsRepositoryMock.save).not.toHaveBeenCalled()
+        expect(providersServiceMock.update).not.toHaveBeenCalled()
+        expect(provider.hashes).toEqual({ breed: 'old-hash' })
+      })
+
+      it('should sync a breed list that repeats a code with the same species', async () => {
+        const provider = freshProvider()
+        const unknownBird = { code: '1335', name: 'Unknown', species: '43' }
+        const breedList = { hash: 'new-hash', items: [unknownBird, { ...unknownBird }] }
+        providerRefsRepositoryMock.findOne
+          .mockResolvedValueOnce(null)
+          .mockResolvedValueOnce({ ...unknownBird, type: 'breed' })
+
+        await refsService.syncProviderRefs(provider, breedList, 'breed')
+
+        expect(providerRefsRepositoryMock.save).toHaveBeenCalledTimes(1)
+        expect(providerRefsRepositoryMock.save).toHaveBeenCalledWith(expect.objectContaining({
+          code: '1335',
+          type: 'breed',
+          species: '43',
+        }))
+        expect(providersServiceMock.update).toHaveBeenCalledWith(expect.objectContaining({
+          hashes: { breed: 'new-hash' },
+        }))
+        expect(loggerErrorSpy).not.toHaveBeenCalled()
+      })
+
+      it('should not count an item without a species as a second species', async () => {
+        const provider = freshProvider()
+        const breedList = {
+          hash: 'new-hash',
+          items: [
+            { code: '1335', name: 'Unknown', species: '43' },
+            { code: '1335', name: 'Unknown', species: '' },
+          ],
+        }
+        providerRefsRepositoryMock.findOne
+          .mockResolvedValueOnce(null)
+          .mockResolvedValueOnce({ code: '1335', name: 'Unknown', type: 'breed', species: '43' })
+
+        await expect(refsService.syncProviderRefs(provider, breedList, 'breed')).resolves.toBeUndefined()
+        expect(providersServiceMock.update).toHaveBeenCalled()
+      })
     })
   })
 })
