@@ -177,6 +177,40 @@ describe('AdminController', () => {
       expect(result).toEqual(expectedResult)
     })
 
+    it('should never return an unmasked Authorization header', async () => {
+      // The real service over stored documents that still hold the header verbatim.
+      const storedRequest = (id: string) => ({
+        _id: id,
+        createdAt: new Date('2026-09-30T10:00:00.000Z'),
+        provider: 'provider1',
+        status: 200,
+        method: 'GET',
+        url: 'https://vendor.example.test/api/orders',
+        headers: { Accept: 'application/json', Authorization: 'Bearer dummy-bearer' },
+      })
+      const modelWith = (docs: any[]) => ({
+        find: jest.fn().mockResolvedValue(docs),
+        countDocuments: jest.fn().mockResolvedValue(docs.length),
+      })
+      ;(adminController as any).providersService = new ProvidersService(
+        undefined as any,
+        undefined as any,
+        modelWith([storedRequest('v2-id')]) as any,
+        modelWith([storedRequest('v3-id')]) as any,
+        undefined as any,
+        undefined as any,
+      )
+
+      const result = await adminController.getExternalRequests({ page: 1, limit: 10 })
+
+      expect(result.total).toEqual(2)
+      expect(result.data.map((record) => record.headers)).toEqual([
+        { Accept: 'application/json', Authorization: '***' },
+        { Accept: 'application/json', Authorization: '***' },
+      ])
+      expect(JSON.stringify(result)).not.toContain('dummy-bearer')
+    })
+
     it('should throw BadRequestException for invalid query parameters', async () => {
       await expect(validationPipe.transform({ page: '-1' }, metadata)).rejects.toThrow(
         BadRequestException,
