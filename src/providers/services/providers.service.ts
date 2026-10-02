@@ -34,7 +34,7 @@ import { UpdateProviderDto } from '../dtos/update-provider.dto'
 import { ProviderOption } from '../entities/provider-option.entity'
 import { ProviderOptionDto } from '../dtos/provider-option.dto'
 import { nestKeys } from '../../common/utils/nest-keys'
-import { redactHeaders, redactObject, redactPayload, redactUrl } from '../../common/utils/redact'
+import { redactHeaders, redactPayload, redactUrl } from '../../common/utils/redact'
 import { PaginationDto } from '../../common/dtos/pagination.dto'
 import { isNullOrEmpty, stringifyId } from '../../common/utils/shared.utils'
 
@@ -53,7 +53,7 @@ function redactExternalRequest<T> (doc: T): T {
     redacted.headers = redactHeaders(redacted.headers)
   }
   if (redacted.body !== undefined) {
-    redacted.body = redactObject(redacted.body)
+    redacted.body = redactPayload(redacted.body)
   }
   if (redacted.payload !== undefined) {
     redacted.payload = redactPayload(redacted.payload)
@@ -433,7 +433,7 @@ export class ProvidersService implements OnModuleInit {
       // Engines forward whatever their interceptor sees, credentials included
       url: redactUrl(url),
       headers: nestKeys(redactHeaders(headers)),
-      body: nestKeys(redactObject(body)), // Nest keys to ensure MongoDB safety
+      body: nestKeys(redactPayload(body)), // Nest keys to ensure MongoDB safety
       partitionKey: buildExternalRequestPartitionKey(provider, undefined, createdAt)
     }
 

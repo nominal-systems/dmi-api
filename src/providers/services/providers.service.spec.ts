@@ -258,6 +258,82 @@ describe('ProvidersService', () => {
       createSpy.mockRestore()
       loggerSpy.mockRestore()
     })
+    it('should mask nested credentials in the headers, the body and the payload', async () => {
+      const createSpy = jest.spyOn(providerExternalRequestsV3Model, 'create')
+      const data = {
+        headers: { common: { Authorization: 'Bearer dummy-bearer', Accept: 'application/json' } },
+        body: { data: { session: { access_token: 'dummy-access', user: 'u' } }, items: [{ id: 1, password: 'dummy-password' }] },
+        url: 'https://vendor.example.test/api/session',
+        method: 'POST',
+        provider: 'test-provider',
+        status: 200,
+        payload: { auth: { client_id: 'c', client_secret: 'dummy-secret' } }
+      }
+
+      await service.saveProviderRawData(data)
+
+      expect(createSpy).toHaveBeenCalledWith({
+        createdAt: expect.any(Date),
+        headers: { common: { Authorization: '***', Accept: 'application/json' } },
+        body: { data: { session: { access_token: '***', user: 'u' } }, items: [{ id: 1, password: '***' }] },
+        url: 'https://vendor.example.test/api/session',
+        method: 'POST',
+        provider: 'test-provider',
+        status: 200,
+        payload: { auth: { client_id: 'c', client_secret: '***' } },
+        partitionKey: expect.stringMatching(/^test-provider:na:\d{8}$/)
+      }, expect.any(Function))
+
+      createSpy.mockRestore()
+    })
+    it('should mask credentials in a string body, form-encoded or JSON', async () => {
+      const createSpy = jest.spyOn(providerExternalRequestsV3Model, 'create')
+      const data = {
+        headers: {},
+        body: 'access_token=dummy-access&expires_in=3600',
+        url: 'https://vendor.example.test/oauth/token',
+        method: 'POST',
+        provider: 'test-provider',
+        status: 200,
+        payload: undefined
+      }
+
+      await service.saveProviderRawData(data)
+      await service.saveProviderRawData({ ...data, body: '{"access_token":"dummy-access","expires_in":3600}' })
+
+      expect((createSpy.mock.calls[0][0] as any).body).toEqual('access_token=***&expires_in=3600')
+      expect((createSpy.mock.calls[1][0] as any).body).toEqual('{"access_token":"***","expires_in":3600}')
+
+      createSpy.mockRestore()
+    })
+    it('should keep the url, headers and payload masked in the body-less fallback write', async () => {
+      const error = Object.assign(new Error('Request rate is large'), { name: 'MongoServerError', code: 16500 })
+      const written: any[] = []
+      const createSpy = jest.spyOn(providerExternalRequestsV3Model, 'create')
+        .mockImplementationOnce((doc: any, cb: any) => { written.push({ ...doc }); cb(error); return undefined as any })
+        .mockImplementationOnce((doc: any, cb: any) => { written.push({ ...doc }); cb(null); return undefined as any })
+      const loggerSpy = jest.spyOn((service as any).logger, 'error').mockImplementation(() => {})
+
+      await service.saveProviderRawData({
+        headers: { Authorization: 'Bearer dummy-bearer', Accept: 'application/json' },
+        body: { access_token: 'dummy-access' },
+        url: 'https://vendor.example.test/oauth/token?client_secret=dummy-secret&scope=read',
+        method: 'POST',
+        provider: 'test-provider',
+        status: 200,
+        payload: 'grant_type=password&username=u&password=dummy-password'
+      })
+
+      expect(written).toHaveLength(2)
+      const fallback = written[1]
+      expect('body' in fallback).toBe(false)
+      expect(fallback.headers).toEqual({ Authorization: '***', Accept: 'application/json' })
+      expect(fallback.payload).toEqual('grant_type=password&username=u&password=***')
+      expect(fallback.url).toEqual('https://vendor.example.test/oauth/token?client_secret=***&scope=read')
+
+      createSpy.mockRestore()
+      loggerSpy.mockRestore()
+    })
     it('should remove duplicate accession IDs before saving', async () => {
       const createSpy = jest.spyOn(providerExternalRequestsV3Model, 'create')
 
@@ -479,6 +555,14 @@ describe('ProvidersService', () => {
         payload: 'grant_type=password&username=u&password=***'
       })
       expect(findByIdSpy).toHaveBeenCalledWith(ID_V3, { __v: 0 }, { lean: true })
+    })
+
+    it('findExternalRequestById should mask a credential in a stored string body', async () => {
+      jest.spyOn(providerExternalRequestsV3Model, 'findById').mockReturnValue({
+        exec: jest.fn().mockResolvedValue({ ...storedRequest(ID_V3, '2026-09-30T10:00:00.000Z'), body: 'access_token=dummy-access&expires_in=3600' })
+      } as any)
+
+      expect((await service.findExternalRequestById(ID_V3)).body).toEqual('access_token=***&expires_in=3600')
     })
 
     it('findExternalRequests should mask the Authorization header in every record of both collections', async () => {

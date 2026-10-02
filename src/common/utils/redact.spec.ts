@@ -34,6 +34,45 @@ describe('redactHeaders()', () => {
     })
   })
 
+  it('should mask any header whose name contains key, and keep the usual ones', () => {
+    expect(redactHeaders({
+      'Ocp-Apim-Subscription-Key': 'dummy-key',
+      'X-Auth-Key': 'dummy-key',
+      'X-Access-Key': 'dummy-key',
+      api_key: 'dummy-key',
+      'X-Client-Credential': 'dummy-credential',
+      'Keep-Alive': 'timeout=5',
+      Connection: 'keep-alive',
+      'X-Request-Id': 'r-1',
+      Accept: 'application/json'
+    })).toEqual({
+      'Ocp-Apim-Subscription-Key': '***',
+      'X-Auth-Key': '***',
+      'X-Access-Key': '***',
+      api_key: '***',
+      'X-Client-Credential': '***',
+      'Keep-Alive': 'timeout=5',
+      Connection: 'keep-alive',
+      'X-Request-Id': 'r-1',
+      Accept: 'application/json'
+    })
+  })
+
+  it('should mask credential headers inside an object-valued header without mutating it', () => {
+    const headers = {
+      common: { Authorization: 'Bearer dummy-token', Accept: 'application/json' },
+      get: { 'X-Api-Key': 'dummy-key' },
+      'Content-Type': 'application/json'
+    }
+
+    expect(redactHeaders(headers)).toEqual({
+      common: { Authorization: '***', Accept: 'application/json' },
+      get: { 'X-Api-Key': '***' },
+      'Content-Type': 'application/json'
+    })
+    expect(headers.common.Authorization).toEqual('Bearer dummy-token')
+  })
+
   it('should not mutate its input', () => {
     const headers = { Authorization: 'Bearer dummy-token', Accept: 'application/json' }
 
@@ -67,6 +106,53 @@ describe('redactObject()', () => {
       clients: [{ id: 1, client_secret: '***' }, { id: 2, Token: '***' }],
       settings: { apiKey: '***', api_key: '***', 'api-key': '***', authorization: '***' }
     })
+  })
+
+  it('should mask the other credential names: passwd, passphrase, jwt, sig, key, credentials, private keys', () => {
+    expect(redactObject({
+      passwd: 'p',
+      passphrase: 'p',
+      jwt: 'j',
+      sig: 's',
+      Key: 'k',
+      client_credentials: 'c',
+      private_key: 'k',
+      privateKey: 'k',
+      'private-key': 'k'
+    })).toEqual({
+      passwd: '***',
+      passphrase: '***',
+      jwt: '***',
+      sig: '***',
+      Key: '***',
+      client_credentials: '***',
+      private_key: '***',
+      privateKey: '***',
+      'private-key': '***'
+    })
+  })
+
+  // Pins the trade-off both ways: broadening or narrowing the rules must change these tests.
+  it('should keep these keys unmasked', () => {
+    const kept = {
+      keyword: 'k',
+      monkey: 'm',
+      keys: ['a'],
+      publicKey: 'p',
+      description: 'd',
+      passenger: 'p',
+      bypass: true,
+      sigma: 1,
+      signatureRequired: true,
+      privateNote: 'n'
+    }
+
+    expect(redactObject(kept)).toEqual(kept)
+  })
+
+  it('should mask token_type and passwordExpiresAt on purpose', () => {
+    expect(redactObject({ token_type: 'Bearer', passwordExpiresAt: '2026-01-01' }))
+      .toEqual({ token_type: '***', passwordExpiresAt: '***' })
   })
 
   it('should mask a dotted key whose segment is pass or pwd, which nestKeys() would otherwise expose', () => {
@@ -116,6 +202,37 @@ describe('redactPayload()', () => {
       .toEqual('scope=read+write&api%5Fkey=***&redirect_uri=https%3A%2F%2Fexample.test%2F')
   })
 
+  it('should mask the password in a form payload whose values contain spaces', () => {
+    expect(redactPayload('username=John Smith&password=dummy-password'))
+      .toEqual('username=John Smith&password=***')
+  })
+
+  it('should leave a pair whose key holds whitespace or markup', () => {
+    expect(redactPayload('Status: password=pending')).toEqual('Status: password=pending')
+    expect(redactPayload('<Note>password=pending</Note>')).toEqual('<Note>password=pending</Note>')
+  })
+
+  it('should return a string without any sensitive name unparsed', () => {
+    const parseSpy = jest.spyOn(JSON, 'parse')
+    const payload = '{ "ClinicID": "123456", "Accessions": ["A1"] }'
+
+    expect(redactPayload(payload)).toBe(payload)
+    expect(parseSpy).not.toHaveBeenCalled()
+
+    parseSpy.mockRestore()
+  })
+
+  it('should still mask a short credential name in a string payload', () => {
+    expect(redactPayload('sig=dummy-sig&sv=2024')).toEqual('sig=***&sv=2024')
+    expect(JSON.parse(redactPayload('{"jwt":"dummy-jwt","id":1}'))).toEqual({ jwt: '***', id: 1 })
+  })
+
+  // The values carry no sensitive name, so only the escape can let the string through the pre-check.
+  it('should still mask a key spelled with escapes', () => {
+    expect(JSON.parse(redactPayload('{"p\\u0061ssword":"dummy-value"}'))).toEqual({ password: '***' })
+    expect(redactPayload('%70assword=dummy-value&user=u')).toEqual('%70assword=***&user=u')
+  })
+
   it('should mask a nested access_token in a JSON string payload', () => {
     const payload = JSON.stringify({ data: { access_token: 'dummy-access', expires_in: 3600 }, user: 'u' })
 
@@ -152,6 +269,11 @@ describe('redactUrl()', () => {
   it('should mask accessToken and signature whatever their case', () => {
     expect(redactUrl('https://vendor.example.test/api/results?accessToken=abc&Signature=s1&clinicId=1'))
       .toEqual('https://vendor.example.test/api/results?accessToken=***&Signature=***&clinicId=1')
+  })
+
+  it('should mask sig and key parameters', () => {
+    expect(redactUrl('https://vendor.example.test/files/report.pdf?sv=2024&sig=dummy-sig&key=dummy-key&se=2026'))
+      .toEqual('https://vendor.example.test/files/report.pdf?sv=2024&sig=***&key=***&se=2026')
   })
 
   it('should return a URL without a query as the same string', () => {
