@@ -35,7 +35,8 @@ describe('RefsService', () => {
     update: jest.fn(entity => entity),
     delete: jest.fn(entity => entity),
     findBy: jest.fn(entity => entity),
-    createQueryBuilder: jest.fn(() => ({
+    // Builders are shaped per test (getOne or getMany), hence the loose return type
+    createQueryBuilder: jest.fn((): any => ({
       leftJoin: jest.fn().mockReturnThis(),
       select: jest.fn().mockReturnThis(),
       where: jest.fn().mockReturnThis(),
@@ -550,6 +551,15 @@ describe('RefsService', () => {
         species: 'dmi-avian',
         ...(breed !== undefined ? { breed } : {}),
       } as CreateOrderDtoPatient)
+      // The provider_ref rows that share the resolved breed's code, as the service reads them back
+      const providerBreedRows = (...species: string[]): void => {
+        providerRefsRepositoryMock.createQueryBuilder.mockReturnValueOnce({
+          leftJoin: jest.fn().mockReturnThis(),
+          select: jest.fn().mockReturnThis(),
+          where: jest.fn().mockReturnThis(),
+          getMany: jest.fn().mockResolvedValueOnce(species.map((value, index) => ({ id: index + 1, species: value }))),
+        })
+      }
 
       it('should send the resolved breed\'s own species instead of the mapped species', async () => {
         const patient = birdPatient('dmi-red-tailed-hawk')
@@ -557,6 +567,9 @@ describe('RefsService', () => {
           .mockResolvedValueOnce({ code: 'U', type: 'sex' })
           .mockResolvedValueOnce({ code: '53', type: 'species' })
           .mockResolvedValueOnce({ code: '834', type: 'breed', species: '119' })
+          // the hawk's dmi ref, read back for its own species: the seeded bird breeds have none
+          .mockResolvedValueOnce({ code: 'dmi-red-tailed-hawk', species: null })
+        providerBreedRows('119')
 
         await refsService.mapPatientRefs('antech-v6', patient)
 
@@ -575,6 +588,8 @@ describe('RefsService', () => {
           .mockResolvedValueOnce(undefined)
           .mockResolvedValueOnce(undefined)
           .mockResolvedValueOnce({ code: '834', type: 'breed', species: '119' })
+        // nothing resolved for the species, so the breed's dmi ref is not consulted
+        providerBreedRows('119')
 
         await refsService.mapPatientRefs('antech-v6', patient)
 
@@ -582,6 +597,65 @@ describe('RefsService', () => {
           species: '119',
           breed: '834',
         }))
+      })
+
+      it('should send the resolved breed\'s species when its dmi ref belongs to the patient\'s dmi species', async () => {
+        const patient = birdPatient('dmi-red-tailed-hawk')
+        findOneByCodeAndProviderMock
+          .mockResolvedValueOnce({ code: 'U', type: 'sex' })
+          .mockResolvedValueOnce({ code: '53', type: 'species' })
+          .mockResolvedValueOnce({ code: '834', type: 'breed', species: '119' })
+          .mockResolvedValueOnce({ code: 'dmi-red-tailed-hawk', species: 'dmi-avian' })
+        providerBreedRows('119')
+
+        await refsService.mapPatientRefs('antech-v6', patient)
+
+        expect(patient).toEqual(expect.objectContaining({ species: '119', breed: '834' }))
+      })
+
+      it('should keep the mapped species when the breed\'s dmi ref belongs to another dmi species (a dog with the breed Siamese)', async () => {
+        const patient = { sex: 'dmi-sex-unknown', species: 'dmi-canis-familiaris', breed: 'dmi-siamese' } as CreateOrderDtoPatient
+        findOneByCodeAndProviderMock
+          .mockResolvedValueOnce({ code: 'U', type: 'sex' })
+          .mockResolvedValueOnce({ code: '41', type: 'species' })
+          .mockResolvedValueOnce({ code: '33', type: 'breed', species: '42' })
+          .mockResolvedValueOnce({ code: 'dmi-siamese', species: 'dmi-felidae' })
+
+        await refsService.mapPatientRefs('antech', patient)
+
+        // The order contradicts itself; the species the practice chose stands, and the provider's
+        // own refusal of the pair, if any, stays as loud as before.
+        expect(patient).toEqual(expect.objectContaining({ species: '41', breed: '33' }))
+        expect(providerRefsRepositoryMock.createQueryBuilder).not.toHaveBeenCalled()
+      })
+
+      it('should keep the mapped species when the provider files the breed code under it as well (heska MIX)', async () => {
+        const patient = { sex: 'dmi-sex-unknown', species: 'dmi-felidae', breed: 'dmi-mixed' } as CreateOrderDtoPatient
+        findOneByCodeAndProviderMock
+          .mockResolvedValueOnce({ code: 'UNKNOWN', type: 'sex' })
+          .mockResolvedValueOnce({ code: 'FELINE', type: 'species' })
+          // whichever MIX row the join returned first
+          .mockResolvedValueOnce({ code: 'MIX', type: 'breed', species: 'CANINE' })
+          .mockResolvedValueOnce({ code: 'dmi-mixed', species: null })
+        providerBreedRows('CANINE', 'FELINE')
+
+        await refsService.mapPatientRefs('heska', patient)
+
+        expect(patient).toEqual(expect.objectContaining({ species: 'FELINE', breed: 'MIX' }))
+      })
+
+      it('should keep the mapped species when the breed code is filed under several species, none of them the mapped one', async () => {
+        const patient = { sex: 'dmi-sex-unknown', species: 'dmi-equus', breed: 'dmi-mixed' } as CreateOrderDtoPatient
+        findOneByCodeAndProviderMock
+          .mockResolvedValueOnce({ code: 'UNKNOWN', type: 'sex' })
+          .mockResolvedValueOnce({ code: 'EQUINE', type: 'species' })
+          .mockResolvedValueOnce({ code: 'MIX', type: 'breed', species: 'CANINE' })
+          .mockResolvedValueOnce({ code: 'dmi-mixed', species: null })
+        providerBreedRows('CANINE', 'FELINE')
+
+        await refsService.mapPatientRefs('heska', patient)
+
+        expect(patient).toEqual(expect.objectContaining({ species: 'EQUINE', breed: 'MIX' }))
       })
 
       it.each([
@@ -781,10 +855,18 @@ describe('RefsService', () => {
           .mockResolvedValueOnce({ code: 'U', type: 'sex' })
           .mockResolvedValueOnce({ code: '53', type: 'species' })
           .mockResolvedValueOnce({ code: '834', type: 'breed', species: '119' })
+          // the hawk's dmi ref, read back for its own species
+          .mockResolvedValueOnce({ code: 'dmi-red-tailed-hawk', species: null })
           // stored refs, looked up from the codes the order came with
           .mockResolvedValueOnce({ code: 'dmi-avian' })
           .mockResolvedValueOnce({ code: 'dmi-red-tailed-hawk' })
           .mockResolvedValueOnce({ code: 'dmi-sex-unknown' })
+        providerRefsRepositoryMock.createQueryBuilder.mockReturnValueOnce({
+          leftJoin: jest.fn().mockReturnThis(),
+          select: jest.fn().mockReturnThis(),
+          where: jest.fn().mockReturnThis(),
+          getMany: jest.fn().mockResolvedValueOnce([{ id: 1, species: '119' }]),
+        })
 
         const patient = await refsService.mapPatientReferences(createOrderDto, providerPatient, 'antech-v6')
 
@@ -799,7 +881,8 @@ describe('RefsService', () => {
           species: 'dmi-avian',
           breed: 'dmi-red-tailed-hawk',
         }))
-        expect(findOneByCodeAndProviderMock).toHaveBeenNthCalledWith(4, 'dmi-avian', 'antech-v6', false, 'species')
+        expect(findOneByCodeAndProviderMock).toHaveBeenNthCalledWith(4, 'dmi-red-tailed-hawk', 'antech-v6', false, 'breed')
+        expect(findOneByCodeAndProviderMock).toHaveBeenNthCalledWith(5, 'dmi-avian', 'antech-v6', false, 'species')
       })
     })
     describe('Idexx', () => {
