@@ -317,6 +317,9 @@ export class RefsService {
           // sent under another species. When the breed resolves, its own species is what gets sent,
           // whatever the patient's species is mapped to (breed is mapped last, so this wins).
           if (attribute === 'breed' && typeof result.species === 'string' && result.species !== '') {
+            if (mappedPatient.species !== result.species) {
+              this.logger.log(`Sending species ${result.species} instead of ${String(mappedPatient.species)} to ${providerId}: it is the species of provider breed ${result.code}`)
+            }
             mappedPatient.species = result.species
           }
         } else if (attribute === 'breed') {
