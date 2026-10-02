@@ -1,7 +1,7 @@
 import { ClientProxy } from '@nestjs/microservices'
 import { IntegrationsService } from '../../integrations/integrations.service'
 import { ProvidersService } from './providers.service'
-import { Model } from 'mongoose'
+import { Model, Types } from 'mongoose'
 import * as fs from 'fs'
 import * as path from 'path'
 import { ProviderExternalRequestDocument } from '../entities/provider-external-requests.entity'
@@ -60,8 +60,8 @@ describe('ProvidersService', () => {
           useValue: providerConfigurationRepositoryMock
         },
         { provide: ClientProxy, useValue: {} },
-        { provide: getModelToken('ProviderExternalRequests'), useValue: { create: jest.fn(), countDocuments: jest.fn() } },
-        { provide: getModelToken('ProviderExternalRequestsV3'), useValue: { create: jest.fn(), countDocuments: jest.fn() } },
+        { provide: getModelToken('ProviderExternalRequests'), useValue: { create: jest.fn(), countDocuments: jest.fn(), find: jest.fn(), findById: jest.fn() } },
+        { provide: getModelToken('ProviderExternalRequestsV3'), useValue: { create: jest.fn(), countDocuments: jest.fn(), find: jest.fn(), findById: jest.fn() } },
         {
           provide: getRepositoryToken(Provider),
           useValue: providersRepositoryMock
@@ -145,8 +145,63 @@ describe('ProvidersService', () => {
         method: data.method,
         provider: data.provider,
         status: data.status,
-        payload: data.payload,
+        payload: { ...data.payload, Password: '***' },
         partitionKey: expect.stringMatching(new RegExp(`^${String(data.provider)}:na:\\d{8}$`))
+      }, expect.any(Function))
+
+      createSpy.mockRestore()
+    })
+    it('should mask the Authorization header and the access_token in the body, and store everything else unchanged', async () => {
+      const createSpy = jest.spyOn(providerExternalRequestsV3Model, 'create')
+      const data = {
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer dummy-bearer' },
+        body: { access_token: 'dummy-access', expires_in: 3600, scope: 'read' },
+        url: 'https://vendor.example.test/api/orders',
+        method: 'GET',
+        provider: 'test-provider',
+        status: 200,
+        payload: undefined
+      }
+
+      await service.saveProviderRawData(data)
+
+      expect(createSpy).toHaveBeenCalledWith({
+        createdAt: expect.any(Date),
+        headers: { 'Content-Type': 'application/json', Authorization: '***' },
+        body: { access_token: '***', expires_in: 3600, scope: 'read' },
+        url: 'https://vendor.example.test/api/orders',
+        method: 'GET',
+        provider: 'test-provider',
+        status: 200,
+        partitionKey: expect.stringMatching(/^test-provider:na:\d{8}$/)
+      }, expect.any(Function))
+
+      createSpy.mockRestore()
+    })
+    it('should mask the password in a form-encoded payload and keep the username', async () => {
+      const createSpy = jest.spyOn(providerExternalRequestsV3Model, 'create')
+      const data = {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: { scope: 'read', expires_in: 3600 },
+        url: 'https://vendor.example.test/oauth/token',
+        method: 'POST',
+        provider: 'test-provider',
+        status: 200,
+        payload: 'grant_type=password&username=u&password=p'
+      }
+
+      await service.saveProviderRawData(data)
+
+      expect(createSpy).toHaveBeenCalledWith({
+        createdAt: expect.any(Date),
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: { scope: 'read', expires_in: 3600 },
+        url: 'https://vendor.example.test/oauth/token',
+        method: 'POST',
+        provider: 'test-provider',
+        status: 200,
+        payload: 'grant_type=password&username=u&password=***',
+        partitionKey: expect.stringMatching(/^test-provider:na:\d{8}$/)
       }, expect.any(Function))
 
       createSpy.mockRestore()
@@ -340,6 +395,75 @@ describe('ProvidersService', () => {
       jest.spyOn(providerExternalRequestsModel, 'countDocuments').mockResolvedValue(5 as never)
 
       expect(await service.countExternalRequests({ provider: 'idexx' })).toEqual(12)
+    })
+  })
+  describe('reading stored external requests', () => {
+    // A document written before redaction was added on write, holding credentials verbatim.
+    const storedRequest = (id: string, createdAt: string) => ({
+      _id: new Types.ObjectId(id),
+      createdAt: new Date(createdAt),
+      provider: 'test-provider',
+      status: 200,
+      method: 'POST',
+      url: 'https://vendor.example.test/oauth/token',
+      headers: { Accept: 'application/json', Authorization: 'Bearer dummy-bearer' },
+      body: { access_token: 'dummy-access', expires_in: 3600 },
+      payload: 'grant_type=password&username=u&password=dummy-password',
+      partitionKey: 'test-provider:na:20260930'
+    })
+    const listed = ({ body, payload, ...rest }: ReturnType<typeof storedRequest>) => rest
+    const ID_V3 = '650000000000000000000001'
+    const ID_V2 = '650000000000000000000002'
+
+    it('findExternalRequestById should mask the Authorization header, the access_token and the password', async () => {
+      const findByIdSpy = jest.spyOn(providerExternalRequestsV3Model, 'findById')
+        .mockReturnValue({ exec: jest.fn().mockResolvedValue(storedRequest(ID_V3, '2026-09-30T10:00:00.000Z')) } as any)
+
+      expect(await service.findExternalRequestById(ID_V3)).toEqual({
+        ...storedRequest(ID_V3, '2026-09-30T10:00:00.000Z'),
+        _id: ID_V3,
+        headers: { Accept: 'application/json', Authorization: '***' },
+        body: { access_token: '***', expires_in: 3600 },
+        payload: 'grant_type=password&username=u&password=***'
+      })
+      expect(findByIdSpy).toHaveBeenCalledWith(ID_V3, { __v: 0 }, { lean: true })
+    })
+
+    it('findExternalRequests should mask the Authorization header in every record of both collections', async () => {
+      const v3FindSpy = jest.spyOn(providerExternalRequestsV3Model, 'find')
+        .mockResolvedValue([listed(storedRequest(ID_V3, '2026-09-30T10:00:00.000Z'))] as never)
+      const v2FindSpy = jest.spyOn(providerExternalRequestsModel, 'find')
+        .mockResolvedValue([listed(storedRequest(ID_V2, '2026-09-29T10:00:00.000Z'))] as never)
+
+      const records = await service.findExternalRequests({ provider: 'test-provider' }, { page: 1, limit: 10 })
+
+      expect(records).toEqual([
+        { ...listed(storedRequest(ID_V3, '2026-09-30T10:00:00.000Z')), _id: ID_V3, headers: { Accept: 'application/json', Authorization: '***' } },
+        { ...listed(storedRequest(ID_V2, '2026-09-29T10:00:00.000Z')), _id: ID_V2, headers: { Accept: 'application/json', Authorization: '***' } }
+      ])
+      for (const findSpy of [v3FindSpy, v2FindSpy]) {
+        expect(findSpy).toHaveBeenCalledWith(
+          { provider: 'test-provider' },
+          { __v: 0, body: 0, payload: 0 },
+          { limit: 10, sort: { createdAt: -1 }, lean: true }
+        )
+      }
+    })
+
+    it('findAllExternalRequests should mask credentials in every document of both collections', async () => {
+      jest.spyOn(providerExternalRequestsV3Model, 'find')
+        .mockResolvedValue([storedRequest(ID_V3, '2026-09-30T10:00:00.000Z')] as never)
+      jest.spyOn(providerExternalRequestsModel, 'find')
+        .mockResolvedValue([storedRequest(ID_V2, '2026-09-29T10:00:00.000Z')] as never)
+
+      const documents = await service.findAllExternalRequests({ accessionIds: 'ACC123' })
+
+      expect(documents).toHaveLength(2)
+      for (const document of documents) {
+        expect(document.headers).toEqual({ Accept: 'application/json', Authorization: '***' })
+        expect(document.body).toEqual({ access_token: '***', expires_in: 3600 })
+        expect(document.payload).toEqual('grant_type=password&username=u&password=***')
+      }
     })
   })
   describe('checkLabRequisitionParameters()', () => {
