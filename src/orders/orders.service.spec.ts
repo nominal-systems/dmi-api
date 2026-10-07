@@ -11,6 +11,7 @@ import { EventsService } from '../events/services/events.service'
 import {
   FileUtils,
   OrderStatus,
+  PimsIdentifiers,
   ProviderError,
   ProviderResult,
   ResultStatus,
@@ -1287,6 +1288,146 @@ describe('OrdersService', () => {
         })
 
         expect(updateSpy).toHaveBeenCalledTimes(1)
+      })
+    })
+
+    // Regression for https://github.com/nominal-systems/dmi-api/issues/334
+    // When the caller supplies no pims:patient:id, the engines send the order's
+    // internal patient id as the provider's patient id and the provider echoes
+    // it back; some result mappers stamp the echo as pims:patient:id, others
+    // under their own identifier system. A pims:patient:id on one side only must
+    // not keep a submitted order from advancing; two differing ids still must.
+    describe('one-sided pims:patient:id (issue #334)', () => {
+      const EXTERNAL_ID = 'ORD-334'
+      const INTEGRATION_ID = 'integration-a'
+      const ECHOED_PATIENT_ID = '3f1c2b9a-7d4e-4a6b-8c5d-2e9f0a1b3c4d'
+      const PIMS_PATIENT_ID = 'PIMS-PATIENT-42'
+
+      type IdentifierLike = { system: string; value: string }
+      const pimsPatientId = (value: string): IdentifierLike[] => [
+        { system: PimsIdentifiers.PatientID, value },
+      ]
+
+      const buildIncomingResult = (patientIdentifier: IdentifierLike[]): ProviderResult =>
+        ({
+          id: 'result-334',
+          orderId: EXTERNAL_ID,
+          status: ResultStatus.COMPLETED,
+          order: {
+            externalId: EXTERNAL_ID,
+            status: OrderStatus.COMPLETED,
+            patient: {
+              name: 'Rex',
+              species: 'Canine',
+              sex: 'M',
+              breed: 'Beagle',
+              identifier: patientIdentifier,
+            },
+            client: { firstName: 'Alice', lastName: 'Anderson', identifier: [] },
+            veterinarian: { firstName: 'Dana', lastName: 'Vetson' },
+            tests: [],
+            editable: false,
+          },
+          testResults: [
+            {
+              seq: 1,
+              code: 'CBC',
+              name: 'Complete Blood Count',
+              items: [
+                { seq: 1, code: 'HCT', name: 'Hematocrit', status: 'DONE', valueString: '45' },
+              ],
+            },
+          ],
+        }) as unknown as ProviderResult
+
+      // A submitted order: not an orphan, correlated by its provider order id.
+      const buildSubmittedOrder = (patientIdentifier: IdentifierLike[]): Order =>
+        ({
+          id: 'order-334',
+          integrationId: INTEGRATION_ID,
+          externalId: EXTERNAL_ID,
+          status: OrderStatus.SUBMITTED,
+          orphan: false,
+          patient: { name: 'Rex', identifier: patientIdentifier },
+          client: { lastName: 'Anderson', identifier: [] },
+        }) as unknown as Order
+
+      it('advances an order placed without a pims:patient:id when the result carries the echoed id as one', async () => {
+        const order = buildSubmittedOrder([])
+        jest.spyOn(ordersService, 'findOneByExternalId').mockResolvedValueOnce(order)
+        const updateSpy = jest.spyOn(ordersService, 'updateOrderFromResults')
+
+        await ordersService.handleExternalOrderResults({
+          integrationId: INTEGRATION_ID,
+          results: [buildIncomingResult(pimsPatientId(ECHOED_PATIENT_ID))],
+        })
+
+        expect(updateSpy).toHaveBeenCalledTimes(1)
+        expect(updateSpy).toHaveBeenCalledWith(
+          order,
+          expect.objectContaining({ orderId: EXTERNAL_ID }),
+        )
+        expect(order.status).toBe(OrderStatus.COMPLETED)
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(
+          expect.objectContaining({
+            namespace: EventNamespace.ORDERS,
+            type: EventType.ORDER_UPDATED,
+            integrationId: INTEGRATION_ID,
+            data: expect.objectContaining({
+              orderId: order.id,
+              status: OrderStatus.COMPLETED,
+            }),
+          }),
+        )
+      })
+
+      it('advances an order placed with a pims:patient:id when the result echoes it under the provider\'s own system', async () => {
+        const order = buildSubmittedOrder(pimsPatientId(PIMS_PATIENT_ID))
+        jest.spyOn(ordersService, 'findOneByExternalId').mockResolvedValueOnce(order)
+        const updateSpy = jest.spyOn(ordersService, 'updateOrderFromResults')
+
+        await ordersService.handleExternalOrderResults({
+          integrationId: INTEGRATION_ID,
+          results: [buildIncomingResult([{ system: 'antech:pet:id', value: PIMS_PATIENT_ID }])],
+        })
+
+        expect(updateSpy).toHaveBeenCalledTimes(1)
+        expect(updateSpy).toHaveBeenCalledWith(
+          order,
+          expect.objectContaining({ orderId: EXTERNAL_ID }),
+        )
+        expect(order.status).toBe(OrderStatus.COMPLETED)
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(
+          expect.objectContaining({
+            namespace: EventNamespace.ORDERS,
+            type: EventType.ORDER_UPDATED,
+            integrationId: INTEGRATION_ID,
+            data: expect.objectContaining({
+              orderId: order.id,
+              status: OrderStatus.COMPLETED,
+            }),
+          }),
+        )
+      })
+
+      it('still skips the update when both sides carry a pims:patient:id and they differ', async () => {
+        const order = buildSubmittedOrder(pimsPatientId(PIMS_PATIENT_ID))
+        jest.spyOn(ordersService, 'findOneByExternalId').mockResolvedValueOnce(order)
+        const updateSpy = jest.spyOn(ordersService, 'updateOrderFromResults')
+
+        await ordersService.handleExternalOrderResults({
+          integrationId: INTEGRATION_ID,
+          results: [buildIncomingResult(pimsPatientId(ECHOED_PATIENT_ID))],
+        })
+
+        expect(updateSpy).not.toHaveBeenCalled()
+        expect(order.status).toBe(OrderStatus.SUBMITTED)
+        expect(eventsServiceMock.addEvent).not.toHaveBeenCalledWith(
+          expect.objectContaining({
+            namespace: EventNamespace.ORDERS,
+            type: EventType.ORDER_UPDATED,
+          }),
+        )
       })
     })
   })
