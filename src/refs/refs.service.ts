@@ -27,6 +27,9 @@ export class RefsService {
 
   async syncProviderRefs (provider: Provider, mapList: ReferenceDataResponse<Sex | Breed | Species>, type: 'species' | 'breed' | 'sex'): Promise<void> {
     this.logger.log(`Found ${type} in ${provider.id}: ${mapList.items.length}`)
+    if (type === 'breed') {
+      this.assertOneSpeciesPerBreed(provider, mapList.items)
+    }
     if (provider.hashes === null || provider.hashes[type] !== mapList.hash) {
       let newRefsCount = 0
       let updatedRefsCount = 0
@@ -68,6 +71,32 @@ export class RefsService {
       await this.providersService.update(provider)
     } else {
       this.logger.log(`No ${type} to sync for ${provider.id}`)
+    }
+  }
+
+  // A patient is sent with its provider breed's own species (see mapPatientRefs), which only holds
+  // if every breed code belongs to one species. A breed list that files a code under several species
+  // is refused as a whole, rather than letting the sync keep whichever item happened to come last.
+  // Repeats with the same species are not a conflict, and an item without a species is not counted.
+  private assertOneSpeciesPerBreed (provider: Provider, items: Array<Sex | Breed | Species>): void {
+    const speciesByCode = new Map<string, Set<string>>()
+    for (const item of items) {
+      const species = 'species' in item ? item.species : undefined
+      if (species === undefined || species === null || species === '') {
+        continue
+      }
+      const seen = speciesByCode.get(item.code) ?? new Set<string>()
+      seen.add(String(species))
+      speciesByCode.set(item.code, seen)
+    }
+
+    const conflicts = [...speciesByCode]
+      .filter(([, species]) => species.size > 1)
+      .map(([code, species]) => `${code} (species ${[...species].join(', ')})`)
+    if (conflicts.length > 0) {
+      const message = `Refusing breed sync for ${provider.id}: breed codes listed under more than one species: ${conflicts.join('; ')}`
+      this.logger.error(message)
+      throw new Error(message)
     }
   }
 
@@ -178,12 +207,27 @@ export class RefsService {
     return ref
   }
 
-  async findOneByCodeAndProvider (code: string, provider?: string, providerRef = false): Promise<Ref | ProviderRef | undefined> {
-    const result = await this.refRepository.createQueryBuilder('ref')
-      .leftJoinAndSelect('ref.providerRef', 'providerRef', 'providerRef.provider = :provider', { provider })
-      .leftJoinAndSelect('providerRef.provider', 'provider')
-      .where('ref.code = :code OR providerRef.code = :code', { code })
-      .getOne()
+  async findOneByCodeAndProvider (
+    code: string,
+    provider?: string,
+    providerRef = false,
+    type?: 'species' | 'breed' | 'sex',
+  ): Promise<Ref | ProviderRef | undefined> {
+    // Provider codes repeat across types (Antech's '43' is both a species and a breed),
+    // so callers that know which kind of ref they want pass the type to keep them apart.
+    const query = this.refRepository.createQueryBuilder('ref')
+    if (type === undefined) {
+      query
+        .leftJoinAndSelect('ref.providerRef', 'providerRef', 'providerRef.provider = :provider', { provider })
+        .leftJoinAndSelect('providerRef.provider', 'provider')
+        .where('ref.code = :code OR providerRef.code = :code', { code })
+    } else {
+      query
+        .leftJoinAndSelect('ref.providerRef', 'providerRef', 'providerRef.provider = :provider AND providerRef.type = :type', { provider, type })
+        .leftJoinAndSelect('providerRef.provider', 'provider')
+        .where('(ref.code = :code AND ref.type = :type) OR providerRef.code = :code', { code, type })
+    }
+    const result = await query.getOne()
     if (providerRef) {
       return result?.providerRef[0]
     } else {
@@ -252,7 +296,7 @@ export class RefsService {
   }
 
   async mapPatientRefs (providerId: string, patient: CreateOrderDtoPatient): Promise<void> {
-    const attributesToMap = ['sex', 'species', 'breed']
+    const attributesToMap: Array<'sex' | 'species' | 'breed'> = ['sex', 'species', 'breed']
 
     const mappedPatient: Partial<CreateOrderDtoPatient> = {}
     // Track which mapping was used for species to support per-mapping default breed precedence
@@ -261,13 +305,28 @@ export class RefsService {
 
     for (const attribute of attributesToMap) {
       if (patient[attribute] !== undefined && patient[attribute] !== null) {
-        const result = await this.findOneByCodeAndProvider(patient[attribute], providerId, true)
+        const result = await this.findOneByCodeAndProvider(patient[attribute], providerId, true, attribute)
 
         if (result !== undefined) {
           mappedPatient[attribute] = result.code
           if (attribute === 'species') {
             originalRefSpeciesForMapping = patient[attribute]
             mappedProviderSpeciesForMapping = result.code
+          }
+          // Breed is mapped last, so the breed can refine the species: a provider breed belongs to
+          // one provider species, and providers refuse a breed sent under another one.
+          if (attribute === 'breed') {
+            const species = await this.speciesOfResolvedBreed(
+              providerId,
+              result as ProviderRef,
+              patient[attribute],
+              mappedPatient.species,
+              originalRefSpeciesForMapping,
+            )
+            if (species !== undefined) {
+              this.logger.log(`Sending species ${species} instead of ${String(mappedPatient.species)} to ${providerId}: it is the species of provider breed ${result.code}`)
+              mappedPatient.species = species
+            }
           }
         } else if (attribute === 'breed') {
           // Breed not mapped: try mapping-level default first, then provider-level default
@@ -314,6 +373,61 @@ export class RefsService {
     Object.assign(patient, mappedPatient)
   }
 
+  /* The species to send with a resolved provider breed, or undefined when the species already
+   * chosen stands. dmi's `Avian` is one species where Antech has twelve, so the breed is what
+   * knows which of them a bird is; sending the breed's own species is what makes the pair valid.
+   * Three things keep the species as mapped:
+   *  - the breed's dmi ref belongs to another dmi species than the one the patient resolved with
+   *    (a dog with the breed Siamese): the order contradicts itself, and the species the practice
+   *    chose stands — so a provider's refusal of the pair stays as loud as it is today;
+   *  - the provider files the breed code under several species (heska's MIX, UNK and HAVAN are
+   *    both canine and feline): the species sent stays when it is one of them, and a code that
+   *    cannot name one species never moves it;
+   *  - the breed row carries no species at all. */
+  private async speciesOfResolvedBreed (
+    providerId: string,
+    breed: ProviderRef,
+    breedInput: string,
+    sentSpecies: string | undefined,
+    resolvedSpeciesInput: string | undefined,
+  ): Promise<string | undefined> {
+    if (typeof breed.species !== 'string' || breed.species === '' || breed.species === sentSpecies) {
+      return undefined
+    }
+
+    if (resolvedSpeciesInput !== undefined) {
+      const breedRef = await this.findOneByCodeAndProvider(breedInput, providerId, false, 'breed')
+      const dmiSpeciesOfBreed = breedRef?.species
+      if (typeof dmiSpeciesOfBreed === 'string' && dmiSpeciesOfBreed !== '' && dmiSpeciesOfBreed !== resolvedSpeciesInput) {
+        this.logger.warn(`Keeping species ${String(sentSpecies)} for ${providerId}: breed ${breedInput} belongs to dmi species ${dmiSpeciesOfBreed}, the patient came as ${resolvedSpeciesInput}`)
+        return undefined
+      }
+    }
+
+    const rows = await this.providerRefRepository.createQueryBuilder('providerRef')
+      .leftJoin('providerRef.provider', 'provider', 'provider.id = providerRef.provider')
+      .select(['providerRef.id', 'providerRef.species'])
+      .where('providerRef.code = :code AND providerRef.type = :type AND provider.id = :providerId', {
+        code: breed.code,
+        type: 'breed',
+        providerId,
+      })
+      .getMany()
+    const candidates = new Set(rows.map((row) => row.species).filter((species): species is string => typeof species === 'string' && species !== ''))
+    if (candidates.size === 0) {
+      candidates.add(breed.species)
+    }
+    if (candidates.size > 1) {
+      // A code filed under the species already chosen is that provider's normal shape (heska's
+      // MIX is canine and feline), not something to warn about; one filed only under others is.
+      if (sentSpecies === undefined || !candidates.has(sentSpecies)) {
+        this.logger.warn(`Keeping species ${String(sentSpecies)} for ${providerId}: breed code ${breed.code} is filed under ${[...candidates].join(', ')}`)
+      }
+      return undefined
+    }
+    return [...candidates][0]
+  }
+
   async mapPatientReferences (order, providerPatient, providerId): Promise<Patient> {
     const { species, sex, weight, ...patient } = providerPatient
     let { breed } = providerPatient
@@ -322,9 +436,9 @@ export class RefsService {
       breed = providerPatient.breed
     }
     const [speciesRef, breedRef, sexRef] = await Promise.all([
-      this.findOneByCodeAndProvider(species, providerId),
-      this.findOneByCodeAndProvider(breed, providerId),
-      this.findOneByCodeAndProvider(sex, providerId),
+      this.findOneByCodeAndProvider(species, providerId, false, 'species'),
+      this.findOneByCodeAndProvider(breed, providerId, false, 'breed'),
+      this.findOneByCodeAndProvider(sex, providerId, false, 'sex'),
     ])
 
     const mappedPatient = {
