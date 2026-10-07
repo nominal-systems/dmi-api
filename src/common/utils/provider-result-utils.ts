@@ -92,12 +92,18 @@ export class ProviderResultUtils {
     if (!existingOrder.patient?.name || !extractedOrder.patient?.name) return false
     if (existingOrder.patient.name !== extractedOrder.patient.name) return false
 
-    // Check patient ID — if present on either side, both must have it and match
+    // Check patient ID — reject only when both sides carry a pims:patient:id and
+    // the values differ. An identifier on one side only says nothing about
+    // whether this is the same patient: when the caller supplied no identifier,
+    // the engines send the order's internal patient id as the provider's patient
+    // id and the providers echo it back, which some result mappers stamp as
+    // pims:patient:id while others stamp the echo under their own identifier
+    // system. Rejecting a one-sided id kept such orders from ever matching their
+    // own results (issue #334). Patient name and client last name remain the
+    // guard against a wrong-patient match (#285/#286).
     const existingPatientId = this.getIdentifierValue(existingOrder.patient?.identifier, PimsIdentifiers.PatientID)
     const extractedPatientId = this.getIdentifierValue(extractedOrder.patient?.identifier, PimsIdentifiers.PatientID)
-    if (existingPatientId || extractedPatientId) {
-      if (!existingPatientId || !extractedPatientId || existingPatientId !== extractedPatientId) return false
-    }
+    if (existingPatientId && extractedPatientId && existingPatientId !== extractedPatientId) return false
 
     // Check client last name — if present on either side, both must have it and
     // match. Absent on both sides is compatible: in-house analyzer results never
