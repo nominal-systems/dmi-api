@@ -638,10 +638,14 @@ describe('RefsService', () => {
           .mockResolvedValueOnce({ code: 'MIX', type: 'breed', species: 'CANINE' })
           .mockResolvedValueOnce({ code: 'dmi-mixed', species: null })
         providerBreedRows('CANINE', 'FELINE')
+        const warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined)
 
         await refsService.mapPatientRefs('heska', patient)
 
         expect(patient).toEqual(expect.objectContaining({ species: 'FELINE', breed: 'MIX' }))
+        // The provider's normal shape, not a problem: nothing is logged
+        expect(warn).not.toHaveBeenCalled()
+        warn.mockRestore()
       })
 
       it('should keep the mapped species when the breed code is filed under several species, none of them the mapped one', async () => {
@@ -652,10 +656,13 @@ describe('RefsService', () => {
           .mockResolvedValueOnce({ code: 'MIX', type: 'breed', species: 'CANINE' })
           .mockResolvedValueOnce({ code: 'dmi-mixed', species: null })
         providerBreedRows('CANINE', 'FELINE')
+        const warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined)
 
         await refsService.mapPatientRefs('heska', patient)
 
         expect(patient).toEqual(expect.objectContaining({ species: 'EQUINE', breed: 'MIX' }))
+        expect(warn).toHaveBeenCalledWith(expect.stringContaining('breed code MIX is filed under CANINE, FELINE'))
+        warn.mockRestore()
       })
 
       it.each([

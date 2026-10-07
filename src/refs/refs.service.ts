@@ -417,11 +417,12 @@ export class RefsService {
     if (candidates.size === 0) {
       candidates.add(breed.species)
     }
-    if (sentSpecies !== undefined && candidates.has(sentSpecies)) {
-      return undefined
-    }
     if (candidates.size > 1) {
-      this.logger.warn(`Keeping species ${String(sentSpecies)} for ${providerId}: breed code ${breed.code} is filed under ${[...candidates].join(', ')}`)
+      // A code filed under the species already chosen is that provider's normal shape (heska's
+      // MIX is canine and feline), not something to warn about; one filed only under others is.
+      if (sentSpecies === undefined || !candidates.has(sentSpecies)) {
+        this.logger.warn(`Keeping species ${String(sentSpecies)} for ${providerId}: breed code ${breed.code} is filed under ${[...candidates].join(', ')}`)
+      }
       return undefined
     }
     return [...candidates][0]
