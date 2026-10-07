@@ -92,18 +92,24 @@ export class ProviderResultUtils {
     if (!existingOrder.patient?.name || !extractedOrder.patient?.name) return false
     if (existingOrder.patient.name !== extractedOrder.patient.name) return false
 
-    // Check patient ID — reject only when both sides carry a pims:patient:id and
-    // the values differ. An identifier on one side only says nothing about
-    // whether this is the same patient: when the caller supplied no identifier,
-    // the engines send the order's internal patient id as the provider's patient
-    // id and the providers echo it back, which some result mappers stamp as
+    // Check patient ID — reject when both sides carry a pims:patient:id and the
+    // values differ. An identifier on one side only says nothing about whether
+    // this is the same patient: when the caller supplied no identifier, the
+    // engines send the order's internal patient id as the provider's patient id
+    // and the providers echo it back, which some result mappers stamp as
     // pims:patient:id while others stamp the echo under their own identifier
     // system. Rejecting a one-sided id kept such orders from ever matching their
-    // own results (issue #334). Patient name and client last name remain the
+    // own results (issue #334). So a one-sided id is tolerated where the client
+    // last name corroborates the patient name — every placed order carries a
+    // client — and still rejected where neither side has a client (in-house
+    // analyzer results, placeholder externalIds), where the name alone would be
+    // the only discriminator left. Patient name and client last name remain the
     // guard against a wrong-patient match (#285/#286).
     const existingPatientId = this.getIdentifierValue(existingOrder.patient?.identifier, PimsIdentifiers.PatientID)
     const extractedPatientId = this.getIdentifierValue(extractedOrder.patient?.identifier, PimsIdentifiers.PatientID)
     if (existingPatientId && extractedPatientId && existingPatientId !== extractedPatientId) return false
+    const oneSidedPatientId = Boolean(existingPatientId) !== Boolean(extractedPatientId)
+    if (oneSidedPatientId && !(existingOrder.client?.lastName && extractedOrder.client?.lastName)) return false
 
     // Check client last name — if present on either side, both must have it and
     // match. Absent on both sides is compatible: in-house analyzer results never

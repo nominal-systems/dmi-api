@@ -135,6 +135,13 @@ describe('ProviderResultUtils', () => {
       expect(ProviderResultUtils.isMatchingOrder(existing, extracted)).toBe(false)
     })
 
+    it('should return false when a patient ID is on one side only and neither side has a client (in-house analyzer results)', () => {
+      const existing = buildOrder({ integrationId: 'int-1', patientName: 'Max', patientId: 'P1' })
+      const extracted = buildOrder({ integrationId: 'int-1', patientName: 'Max' })
+      expect(ProviderResultUtils.isMatchingOrder(existing, extracted)).toBe(false)
+      expect(ProviderResultUtils.isMatchingOrder(extracted, existing)).toBe(false)
+    })
+
     it('should return false when a patient ID is on one side only and the client last name differs', () => {
       const existing = buildOrder({ integrationId: 'int-1', patientName: 'Toby', clientLastName: 'Smith' })
       const extracted = buildOrder({ integrationId: 'int-1', patientName: 'Toby', patientId: '123', clientLastName: 'Jones' })
