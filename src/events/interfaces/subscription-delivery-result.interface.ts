@@ -1,4 +1,5 @@
-export type SubscriptionDeliveryResult =
-  | { subscriptionId: string, status: 'sent' }
-  | { subscriptionId: string, status: 'too_large', sizeInBytes: number, maxSizeInBytes: number }
-  | { subscriptionId: string, status: 'error', error: Error }
+export type SubscriptionDeliveryResult = { subscriptionId: string } & (
+  | { status: 'sent' }
+  | { status: 'too_large', jsonSizeInBytes: number, maxSizeInBytes: number }
+  | { status: 'error', error: Error }
+)

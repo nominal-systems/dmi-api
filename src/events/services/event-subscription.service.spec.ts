@@ -108,7 +108,7 @@ describe('EventSubscriptionService', () => {
       expect(message).toContain('seq=42')
       expect(message).toContain('integrationId=integration-1')
       expect(message).toContain('accessionId=ACC-1')
-      expect(message).toContain(`size=${Buffer.byteLength(JSON.stringify(event))} bytes`)
+      expect(message).toContain(`jsonSize=${Buffer.byteLength(JSON.stringify(event))} bytes`)
       expect(message).toContain('max=1048576 bytes')
     })
 

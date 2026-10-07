@@ -107,7 +107,7 @@ export class EventSubscriptionService {
           this.logger.error(
             `Event too large for subscription: ${subscription.id}, event '${event.type}' was NOT delivered ` +
             `(eventId=${String(eventId)}, seq=${event.seq}, integrationId=${event.integrationId}, accessionId=${event.accessionId}, ` +
-            `size=${result.sizeInBytes} bytes, max=${result.maxSizeInBytes} bytes)`
+            `jsonSize=${result.jsonSizeInBytes} bytes, max=${result.maxSizeInBytes} bytes)`
           )
           break
         }
@@ -131,13 +131,12 @@ export class EventSubscriptionService {
       const eventData: Record<string, any> = event.data ?? {}
       const partitionKey: string | undefined = eventData.reportId ?? eventData.orderId ?? event.accessionId
       const eventDataBatch = await producer.createBatch({ ...(partitionKey != null && { partitionKey }) })
-      // tryAdd() returns false when the event exceeds the hub's max message size,
-      // and sending the resulting empty batch is a silent no-op.
+      // tryAdd() is false when over max size; sending the empty batch is a silent no-op
       if (!eventDataBatch.tryAdd({ body: event })) {
         return {
           subscriptionId: subscription.id,
           status: 'too_large',
-          sizeInBytes: Buffer.byteLength(JSON.stringify(event)),
+          jsonSizeInBytes: Buffer.byteLength(JSON.stringify(event)),
           maxSizeInBytes: eventDataBatch.maxSizeInBytes
         }
       }
