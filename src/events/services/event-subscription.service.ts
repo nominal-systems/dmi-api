@@ -3,12 +3,13 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { EventSubscription } from '../entities/event-subscription.entity'
 import { FindManyOptions, Repository } from 'typeorm'
 import { CreateEventSubscriptionDto } from '../dto/create-event-subscription.dto'
-import { Event } from '../entities/event.entity'
+import { Event, EventDocument } from '../entities/event.entity'
 import { EventHubProducerClient } from '@azure/event-hubs'
 import { AzureNamedKeyCredential } from '@azure/core-auth'
 import { FindOneOfTypeOptions, toFindOneOptions } from '../../common/typings/find-one-of-type-options.interface'
 import { IntegrationsService } from '../../integrations/integrations.service'
 import { EventType } from '../constants/event-type.enum'
+import { SubscriptionDeliveryResult } from '../interfaces/subscription-delivery-result.interface'
 
 @Injectable()
 export class EventSubscriptionService {
@@ -96,21 +97,62 @@ export class EventSubscriptionService {
 
     // TODO(gb): optimize this by sending all subscriptions in one batch?
     for (const subscription of subscriptions) {
-      try {
-        const opts = subscription.subscription_options
-        const credential = new AzureNamedKeyCredential(opts.sa_key_name, opts.sa_key_value)
-        const namespace = [opts.hub_namespace, '.servicebus.windows.net'].join('')
-        const producer = new EventHubProducerClient(namespace, opts.hub_name, credential)
-        const eventData: Record<string, any> = event.data ?? {}
-        const partitionKey: string | undefined = eventData.reportId ?? eventData.orderId ?? event.accessionId
-        const eventDataBatch = await producer.createBatch({ ...(partitionKey != null && { partitionKey }) })
-        eventDataBatch.tryAdd({ body: event })
-        await producer.sendBatch(eventDataBatch)
-        await producer.close()
-        this.logger.log(`Notifying subscription: ${subscription.id} of event '${event.type}'`)
-      } catch (error) {
-        this.logger.error(`Error notifying subscription: ${subscription.id} of event '${event.type}'`, error)
+      const result = await this.sendToSubscription(subscription, event)
+      switch (result.status) {
+        case 'sent':
+          this.logger.log(`Notifying subscription: ${subscription.id} of event '${event.type}'`)
+          break
+        case 'too_large': {
+          const { _id: eventId } = event as EventDocument
+          this.logger.error(
+            `Event too large for subscription: ${subscription.id}, event '${event.type}' was NOT delivered ` +
+            `(eventId=${String(eventId)}, seq=${event.seq}, integrationId=${event.integrationId}, accessionId=${event.accessionId}, ` +
+            `size=${result.sizeInBytes} bytes, max=${result.maxSizeInBytes} bytes)`
+          )
+          break
+        }
+        case 'error':
+          this.logger.error(`Error notifying subscription: ${subscription.id} of event '${event.type}'`, result.error.stack)
+          break
       }
+    }
+  }
+
+  private async sendToSubscription (
+    subscription: EventSubscription,
+    event: Event
+  ): Promise<SubscriptionDeliveryResult> {
+    const opts = subscription.subscription_options
+    let producer: EventHubProducerClient | undefined
+    try {
+      const credential = new AzureNamedKeyCredential(opts.sa_key_name, opts.sa_key_value)
+      const namespace = [opts.hub_namespace, '.servicebus.windows.net'].join('')
+      producer = new EventHubProducerClient(namespace, opts.hub_name, credential)
+      const eventData: Record<string, any> = event.data ?? {}
+      const partitionKey: string | undefined = eventData.reportId ?? eventData.orderId ?? event.accessionId
+      const eventDataBatch = await producer.createBatch({ ...(partitionKey != null && { partitionKey }) })
+      // tryAdd() returns false when the event exceeds the hub's max message size,
+      // and sending the resulting empty batch is a silent no-op.
+      if (!eventDataBatch.tryAdd({ body: event })) {
+        return {
+          subscriptionId: subscription.id,
+          status: 'too_large',
+          sizeInBytes: Buffer.byteLength(JSON.stringify(event)),
+          maxSizeInBytes: eventDataBatch.maxSizeInBytes
+        }
+      }
+      await producer.sendBatch(eventDataBatch)
+      return { subscriptionId: subscription.id, status: 'sent' }
+    } catch (error) {
+      return {
+        subscriptionId: subscription.id,
+        status: 'error',
+        error: error instanceof Error ? error : new Error(String(error))
+      }
+    } finally {
+      await producer?.close().catch((error) => {
+        this.logger.warn(`Error closing producer for subscription: ${subscription.id}: ${String(error?.message ?? error)}`)
+      })
     }
   }
 }
