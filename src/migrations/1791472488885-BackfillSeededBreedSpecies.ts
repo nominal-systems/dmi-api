@@ -10,8 +10,13 @@ const CHUNK_SIZE = 500
  * fixed it gave every one of them a NULL `species`: it looked the Antech species code up among the
  * dmi species names, which never matched. This gives a database seeded before the fix the species
  * the fixed seed gives a fresh one. Only refs whose `species` is still NULL are touched, so a
- * species set by hand since is kept. Breeds under Antech "Other species" have no dmi species and
- * stay NULL.
+ * species set by hand since is kept. Breeds under Antech "Other species" and "Camelid" have no dmi
+ * species and stay NULL (see the seed).
+ *
+ * `down()` cannot know which rows `up()` set, so it clears the derived species wherever it sits on
+ * a seeded breed: on a database seeded before the fix that is exactly what `up()` set; on a fresh
+ * database (the fixed seed set them) it also clears the seed's values, and a value set by hand
+ * that happens to equal the derived one goes with them.
  */
 export class BackfillSeededBreedSpecies1791472488885 implements MigrationInterface {
   name = 'BackfillSeededBreedSpecies1791472488885'
