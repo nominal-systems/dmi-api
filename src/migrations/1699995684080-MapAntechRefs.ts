@@ -347038,15 +347038,18 @@ const mappings = [
     ]
 ]
 
-// Antech "Other species" (49). Its species line pairs it with "Other Carnivores", which is wrong for
-// most of the breeds filed under it (primates, cetaceans, giraffes, …), so those breeds get no
-// species rather than a wrong one.
-const ANTECH_OTHER_SPECIES = '49'
+// Antech species whose dmi counterpart in the species lines would be wrong for the breeds filed
+// under them, so those breeds get no species rather than a wrong one: "Other species" (49) pairs
+// with "Other Carnivores", wrong for most of its 5,955 (primates, cetaceans, bats, giraffes, …);
+// "Camelid" (63) pairs with "Alpacas and Vicunas", wrong for 8 of its 12 (camels, llamas, a
+// guanaco). "Lagomorph" (40) is kept under "Rabbit" — coarse for its hares and pikas, not another
+// family — as are the polecats under "Ferret" (8).
+const ANTECH_SPECIES_WITHOUT_DMI_SPECIES = new Set(['49', '63'])
 
 // Antech species code -> dmi species code, read off the species lines above.
 const dmiSpeciesByAntechSpecies = new Map<string, string>()
 for (const [, APICode, code, , type] of mappings) {
-    if (type === 'species' && APICode && code && code !== ANTECH_OTHER_SPECIES) {
+    if (type === 'species' && APICode && code && !ANTECH_SPECIES_WITHOUT_DMI_SPECIES.has(code)) {
         dmiSpeciesByAntechSpecies.set(code, APICode)
     }
 }
