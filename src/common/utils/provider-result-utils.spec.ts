@@ -111,9 +111,40 @@ describe('ProviderResultUtils', () => {
       expect(ProviderResultUtils.isMatchingOrder(existing, extracted)).toBe(false)
     })
 
-    it('should return false when patient ID is present on one side but missing on the other', () => {
-      const existing = buildOrder({ integrationId: 'int-1', patientName: 'Toby' })
-      const extracted = buildOrder({ integrationId: 'int-1', patientName: 'Toby', patientId: '123', clientLastName: 'Smith' })
+    // Issue #334: an order placed without a pims:patient:id is sent to the
+    // provider with its internal patient id, which the provider echoes back.
+    it('should return true when only the result carries a patient ID (the provider echoed the order\'s internal patient id)', () => {
+      const existing = buildOrder({ integrationId: 'int-1', patientName: 'Toby', clientLastName: 'Smith' })
+      const extracted = buildOrder({ integrationId: 'int-1', patientName: 'Toby', patientId: '3f1c2b9a-7d4e-4a6b-8c5d-2e9f0a1b3c4d', clientLastName: 'Smith' })
+      expect(ProviderResultUtils.isMatchingOrder(existing, extracted)).toBe(true)
+    })
+
+    it('should return true when only the order carries a patient ID (the engine stamps the echo under its own system)', () => {
+      const existing = buildOrder({ integrationId: 'int-1', patientName: 'Toby', patientId: '123', clientLastName: 'Smith' })
+      const extracted = buildOrder({ integrationId: 'int-1', patientName: 'Toby', clientLastName: 'Smith' })
+      const echo = new Identifier()
+      echo.system = 'antech:pet:id'
+      echo.value = '123'
+      extracted.patient.identifier = [echo]
+      expect(ProviderResultUtils.isMatchingOrder(existing, extracted)).toBe(true)
+    })
+
+    it('should return false when a patient ID is on one side only and the patient name differs', () => {
+      const existing = buildOrder({ integrationId: 'int-1', patientName: 'Toby', clientLastName: 'Smith' })
+      const extracted = buildOrder({ integrationId: 'int-1', patientName: 'Max', patientId: '123', clientLastName: 'Smith' })
+      expect(ProviderResultUtils.isMatchingOrder(existing, extracted)).toBe(false)
+    })
+
+    it('should return false when a patient ID is on one side only and neither side has a client (in-house analyzer results)', () => {
+      const existing = buildOrder({ integrationId: 'int-1', patientName: 'Max', patientId: 'P1' })
+      const extracted = buildOrder({ integrationId: 'int-1', patientName: 'Max' })
+      expect(ProviderResultUtils.isMatchingOrder(existing, extracted)).toBe(false)
+      expect(ProviderResultUtils.isMatchingOrder(extracted, existing)).toBe(false)
+    })
+
+    it('should return false when a patient ID is on one side only and the client last name differs', () => {
+      const existing = buildOrder({ integrationId: 'int-1', patientName: 'Toby', clientLastName: 'Smith' })
+      const extracted = buildOrder({ integrationId: 'int-1', patientName: 'Toby', patientId: '123', clientLastName: 'Jones' })
       expect(ProviderResultUtils.isMatchingOrder(existing, extracted)).toBe(false)
     })
 

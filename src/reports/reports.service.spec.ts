@@ -8,7 +8,7 @@ import { TestResult } from './entities/test-result.entity'
 import { IntegrationsService } from '../integrations/integrations.service'
 import { EventsService } from '../events/services/events.service'
 import { OrdersService } from '../orders/orders.service'
-import { OrderStatus, ProviderResult, ReportStatus, TestResultItemStatus } from '@nominal-systems/dmi-engine-common'
+import { OrderStatus, PimsIdentifiers, ProviderResult, ReportStatus, TestResultItemStatus } from '@nominal-systems/dmi-engine-common'
 import { reportRepositoryMockFactory } from './test/report.repository.mock'
 import { EventNamespace } from '../events/constants/event-namespace.enum'
 import { EventType } from '../events/constants/event-type.enum'
@@ -2793,6 +2793,112 @@ describe('ReportsService', () => {
             })
           })
         }))
+      })
+    })
+    // Regression for https://github.com/nominal-systems/dmi-api/issues/334
+    // A provider result that embeds its order takes the orphan-results path.
+    // When the caller supplies no pims:patient:id, the engines send the order's
+    // internal patient id as the provider's patient id and the provider echoes
+    // it back; some result mappers stamp the echo as pims:patient:id, others
+    // under their own identifier system. A pims:patient:id on one side only must
+    // file the result against the existing order, not mint a new orphan order.
+    describe('one-sided pims:patient:id (issue #334)', () => {
+      const EXTERNAL_ID = 'ORD-334'
+      const INTEGRATION_ID = 'integration-a'
+      const ECHOED_PATIENT_ID = '3f1c2b9a-7d4e-4a6b-8c5d-2e9f0a1b3c4d'
+      const PIMS_PATIENT_ID = 'PIMS-PATIENT-42'
+
+      interface IdentifierLike { system: string, value: string }
+
+      const buildResult = (patientIdentifier: IdentifierLike[]): ProviderResult => ({
+        id: 'result-334',
+        orderId: EXTERNAL_ID,
+        status: 'COMPLETED',
+        order: {
+          externalId: EXTERNAL_ID,
+          status: OrderStatus.COMPLETED,
+          patient: { name: 'Rex', species: 'Canine', sex: 'M', breed: 'Beagle', identifier: patientIdentifier },
+          client: { firstName: 'Alice', lastName: 'Anderson', identifier: [] },
+          veterinarian: { firstName: 'Dana', lastName: 'Vetson' },
+          tests: [],
+          editable: false
+        },
+        testResults: [
+          {
+            seq: 1,
+            code: 'CBC',
+            name: 'Complete Blood Count',
+            items: [{ seq: 1, code: 'HCT', name: 'Hematocrit', status: 'DONE', valueString: '45' }]
+          }
+        ]
+      }) as unknown as ProviderResult
+
+      // A submitted order: not an orphan, with the report registered for it at submission.
+      const buildSubmittedOrder = (patientIdentifier: IdentifierLike[]): Order => ({
+        id: 'order-334',
+        integrationId: INTEGRATION_ID,
+        externalId: EXTERNAL_ID,
+        status: OrderStatus.SUBMITTED,
+        orphan: false,
+        patient: { name: 'Rex', identifier: patientIdentifier },
+        client: { lastName: 'Anderson', identifier: [] }
+      }) as unknown as Order
+      const buildRegisteredReport = (order: Order): Report => ({
+        id: 'report-334',
+        orderId: order.id,
+        order,
+        status: ReportStatus.REGISTERED,
+        testResultsSet: []
+      }) as unknown as Report
+
+      const expectFiledAgainst = (order: Order, byOrderId: jest.SpyInstance): void => {
+        // No new order...
+        expect(ordersServiceMock.saveOrder).not.toHaveBeenCalled()
+        expect(eventsServiceMock.addEvent).not.toHaveBeenCalledWith(expect.objectContaining({
+          type: EventType.ORDER_CREATED
+        }))
+        // ...and the result lands on the existing order's report
+        expect(byOrderId).toHaveBeenCalledWith(order.id)
+        expect(eventsServiceMock.addEvent).not.toHaveBeenCalledWith(expect.objectContaining({
+          namespace: EventNamespace.REPORTS,
+          type: EventType.REPORT_CREATED
+        }))
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(expect.objectContaining({
+          namespace: EventNamespace.REPORTS,
+          type: EventType.REPORT_UPDATED,
+          integrationId: INTEGRATION_ID,
+          data: expect.objectContaining({
+            orderId: order.id,
+            reportId: 'report-334'
+          })
+        }))
+      }
+
+      it('files the result against an order placed without a pims:patient:id when the result carries the echoed id as one', async () => {
+        const order = buildSubmittedOrder([])
+        ordersServiceMock.findOneByExternalId.mockResolvedValueOnce(order)
+        const byOrderId = jest.spyOn(reportsService, 'findReportByOrderId')
+          .mockResolvedValueOnce(buildRegisteredReport(order))
+
+        await reportsService.handleExternalResults({
+          integrationId: INTEGRATION_ID,
+          results: [buildResult([{ system: PimsIdentifiers.PatientID, value: ECHOED_PATIENT_ID }])]
+        })
+
+        expectFiledAgainst(order, byOrderId)
+      })
+      it('files the result against an order placed with a pims:patient:id when the result echoes it under the provider\'s own system', async () => {
+        const order = buildSubmittedOrder([{ system: PimsIdentifiers.PatientID, value: PIMS_PATIENT_ID }])
+        ordersServiceMock.findOneByExternalId.mockResolvedValueOnce(order)
+        const byOrderId = jest.spyOn(reportsService, 'findReportByOrderId')
+          .mockResolvedValueOnce(buildRegisteredReport(order))
+
+        await reportsService.handleExternalResults({
+          integrationId: INTEGRATION_ID,
+          results: [buildResult([{ system: 'antech:pet:id', value: PIMS_PATIENT_ID }])]
+        })
+
+        expectFiledAgainst(order, byOrderId)
       })
     })
   })
