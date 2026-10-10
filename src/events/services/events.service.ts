@@ -11,6 +11,7 @@ import { EventSubscriptionService } from './event-subscription.service'
 import { stringifyId } from '../../common/utils/shared.utils'
 import { PaginationDto } from '../../common/dtos/pagination.dto'
 import { PracticesService } from '../../practices/practices.service'
+import { PublishedEvent } from '../interfaces/published-event.interface'
 
 @Injectable()
 export class EventsService implements OnModuleInit {
@@ -68,10 +69,17 @@ export class EventsService implements OnModuleInit {
   async addEvent (
     eventDto: AddEventDto
   ): Promise<Event> {
+    const { event } = await this.publishEvent(eventDto)
+    return event
+  }
+
+  async publishEvent (
+    eventDto: AddEventDto
+  ): Promise<PublishedEvent> {
     this.logger.debug(`Event: '${eventDto.type}'`)
     const event = await this.eventModel.create(eventDto)
-    await this.eventSubscriptionService.notifySubscriptions(event)
-    return event
+    const deliveries = await this.eventSubscriptionService.notifySubscriptions(event)
+    return { event, deliveries }
   }
 
   async getEventsForOrganization (

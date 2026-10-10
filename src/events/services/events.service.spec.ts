@@ -6,16 +6,21 @@ import { EventSubscriptionService } from './event-subscription.service'
 import { PracticesService } from '../../practices/practices.service'
 import { Event } from '../entities/event.entity'
 import { Organization } from '../../organizations/entities/organization.entity'
+import { AddEventDto } from '../dto/add-event.dto'
 
 describe('EventsService', () => {
   let service: EventsService
 
   const eventModelMock = {
     find: jest.fn().mockResolvedValue([]),
-    countDocuments: jest.fn().mockResolvedValue(0)
+    countDocuments: jest.fn().mockResolvedValue(0),
+    create: jest.fn()
   }
   const practicesServiceMock = {
     findAll: jest.fn()
+  }
+  const eventSubscriptionServiceMock = {
+    notifySubscriptions: jest.fn()
   }
 
   beforeEach(async () => {
@@ -25,7 +30,7 @@ describe('EventsService', () => {
       providers: [
         EventsService,
         { provide: getModelToken(Event.name), useValue: eventModelMock },
-        { provide: EventSubscriptionService, useValue: {} },
+        { provide: EventSubscriptionService, useValue: eventSubscriptionServiceMock },
         { provide: PracticesService, useValue: practicesServiceMock },
         { provide: ModuleRef, useValue: { get: jest.fn() } }
       ]
@@ -100,6 +105,30 @@ describe('EventsService', () => {
       expect(result.total).toBe(3)
       expect(result.data).toHaveLength(2)
       expect(result.data[0]).toMatchObject({ _id: 'e1', practiceId: 'practice-a' })
+    })
+  })
+
+  describe('publishEvent()', () => {
+    it('should persist the event, notify subscriptions and return both', async () => {
+      const dto = { type: 'report:updated', integrationId: 'integration-1' } as AddEventDto
+      const created = { _id: 'event-1', seq: 7, ...dto }
+      const deliveries = [{ subscriptionId: 'subscription-1', status: 'sent' }]
+      eventModelMock.create.mockResolvedValueOnce(created)
+      eventSubscriptionServiceMock.notifySubscriptions.mockResolvedValueOnce(deliveries)
+
+      await expect(service.publishEvent(dto)).resolves.toEqual({ event: created, deliveries })
+      expect(eventModelMock.create).toHaveBeenCalledWith(dto)
+      expect(eventSubscriptionServiceMock.notifySubscriptions).toHaveBeenCalledWith(created)
+    })
+  })
+
+  describe('addEvent()', () => {
+    it('should still return only the persisted event', async () => {
+      const created = { _id: 'event-1', seq: 7 }
+      eventModelMock.create.mockResolvedValueOnce(created)
+      eventSubscriptionServiceMock.notifySubscriptions.mockResolvedValueOnce([])
+
+      await expect(service.addEvent({ type: 'order:created' } as AddEventDto)).resolves.toBe(created)
     })
   })
 })

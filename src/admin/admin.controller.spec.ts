@@ -25,6 +25,8 @@ import { PAGINATION_PAGE_LIMIT } from '../common/constants/pagination.constant'
 import {
   InternalEventLoggingService,
 } from '../internal-event-logging/internal-event-logging.service'
+import { ReportsService } from '../reports/reports.service'
+import { RepublishReportDto } from './dtos/republish-report.dto'
 import { OidcAuthGuard } from '../common/guards/oidc-auth.guard'
 import { AdminJwtAuthGuard } from '../common/guards/admin-jwt-auth.guard'
 import { OktaJwtAuthGuard } from '../common/guards/okta-jwt-auth.guard'
@@ -119,6 +121,10 @@ describe('AdminController', () => {
         },
         {
           provide: InternalEventLoggingService,
+          useValue: {},
+        },
+        {
+          provide: ReportsService,
           useValue: {},
         },
       ],
@@ -303,6 +309,111 @@ describe('AdminController', () => {
       await expect(
         adminController.updateRefMapping('ref-1', { providerRefId: 430 }),
       ).rejects.toBeInstanceOf(BadRequestException)
+    })
+  })
+
+  describe('getTransactionLogs()', () => {
+    const order = { id: 'order-1', createdAt: new Date('2026-10-01T00:00:00Z') }
+    let reportsServiceMock: { findReportIdByOrderId: jest.Mock }
+
+    beforeEach(() => {
+      reportsServiceMock = { findReportIdByOrderId: jest.fn() }
+      ;(adminController as any).reportsService = reportsServiceMock
+      ;(adminController as any).ordersService = { findOneByExternalId: jest.fn().mockResolvedValue(order) }
+      ;(adminController as any).eventsService = { findAll: jest.fn().mockResolvedValue([]) }
+      ;(adminController as any).providersService = { findAllExternalRequests: jest.fn().mockResolvedValue([]) }
+      ;(adminController as any).internalEventLoggingService = { findByAccessionIds: jest.fn().mockResolvedValue([]) }
+    })
+
+    it('should include the report id in the order entry', async () => {
+      reportsServiceMock.findReportIdByOrderId.mockResolvedValue('report-1')
+
+      const logs = await adminController.getTransactionLogs({ accessionId: 'ACC-1' })
+
+      expect(reportsServiceMock.findReportIdByOrderId).toHaveBeenCalledWith('order-1')
+      expect(logs[0]).toEqual({ timestamp: order.createdAt, type: 'order', id: 'order-1', data: order, reportId: 'report-1' })
+    })
+
+    it('should leave the report id out when the order has no single report', async () => {
+      reportsServiceMock.findReportIdByOrderId.mockResolvedValue(undefined)
+
+      const logs = await adminController.getTransactionLogs({ accessionId: 'ACC-1' })
+
+      expect(logs[0]).not.toHaveProperty('reportId')
+    })
+  })
+
+  describe('republishReport()', () => {
+    let reportsServiceMock: { republishReportEvent: jest.Mock }
+
+    beforeEach(() => {
+      reportsServiceMock = { republishReportEvent: jest.fn() }
+      ;(adminController as any).reportsService = reportsServiceMock
+      reportsServiceMock.republishReportEvent.mockResolvedValue({
+        event: { _id: 'event-2', seq: 99, type: 'report:updated', createdAt: new Date('2026-10-10T00:00:00Z') },
+        deliveries: [
+          { subscriptionId: 'subscription-1', status: 'sent' },
+          { subscriptionId: 'subscription-2', status: 'too_large', jsonSizeInBytes: 2000000, maxSizeInBytes: 1048576 },
+          { subscriptionId: 'subscription-3', status: 'error', error: new Error('connection refused') }
+        ]
+      })
+    })
+
+    it('should return the new event and the delivery results, exposing only the error message', async () => {
+      const response = await adminController.republishReport(
+        'report-1',
+        { sourceEventId: '64b7f0c2e4b0a1a2b3c4d5e6' },
+        { profile: { username: 'jane@example.com' } }
+      )
+
+      expect(reportsServiceMock.republishReportEvent).toHaveBeenCalledWith('report-1', {
+        sourceEventId: '64b7f0c2e4b0a1a2b3c4d5e6',
+        requestedBy: 'jane@example.com'
+      })
+      expect(response).toEqual({
+        eventId: 'event-2',
+        seq: 99,
+        type: 'report:updated',
+        createdAt: new Date('2026-10-10T00:00:00Z'),
+        deliveries: [
+          { subscriptionId: 'subscription-1', status: 'sent' },
+          { subscriptionId: 'subscription-2', status: 'too_large', jsonSizeInBytes: 2000000, maxSizeInBytes: 1048576 },
+          { subscriptionId: 'subscription-3', status: 'error', message: 'connection refused' }
+        ]
+      })
+    })
+
+    it.each([
+      [{ profile: { username: 'jane@example.com' } }, 'jane@example.com'],
+      [{ sub: 'Admin', iat: 1, exp: 2 }, 'Admin'],
+      [undefined, 'unknown']
+    ])('should identify the requester from %j as %s', async (user, requestedBy) => {
+      await adminController.republishReport('report-1', {}, user)
+
+      expect(reportsServiceMock.republishReportEvent).toHaveBeenCalledWith('report-1', { sourceEventId: undefined, requestedBy })
+    })
+  })
+
+  describe('RepublishReportDto validation', () => {
+    const validationPipe = new ValidationPipe({
+      transform: true,
+      transformOptions: { enableImplicitConversion: true },
+    })
+    const metadata: ArgumentMetadata = { type: 'body', metatype: RepublishReportDto }
+
+    it('should accept an empty body and a missing body', async () => {
+      await expect(validationPipe.transform({}, metadata)).resolves.toEqual({})
+      await expect(validationPipe.transform(undefined, metadata)).resolves.toEqual({})
+    })
+
+    it('should accept a Mongo id as sourceEventId', async () => {
+      await expect(validationPipe.transform({ sourceEventId: '64b7f0c2e4b0a1a2b3c4d5e6' }, metadata))
+        .resolves.toEqual({ sourceEventId: '64b7f0c2e4b0a1a2b3c4d5e6' })
+    })
+
+    it('should reject a sourceEventId that is not a Mongo id', async () => {
+      await expect(validationPipe.transform({ sourceEventId: 'not-an-id' }, metadata))
+        .rejects.toBeInstanceOf(BadRequestException)
     })
   })
 })

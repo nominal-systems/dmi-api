@@ -150,9 +150,62 @@ describe('EventSubscriptionService', () => {
     it('should do nothing when the integration is not found', async () => {
       integrationsServiceMock.findOne.mockResolvedValue(undefined)
 
-      await service.notifySubscriptions(event)
+      const results = await service.notifySubscriptions(event)
 
+      expect(results).toEqual([])
       expect(eventSubscriptionRepositoryMock.find).not.toHaveBeenCalled()
+      expect(EventHubProducerClient).not.toHaveBeenCalled()
+    })
+
+    it('should return a sent result per delivered subscription', async () => {
+      const results = await service.notifySubscriptions(event)
+
+      expect(results).toEqual([{ subscriptionId: 'subscription-1', status: 'sent' }])
+    })
+
+    it('should return a too_large result when the event does not fit', async () => {
+      batch.tryAdd.mockReturnValue(false)
+
+      const results = await service.notifySubscriptions(event)
+
+      expect(results).toEqual([{
+        subscriptionId: 'subscription-1',
+        status: 'too_large',
+        jsonSizeInBytes: Buffer.byteLength(JSON.stringify(event)),
+        maxSizeInBytes: 1048576
+      }])
+    })
+
+    it('should return an error result when sending fails', async () => {
+      producer.sendBatch.mockRejectedValue(new Error('boom'))
+
+      const results = await service.notifySubscriptions(event)
+
+      expect(results).toEqual([{
+        subscriptionId: 'subscription-1',
+        status: 'error',
+        error: expect.objectContaining({ message: 'boom' })
+      }])
+    })
+
+    it('should return one result per subscription, in order', async () => {
+      eventSubscriptionRepositoryMock.find.mockResolvedValue([subscription, { ...subscription, id: 'subscription-2' }])
+      batch.tryAdd.mockReturnValueOnce(false).mockReturnValueOnce(true)
+
+      const results = await service.notifySubscriptions(event)
+
+      expect(results.map((result) => [result.subscriptionId, result.status])).toEqual([
+        ['subscription-1', 'too_large'],
+        ['subscription-2', 'sent']
+      ])
+    })
+
+    it('should return no results when the organization has no subscription for the event type', async () => {
+      eventSubscriptionRepositoryMock.find.mockResolvedValue([])
+
+      const results = await service.notifySubscriptions(event)
+
+      expect(results).toEqual([])
       expect(EventHubProducerClient).not.toHaveBeenCalled()
     })
   })

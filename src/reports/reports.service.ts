@@ -1,4 +1,4 @@
-import { ForbiddenException, forwardRef, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { BadRequestException, ForbiddenException, forwardRef, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { FindManyOptions, Repository, SelectQueryBuilder } from 'typeorm'
 import { Report } from './entities/report.entity'
@@ -27,6 +27,11 @@ import { Attachment as AttachmentEntity } from '../common/entities/attachment.en
 import { ExternalResultEventData } from '../common/typings/internal-event-data.interface'
 import { FEATURE_FLAG_PROVIDER, FeatureFlagProvider, TEST_RESULT_MATCH_BY_NAME_FLAG } from '../feature-flags/feature-flag.interface'
 import { NamedLockService, orderLockKey } from '../common/services/named-lock.service'
+import { Integration } from '../integrations/entities/integration.entity'
+import { AddEventDto } from '../events/dto/add-event.dto'
+import { ReportEventType, RepublishReportOptions } from './interfaces/republish.interface'
+import { EventDocument } from '../events/entities/event.entity'
+import { PublishedEvent } from '../events/interfaces/published-event.interface'
 
 @Injectable()
 export class ReportsService {
@@ -320,39 +325,12 @@ export class ReportsService {
 
     // Notify about new reports
     for (const report of createdReports) {
-      await this.eventsService.addEvent({
-        namespace: EventNamespace.REPORTS,
-        type: EventType.REPORT_CREATED,
-        providerId: integration.providerConfiguration.providerId,
-        practiceId: integration.practice.id,
-        integrationId: integrationId,
-        accessionId: report.order?.requisitionId,
-        data: {
-          practice: integration.practice,
-          orderId: report.orderId,
-          reportId: report.id,
-          report: report
-        }
-      })
+      await this.eventsService.addEvent(this.buildReportEvent(report, integration, EventType.REPORT_CREATED))
     }
 
     // Notify about updated reports
     for (const report of updatedReports) {
-      delete report.presentedFrom
-      await this.eventsService.addEvent({
-        namespace: EventNamespace.REPORTS,
-        type: EventType.REPORT_UPDATED,
-        practiceId: integration.practice.id,
-        providerId: integration.providerConfiguration.providerId,
-        integrationId: integrationId,
-        accessionId: report.order?.requisitionId,
-        data: {
-          practice: integration.practice,
-          orderId: report.orderId,
-          reportId: report.id,
-          report: report
-        }
-      })
+      await this.eventsService.addEvent(this.buildReportEvent(report, integration, EventType.REPORT_UPDATED))
     }
 
     this.logger.log(`external_results -> Got ${results.length} results from ${integration.providerConfiguration.providerId}: ${createdReports.length} reports created, ${updatedReports.length} reports updated, orders ${[...createdOrders, ...dummyOrders].length} orders created`)
@@ -399,6 +377,11 @@ export class ReportsService {
     }
 
     return undefined
+  }
+
+  async findReportIdByOrderId (orderId: string): Promise<string | undefined> {
+    const reports = await this.reportsRepository.find({ select: { id: true }, where: { orderId } })
+    return reports.length === 1 ? reports[0].id : undefined
   }
 
   async findReportByExternalOrderId (
@@ -567,6 +550,103 @@ export class ReportsService {
     if (item.notes != null) {
       observation.notes = item.notes
     }
+  }
+
+  buildReportEvent (
+    report: Report,
+    integration: Integration,
+    type: ReportEventType
+  ): AddEventDto {
+    // Mutates the given report: PDFs are served by GET /reports/:id/presentedForm, never in updates
+    if (type === EventType.REPORT_UPDATED) {
+      delete report.presentedFrom
+    }
+    return {
+      namespace: EventNamespace.REPORTS,
+      type,
+      providerId: integration.providerConfiguration.providerId,
+      practiceId: integration.practice.id,
+      integrationId: integration.id,
+      accessionId: report.order?.requisitionId,
+      data: {
+        practice: integration.practice,
+        orderId: report.orderId,
+        reportId: report.id,
+        report: report
+      }
+    }
+  }
+
+  async republishReportEvent (
+    reportId: string,
+    { sourceEventId, requestedBy }: RepublishReportOptions
+  ): Promise<PublishedEvent> {
+    const type = await this.resolveRepublishType(reportId, sourceEventId)
+
+    const report = await this.loadReportForEvent(reportId, type)
+    if (report == null) {
+      throw new NotFoundException(`Report '${reportId}' not found`)
+    }
+    // findById(undefined) would load an arbitrary integration
+    if (report.order?.integrationId == null) {
+      throw new NotFoundException(`Order for report '${reportId}' not found`)
+    }
+
+    const integration = await this.integrationsService.findById(report.order.integrationId)
+    if (integration.practice == null) {
+      throw new NotFoundException(`Practice for integration '${integration.id}' not found`)
+    }
+
+    const event = this.buildReportEvent(report, integration, type)
+    event.context = { republish: { sourceEventId: sourceEventId ?? null, requestedAt: new Date() } }
+    const published = await this.eventsService.publishEvent(event)
+
+    const sent = published.deliveries.filter((delivery) => delivery.status === 'sent').length
+    const eventId = String((published.event as EventDocument)._id)
+    this.logger.log(`Republished report ${reportId} as '${type}' event ${eventId} (seq ${published.event.seq}), requested by ${requestedBy}: ${sent} sent, ${published.deliveries.length - sent} not delivered`)
+
+    return published
+  }
+
+  private async resolveRepublishType (
+    reportId: string,
+    sourceEventId?: string
+  ): Promise<ReportEventType> {
+    if (sourceEventId == null) return EventType.REPORT_UPDATED
+
+    const source = await this.eventsService.findById(sourceEventId)
+    if (source == null) {
+      throw new NotFoundException(`Event '${sourceEventId}' not found`)
+    }
+    if (source.type !== EventType.REPORT_CREATED && source.type !== EventType.REPORT_UPDATED) {
+      throw new BadRequestException(`Event '${sourceEventId}' is not a report event`)
+    }
+    // ParseUUIDPipe accepts uppercase ids and MySQL matches them case-insensitively
+    const sourceReportId = (source.data as { reportId?: string } | undefined)?.reportId
+    if (sourceReportId?.toLowerCase() !== reportId.toLowerCase()) {
+      throw new BadRequestException(`Event '${sourceEventId}' belongs to another report`)
+    }
+    return source.type as ReportEventType
+  }
+
+  private async loadReportForEvent (
+    reportId: string,
+    type: ReportEventType
+  ): Promise<Report | null> {
+    const query = this.reportGraphQuery()
+      .where('report.id = :reportId', { reportId })
+    // The created-from-results path also carries the order's tests and the PDF
+    if (type === EventType.REPORT_CREATED) {
+      query
+        .leftJoinAndSelect('order.tests', 'orderTest')
+        .leftJoinAndSelect('report.presentedFrom', 'presentedFrom')
+    }
+    const report = await query.getOne()
+    // Production leaves presentedFrom unset when there is no PDF
+    if (report?.presentedFrom?.length === 0) {
+      delete report.presentedFrom
+    }
+    return report
   }
 
   private buildRegisteredReport (
