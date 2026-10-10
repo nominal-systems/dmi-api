@@ -25,6 +25,7 @@ import { PAGINATION_PAGE_LIMIT } from '../common/constants/pagination.constant'
 import {
   InternalEventLoggingService,
 } from '../internal-event-logging/internal-event-logging.service'
+import { ReportsService } from '../reports/reports.service'
 import { OidcAuthGuard } from '../common/guards/oidc-auth.guard'
 import { AdminJwtAuthGuard } from '../common/guards/admin-jwt-auth.guard'
 import { OktaJwtAuthGuard } from '../common/guards/okta-jwt-auth.guard'
@@ -119,6 +120,10 @@ describe('AdminController', () => {
         },
         {
           provide: InternalEventLoggingService,
+          useValue: {},
+        },
+        {
+          provide: ReportsService,
           useValue: {},
         },
       ],
@@ -303,6 +308,37 @@ describe('AdminController', () => {
       await expect(
         adminController.updateRefMapping('ref-1', { providerRefId: 430 }),
       ).rejects.toBeInstanceOf(BadRequestException)
+    })
+  })
+
+  describe('getTransactionLogs()', () => {
+    const order = { id: 'order-1', createdAt: new Date('2026-10-01T00:00:00Z') }
+    let reportsServiceMock: { findReportIdByOrderId: jest.Mock }
+
+    beforeEach(() => {
+      reportsServiceMock = { findReportIdByOrderId: jest.fn() }
+      ;(adminController as any).reportsService = reportsServiceMock
+      ;(adminController as any).ordersService = { findOneByExternalId: jest.fn().mockResolvedValue(order) }
+      ;(adminController as any).eventsService = { findAll: jest.fn().mockResolvedValue([]) }
+      ;(adminController as any).providersService = { findAllExternalRequests: jest.fn().mockResolvedValue([]) }
+      ;(adminController as any).internalEventLoggingService = { findByAccessionIds: jest.fn().mockResolvedValue([]) }
+    })
+
+    it('should include the report id in the order entry', async () => {
+      reportsServiceMock.findReportIdByOrderId.mockResolvedValue('report-1')
+
+      const logs = await adminController.getTransactionLogs({ accessionId: 'ACC-1' })
+
+      expect(reportsServiceMock.findReportIdByOrderId).toHaveBeenCalledWith('order-1')
+      expect(logs[0]).toEqual({ timestamp: order.createdAt, type: 'order', id: 'order-1', data: order, reportId: 'report-1' })
+    })
+
+    it('should leave the report id out when the order has no single report', async () => {
+      reportsServiceMock.findReportIdByOrderId.mockResolvedValue(undefined)
+
+      const logs = await adminController.getTransactionLogs({ accessionId: 'ACC-1' })
+
+      expect(logs[0]).not.toHaveProperty('reportId')
     })
   })
 })
