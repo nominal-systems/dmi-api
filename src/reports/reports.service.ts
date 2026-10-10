@@ -1,4 +1,4 @@
-import { ForbiddenException, forwardRef, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { BadRequestException, ForbiddenException, forwardRef, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { FindManyOptions, Repository, SelectQueryBuilder } from 'typeorm'
 import { Report } from './entities/report.entity'
@@ -29,7 +29,9 @@ import { FEATURE_FLAG_PROVIDER, FeatureFlagProvider, TEST_RESULT_MATCH_BY_NAME_F
 import { NamedLockService, orderLockKey } from '../common/services/named-lock.service'
 import { Integration } from '../integrations/entities/integration.entity'
 import { AddEventDto } from '../events/dto/add-event.dto'
-import { ReportEventType } from './interfaces/republish.interface'
+import { ReportEventType, RepublishReportOptions } from './interfaces/republish.interface'
+import { EventDocument } from '../events/entities/event.entity'
+import { PublishedEvent } from '../events/interfaces/published-event.interface'
 
 @Injectable()
 export class ReportsService {
@@ -568,6 +570,76 @@ export class ReportsService {
         report: report
       }
     }
+  }
+
+  async republishReportEvent (
+    reportId: string,
+    { sourceEventId, requestedBy }: RepublishReportOptions
+  ): Promise<PublishedEvent> {
+    const type = await this.resolveRepublishType(reportId, sourceEventId)
+
+    const report = await this.loadReportForEvent(reportId, type)
+    if (report == null) {
+      throw new NotFoundException(`Report '${reportId}' not found`)
+    }
+    // findById(undefined) would load an arbitrary integration
+    if (report.order?.integrationId == null) {
+      throw new NotFoundException(`Order for report '${reportId}' not found`)
+    }
+
+    const integration = await this.integrationsService.findById(report.order.integrationId)
+    if (integration.practice == null) {
+      throw new NotFoundException(`Practice for integration '${integration.id}' not found`)
+    }
+
+    const event = this.buildReportEvent(report, integration, type)
+    event.context = { republish: { sourceEventId: sourceEventId ?? null, requestedAt: new Date() } }
+    const published = await this.eventsService.publishEvent(event)
+
+    const sent = published.deliveries.filter((delivery) => delivery.status === 'sent').length
+    const eventId = String((published.event as EventDocument)._id)
+    this.logger.log(`Republished report ${reportId} as '${type}' event ${eventId} (seq ${published.event.seq}), requested by ${requestedBy}: ${sent} sent, ${published.deliveries.length - sent} not delivered`)
+
+    return published
+  }
+
+  private async resolveRepublishType (
+    reportId: string,
+    sourceEventId?: string
+  ): Promise<ReportEventType> {
+    if (sourceEventId == null) return EventType.REPORT_UPDATED
+
+    const source = await this.eventsService.findById(sourceEventId)
+    if (source == null) {
+      throw new NotFoundException(`Event '${sourceEventId}' not found`)
+    }
+    if (source.type !== EventType.REPORT_CREATED && source.type !== EventType.REPORT_UPDATED) {
+      throw new BadRequestException(`Event '${sourceEventId}' is not a report event`)
+    }
+    if ((source.data as { reportId?: string } | undefined)?.reportId !== reportId) {
+      throw new BadRequestException(`Event '${sourceEventId}' belongs to another report`)
+    }
+    return source.type as ReportEventType
+  }
+
+  private async loadReportForEvent (
+    reportId: string,
+    type: ReportEventType
+  ): Promise<Report | null> {
+    const query = this.reportGraphQuery()
+      .where('report.id = :reportId', { reportId })
+    // The created-from-results path also carries the order's tests and the PDF
+    if (type === EventType.REPORT_CREATED) {
+      query
+        .leftJoinAndSelect('order.tests', 'orderTest')
+        .leftJoinAndSelect('report.presentedFrom', 'presentedFrom')
+    }
+    const report = await query.getOne()
+    // Production leaves presentedFrom unset when there is no PDF
+    if (report?.presentedFrom?.length === 0) {
+      delete report.presentedFrom
+    }
+    return report
   }
 
   private buildRegisteredReport (
