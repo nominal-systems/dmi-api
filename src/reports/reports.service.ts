@@ -27,6 +27,9 @@ import { Attachment as AttachmentEntity } from '../common/entities/attachment.en
 import { ExternalResultEventData } from '../common/typings/internal-event-data.interface'
 import { FEATURE_FLAG_PROVIDER, FeatureFlagProvider, TEST_RESULT_MATCH_BY_NAME_FLAG } from '../feature-flags/feature-flag.interface'
 import { NamedLockService, orderLockKey } from '../common/services/named-lock.service'
+import { Integration } from '../integrations/entities/integration.entity'
+import { AddEventDto } from '../events/dto/add-event.dto'
+import { ReportEventType } from './interfaces/republish.interface'
 
 @Injectable()
 export class ReportsService {
@@ -320,39 +323,12 @@ export class ReportsService {
 
     // Notify about new reports
     for (const report of createdReports) {
-      await this.eventsService.addEvent({
-        namespace: EventNamespace.REPORTS,
-        type: EventType.REPORT_CREATED,
-        providerId: integration.providerConfiguration.providerId,
-        practiceId: integration.practice.id,
-        integrationId: integrationId,
-        accessionId: report.order?.requisitionId,
-        data: {
-          practice: integration.practice,
-          orderId: report.orderId,
-          reportId: report.id,
-          report: report
-        }
-      })
+      await this.eventsService.addEvent(this.buildReportEvent(report, integration, EventType.REPORT_CREATED))
     }
 
     // Notify about updated reports
     for (const report of updatedReports) {
-      delete report.presentedFrom
-      await this.eventsService.addEvent({
-        namespace: EventNamespace.REPORTS,
-        type: EventType.REPORT_UPDATED,
-        practiceId: integration.practice.id,
-        providerId: integration.providerConfiguration.providerId,
-        integrationId: integrationId,
-        accessionId: report.order?.requisitionId,
-        data: {
-          practice: integration.practice,
-          orderId: report.orderId,
-          reportId: report.id,
-          report: report
-        }
-      })
+      await this.eventsService.addEvent(this.buildReportEvent(report, integration, EventType.REPORT_UPDATED))
     }
 
     this.logger.log(`external_results -> Got ${results.length} results from ${integration.providerConfiguration.providerId}: ${createdReports.length} reports created, ${updatedReports.length} reports updated, orders ${[...createdOrders, ...dummyOrders].length} orders created`)
@@ -566,6 +542,31 @@ export class ReportsService {
     // Notes
     if (item.notes != null) {
       observation.notes = item.notes
+    }
+  }
+
+  buildReportEvent (
+    report: Report,
+    integration: Integration,
+    type: ReportEventType
+  ): AddEventDto {
+    // PDFs are served by GET /reports/:id/presentedForm, never in updates
+    if (type === EventType.REPORT_UPDATED) {
+      delete report.presentedFrom
+    }
+    return {
+      namespace: EventNamespace.REPORTS,
+      type,
+      providerId: integration.providerConfiguration.providerId,
+      practiceId: integration.practice.id,
+      integrationId: integration.id,
+      accessionId: report.order?.requisitionId,
+      data: {
+        practice: integration.practice,
+        orderId: report.orderId,
+        reportId: report.id,
+        report: report
+      }
     }
   }
 

@@ -19,6 +19,7 @@ import { ExternalResultEventData } from '../common/typings/internal-event-data.i
 import { TestResultItemInterpretationCode } from '@nominal-systems/dmi-engine-common'
 import { FEATURE_FLAG_PROVIDER } from '../feature-flags/feature-flag.interface'
 import { NamedLockService } from '../common/services/named-lock.service'
+import { Integration } from '../integrations/entities/integration.entity'
 
 const repositoryMockFactory: () => MockUtils<Repository<any>> = jest.fn(() => ({
   findOne: jest.fn(entity => entity),
@@ -1772,6 +1773,45 @@ describe('ReportsService', () => {
           ]
         }
       ))
+    })
+  })
+
+  describe('buildReportEvent()', () => {
+    const integration = {
+      id: 'integration-1',
+      providerConfiguration: { providerId: 'wisdom-panel' },
+      practice: { id: 'practice-1' }
+    } as unknown as Integration
+    const buildReport = (): Report => ({
+      id: 'report-1',
+      orderId: 'order-1',
+      order: { requisitionId: 'REQ-1' },
+      presentedFrom: [{ contentType: 'application/pdf', data: 'pdf' }]
+    }) as unknown as Report
+
+    it('should build a report:created event that carries the PDF', () => {
+      const report = buildReport()
+
+      expect(reportsService.buildReportEvent(report, integration, EventType.REPORT_CREATED)).toEqual({
+        namespace: EventNamespace.REPORTS,
+        type: EventType.REPORT_CREATED,
+        providerId: 'wisdom-panel',
+        practiceId: 'practice-1',
+        integrationId: 'integration-1',
+        accessionId: 'REQ-1',
+        data: { practice: integration.practice, orderId: 'order-1', reportId: 'report-1', report }
+      })
+      expect(report.presentedFrom).toHaveLength(1)
+    })
+
+    it('should build a report:updated event without the PDF', () => {
+      const report = buildReport()
+
+      const event = reportsService.buildReportEvent(report, integration, EventType.REPORT_UPDATED)
+
+      expect(event.type).toBe(EventType.REPORT_UPDATED)
+      expect(event.data).toEqual({ practice: integration.practice, orderId: 'order-1', reportId: 'report-1', report })
+      expect(report).not.toHaveProperty('presentedFrom')
     })
   })
 
