@@ -65,7 +65,14 @@ returns `{ event, deliveries }`.**
 
 1. **Type.** With `sourceEventId`: load the event by `_id`. Not found → 404. Not a `report:*`
    event, or its `data.reportId` is a different report → 400. The type is that event's type.
-   Without `sourceEventId`: `report:updated`.
+   Without `sourceEventId`: `report:updated`. The comparison of `data.reportId` ignores case
+   (`ParseUUIDPipe` accepts uppercase ids and MySQL matches them case-insensitively).
+
+   Production has two emitters of `report:created`: `handleExternalResults` (results arriving for
+   an unknown/orphan order; may carry the PDF) and `OrdersService.createOrder`
+   (`src/orders/orders.service.ts:326`), where every PIMS-placed order gets an empty `REGISTERED`
+   `report:created`. Republishing from the latter sends a `report:created` with the current results
+   (and PDF, if any) for a report the PIMS already has.
 2. **Report.** Load it from MySQL. Not found → 404.
    - `report:updated`: the same graph as the production update path (`reportGraphQuery()`: order,
      order veterinarian/patient/client and their identifiers, report patient and identifier, test
@@ -74,7 +81,9 @@ returns `{ event, deliveries }`.**
      production created-from-results path carries.
 3. **Integration.** `IntegrationsService.findById(report.order.integrationId)`, which loads
    `practice`, `practice.identifier` and `providerConfiguration` like the production path. A
-   soft-deleted integration is not found → 404, and no event is persisted. Any status
+   soft-deleted integration is not found → 404, and no event is persisted. A report whose order is
+   missing or has no `integrationId` → 404 before any integration is loaded, and an integration
+   whose practice was soft-deleted → 404. Nothing is persisted in either case. Any status
    (`RUNNING`, `STOPPED`, `ERROR`, …) is allowed; the UI warns about it (see below).
 4. **Emit.** `buildReportEvent()` plus
    `context.republish = { sourceEventId, requestedAt }`, published with
@@ -93,6 +102,8 @@ returns `{ event, deliveries }`.**
 - **`EventSubscriptionService.notifySubscriptions(event)`** returns `SubscriptionDeliveryResult[]`
   (`sent` / `too_large` / `error`, from #381) and keeps logging as it does. No subscription for the
   organization and event type → `[]`.
+- An organization has at most one subscription per event type (unique constraint on
+  `event_type`, `subscription_type`, `organizationId`), so `deliveries` has at most one entry today.
 - **`EventsService.publishEvent(dto)`** persists and notifies, and returns `{ event, deliveries }`.
   **`addEvent(dto)`** keeps its signature and returns `publishEvent(dto).event`, so existing
   callers do not change.
@@ -126,6 +137,12 @@ Response, **201 whenever the event was persisted**, regardless of delivery:
 A failed delivery is not an HTTP error: the event exists and pollers will see it, and an error
 status would invite a retry that creates another event. Errors expose only their `message`; the
 stack stays in the log. 4xx responses (above) are returned before anything is persisted.
+
+Two exceptions to "201 whenever the event was persisted": if `notifySubscriptions` itself throws
+(e.g. a MySQL error loading the integration or subscriptions) the request returns 500 after the
+event was persisted, and a failing Event Hubs subscription can hold the request for minutes under
+the Azure SDK's default retries. In both cases the event exists: the admin should check the events
+list before retrying.
 
 ### Transaction logs
 
@@ -193,7 +210,21 @@ entry points and the three outcomes.
 - ⚠️ **Blocks merge:** Voyager's confirmation on status times (top of this document).
 - Also open with Voyager (listed on #294): whether they handle a `report:updated` for a report they
   never got a `report:created` for; whether `context.republish` is harmless to them; whether they
-  fetch Wisdom PDFs from `GET /reports/:id/presentedForm`.
+  fetch Wisdom PDFs from `GET /reports/:id/presentedForm`; whether they upsert or reject a second
+  `report:created` for a `reportId` they already have; whether an absent key in an event means
+  "no change" or "cleared" (see the stale data caveat).
+- **Stale data in MySQL.** The results flow clears some fields only in memory:
+  `delete observation.interpretation` when a provider stops sending an interpretation
+  (`updateObservationValue` in `reports.service.ts`), and `TestResult.notes` / `deviceId` assigned
+  `undefined` (TypeORM skips `undefined` on UPDATE). Production events omit them, but MySQL keeps the
+  old value, so `GET /reports/:id` and a republish return it. Pre-existing; a follow-up issue will
+  track the fix.
+- **Field comparison with real events** (local verification): republished events include as `[]` or
+  `null` some keys the original omitted (identifier arrays, veterinarian, observation
+  interpretation). Nothing present in the original is missing from the republished event.
+- The `report:created` load joins `presentedFrom` into the full graph, so the PDF row is repeated
+  across joined rows. Acceptable for an occasional admin action (Wisdom reports are small); a
+  separate query would avoid it if it ever matters.
 - The event's `createdAt` is the republish time.
 - `report.updatedAt` moves only when the report row changes (in practice, its status), not when
   only observations change.
