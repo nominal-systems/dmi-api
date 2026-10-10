@@ -76,7 +76,7 @@ export class EventSubscriptionService {
     await this.eventSubscriptionRepository.delete(eventSubscription.id)
   }
 
-  async notifySubscriptions (event: Event): Promise<void> {
+  async notifySubscriptions (event: Event): Promise<SubscriptionDeliveryResult[]> {
     // Find integration to get organizationId
     const integration = await this.integrationsService.findOne({
       id: event.integrationId,
@@ -85,7 +85,7 @@ export class EventSubscriptionService {
       }
     })
 
-    if (integration == null) return
+    if (integration == null) return []
 
     // Find event subscriptions for organization/event type
     const subscriptions = await this.eventSubscriptionRepository.find({
@@ -95,9 +95,11 @@ export class EventSubscriptionService {
       }
     })
 
+    const results: SubscriptionDeliveryResult[] = []
     // TODO(gb): optimize this by sending all subscriptions in one batch?
     for (const subscription of subscriptions) {
       const result = await this.sendToSubscription(subscription, event)
+      results.push(result)
       switch (result.status) {
         case 'sent':
           this.logger.log(`Notifying subscription: ${subscription.id} of event '${event.type}'`)
@@ -116,6 +118,8 @@ export class EventSubscriptionService {
           break
       }
     }
+
+    return results
   }
 
   private async sendToSubscription (
