@@ -11,6 +11,7 @@ import {
   NotFoundException,
   Param,
   ParseBoolPipe,
+  ParseUUIDPipe,
   Patch,
   Post,
   Put,
@@ -51,13 +52,16 @@ import { FilterQuery } from 'mongoose'
 import { PaginationResult } from '../common/classes/pagination-result'
 import { PaginationDto } from '../common/dtos/pagination.dto'
 import { PAGINATION_PAGE_LIMIT } from '../common/constants/pagination.constant'
-import { getStatusRanges } from './admin-utils'
+import { getRequestedBy, getStatusRanges, toDeliveryResponse } from './admin-utils'
 import { IntegrationsSearch } from '../providers/dtos/integrations-search.dto'
 import { Practice } from '../practices/entities/practice.entity'
 import { TransactionLogsDto } from '../common/dtos/transaction-logs.dto'
 import { OrdersService } from '../orders/orders.service'
 import { ReportsService } from '../reports/reports.service'
 import { TransactionLog } from './interfaces/transaction-log.interface'
+import { User } from '../common/decorators/user.decorator'
+import { RepublishReportDto } from './dtos/republish-report.dto'
+import { RepublishReportResponse } from './interfaces/republish-report-response.interface'
 import { IntegrationTestResponse } from '@nominal-systems/dmi-engine-common'
 import { ExternalRequestsQueryDto } from './dtos/external-requests-query.dto'
 import { ExternalRequestsStatsDto } from './dtos/external-requests-stats.dto'
@@ -878,6 +882,25 @@ export class AdminController {
     })
 
     return logs.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
+  }
+
+  @Post('reports/:reportId/republish')
+  async republishReport (
+    @Param('reportId', ParseUUIDPipe) reportId: string,
+    @Body() body: RepublishReportDto,
+    @User() user: any,
+  ): Promise<RepublishReportResponse> {
+    const { event, deliveries } = await this.reportsService.republishReportEvent(reportId, {
+      sourceEventId: body.sourceEventId,
+      requestedBy: getRequestedBy(user),
+    })
+    return {
+      eventId: String((event as EventDocument)._id),
+      seq: event.seq,
+      type: event.type,
+      createdAt: event.createdAt,
+      deliveries: deliveries.map(toDeliveryResponse),
+    }
   }
 
   @Get('orders/stats')
