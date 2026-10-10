@@ -1903,7 +1903,7 @@ describe('ReportsService', () => {
     })
 
     it('should reject a source event that is not a report event', async () => {
-      eventsServiceMock.findById.mockResolvedValueOnce({ _id: 'event-1', type: EventType.ORDER_CREATED, data: { orderId: 'order-1' } })
+      eventsServiceMock.findById.mockResolvedValueOnce({ _id: 'event-1', type: EventType.ORDER_CREATED, data: { reportId: 'report-1' } })
 
       await expect(reportsService.republishReportEvent('report-1', { sourceEventId: 'event-1', requestedBy: 'jane@example.com' }))
         .rejects.toBeInstanceOf(BadRequestException)
@@ -1916,6 +1916,16 @@ describe('ReportsService', () => {
       await expect(reportsService.republishReportEvent('report-1', { sourceEventId: 'event-1', requestedBy: 'jane@example.com' }))
         .rejects.toBeInstanceOf(BadRequestException)
       expect(eventsServiceMock.publishEvent).not.toHaveBeenCalled()
+    })
+
+    it('should accept a source event whose report id differs only in case', async () => {
+      const reportId = '3f2b8c1e-5d4a-4e6f-9a7b-1c2d3e4f5a6b'
+      eventsServiceMock.findById.mockResolvedValueOnce({ _id: 'event-1', type: EventType.REPORT_CREATED, data: { reportId } })
+
+      await reportsService.republishReportEvent(reportId.toUpperCase(), { sourceEventId: 'event-1', requestedBy: 'jane@example.com' })
+
+      expect(eventsServiceMock.publishEvent).toHaveBeenCalledTimes(1)
+      expect(publishedDto().type).toBe(EventType.REPORT_CREATED)
     })
 
     it('should reject a report that does not exist', async () => {

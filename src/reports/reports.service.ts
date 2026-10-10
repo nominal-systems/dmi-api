@@ -557,7 +557,7 @@ export class ReportsService {
     integration: Integration,
     type: ReportEventType
   ): AddEventDto {
-    // PDFs are served by GET /reports/:id/presentedForm, never in updates
+    // Mutates the given report: PDFs are served by GET /reports/:id/presentedForm, never in updates
     if (type === EventType.REPORT_UPDATED) {
       delete report.presentedFrom
     }
@@ -621,7 +621,9 @@ export class ReportsService {
     if (source.type !== EventType.REPORT_CREATED && source.type !== EventType.REPORT_UPDATED) {
       throw new BadRequestException(`Event '${sourceEventId}' is not a report event`)
     }
-    if ((source.data as { reportId?: string } | undefined)?.reportId !== reportId) {
+    // ParseUUIDPipe accepts uppercase ids and MySQL matches them case-insensitively
+    const sourceReportId = (source.data as { reportId?: string } | undefined)?.reportId
+    if (sourceReportId?.toLowerCase() !== reportId.toLowerCase()) {
       throw new BadRequestException(`Event '${sourceEventId}' belongs to another report`)
     }
     return source.type as ReportEventType
