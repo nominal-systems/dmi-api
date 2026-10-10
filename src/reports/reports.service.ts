@@ -379,6 +379,11 @@ export class ReportsService {
     return undefined
   }
 
+  async findReportIdByOrderId (orderId: string): Promise<string | undefined> {
+    const reports = await this.reportsRepository.find({ select: { id: true }, where: { orderId } })
+    return reports.length === 1 ? reports[0].id : undefined
+  }
+
   async findReportByExternalOrderId (
     externalOrderId: string,
     integrationId?: string

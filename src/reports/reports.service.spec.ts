@@ -2016,6 +2016,24 @@ describe('ReportsService', () => {
     })
   })
 
+  describe('findReportIdByOrderId()', () => {
+    it("should return the id of the order's single report, selecting only the id", async () => {
+      ;(reportsRepositoryMock.find as jest.Mock).mockResolvedValueOnce([{ id: 'report-1' }])
+
+      await expect(reportsService.findReportIdByOrderId('order-1')).resolves.toBe('report-1')
+      expect(reportsRepositoryMock.find).toHaveBeenCalledWith({ select: { id: true }, where: { orderId: 'order-1' } })
+    })
+
+    it('should return undefined when the order has no report or more than one', async () => {
+      ;(reportsRepositoryMock.find as jest.Mock)
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([{ id: 'report-1' }, { id: 'report-2' }])
+
+      await expect(reportsService.findReportIdByOrderId('order-1')).resolves.toBeUndefined()
+      await expect(reportsService.findReportIdByOrderId('order-1')).resolves.toBeUndefined()
+    })
+  })
+
   describe('handleExternalResults()', () => {
     describe('Idexx', () => {
       it('should support drop n run tests, i.e. create orders and reports', async () => {

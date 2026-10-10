@@ -56,6 +56,7 @@ import { IntegrationsSearch } from '../providers/dtos/integrations-search.dto'
 import { Practice } from '../practices/entities/practice.entity'
 import { TransactionLogsDto } from '../common/dtos/transaction-logs.dto'
 import { OrdersService } from '../orders/orders.service'
+import { ReportsService } from '../reports/reports.service'
 import { TransactionLog } from './interfaces/transaction-log.interface'
 import { IntegrationTestResponse } from '@nominal-systems/dmi-engine-common'
 import { ExternalRequestsQueryDto } from './dtos/external-requests-query.dto'
@@ -91,6 +92,7 @@ export class AdminController {
     @InjectRepository(Practice) private readonly practicesRepository: Repository<Practice>,
     private readonly ordersService: OrdersService,
     private readonly internalEventLoggingService: InternalEventLoggingService,
+    private readonly reportsService: ReportsService,
   ) {
   }
 
@@ -826,11 +828,13 @@ export class AdminController {
     if (order === undefined) {
       throw new NotFoundException(`Order with accessionId ${query.accessionId} not found`)
     }
+    const reportId = await this.reportsService.findReportIdByOrderId(order.id)
     logs.push({
       timestamp: order.createdAt,
       type: 'order',
       id: order.id,
       data: order,
+      ...(reportId != null && { reportId }),
     })
 
     // Find Events

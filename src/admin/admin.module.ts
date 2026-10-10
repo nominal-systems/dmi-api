@@ -13,6 +13,7 @@ import { Ref } from '../refs/entities/ref.entity'
 import { Practice } from '../practices/entities/practice.entity'
 import { OrdersModule } from '../orders/orders.module'
 import { InternalEventLoggingModule } from '../internal-event-logging/internal-event-logging.module'
+import { ReportsModule } from '../reports/reports.module'
 import { AuthModule } from '../common/auth/auth.module'
 import { AdminGuard } from '../common/guards/admin.guard'
 import { ProviderConfiguration } from '../providers/entities/provider-configuration.entity'
@@ -29,7 +30,8 @@ import { ProviderConfiguration } from '../providers/entities/provider-configurat
     ProvidersModule,
     OrdersModule,
     InternalEventLoggingModule,
-    AuthModule
+    AuthModule,
+    ReportsModule,
   ],
   controllers: [AdminController],
   providers: [AdminGuard]
