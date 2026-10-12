@@ -74,7 +74,7 @@ Create parallel collections to enable a staged migration:
 db.events_v2.createIndex({ _ts: 1 }, { expireAfterSeconds: 5184000, name: 'ttl_ts_60d' })
 db.internal_events_v2.createIndex({ _ts: 1 }, { expireAfterSeconds: 5184000, name: 'ttl_ts_60d' })
 ```
-- The query indexes are built in the background on the first boot after the cutover (step 6). Deploy off‑peak, and before relying on them check that `getIndexes()` lists them and `db.currentOp({ 'command.createIndexes': '<collection>' })` returns an empty `inprog`.
+- The query indexes are built in the background on the first boot of a dmi-api version with a model for the collection (the dual‑write deploy in step 5, or the cutover in step 6). Deploy off‑peak, and before relying on them check that `getIndexes()` lists them and `db.currentOp({ 'command.createIndexes': '<collection>', 'command.$db': '<db>' })` returns an empty `inprog`.
 
 4) Backfill data
 - Run the provided script `scripts/mongo-shard-migrate.js` (preferred) to copy in batches from old → new collections while preserving `_id`:
