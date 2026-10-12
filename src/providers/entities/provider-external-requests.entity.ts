@@ -21,7 +21,7 @@ export class ProviderExternalRequests {
     @Prop({ index: true })
     status: number
 
-    @Prop()
+    @Prop({ index: true })
     method: string
 
     @Prop()
