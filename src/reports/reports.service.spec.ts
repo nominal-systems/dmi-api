@@ -1872,26 +1872,17 @@ describe('ReportsService', () => {
       expect(publishedDto().data.report).not.toHaveProperty('presentedFrom')
     })
 
-    it('should republish with the source event type, with order tests and PDF for report:created', async () => {
+    it('should republish a report:created source event as report:updated, without the PDF', async () => {
       eventsServiceMock.findById.mockResolvedValueOnce({ _id: 'event-1', type: EventType.REPORT_CREATED, data: { reportId: 'report-1' } })
 
       await reportsService.republishReportEvent('report-1', { sourceEventId: 'event-1', requestedBy: 'jane@example.com' })
 
       expect(eventsServiceMock.findById).toHaveBeenCalledWith('event-1')
-      expect(queryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('order.tests', 'orderTest')
-      expect(queryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('report.presentedFrom', 'presentedFrom')
-      expect(publishedDto().type).toBe(EventType.REPORT_CREATED)
-      expect(publishedDto().data.report.presentedFrom).toEqual([{ id: 'attachment-1', contentType: 'application/pdf', data: 'pdf' }])
-      expect(publishedDto().context).toEqual({ republish: { sourceEventId: 'event-1', requestedAt: expect.any(Date) } })
-    })
-
-    it('should omit presentedFrom from report:created when the report has no PDF, as production does', async () => {
-      queryBuilder.getOne.mockResolvedValue({ ...buildReport(), presentedFrom: [] })
-      eventsServiceMock.findById.mockResolvedValueOnce({ _id: 'event-1', type: EventType.REPORT_CREATED, data: { reportId: 'report-1' } })
-
-      await reportsService.republishReportEvent('report-1', { sourceEventId: 'event-1', requestedBy: 'jane@example.com' })
-
+      expect(queryBuilder.leftJoinAndSelect).not.toHaveBeenCalledWith('order.tests', expect.any(String))
+      expect(queryBuilder.leftJoinAndSelect).not.toHaveBeenCalledWith('report.presentedFrom', expect.any(String))
+      expect(publishedDto().type).toBe(EventType.REPORT_UPDATED)
       expect(publishedDto().data.report).not.toHaveProperty('presentedFrom')
+      expect(publishedDto().context).toEqual({ republish: { sourceEventId: 'event-1', requestedAt: expect.any(Date) } })
     })
 
     it('should reject a source event that no longer exists', async () => {
@@ -1925,7 +1916,6 @@ describe('ReportsService', () => {
       await reportsService.republishReportEvent(reportId.toUpperCase(), { sourceEventId: 'event-1', requestedBy: 'jane@example.com' })
 
       expect(eventsServiceMock.publishEvent).toHaveBeenCalledTimes(1)
-      expect(publishedDto().type).toBe(EventType.REPORT_CREATED)
     })
 
     it('should reject a report that does not exist', async () => {
@@ -1979,7 +1969,7 @@ describe('ReportsService', () => {
       )
     })
 
-    // Golden tests: the republish builds the same event the results flow emits for that report
+    // Golden test: the republish builds the same event the results flow emits for that report
     it('should emit the same report:updated event as the results flow, plus the republish context', async () => {
       const report = buildReport()
       jest.spyOn(reportsService, 'findReportsByExternalOrderIds').mockResolvedValueOnce([report])
@@ -1998,31 +1988,6 @@ describe('ReportsService', () => {
       expect(fromResults).toBeDefined()
       expect(republished).toEqual(fromResults)
       expect(context).toEqual({ republish: { sourceEventId: null, requestedAt: expect.any(Date) } })
-    })
-
-    it('should emit the same report:created event, PDF included, as the orphan results flow', async () => {
-      ordersServiceMock.findOneByExternalId.mockResolvedValueOnce(null)
-      ;(reportsRepositoryMock.save as jest.Mock).mockImplementation(async (saved) => Object.assign(saved, { id: 'report-1' }))
-      await reportsService.handleExternalResults({
-        integrationId: 'integration-1',
-        results: [{
-          status: 'COMPLETED',
-          testResults: [],
-          pdfReport: [{ contentType: 'application/pdf', data: 'pdf' }]
-        }]
-      } as unknown as ExternalResultEventData)
-      const fromResults = eventsServiceMock.addEvent.mock.calls
-        .map((call) => call[0])
-        .find((event) => event.type === EventType.REPORT_CREATED)
-      queryBuilder.getOne.mockResolvedValue(fromResults.data.report)
-      eventsServiceMock.findById.mockResolvedValueOnce({ _id: 'event-1', type: EventType.REPORT_CREATED, data: { reportId: 'report-1' } })
-
-      await reportsService.republishReportEvent('report-1', { sourceEventId: 'event-1', requestedBy: 'jane@example.com' })
-
-      const { context, ...republished } = publishedDto()
-      expect(republished).toEqual(fromResults)
-      expect(republished.data.report.presentedFrom).toHaveLength(1)
-      expect(context).toEqual({ republish: { sourceEventId: 'event-1', requestedAt: expect.any(Date) } })
     })
   })
 

@@ -581,9 +581,15 @@ export class ReportsService {
     reportId: string,
     { sourceEventId, requestedBy }: RepublishReportOptions
   ): Promise<PublishedEvent> {
-    const type = await this.resolveRepublishType(reportId, sourceEventId)
+    if (sourceEventId != null) {
+      await this.assertRepublishSourceEvent(reportId, sourceEventId)
+    }
 
-    const report = await this.loadReportForEvent(reportId, type)
+    // Always report:updated, the event a lab requeue produces for a report DMI already has
+    const type = EventType.REPORT_UPDATED
+    const report = await this.reportGraphQuery()
+      .where('report.id = :reportId', { reportId })
+      .getOne()
     if (report == null) {
       throw new NotFoundException(`Report '${reportId}' not found`)
     }
@@ -608,12 +614,10 @@ export class ReportsService {
     return published
   }
 
-  private async resolveRepublishType (
+  private async assertRepublishSourceEvent (
     reportId: string,
-    sourceEventId?: string
-  ): Promise<ReportEventType> {
-    if (sourceEventId == null) return EventType.REPORT_UPDATED
-
+    sourceEventId: string
+  ): Promise<void> {
     const source = await this.eventsService.findById(sourceEventId)
     if (source == null) {
       throw new NotFoundException(`Event '${sourceEventId}' not found`)
@@ -626,27 +630,6 @@ export class ReportsService {
     if (sourceReportId?.toLowerCase() !== reportId.toLowerCase()) {
       throw new BadRequestException(`Event '${sourceEventId}' belongs to another report`)
     }
-    return source.type as ReportEventType
-  }
-
-  private async loadReportForEvent (
-    reportId: string,
-    type: ReportEventType
-  ): Promise<Report | null> {
-    const query = this.reportGraphQuery()
-      .where('report.id = :reportId', { reportId })
-    // The created-from-results path also carries the order's tests and the PDF
-    if (type === EventType.REPORT_CREATED) {
-      query
-        .leftJoinAndSelect('order.tests', 'orderTest')
-        .leftJoinAndSelect('report.presentedFrom', 'presentedFrom')
-    }
-    const report = await query.getOne()
-    // Production leaves presentedFrom unset when there is no PDF
-    if (report?.presentedFrom?.length === 0) {
-      delete report.presentedFrom
-    }
-    return report
   }
 
   private buildRegisteredReport (
