@@ -77,8 +77,8 @@ republish only builds `report:updated`, so it never carries a PDF; Wisdom PDFs s
 returns `{ event, deliveries }`. The type is always `report:updated`.**
 
 1. **Source event.** Optional; it only records where the admin started from. With
-   `sourceEventId`: load the event by `_id`. Not found → 404. Not a `report:*` event, or its
-   `data.reportId` is a different report → 400. A `report:created` source event is accepted and
+   `sourceEventId`: load the event by `_id`. Not found → 404. Not a `report:*` event, no
+   `data.reportId`, or a `data.reportId` of a different report → 400. A `report:created` source event is accepted and
    still republished as `report:updated`. The comparison of `data.reportId` ignores case
    (`ParseUUIDPipe` accepts uppercase ids and MySQL matches them case-insensitively).
 2. **Report.** Load it from MySQL with the same graph as the production update path

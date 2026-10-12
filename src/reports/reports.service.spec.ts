@@ -1909,6 +1909,14 @@ describe('ReportsService', () => {
       expect(eventsServiceMock.publishEvent).not.toHaveBeenCalled()
     })
 
+    it('should reject a report source event without a report id', async () => {
+      eventsServiceMock.findById.mockResolvedValueOnce({ _id: 'event-1', type: EventType.REPORT_UPDATED, data: {} })
+
+      await expect(reportsService.republishReportEvent('report-1', { sourceEventId: 'event-1', requestedBy: 'jane@example.com' }))
+        .rejects.toThrow(new BadRequestException("Event 'event-1' has no reportId"))
+      expect(eventsServiceMock.publishEvent).not.toHaveBeenCalled()
+    })
+
     it('should accept a source event whose report id differs only in case', async () => {
       const reportId = '3f2b8c1e-5d4a-4e6f-9a7b-1c2d3e4f5a6b'
       eventsServiceMock.findById.mockResolvedValueOnce({ _id: 'event-1', type: EventType.REPORT_CREATED, data: { reportId } })

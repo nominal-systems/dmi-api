@@ -625,9 +625,12 @@ export class ReportsService {
     if (source.type !== EventType.REPORT_CREATED && source.type !== EventType.REPORT_UPDATED) {
       throw new BadRequestException(`Event '${sourceEventId}' is not a report event`)
     }
-    // ParseUUIDPipe accepts uppercase ids and MySQL matches them case-insensitively
     const sourceReportId = (source.data as { reportId?: string } | undefined)?.reportId
-    if (sourceReportId?.toLowerCase() !== reportId.toLowerCase()) {
+    if (sourceReportId == null) {
+      throw new BadRequestException(`Event '${sourceEventId}' has no reportId`)
+    }
+    // ParseUUIDPipe accepts uppercase ids and MySQL matches them case-insensitively
+    if (sourceReportId.toLowerCase() !== reportId.toLowerCase()) {
       throw new BadRequestException(`Event '${sourceEventId}' belongs to another report`)
     }
   }
