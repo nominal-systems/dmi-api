@@ -62,32 +62,19 @@ Create parallel collections to enable a staged migration:
   - `db.createCollection('external_requests_v2', { shardKey: { provider: 'hashed' } })`
   - `db.createCollection('internal_events_v2', { shardKey: { createdAt: 'hashed' } })`
 
-3) Create indexes used by the app
-- Although Cosmos auto‑indexes, create explicit indexes used by queries/sorts to maintain behavior and performance:
-
-  - Events:
+3) Indexes
+- Don't create query indexes by hand. dmi-api declares them in its Mongoose schemas (`index: true`) and `autoIndex` creates them on every boot:
+  - `events_v2`: `seq`, `type`, `providerId`, `practiceId`, `integrationId`, `accessionId`, `createdAt` (`src/events/entities/event.entity.ts`).
+  - `internal_events_v2`: `createdAt`, `accessionIds` (`src/internal-event-logging/schemas/internal-event.schema.ts`).
+  - External requests: whatever `src/providers/entities/provider-external-requests.entity.ts` declares.
+- Mongoose names them `<field>_1`. Don't add `-1` copies: on Cosmos the direction of a single‑field index doesn't matter, so they only add write cost.
+- Don't create a wildcard (`$**`) index, and don't accept the one the portal's Data Explorer offers when creating the collection. It indexes every field of `data`/`payload` and was ~75% of the RU per insert on `events_v2` (#373).
+- The only index created by hand is the TTL on `_ts`. The `expires: '30d'` on `events_v2.currentTime` never creates one, because Mongoose only turns `expires` into an index on a `Date` path:
 ```
-db.events_v2.createIndex({ seq: -1 })
-db.events_v2.createIndex({ providerId: 1 })
-db.events_v2.createIndex({ integrationId: 1 })
-db.events_v2.createIndex({ practiceId: 1 })
-db.events_v2.createIndex({ accessionId: 1 })
-db.events_v2.createIndex({ createdAt: -1 })
+db.events_v2.createIndex({ _ts: 1 }, { expireAfterSeconds: 5184000, name: 'ttl_ts_60d' })
+db.internal_events_v2.createIndex({ _ts: 1 }, { expireAfterSeconds: 5184000, name: 'ttl_ts_60d' })
 ```
-  - External requests:
-```
-db.external_requests_v2.createIndex({ createdAt: -1 })
-db.external_requests_v2.createIndex({ provider: 1 })
-db.external_requests_v2.createIndex({ status: 1 })
-db.external_requests_v2.createIndex({ method: 1 })
-db.external_requests_v2.createIndex({ accessionIds: 1 })
-```
-  - Internal events:
-```
-db.internal_events_v2.createIndex({ createdAt: -1 })
-db.internal_events_v2.createIndex({ pattern: 1 })
-db.internal_events_v2.createIndex({ accessionIds: 1 })
-```
+- The query indexes are built in the background on the first boot after the cutover (step 6). Deploy off‑peak, and before relying on them check that `getIndexes()` lists them and `db.currentOp({ 'command.createIndexes': '<collection>' })` returns an empty `inprog`.
 
 4) Backfill data
 - Run the provided script `scripts/mongo-shard-migrate.js` (preferred) to copy in batches from old → new collections while preserving `_id`:
@@ -133,6 +120,6 @@ Usage:
   - `--batch`: batch size (default `1000`).
 
 Notes and caveats:
-- The script assumes the destination collections already exist with the chosen shard keys and required indexes.
+- The script assumes the destination collections already exist with the chosen shard keys and the `_ts` TTL index (step 3).
 - It uses a forward `_id` cursor and `upsert` to make it restartable.
 - If you enable dual‑write during migration, you can safely re‑run to catch up without duplicates.
