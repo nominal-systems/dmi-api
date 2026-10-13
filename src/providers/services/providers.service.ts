@@ -1,4 +1,15 @@
-import { BadRequestException, Inject, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common'
+import {
+  BadGatewayException,
+  BadRequestException,
+  GatewayTimeoutException,
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+  OnModuleInit
+} from '@nestjs/common'
 import { ClientProxy } from '@nestjs/microservices'
 import { IntegrationsService } from '../../integrations/integrations.service'
 import ieMessageBuilder from '../../common/utils/ieMessageBuilder'
@@ -7,6 +18,7 @@ import {
   Breed,
   Device,
   Operation,
+  ProviderError,
   ReferenceDataResponse,
   Resource,
   Service,
@@ -208,7 +220,7 @@ export class ProvidersService implements OnModuleInit {
       return await this.client.send(messagePattern, message).toPromise()
     } catch (error) {
       this.logger.error(error)
-      throw new NotFoundException(error)
+      throw deviceLookupFailure(error)
     }
   }
 
@@ -582,4 +594,37 @@ export class ProvidersService implements OnModuleInit {
     }
     return Array.from(byBucket.values())
   }
+}
+
+// What a failed device lookup tells the caller (#364). Only the integration lookup before the round trip may
+// answer 404: everything past it used to be reported as "not found" too, so an engine that timed out or a
+// provider that failed looked like a missing integration, and alerting that counts 5xx saw nothing.
+function deviceLookupFailure (error: any): HttpException {
+  // TimeoutClientMqtt's 504: raised in this process, so it is an HttpException already.
+  if (error instanceof HttpException) {
+    return error
+  }
+  // The engine reached the provider and the provider failed. One that timed out on the engine stays a timeout.
+  if (error?.name === ProviderError.name && error.response != null) {
+    const { provider, code, message, error: errors } = error.response
+    const details = (Array.isArray(errors) ? errors : [errors ?? message])
+      .filter((detail) => detail != null && detail !== '')
+      .map((detail) => typeof detail === 'string' ? detail : JSON.stringify(detail))
+      .join('; ')
+    const description = `The provider ${String(provider)} failed to list devices with status ${String(code)}` +
+      (details !== '' ? `: ${details}` : '')
+    return code === HttpStatus.GATEWAY_TIMEOUT
+      ? new GatewayTimeoutException(description, { cause: error })
+      : new BadGatewayException(description, { cause: error })
+  }
+  // An HTTP error the engine chose to send keeps its status.
+  if (typeof error?.status === 'number' && error.status >= 400 && error.status < 600) {
+    return new HttpException(error.response ?? String(error.message), error.status, { cause: error })
+  }
+  // Anything else is the engine failing. A handler that throws a plain Error replies with Nest's
+  // `{ status: 'error', message: 'Internal server error' }`.
+  return new BadGatewayException(
+    `The engine failed to list devices: ${String(error?.message ?? 'no reason given')}`,
+    { cause: error }
+  )
 }
