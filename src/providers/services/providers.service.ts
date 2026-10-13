@@ -34,12 +34,32 @@ import { UpdateProviderDto } from '../dtos/update-provider.dto'
 import { ProviderOption } from '../entities/provider-option.entity'
 import { ProviderOptionDto } from '../dtos/provider-option.dto'
 import { nestKeys } from '../../common/utils/nest-keys'
+import { redactHeaders, redactPayload, redactUrl } from '../../common/utils/redact'
 import { PaginationDto } from '../../common/dtos/pagination.dto'
 import { isNullOrEmpty, stringifyId } from '../../common/utils/shared.utils'
 
 // Matches the TTL on external_requests_v2 (ttl_ts_30d). Cosmos evaluates it
 // against the internal `_ts` (last-modified) timestamp.
 const EXTERNAL_REQUESTS_TTL_SECONDS = Number(process.env.EXTERNAL_REQUESTS_TTL_SECONDS ?? 2592000)
+
+// Masks credentials in a stored external request on the way out, so documents
+// written before redaction was added on write are not served verbatim either.
+function redactExternalRequest<T> (doc: T): T {
+  const redacted: any = { ...doc }
+  if (redacted.url !== undefined) {
+    redacted.url = redactUrl(redacted.url)
+  }
+  if (redacted.headers !== undefined) {
+    redacted.headers = redactHeaders(redacted.headers)
+  }
+  if (redacted.body !== undefined) {
+    redacted.body = redactPayload(redacted.body)
+  }
+  if (redacted.payload !== undefined) {
+    redacted.payload = redactPayload(redacted.payload)
+  }
+  return redacted
+}
 
 @Injectable()
 export class ProvidersService implements OnModuleInit {
@@ -410,9 +430,10 @@ export class ProvidersService implements OnModuleInit {
       accessionIds,
       status,
       method,
-      url,
-      headers: nestKeys(headers),
-      body: nestKeys(body), // Nest keys to ensure MongoDB safety
+      // Engines forward whatever their interceptor sees, credentials included
+      url: redactUrl(url),
+      headers: nestKeys(redactHeaders(headers)),
+      body: nestKeys(redactPayload(body)), // Nest keys to ensure MongoDB safety
       partitionKey: buildExternalRequestPartitionKey(provider, undefined, createdAt)
     }
 
@@ -426,7 +447,7 @@ export class ProvidersService implements OnModuleInit {
     }
 
     if (payload !== undefined) {
-      rawData.payload = payload
+      rawData.payload = redactPayload(payload)
     }
 
     this.providerExternalRequestsV3Model.create(rawData, (error) => {
@@ -435,13 +456,13 @@ export class ProvidersService implements OnModuleInit {
       // to 'MongoServerError', so the old check silently dropped every failed
       // write (429 throttling, 413 oversized document, etc.) with no trace.
       if (error != null) {
-        this.logger.error(`Could not save external request (${method} ${url}), saving without the body: ${error.message}`)
+        this.logger.error(`Could not save external request (${method} ${rawData.url}), saving without the body: ${error.message}`)
 
         // TODO(gb): implement a better fallback strategy than just removing the body
         delete rawData.body
         this.providerExternalRequestsV3Model.create(rawData, (error) => {
           if (error != null) {
-            this.logger.error(`Could not save external request (${method} ${url}) without the body either: ${error.message}`)
+            this.logger.error(`Could not save external request (${method} ${rawData.url}) without the body either: ${error.message}`)
           }
         })
       }
@@ -479,7 +500,7 @@ export class ProvidersService implements OnModuleInit {
       this.providerExternalRequestsV3Model.find(query, { __v: 0 }, { lean: true }),
       this.providerExternalRequestsModel.find(query, { __v: 0 }, { lean: true })
     ])
-    return [...v3Docs, ...v2Docs].map(stringifyId)
+    return [...v3Docs, ...v2Docs].map((doc) => redactExternalRequest(stringifyId(doc)))
   }
 
   async findExternalRequests (
@@ -504,7 +525,7 @@ export class ProvidersService implements OnModuleInit {
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     )
     const skip = (page - 1) * limit
-    return merged.slice(skip, skip + limit).map(stringifyId)
+    return merged.slice(skip, skip + limit).map((doc) => redactExternalRequest(stringifyId(doc)))
   }
 
   async findExternalRequestById (
@@ -515,7 +536,7 @@ export class ProvidersService implements OnModuleInit {
     if (doc === null) {
       throw new NotFoundException(`The external request ${id} doesn't exist`)
     } else {
-      return stringifyId(doc)
+      return redactExternalRequest(stringifyId(doc))
     }
   }
 
