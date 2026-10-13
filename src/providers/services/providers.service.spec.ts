@@ -356,7 +356,7 @@ describe('ProvidersService', () => {
 
     beforeEach(() => {
       jest.spyOn(integrationsService, 'findOne').mockResolvedValue({
-        providerConfiguration: { configurationOptions: {} },
+        providerConfiguration: { providerId: 'idexx', configurationOptions: {} },
         integrationOptions: {}
       } as unknown as Integration)
     })
@@ -377,11 +377,24 @@ describe('ProvidersService', () => {
       expect(clientProxyMock.send).not.toHaveBeenCalled()
     })
 
-    it('should answer 504 when the engine does not respond in time', async () => {
-      clientProxyMock.send.mockReturnValue(throwError(() => new GatewayTimeoutException('The engine did not respond in time')))
+    it('should answer 404 for an integration of another provider, without asking the engine', async () => {
+      const error = await service.getDevices('zoetis', 'integration-1').then(
+        () => { throw new Error('expected getDevices to fail') },
+        (error) => error
+      )
+
+      expect(error.getStatus()).toEqual(404)
+      expect(error.message).toEqual('The integration was not found')
+      expect(clientProxyMock.send).not.toHaveBeenCalled()
+    })
+
+    it('should rethrow the engine timeout as it was raised: a 504 naming it', async () => {
+      const timeout = new GatewayTimeoutException('The engine did not respond in time')
+      clientProxyMock.send.mockReturnValue(throwError(() => timeout))
 
       const error = await failure()
 
+      expect(error).toBe(timeout)
       expect(error.getStatus()).toEqual(504)
       expect(error.message).toEqual('The engine did not respond in time')
     })
@@ -438,6 +451,24 @@ describe('ProvidersService', () => {
 
       expect(error.getStatus()).toEqual(400)
       expect(error.message).toEqual('The integration has no username')
+    })
+
+    it('should keep a 404 the engine sent, as classic Antech answers a device lookup', async () => {
+      clientProxyMock.send.mockReturnValue(throwError(() => overTheWire(new NotFoundException('Method not implemented.'))))
+
+      const error = await failure()
+
+      expect(error.getStatus()).toEqual(404)
+      expect(error.message).toEqual('Method not implemented.')
+    })
+
+    it('should answer 502 naming the request when it fails before any engine answers', async () => {
+      clientProxyMock.send.mockReturnValue(throwError(() => new Error('connect ECONNREFUSED 127.0.0.1:1883')))
+
+      const error = await failure()
+
+      expect(error.getStatus()).toEqual(502)
+      expect(error.message).toEqual('The request to the engine failed: connect ECONNREFUSED 127.0.0.1:1883')
     })
 
     it('should answer 502 when the engine fails without a provider error', async () => {

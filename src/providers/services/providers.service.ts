@@ -197,7 +197,7 @@ export class ProvidersService implements OnModuleInit {
     integrationId: string
   ): Promise<Device[]> {
     const {
-      providerConfiguration: { configurationOptions },
+      providerConfiguration: { providerId: integrationProviderId, configurationOptions },
       integrationOptions
     } = await this.integrationsService.findOne({
       id: integrationId,
@@ -205,6 +205,11 @@ export class ProvidersService implements OnModuleInit {
         relations: ['providerConfiguration']
       }
     })
+    // An integration of another provider is not found here either: asked of the engine in the path, it would
+    // be sent this integration's credentials, and an unknown provider would only time out (#364).
+    if (integrationProviderId !== providerId) {
+      throw new NotFoundException('The integration was not found')
+    }
 
     const { message, messagePattern } = ieMessageBuilder(providerId, {
       resource: Resource.Devices,
@@ -603,6 +608,11 @@ function deviceLookupFailure (error: any): HttpException {
   // TimeoutClientMqtt's 504: raised in this process, so it is an HttpException already.
   if (error instanceof HttpException) {
     return error
+  }
+  // An engine's reply arrives as parsed JSON, so an Error instance was raised here, before any engine answered:
+  // the broker connection, most likely.
+  if (error instanceof Error) {
+    return new BadGatewayException(`The request to the engine failed: ${error.message}`, { cause: error })
   }
   // The engine reached the provider and the provider failed. One that timed out on the engine stays a timeout.
   if (error?.name === ProviderError.name && error.response != null) {
