@@ -779,7 +779,7 @@ describe('OrdersService', () => {
         expect(errorSpy).toHaveBeenCalledTimes(1)
         expect(errorSpy).toHaveBeenCalledWith(
           expect.stringContaining(
-            `Could not record the '${EventType.ORDER_CREATED}' event for order ${ORDER_ID}: Error=16500`,
+            `Could not record or deliver the '${EventType.ORDER_CREATED}' event for order ${ORDER_ID}: Error=16500`,
           ),
           expect.any(String),
         )
@@ -816,6 +816,27 @@ describe('OrdersService', () => {
         expect(error).toBeInstanceOf(HttpException)
         expect(error.getStatus()).toBe(400)
         expect(error.getResponse()).toEqual(providerErrors)
+        expect(savedStatuses).toEqual([OrderStatus.ACCEPTED, OrderStatus.ERROR])
+        expect(clientMock.send).toHaveBeenCalledTimes(1)
+        expect(recordedTypes()).toEqual([EventType.ORDER_CREATED, EventType.ORDER_UPDATED])
+        expect(reportsServiceMock.registerForOrder).not.toHaveBeenCalled()
+        expect(errorMessages()).toContainEqual(
+          expect.stringContaining(`'${EventType.ORDER_UPDATED}' event for order ${ORDER_ID}`),
+        )
+      })
+
+      it("keeps the provider's own ProviderError, not a 500, when the order:updated event after a refused order cannot be stored", async () => {
+        eventsServiceMock.addEvent.mockRejectedValue(throttledError())
+        customPromise.toPromise.mockRejectedValueOnce({
+          name: 'ProviderError',
+          response: { provider: 'idexx', code: 400, message: 'The request is invalid.', error: providerErrors },
+        })
+
+        const error = await placeOrder().catch((e) => e)
+
+        expect(error.name).toEqual(ProviderError.name)
+        expect(error.response.message).toBe('Error while trying to place an order with idexx')
+        expect(error.response.error).toEqual(providerErrors)
         expect(savedStatuses).toEqual([OrderStatus.ACCEPTED, OrderStatus.ERROR])
         expect(clientMock.send).toHaveBeenCalledTimes(1)
         expect(recordedTypes()).toEqual([EventType.ORDER_CREATED, EventType.ORDER_UPDATED])
