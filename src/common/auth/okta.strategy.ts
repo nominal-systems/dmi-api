@@ -3,6 +3,7 @@ import fastifyPassport from '@fastify/passport'
 import { Strategy } from 'passport-openidconnect'
 import { ConfigService } from '@nestjs/config'
 import { PassportStrategy } from '@nestjs/passport'
+import { OidcStateStore } from './oidc-state.store'
 
 @Injectable()
 export class OktaStrategy extends PassportStrategy(Strategy, 'oidc') {
@@ -31,6 +32,8 @@ export class OktaStrategy extends PassportStrategy(Strategy, 'oidc') {
         scope: 'profile',
         passReqToCallback: true,
         proxy: true,
+        // Keeps one entry per pending login so concurrent flows in the same session don't invalidate each other
+        store: new OidcStateStore('oidc:states'),
       },
       async (
         req: any,

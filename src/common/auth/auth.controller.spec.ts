@@ -44,6 +44,7 @@ describe('AuthController', () => {
       sent: false,
       raw: { headersSent: false },
       status: jest.fn(),
+      code: jest.fn(() => reply),
       header: jest.fn((key: string, value: any) => {
         headers[key.toLowerCase()] = value
         return reply
@@ -53,7 +54,7 @@ describe('AuthController', () => {
         reply.sends++
         return reply
       }),
-      redirect: jest.fn((url: string) => {
+      redirect: jest.fn((url: string, _code?: number) => {
         headers.location = url
         reply.sends++
         return reply
@@ -76,14 +77,12 @@ describe('AuthController', () => {
         profile: { username: 'test.user@example.com' },
         idToken: 'id-token',
       }
-      const req: any = {
-        query: { code: 'okta-code' },
-        session: { redirectUrl: 'https://dmi.example.com/dmi/ui/integrations' },
-      }
+      const req: any = { query: { code: 'okta-code' }, session: {} }
       const res = createReply()
       ;(fastifyPassport.authenticate as jest.Mock).mockReturnValue(async () => {
         req.session.passport = oktaUser
         req.user = oktaUser
+        req.authInfo = { state: 'https://dmi.example.com/dmi/ui/integrations' }
       })
 
       await controller.callback(req, res)
@@ -105,7 +104,7 @@ describe('AuthController', () => {
 
       await controller.callback(req, res)
 
-      expect(res.redirect).toHaveBeenCalledWith(expect.stringContaining('error=auth_failed'))
+      expect(res.redirect).toHaveBeenCalledWith(expect.stringContaining('error=auth_failed'), 302)
       expect(res.sends).toBe(1)
     })
 
@@ -118,7 +117,7 @@ describe('AuthController', () => {
       await controller.callback(req, res)
 
       expect(fastifyPassport.authenticate).not.toHaveBeenCalled()
-      expect(res.redirect).toHaveBeenCalledWith(expect.stringContaining('error=auth_failed'))
+      expect(res.redirect).toHaveBeenCalledWith(expect.stringContaining('error=auth_failed'), 302)
       expect(res.sends).toBe(1)
     })
 
@@ -149,6 +148,103 @@ describe('AuthController', () => {
       await controller.callback(req, res)
 
       expect(res.sends).toBe(1)
+    })
+  })
+
+  // Regression: dmi-api-admin-ui#138 — Nest sets the route's 200 before the handler, and a redirect without
+  // a code kept it: a failed login answered an empty 200, a blank page.
+  describe('explicit 302 redirects', () => {
+    it('sets 302 before passport runs, so its failureRedirect is not a 200', async () => {
+      const req: any = { query: { code: 'okta-code', state: 'unknown' }, session: {} }
+      const res = createReply()
+      ;(fastifyPassport.authenticate as jest.Mock).mockReturnValue(async () => {
+        expect(res.code).toHaveBeenCalledWith(302)
+        res.redirect('https://dmi.example.com/dmi/ui/login')
+      })
+
+      await controller.callback(req, res)
+
+      expect(res.sends).toBe(1)
+    })
+
+    it.each([
+      ['an Okta error', { error: 'access_denied', error_description: 'User is not assigned' }],
+      ['no authorization code', {}],
+    ])('redirects a callback with %s with a 302', async (_name, query) => {
+      const req: any = { query, session: {} }
+      const res = createReply()
+
+      await controller.callback(req, res)
+
+      expect(res.redirect).toHaveBeenCalledWith(expect.stringContaining('/ui/login?error='), 302)
+    })
+
+    it('redirects with a 302 when passport throws', async () => {
+      const req: any = { query: { code: 'okta-code' }, session: {} }
+      const res = createReply()
+      ;(fastifyPassport.authenticate as jest.Mock).mockReturnValue(async () => {
+        throw new Error('token exchange failed')
+      })
+
+      await controller.callback(req, res)
+
+      expect(res.redirect).toHaveBeenCalledWith('https://dmi.example.com/dmi/ui/login?error=auth_failed', 302)
+    })
+  })
+
+  describe('redirect after login', () => {
+    it('sends the validated redirect as the OIDC state of the flow', async () => {
+      const req: any = { query: { redirect: 'https://dmi.example.com/dmi/ui/events' }, session: {} }
+      const res = createReply()
+      ;(fastifyPassport.authenticate as jest.Mock).mockReturnValue(async () => {})
+
+      await controller.login(req, res)
+
+      expect(fastifyPassport.authenticate).toHaveBeenCalledWith(
+        'oidc',
+        expect.objectContaining({ state: 'https://dmi.example.com/dmi/ui/events' }),
+      )
+      expect(res.code).toHaveBeenCalledWith(302)
+    })
+
+    it.each([
+      'https://evil.example.com/dmi/ui',
+      'https://dmi.example.com/dmiother',
+      '//evil.example.com',
+    ])('ignores a redirect outside the app: %s', async (redirect) => {
+      const req: any = { query: { redirect }, session: {} }
+      const res = createReply()
+      ;(fastifyPassport.authenticate as jest.Mock).mockReturnValue(async () => {})
+
+      await controller.login(req, res)
+
+      expect(fastifyPassport.authenticate).toHaveBeenCalledWith('oidc', expect.objectContaining({ state: undefined }))
+    })
+
+    it('keeps the other pending OIDC states when the login regenerates the session', async () => {
+      const req: any = { query: { code: 'okta-code' }, session: {} }
+      const res = createReply()
+      ;(fastifyPassport.authenticate as jest.Mock).mockReturnValue(async () => {})
+
+      await controller.callback(req, res)
+
+      expect(fastifyPassport.authenticate).toHaveBeenCalledWith(
+        'oidc',
+        expect.objectContaining({ keepSessionInfo: true }),
+      )
+    })
+
+    it('falls back to the dashboard when the state carries no valid redirect', async () => {
+      const req: any = { query: { code: 'okta-code' }, session: {} }
+      const res = createReply()
+      ;(fastifyPassport.authenticate as jest.Mock).mockReturnValue(async () => {
+        req.user = { profile: { username: 'test.user@example.com' } }
+        req.authInfo = { state: 'https://evil.example.com' }
+      })
+
+      await controller.callback(req, res)
+
+      expect(res.header).toHaveBeenCalledWith('Location', 'https://dmi.example.com/dmi/ui')
     })
   })
 

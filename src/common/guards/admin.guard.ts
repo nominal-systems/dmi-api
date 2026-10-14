@@ -22,7 +22,7 @@ export class AdminGuard implements CanActivate {
       if (req.headers.authorization) {
         return this.oktaJwtAuthGuard.canActivate(ctx) as Promise<boolean>
       }
-      return this.oidcAuthGuard.canActivate(ctx) as Promise<boolean>
+      return this.oidcAuthGuard.canActivate(ctx)
     }
     return this.jwtAuthGuard.canActivate(ctx) as Promise<boolean>
   }

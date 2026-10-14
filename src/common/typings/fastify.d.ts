@@ -7,8 +7,6 @@ import '@fastify/passport'
 
 declare module 'fastify' {
   interface Session {
-    /** Originally requested URL captured before the OIDC redirect. */
-    redirectUrl?: string
     /** Passport session payload persisted across requests. */
     passport?: SessionPassport
   }
