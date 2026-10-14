@@ -29,7 +29,7 @@ import { FEATURE_FLAG_PROVIDER, FeatureFlagProvider, TEST_RESULT_MATCH_BY_NAME_F
 import { NamedLockService, orderLockKey } from '../common/services/named-lock.service'
 import { Integration } from '../integrations/entities/integration.entity'
 import { AddEventDto } from '../events/dto/add-event.dto'
-import { ReportEventType, RepublishReportOptions } from './interfaces/republish.interface'
+import { REPUBLISH_DELIVERY_OPTIONS, ReportEventType, RepublishReportOptions } from './interfaces/republish.interface'
 import { EventDocument } from '../events/entities/event.entity'
 import { PublishedEvent } from '../events/interfaces/published-event.interface'
 
@@ -605,7 +605,7 @@ export class ReportsService {
 
     const event = this.buildReportEvent(report, integration, type)
     event.context = { republish: { sourceEventId: sourceEventId ?? null, requestedAt: new Date() } }
-    const published = await this.eventsService.publishEvent(event)
+    const published = await this.eventsService.publishEvent(event, REPUBLISH_DELIVERY_OPTIONS)
 
     const sent = published.deliveries.filter((delivery) => delivery.status === 'sent').length
     const eventId = String((published.event as EventDocument)._id)

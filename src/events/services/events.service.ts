@@ -12,6 +12,7 @@ import { stringifyId } from '../../common/utils/shared.utils'
 import { PaginationDto } from '../../common/dtos/pagination.dto'
 import { PracticesService } from '../../practices/practices.service'
 import { PublishedEvent } from '../interfaces/published-event.interface'
+import { DeliveryOptions } from '../interfaces/delivery-options.interface'
 
 @Injectable()
 export class EventsService implements OnModuleInit {
@@ -74,11 +75,12 @@ export class EventsService implements OnModuleInit {
   }
 
   async publishEvent (
-    eventDto: AddEventDto
+    eventDto: AddEventDto,
+    deliveryOptions?: DeliveryOptions
   ): Promise<PublishedEvent> {
     this.logger.debug(`Event: '${eventDto.type}'`)
     const event = await this.eventModel.create(eventDto)
-    const deliveries = await this.eventSubscriptionService.notifySubscriptions(event)
+    const deliveries = await this.eventSubscriptionService.notifySubscriptions(event, deliveryOptions)
     return { event, deliveries }
   }
 

@@ -359,6 +359,23 @@ describe('AdminController', () => {
       })
     })
 
+    it('should explain an error delivery that the SDK retried, from the AggregateError causes', async () => {
+      reportsServiceMock.republishReportEvent.mockResolvedValueOnce({
+        event: { _id: 'event-2', seq: 99, type: 'report:updated', createdAt: new Date('2026-10-10T00:00:00Z') },
+        deliveries: [{
+          subscriptionId: 'subscription-1',
+          status: 'error',
+          error: new (global as any).AggregateError([new Error('connect ECONNREFUSED 127.0.0.1:59999'), new Error('connect ECONNREFUSED 127.0.0.1:59999')])
+        }]
+      })
+
+      const response = await adminController.republishReport('report-1', {}, undefined)
+
+      expect(response.deliveries).toEqual([
+        { subscriptionId: 'subscription-1', status: 'error', message: 'connect ECONNREFUSED 127.0.0.1:59999' }
+      ])
+    })
+
     it('should return the new event and the delivery results, exposing only the error message', async () => {
       const response = await adminController.republishReport(
         'report-1',

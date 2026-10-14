@@ -118,7 +118,18 @@ describe('EventsService', () => {
 
       await expect(service.publishEvent(dto)).resolves.toEqual({ event: created, deliveries })
       expect(eventModelMock.create).toHaveBeenCalledWith(dto)
-      expect(eventSubscriptionServiceMock.notifySubscriptions).toHaveBeenCalledWith(created)
+      expect(eventSubscriptionServiceMock.notifySubscriptions).toHaveBeenCalledWith(created, undefined)
+    })
+
+    it('should pass the delivery options on to the subscriptions', async () => {
+      const created = { _id: 'event-1', seq: 7 }
+      const deliveryOptions = { retryOptions: { maxRetries: 1 }, timeoutInMs: 20000 }
+      eventModelMock.create.mockResolvedValueOnce(created)
+      eventSubscriptionServiceMock.notifySubscriptions.mockResolvedValueOnce([])
+
+      await service.publishEvent({ type: 'report:updated' } as AddEventDto, deliveryOptions)
+
+      expect(eventSubscriptionServiceMock.notifySubscriptions).toHaveBeenCalledWith(created, deliveryOptions)
     })
   })
 
@@ -129,6 +140,7 @@ describe('EventsService', () => {
       eventSubscriptionServiceMock.notifySubscriptions.mockResolvedValueOnce([])
 
       await expect(service.addEvent({ type: 'order:created' } as AddEventDto)).resolves.toBe(created)
+      expect(eventSubscriptionServiceMock.notifySubscriptions).toHaveBeenCalledWith(created, undefined)
     })
   })
 })

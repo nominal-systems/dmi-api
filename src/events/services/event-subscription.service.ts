@@ -10,6 +10,8 @@ import { FindOneOfTypeOptions, toFindOneOptions } from '../../common/typings/fin
 import { IntegrationsService } from '../../integrations/integrations.service'
 import { EventType } from '../constants/event-type.enum'
 import { SubscriptionDeliveryResult } from '../interfaces/subscription-delivery-result.interface'
+import { describeError } from '../../common/utils/describe-error'
+import { DeliveryOptions } from '../interfaces/delivery-options.interface'
 
 @Injectable()
 export class EventSubscriptionService {
@@ -76,7 +78,8 @@ export class EventSubscriptionService {
     await this.eventSubscriptionRepository.delete(eventSubscription.id)
   }
 
-  async notifySubscriptions (event: Event): Promise<SubscriptionDeliveryResult[]> {
+  // Without options: the SDK's 3 retries 30 s apart, and no overall timeout
+  async notifySubscriptions (event: Event, options: DeliveryOptions = {}): Promise<SubscriptionDeliveryResult[]> {
     // Find integration to get organizationId
     const integration = await this.integrationsService.findOne({
       id: event.integrationId,
@@ -98,7 +101,7 @@ export class EventSubscriptionService {
     const results: SubscriptionDeliveryResult[] = []
     // TODO(gb): optimize this by sending all subscriptions in one batch?
     for (const subscription of subscriptions) {
-      const result = await this.sendToSubscription(subscription, event)
+      const result = await this.sendToSubscription(subscription, event, options)
       results.push(result)
       switch (result.status) {
         case 'sent':
@@ -114,7 +117,7 @@ export class EventSubscriptionService {
           break
         }
         case 'error':
-          this.logger.error(`Error notifying subscription: ${subscription.id} of event '${event.type}'`, result.error.stack)
+          this.logger.error(`Error notifying subscription: ${subscription.id} of event '${event.type}': ${describeError(result.error)}`, result.error.stack)
           break
       }
     }
@@ -124,17 +127,19 @@ export class EventSubscriptionService {
 
   private async sendToSubscription (
     subscription: EventSubscription,
-    event: Event
+    event: Event,
+    { retryOptions, timeoutInMs }: DeliveryOptions
   ): Promise<SubscriptionDeliveryResult> {
     const opts = subscription.subscription_options
     let producer: EventHubProducerClient | undefined
+    const abortSignal = timeoutInMs != null ? AbortSignal.timeout(timeoutInMs) : undefined
     try {
       const credential = new AzureNamedKeyCredential(opts.sa_key_name, opts.sa_key_value)
       const namespace = [opts.hub_namespace, '.servicebus.windows.net'].join('')
-      producer = new EventHubProducerClient(namespace, opts.hub_name, credential)
+      producer = new EventHubProducerClient(namespace, opts.hub_name, credential, { retryOptions })
       const eventData: Record<string, any> = event.data ?? {}
       const partitionKey: string | undefined = eventData.reportId ?? eventData.orderId ?? event.accessionId
-      const eventDataBatch = await producer.createBatch({ ...(partitionKey != null && { partitionKey }) })
+      const eventDataBatch = await producer.createBatch({ ...(partitionKey != null && { partitionKey }), abortSignal })
       // tryAdd() is false when over max size; sending the empty batch is a silent no-op
       if (!eventDataBatch.tryAdd({ body: event })) {
         return {
@@ -144,9 +149,13 @@ export class EventSubscriptionService {
           maxSizeInBytes: eventDataBatch.maxSizeInBytes
         }
       }
-      await producer.sendBatch(eventDataBatch)
+      await producer.sendBatch(eventDataBatch, { abortSignal })
       return { subscriptionId: subscription.id, status: 'sent' }
     } catch (error) {
+      // The SDK only says "The operation was aborted."
+      if (abortSignal?.aborted === true) {
+        return { subscriptionId: subscription.id, status: 'error', error: new Error(`Not delivered within ${timeoutInMs} ms`) }
+      }
       return {
         subscriptionId: subscription.id,
         status: 'error',

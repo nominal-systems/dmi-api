@@ -1864,6 +1864,15 @@ describe('ReportsService', () => {
       expect(published.deliveries).toEqual([{ subscriptionId: 'subscription-1', status: 'sent' }])
     })
 
+    it('should bound the delivery, so an unreachable subscriber cannot hold the request past a proxy timeout', async () => {
+      await reportsService.republishReportEvent('report-1', { requestedBy: 'jane@example.com' })
+
+      expect(eventsServiceMock.publishEvent).toHaveBeenCalledWith(expect.anything(), {
+        retryOptions: { maxRetries: 1, retryDelayInMs: 1000, timeoutInMs: 10000 },
+        timeoutInMs: 20000
+      })
+    })
+
     it('should load the production update graph and leave the PDF out of report:updated', async () => {
       await reportsService.republishReportEvent('report-1', { requestedBy: 'jane@example.com' })
 

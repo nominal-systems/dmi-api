@@ -1,4 +1,5 @@
 import { SubscriptionDeliveryResult } from '../events/interfaces/subscription-delivery-result.interface'
+import { describeError } from '../common/utils/describe-error'
 import { DeliveryResponse } from './interfaces/republish-report-response.interface'
 
 export function getStatusRanges (statusCodes: string[]): Array<[number, number]> {
@@ -39,7 +40,7 @@ export function getRequestedBy (user: any): string {
 // The error stack stays in the server log
 export function toDeliveryResponse (delivery: SubscriptionDeliveryResult): DeliveryResponse {
   if (delivery.status === 'error') {
-    return { subscriptionId: delivery.subscriptionId, status: 'error', message: delivery.error.message }
+    return { subscriptionId: delivery.subscriptionId, status: 'error', message: describeError(delivery.error) }
   }
   return delivery
 }

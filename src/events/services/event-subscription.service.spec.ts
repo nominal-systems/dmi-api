@@ -86,7 +86,7 @@ describe('EventSubscriptionService', () => {
 
       expect(producer.createBatch).toHaveBeenCalledWith({ partitionKey: 'report-1' })
       expect(batch.tryAdd).toHaveBeenCalledWith({ body: event })
-      expect(producer.sendBatch).toHaveBeenCalledWith(batch)
+      expect(producer.sendBatch).toHaveBeenCalledWith(batch, { abortSignal: undefined })
       expect(producer.close).toHaveBeenCalled()
       expect(logSpy).toHaveBeenCalledWith("Notifying subscription: subscription-1 of event 'report:updated'")
       expect(errorSpy).not.toHaveBeenCalled()
@@ -120,8 +120,22 @@ describe('EventSubscriptionService', () => {
       expect(producer.close).toHaveBeenCalled()
       expect(logSpy).not.toHaveBeenCalled()
       expect(errorSpy).toHaveBeenCalledWith(
-        "Error notifying subscription: subscription-1 of event 'report:updated'",
+        "Error notifying subscription: subscription-1 of event 'report:updated': boom",
         expect.stringContaining('boom')
+      )
+    })
+
+    it('should log the reasons of a retried failure, which the SDK throws as an AggregateError with no message', async () => {
+      producer.sendBatch.mockRejectedValue(new (global as any).AggregateError([
+        new Error('connect ECONNREFUSED 127.0.0.1:59999'),
+        new Error('connect ECONNREFUSED 127.0.0.1:59999')
+      ]))
+
+      await service.notifySubscriptions(event)
+
+      expect(errorSpy).toHaveBeenCalledWith(
+        "Error notifying subscription: subscription-1 of event 'report:updated': connect ECONNREFUSED 127.0.0.1:59999",
+        expect.any(String)
       )
     })
 
@@ -145,6 +159,46 @@ describe('EventSubscriptionService', () => {
       expect(producer.sendBatch).toHaveBeenCalledTimes(1)
       expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('subscription-1'))
       expect(logSpy).toHaveBeenCalledWith("Notifying subscription: subscription-2 of event 'report:updated'")
+    })
+
+    it('should keep the SDK default retries and no overall timeout unless told otherwise', async () => {
+      await service.notifySubscriptions(event)
+
+      expect(EventHubProducerClient).toHaveBeenCalledWith('ns.servicebus.windows.net', 'hub', expect.anything(), { retryOptions: undefined })
+      expect(producer.createBatch.mock.calls[0][0].abortSignal).toBeUndefined()
+      expect(producer.sendBatch.mock.calls[0][1].abortSignal).toBeUndefined()
+    })
+
+    it('should give every subscription the retry options and its own timeout', async () => {
+      const retryOptions = { maxRetries: 1, retryDelayInMs: 1000, timeoutInMs: 10000 }
+      const timeoutSpy = jest.spyOn(AbortSignal, 'timeout')
+      eventSubscriptionRepositoryMock.find.mockResolvedValue([subscription, { ...subscription, id: 'subscription-2' }])
+
+      await service.notifySubscriptions(event, { retryOptions, timeoutInMs: 20000 })
+
+      expect(EventHubProducerClient).toHaveBeenCalledTimes(2)
+      expect(EventHubProducerClient).toHaveBeenNthCalledWith(1, 'ns.servicebus.windows.net', 'hub', expect.anything(), { retryOptions })
+      expect(EventHubProducerClient).toHaveBeenNthCalledWith(2, 'ns.servicebus.windows.net', 'hub', expect.anything(), { retryOptions })
+      expect(timeoutSpy).toHaveBeenCalledTimes(2)
+      expect(timeoutSpy).toHaveBeenCalledWith(20000)
+      const signals = timeoutSpy.mock.results.map((result) => result.value)
+      expect(producer.createBatch.mock.calls.map((call) => call[0].abortSignal)).toEqual(signals)
+      expect(producer.sendBatch.mock.calls.map((call) => call[1].abortSignal)).toEqual(signals)
+    })
+
+    it('should report a delivery cut by the timeout as such', async () => {
+      producer.sendBatch.mockImplementation(async (_batch, { abortSignal }) => {
+        await new Promise((resolve) => abortSignal.addEventListener('abort', resolve))
+        throw Object.assign(new Error('The operation was aborted.'), { name: 'AbortError' })
+      })
+
+      const results = await service.notifySubscriptions(event, { timeoutInMs: 10 })
+
+      expect(results).toEqual([{
+        subscriptionId: 'subscription-1',
+        status: 'error',
+        error: expect.objectContaining({ message: 'Not delivered within 10 ms' })
+      }])
     })
 
     it('should do nothing when the integration is not found', async () => {
