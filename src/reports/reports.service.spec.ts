@@ -1876,6 +1876,22 @@ describe('ReportsService', () => {
     it('should load the production update graph and leave the PDF out of report:updated', async () => {
       await reportsService.republishReportEvent('report-1', { requestedBy: 'jane@example.com' })
 
+      // The golden test reuses one report object, so only this pins the relations loaded
+      expect(queryBuilder.leftJoinAndSelect.mock.calls).toEqual([
+        ['report.order', 'order'],
+        ['order.veterinarian', 'veterinarian'],
+        ['order.patient', 'patient'],
+        ['order.client', 'client'],
+        ['client.identifier', 'clientIdentifier'],
+        ['veterinarian.identifier', 'veterinarianIdentifier'],
+        ['patient.identifier', 'identifier'],
+        ['report.testResultsSet', 'testResult'],
+        ['report.patient', 'reportPatient'],
+        ['reportPatient.identifier', 'reportPatientIdentifier'],
+        ['testResult.observations', 'observation']
+      ])
+      expect(queryBuilder.orderBy).toHaveBeenCalledWith('testResult.seq', 'ASC')
+      expect(queryBuilder.addOrderBy).toHaveBeenCalledWith('observation.seq', 'ASC')
       expect(queryBuilder.leftJoinAndSelect).not.toHaveBeenCalledWith('order.tests', expect.any(String))
       expect(queryBuilder.leftJoinAndSelect).not.toHaveBeenCalledWith('report.presentedFrom', expect.any(String))
       expect(publishedDto().data.report).not.toHaveProperty('presentedFrom')
@@ -1982,6 +1998,13 @@ describe('ReportsService', () => {
 
       await reportsService.republishReportEvent('report-1', { requestedBy: 'jane@example.com' })
 
+      expect(eventsServiceMock.publishEvent).toHaveBeenCalledTimes(1)
+    })
+
+    it('should not write the report back to MySQL', async () => {
+      await reportsService.republishReportEvent('report-1', { requestedBy: 'jane@example.com' })
+
+      expect(reportsRepositoryMock.save).not.toHaveBeenCalled()
       expect(eventsServiceMock.publishEvent).toHaveBeenCalledTimes(1)
     })
 
