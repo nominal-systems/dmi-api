@@ -26,7 +26,7 @@ import {
   CreateOrderDtoClient,
   CreateOrderDtoPatient,
 } from './dtos/create-order.dto'
-import { ForbiddenException, HttpException } from '@nestjs/common'
+import { ForbiddenException, HttpException, Logger } from '@nestjs/common'
 import { v4 as uuidv4 } from 'uuid'
 import { Patient } from './entities/patient.entity'
 import { ProvidersService } from '../providers/services/providers.service'
@@ -688,6 +688,181 @@ describe('OrdersService', () => {
             }),
           }),
         )
+      })
+    })
+    describe('when an event cannot be recorded', () => {
+      const exampleOrder = JSON.parse(
+        fs.readFileSync(path.join(__dirname, '..', '..', 'test', 'orders', 'order.json'), 'utf8'),
+      )
+      const ORDER_ID = 'order-371'
+      // A Cosmos DB 429 as the driver surfaces it, after EventsService has given up retrying
+      const throttledError = (): Error =>
+        Object.assign(
+          new Error(
+            "Error=16500, RetryAfterMs=14, Details='Response status code does not indicate success: TooManyRequests (429); Substatus: 3200'",
+          ),
+          { name: 'MongoServerError', code: 16500 },
+        )
+      const providerErrors = [
+        {
+          provider: 'idexx',
+          message: 'Invalid order, see data for field level details',
+          code: 400,
+          error: 'INVALID_ORDER',
+        },
+      ]
+
+      let savedStatuses: string[]
+      let errorSpy: jest.SpyInstance
+
+      const placeOrder = async (): Promise<Order> =>
+        await ordersService.createOrder(organization, {
+          integrationId: 'integration-idexx',
+          ...exampleOrder,
+        } as CreateOrderDto)
+      const recordedTypes = (): string[] =>
+        eventsServiceMock.addEvent.mock.calls.map(([event]) => event.type)
+      const errorMessages = (): string[] => errorSpy.mock.calls.map(([message]) => message)
+
+      beforeEach(() => {
+        savedStatuses = []
+        jest.spyOn(ordersRepositoryMock, 'save').mockImplementation((async (order: Order) => {
+          order.id = ORDER_ID
+          savedStatuses.push(order.status)
+          return order
+        }) as any)
+        jest.spyOn(integrationsServiceMock, 'findOne').mockResolvedValueOnce({
+          id: 'integration-idexx',
+          providerConfiguration: {
+            providerId: 'idexx',
+            organizationId: 'org-1',
+            configurationOptions: { url: 'https://test.com' },
+          },
+          practice: { id: 'practice-1' },
+        })
+        jest.spyOn(refsServiceMock, 'mapPatientReferences').mockResolvedValueOnce({
+          name: 'Medicalnotes_author_test',
+          birthdate: '2022-08-15',
+          sex: 'bc93eac2-886a-47da-89b7-30e8e2d83e75',
+          species: '36c3cde0-bd6b-11eb-9610-302432eba3e9',
+          breed: '1ddc42c3-d7ed-11ea-aa5e-302432eba3ec',
+        })
+        jest.spyOn(clientMock, 'send').mockReturnValue(customPromise)
+        jest.spyOn(reportsServiceMock, 'registerForOrder').mockReturnValue({ id: 'report-1' })
+        errorSpy = jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined)
+      })
+
+      afterEach(() => {
+        errorSpy.mockRestore()
+        // clearAllMocks() keeps implementations and queued once-values: reset the two mocks these
+        // tests program, so a standing rejection cannot leak into the tests that follow
+        eventsServiceMock.addEvent.mockReset()
+        customPromise.toPromise.mockReset()
+      })
+
+      it('still sends the order to the provider when order:created cannot be stored', async () => {
+        eventsServiceMock.addEvent.mockRejectedValueOnce(throttledError())
+        customPromise.toPromise.mockResolvedValueOnce({ status: OrderStatus.SUBMITTED })
+
+        const order = await placeOrder()
+
+        expect(order.status).toBe(OrderStatus.SUBMITTED)
+        expect(clientMock.send).toHaveBeenCalledTimes(1)
+        expect(reportsServiceMock.registerForOrder).toHaveBeenCalledTimes(1)
+        expect(savedStatuses).toEqual([OrderStatus.ACCEPTED, OrderStatus.SUBMITTED])
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledTimes(3)
+        expect(recordedTypes()).toEqual([
+          EventType.ORDER_CREATED,
+          EventType.ORDER_UPDATED,
+          EventType.REPORT_CREATED,
+        ])
+        expect(errorSpy).toHaveBeenCalledTimes(1)
+        expect(errorSpy).toHaveBeenCalledWith(
+          expect.stringContaining(
+            `Could not record the '${EventType.ORDER_CREATED}' event for order ${ORDER_ID}: Error=16500`,
+          ),
+          expect.any(String),
+        )
+      })
+
+      it('still places the order when no event can be stored', async () => {
+        eventsServiceMock.addEvent.mockRejectedValue(throttledError())
+        customPromise.toPromise.mockResolvedValueOnce({ status: OrderStatus.SUBMITTED })
+
+        const order = await placeOrder()
+
+        expect(order.status).toBe(OrderStatus.SUBMITTED)
+        expect(clientMock.send).toHaveBeenCalledTimes(1)
+        expect(reportsServiceMock.registerForOrder).toHaveBeenCalledTimes(1)
+        expect(savedStatuses).toEqual([OrderStatus.ACCEPTED, OrderStatus.SUBMITTED])
+        expect(recordedTypes()).toEqual([
+          EventType.ORDER_CREATED,
+          EventType.ORDER_UPDATED,
+          EventType.REPORT_CREATED,
+        ])
+        expect(errorMessages()).toEqual([
+          expect.stringContaining(`'${EventType.ORDER_CREATED}' event for order ${ORDER_ID}`),
+          expect.stringContaining(`'${EventType.ORDER_UPDATED}' event for order ${ORDER_ID}`),
+          expect.stringContaining(`'${EventType.REPORT_CREATED}' event for order ${ORDER_ID}`),
+        ])
+      })
+
+      it("answers with the provider's error, not a 500, when the order:updated event after an engine failure cannot be stored", async () => {
+        eventsServiceMock.addEvent.mockRejectedValue(throttledError())
+        customPromise.toPromise.mockRejectedValueOnce({ response: providerErrors, status: 400 })
+
+        const error = await placeOrder().catch((e) => e)
+
+        expect(error).toBeInstanceOf(HttpException)
+        expect(error.getStatus()).toBe(400)
+        expect(error.getResponse()).toEqual(providerErrors)
+        expect(savedStatuses).toEqual([OrderStatus.ACCEPTED, OrderStatus.ERROR])
+        expect(clientMock.send).toHaveBeenCalledTimes(1)
+        expect(recordedTypes()).toEqual([EventType.ORDER_CREATED, EventType.ORDER_UPDATED])
+        expect(reportsServiceMock.registerForOrder).not.toHaveBeenCalled()
+        expect(errorMessages()).toContainEqual(
+          expect.stringContaining(`'${EventType.ORDER_UPDATED}' event for order ${ORDER_ID}`),
+        )
+      })
+
+      it('records order:created, order:updated and report:created, in that order, when every event is stored', async () => {
+        eventsServiceMock.addEvent.mockResolvedValue(undefined)
+        customPromise.toPromise.mockResolvedValueOnce({ status: OrderStatus.SUBMITTED })
+
+        const order = await placeOrder()
+
+        expect(order).toEqual(
+          expect.objectContaining({ id: ORDER_ID, status: OrderStatus.SUBMITTED }),
+        )
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledTimes(3)
+        expect(eventsServiceMock.addEvent).toHaveBeenNthCalledWith(
+          1,
+          expect.objectContaining({
+            namespace: EventNamespace.ORDERS,
+            type: EventType.ORDER_CREATED,
+            providerId: 'idexx',
+            practiceId: 'practice-1',
+            integrationId: 'integration-idexx',
+            data: expect.objectContaining({ orderId: ORDER_ID, order }),
+          }),
+        )
+        expect(eventsServiceMock.addEvent).toHaveBeenNthCalledWith(
+          2,
+          expect.objectContaining({
+            namespace: EventNamespace.ORDERS,
+            type: EventType.ORDER_UPDATED,
+            data: expect.objectContaining({ orderId: ORDER_ID, status: OrderStatus.SUBMITTED }),
+          }),
+        )
+        expect(eventsServiceMock.addEvent).toHaveBeenNthCalledWith(
+          3,
+          expect.objectContaining({
+            namespace: EventNamespace.REPORTS,
+            type: EventType.REPORT_CREATED,
+            data: expect.objectContaining({ orderId: ORDER_ID, reportId: 'report-1' }),
+          }),
+        )
+        expect(errorSpy).not.toHaveBeenCalled()
       })
     })
   })

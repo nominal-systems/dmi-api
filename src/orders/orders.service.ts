@@ -17,6 +17,7 @@ import { Organization } from '../organizations/entities/organization.entity'
 import { ConfigService } from '@nestjs/config'
 import ieMessageBuilder from '../common/utils/ieMessageBuilder'
 import { EventsService } from '../events/services/events.service'
+import { AddEventDto } from '../events/dto/add-event.dto'
 import { OrderSearchQueryParams } from './dtos/order-search-queryparams.dto'
 import { Test } from './entities/test.entity'
 import {
@@ -242,19 +243,22 @@ export class OrdersService {
     }
     // Save order
     const newOrder = await this.ordersRepository.save(order)
-    await this.eventsService.addEvent({
-      namespace: EventNamespace.ORDERS,
-      type: EventType.ORDER_CREATED,
-      providerId: integration.providerConfiguration.providerId,
-      practiceId: integration.practice.id,
-      integrationId: integration.id,
-      accessionId: order.requisitionId,
-      data: {
-        practice: integration.practice,
-        orderId: order.id,
-        order: newOrder,
+    await this.addOrderEvent(
+      {
+        namespace: EventNamespace.ORDERS,
+        type: EventType.ORDER_CREATED,
+        providerId: integration.providerConfiguration.providerId,
+        practiceId: integration.practice.id,
+        integrationId: integration.id,
+        accessionId: order.requisitionId,
+        data: {
+          practice: integration.practice,
+          orderId: order.id,
+          order: newOrder,
+        },
       },
-    })
+      order.id,
+    )
     try {
       if (this.nodeEnv === 'seed') return order
 
@@ -282,7 +286,35 @@ export class OrdersService {
       this.logger.error(`Error sending order to ${providerId} provider`)
       order.status = OrderStatus.ERROR
       await this.ordersRepository.save(order)
-      await this.eventsService.addEvent({
+      await this.addOrderEvent(
+        {
+          namespace: EventNamespace.ORDERS,
+          type: EventType.ORDER_UPDATED,
+          providerId: integration.providerConfiguration.providerId,
+          practiceId: integration.practice.id,
+          integrationId: integration.id,
+          accessionId: order.requisitionId,
+          data: {
+            practice: integration.practice,
+            orderId: order.id,
+            status: order.status,
+            order: order,
+          },
+        },
+        order.id,
+      )
+      if (error.name === ProviderError.name) {
+        error.response.message = `Error while trying to place an order with ${providerId}`
+        throw error
+      } else {
+        throw new HttpException(error.response, error.status)
+      }
+    }
+
+    // Update order
+    await this.ordersRepository.save(order)
+    await this.addOrderEvent(
+      {
         namespace: EventNamespace.ORDERS,
         type: EventType.ORDER_UPDATED,
         providerId: integration.providerConfiguration.providerId,
@@ -295,50 +327,47 @@ export class OrdersService {
           status: order.status,
           order: order,
         },
-      })
-      if (error.name === ProviderError.name) {
-        error.response.message = `Error while trying to place an order with ${providerId}`
-        throw error
-      } else {
-        throw new HttpException(error.response, error.status)
-      }
-    }
-
-    // Update order
-    await this.ordersRepository.save(order)
-    await this.eventsService.addEvent({
-      namespace: EventNamespace.ORDERS,
-      type: EventType.ORDER_UPDATED,
-      providerId: integration.providerConfiguration.providerId,
-      practiceId: integration.practice.id,
-      integrationId: integration.id,
-      accessionId: order.requisitionId,
-      data: {
-        practice: integration.practice,
-        orderId: order.id,
-        status: order.status,
-        order: order,
       },
-    })
+      order.id,
+    )
 
     // Register report
     const report = await this.reportsService.registerForOrder(order)
-    await this.eventsService.addEvent({
-      namespace: EventNamespace.REPORTS,
-      type: EventType.REPORT_CREATED,
-      providerId: integration.providerConfiguration.providerId,
-      practiceId: integration.practice.id,
-      integrationId: integration.id,
-      accessionId: order.requisitionId,
-      data: {
-        practice: integration.practice,
-        orderId: order.id,
-        reportId: report.id,
-        report: report,
+    await this.addOrderEvent(
+      {
+        namespace: EventNamespace.REPORTS,
+        type: EventType.REPORT_CREATED,
+        providerId: integration.providerConfiguration.providerId,
+        practiceId: integration.practice.id,
+        integrationId: integration.id,
+        accessionId: order.requisitionId,
+        data: {
+          practice: integration.practice,
+          orderId: order.id,
+          reportId: report.id,
+          report: report,
+        },
       },
-    })
+      order.id,
+    )
 
     return order
+  }
+
+  /* Records an order event without letting its failure fail the request. The order is the
+   * patient-facing outcome; an event that could not be stored is logged with the order id so it
+   * can be re-emitted. A 500 here — before the engine call, or worse after the provider has
+   * accepted the order — would make the PIMS re-place an order the provider may already have.
+   * (#371) */
+  private async addOrderEvent(eventDto: AddEventDto, orderId: string): Promise<void> {
+    try {
+      await this.eventsService.addEvent(eventDto)
+    } catch (error) {
+      this.logger.error(
+        `Could not record the '${eventDto.type}' event for order ${orderId}: ${error?.message}`,
+        error?.stack,
+      )
+    }
   }
 
   async cancelOrder(organization: Organization, orderId: string): Promise<void> {
