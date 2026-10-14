@@ -96,7 +96,7 @@ describe('EventsService', () => {
       expect(eventSubscriptionServiceMock.notifySubscriptions).toHaveBeenCalledTimes(1)
       expect(eventSubscriptionServiceMock.notifySubscriptions).toHaveBeenCalledWith(event)
       expect(warnSpy).toHaveBeenCalledTimes(1)
-      expect(warnSpy.mock.calls[0][0]).toContain(`Insert of '${EventType.ORDER_CREATED}' event throttled by the database (attempt 1, retrying in 100 ms)`)
+      expect(warnSpy.mock.calls[0][0]).toContain(`Write of '${EventType.ORDER_CREATED}' event throttled by the database (attempt 1, retrying in 100 ms)`)
       expect(warnSpy.mock.calls[0][0]).toContain('TooManyRequests (429)')
     })
 

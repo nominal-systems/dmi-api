@@ -355,16 +355,16 @@ export class OrdersService {
   }
 
   /* Records an order event without letting its failure fail the request. The order is the
-   * patient-facing outcome; an event that could not be stored is logged with the order id so it
-   * can be re-emitted. A 500 here — before the engine call, or worse after the provider has
-   * accepted the order — would make the PIMS re-place an order the provider may already have.
-   * (#371) */
+   * patient-facing outcome; an event that could not be stored, or was stored but not delivered
+   * (addEvent notifies the subscriptions after the insert), is logged with the order id. A 500
+   * here — before the engine call, or worse after the provider has accepted the order — would
+   * make the PIMS re-place an order the provider may already have. (#371) */
   private async addOrderEvent(eventDto: AddEventDto, orderId: string): Promise<void> {
     try {
       await this.eventsService.addEvent(eventDto)
     } catch (error) {
       this.logger.error(
-        `Could not record the '${eventDto.type}' event for order ${orderId}: ${error?.message}`,
+        `Could not record or deliver the '${eventDto.type}' event for order ${orderId}: ${error?.message}`,
         error?.stack,
       )
     }

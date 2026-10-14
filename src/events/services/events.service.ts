@@ -75,7 +75,7 @@ export class EventsService implements OnModuleInit {
     const event = await retryWhenThrottled(async () => await this.eventModel.create(eventDto), {
       onRetry: ({ attempt, delayMs, error }) => {
         this.logger.warn(
-          `Insert of '${eventDto.type}' event throttled by the database (attempt ${attempt}, retrying in ${delayMs} ms): ${(error as Error).message}`
+          `Write of '${eventDto.type}' event throttled by the database (attempt ${attempt}, retrying in ${delayMs} ms): ${(error as Error).message}`
         )
       }
     })
