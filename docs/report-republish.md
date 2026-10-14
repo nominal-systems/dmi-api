@@ -24,8 +24,9 @@ state. Wherever there is a choice, it mirrors the path a report takes when resul
 - Which field VH uses for the report date is not known yet. It does not block: a requeue also
   arrives with the requeue time as the event's `createdAt`, and a republish keeps
   `data.report.createdAt` / `updatedAt` as they are in MySQL. Whichever field VH reads, a republish
-  dates the report no differently than a requeue does today. The original time cannot go in the
-  event's `createdAt` (the `events_v2` TTL is on it), and a new field would be ignored.
+  dates the report no differently than a requeue does today. The event's `createdAt` stays the
+  republish time, as a requeue's is the requeue time, and a new field with the original time would
+  be ignored.
 - Whether VH processed the `report:created` before the missed `report:updated` is not known. A
   `report:updated` for a report VH never got is what a requeue would send in that case too.
 
@@ -83,7 +84,9 @@ returns `{ event, deliveries }`. The type is always `report:updated`.**
    (`ParseUUIDPipe` accepts uppercase ids and MySQL matches them case-insensitively).
 2. **Report.** Load it from MySQL with the same graph as the production update path
    (`reportGraphQuery()`: order, order veterinarian/patient/client and their identifiers, report
-   patient and identifier, test results and observations ordered by `seq`). Not found → 404.
+   patient and identifier, test results and observations ordered by `seq`). Not found → 404. No
+   test results yet → 409: every order gets an empty `REGISTERED` report when it is created, and
+   production never emits a report event without results.
 3. **Integration.** `IntegrationsService.findById(report.order.integrationId)`, which loads
    `practice`, `practice.identifier` and `providerConfiguration` like the production path. A
    soft-deleted integration is not found → 404, and no event is persisted. A report whose order is
@@ -92,9 +95,9 @@ returns `{ event, deliveries }`. The type is always `report:updated`.**
    (`RUNNING`, `STOPPED`, `ERROR`, …) is allowed; the UI warns about it (see below).
 4. **Emit.** `buildReportEvent()` plus
    `context.republish = { sourceEventId, requestedAt }`, published with
-   `EventsService.publishEvent()`. The event gets a new `seq`, so `GET /events` pollers see it,
-   and goes to the organization's Event Hubs subscriptions with the same partition key
-   (`reportId`) as any report event.
+   `EventsService.publishEvent()` with `REPUBLISH_DELIVERY_OPTIONS` (see "Delivery feedback"). The
+   event gets a new `seq`, so `GET /events` pollers see it, and goes to the organization's Event
+   Hubs subscriptions with the same partition key (`reportId`) as any report event.
 5. **Log.** `Republished report <reportId> as 'report:updated' event <eventId> (seq <seq>), requested by
    <requestedBy>: <n> sent, <m> not delivered`.
 
@@ -109,9 +112,17 @@ returns `{ event, deliveries }`. The type is always `report:updated`.**
   organization and event type → `[]`.
 - An organization has at most one subscription per event type (unique constraint on
   `event_type`, `subscription_type`, `organizationId`), so `deliveries` has at most one entry today.
-- **`EventsService.publishEvent(dto)`** persists and notifies, and returns `{ event, deliveries }`.
-  **`addEvent(dto)`** keeps its signature and returns `publishEvent(dto).event`, so existing
-  callers do not change.
+- **`EventsService.publishEvent(dto, deliveryOptions?)`** persists and notifies, and returns
+  `{ event, deliveries }`. **`addEvent(dto)`** keeps its signature and returns
+  `publishEvent(dto).event`, so existing callers do not change.
+- **Bounded delivery for the republish.** Without options, the producer keeps the SDK defaults
+  (3 retries, 30 s apart), so an unreachable hub takes about 90 s. The admin waits on the response,
+  so the republish passes `REPUBLISH_DELIVERY_OPTIONS`: `retryOptions` of 1 retry, 1 s apart, 10 s
+  per attempt, and `timeoutInMs: 20000`, an `abortSignal` on `createBatch` / `sendBatch` per
+  subscription. The signal is needed because `retryOptions.timeoutInMs` does not bound opening the
+  AMQP connection (60 s against a host that does not answer). Measured with the SDK: a refused
+  port fails in 1 s (90 s with the defaults), a host that does not answer in 20 s (60 s), an unknown
+  namespace in 0.4 s. The results path keeps the defaults.
 
 ### Endpoint
 
@@ -140,14 +151,15 @@ Response, **201 whenever the event was persisted**, regardless of delivery:
 ```
 
 A failed delivery is not an HTTP error: the event exists and pollers will see it, and an error
-status would invite a retry that creates another event. Errors expose only their `message`; the
-stack stays in the log. 4xx responses (above) are returned before anything is persisted.
+status would invite a retry that creates another event. Errors expose only their message; the
+stack stays in the log. Once the SDK has retried, it throws an `AggregateError` whose own message is
+empty, so `describeError()` returns the distinct messages of its `errors` (e.g.
+`connect ECONNREFUSED …`); a delivery cut by the timeout reads `Not delivered within 20000 ms`.
+4xx responses (above) are returned before anything is persisted.
 
-Two exceptions to "201 whenever the event was persisted": if `notifySubscriptions` itself throws
+One exception to "201 whenever the event was persisted": if `notifySubscriptions` itself throws
 (e.g. a MySQL error loading the integration or subscriptions) the request returns 500 after the
-event was persisted, and a failing Event Hubs subscription can hold the request for minutes under
-the Azure SDK's default retries. In both cases the event exists: the admin should check the events
-list before retrying.
+event was persisted. The event exists: the admin should check the events list before retrying.
 
 ### Transaction logs
 
@@ -192,14 +204,20 @@ A separate PR (branch `dmi-api/issues/294`), after the dmi-api one.
   - The existing `handleExternalResults` tests, unchanged, as the safety net for the extraction.
   - `republishReportEvent`: always `updated`, also from a `created` source event, without the PDF;
     404 for a missing report, integration or source event; 400 for a non-report source event or
-    another report's; no `publishEvent` call when the integration is missing; the
-    `context.republish` shape.
+    another report's; 409 for a report without results; no `publishEvent` call when the
+    integration is missing; the `context.republish` shape; the bounded delivery options; the
+    exact join list (the golden test reuses one report object, so it cannot see the graph); no
+    `save` of the report.
   - **Golden test**: the `report:updated` event `handleExternalResults` emits for a report equals
     the one `republishReportEvent` emits for it, except `context`.
-- `event-subscription.service.spec.ts`: returns the results; `[]` without subscriptions.
+- `event-subscription.service.spec.ts`: returns the results; `[]` without subscriptions; SDK
+  defaults without options, retry options and one timeout per subscription with them; a timeout
+  reported as such; the `AggregateError` causes in the log.
+- `describe-error.spec.ts`: plain errors, `AggregateError` causes, code/name fallbacks.
 - `events.service.spec.ts`: `publishEvent` returns `{ event, deliveries }`; `addEvent` still
   returns the `Event`.
-- `admin.controller.spec.ts`: the endpoint's response (error `message` only), `reportId` and
+- `admin.controller.spec.ts`: the endpoint's response (error message only, also from an
+  `AggregateError`), `reportId` and
   `sourceEventId` validation, `reportId` present/absent in transaction logs.
 
 **Limit of the golden tests:** with mocked repositories they prove how the event is *built*, not
@@ -223,9 +241,11 @@ entry points and the three outcomes.
   `undefined` (TypeORM skips `undefined` on UPDATE). Production events omit them, but MySQL keeps the
   old value, so `GET /reports/:id` and a republish return it. Pre-existing; a follow-up issue will
   track the fix.
-- **Field comparison with real events** (local verification): republished events include as `[]` or
-  `null` some keys the original omitted (identifier arrays, veterinarian, observation
-  interpretation). Nothing present in the original is missing from the republished event.
+- **Field comparison with real events** (local verification): compared with a `report:created` or
+  orphan-path original, republished events include as `[]` or `null` some keys the original omitted
+  (identifier arrays, veterinarian, observation interpretation). Against a results-path
+  `report:updated` (the wisdom-panel loop), the two differ only in the order's newer state. Nothing
+  present in the original is missing from the republished event.
 - The event's `createdAt` is the republish time, as it is the requeue time for a requeue.
 - `report.updatedAt` moves only when the report row changes (in practice, its status), not when
   only observations change.
