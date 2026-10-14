@@ -14,7 +14,7 @@ import { EventNamespace } from '../events/constants/event-namespace.enum'
 import { EventType } from '../events/constants/event-type.enum'
 import { FileUtils } from '../common/utils/file-utils'
 import { Order } from '../orders/entities/order.entity'
-import { BadRequestException, ForbiddenException, HttpException, HttpStatus, NotFoundException } from '@nestjs/common'
+import { BadRequestException, ConflictException, ForbiddenException, HttpException, HttpStatus, NotFoundException } from '@nestjs/common'
 import { ExternalResultEventData } from '../common/typings/internal-event-data.interface'
 import { TestResultItemInterpretationCode } from '@nominal-systems/dmi-engine-common'
 import { FEATURE_FLAG_PROVIDER } from '../feature-flags/feature-flag.interface'
@@ -1823,7 +1823,7 @@ describe('ReportsService', () => {
       orderId: 'order-1',
       status: ReportStatus.PARTIAL,
       order: { id: 'order-1', integrationId: 'integration-1', requisitionId: 'REQ-1', externalId: 'EXT-1' },
-      testResultsSet: [],
+      testResultsSet: [{ id: 'test-result-1', seq: 0, code: 'CBC', name: 'Complete Blood Count', observations: [] }],
       presentedFrom: [{ id: 'attachment-1', contentType: 'application/pdf', data: 'pdf' }]
     }) as unknown as Report
     let queryBuilder: Record<string, jest.Mock>
@@ -1940,6 +1940,15 @@ describe('ReportsService', () => {
 
       await expect(reportsService.republishReportEvent('report-1', { requestedBy: 'jane@example.com' }))
         .rejects.toBeInstanceOf(NotFoundException)
+      expect(eventsServiceMock.publishEvent).not.toHaveBeenCalled()
+    })
+
+    it('should refuse a report with no results yet, like the one every order gets on creation', async () => {
+      queryBuilder.getOne.mockResolvedValue({ ...buildReport(), status: ReportStatus.REGISTERED, testResultsSet: [] })
+
+      await expect(reportsService.republishReportEvent('report-1', { requestedBy: 'jane@example.com' }))
+        .rejects.toThrow(new ConflictException("Report 'report-1' has no results yet"))
+      expect(integrationsServiceMock.findById).not.toHaveBeenCalled()
       expect(eventsServiceMock.publishEvent).not.toHaveBeenCalled()
     })
 

@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, forwardRef, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { BadRequestException, ConflictException, ForbiddenException, forwardRef, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { FindManyOptions, Repository, SelectQueryBuilder } from 'typeorm'
 import { Report } from './entities/report.entity'
@@ -592,6 +592,10 @@ export class ReportsService {
       .getOne()
     if (report == null) {
       throw new NotFoundException(`Report '${reportId}' not found`)
+    }
+    // Every order gets an empty report on creation; production never emits one without results
+    if (report.testResultsSet.length === 0) {
+      throw new ConflictException(`Report '${reportId}' has no results yet`)
     }
     // findById(undefined) would load an arbitrary integration
     if (report.order?.integrationId == null) {
