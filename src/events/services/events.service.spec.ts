@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { getModelToken } from '@nestjs/mongoose'
 import { ModuleRef } from '@nestjs/core'
@@ -6,13 +7,20 @@ import { EventSubscriptionService } from './event-subscription.service'
 import { PracticesService } from '../../practices/practices.service'
 import { Event } from '../entities/event.entity'
 import { Organization } from '../../organizations/entities/organization.entity'
+import { AddEventDto } from '../dto/add-event.dto'
+import { EventNamespace } from '../constants/event-namespace.enum'
+import { EventType } from '../constants/event-type.enum'
 
 describe('EventsService', () => {
   let service: EventsService
 
   const eventModelMock = {
     find: jest.fn().mockResolvedValue([]),
-    countDocuments: jest.fn().mockResolvedValue(0)
+    countDocuments: jest.fn().mockResolvedValue(0),
+    create: jest.fn()
+  }
+  const eventSubscriptionServiceMock = {
+    notifySubscriptions: jest.fn()
   }
   const practicesServiceMock = {
     findAll: jest.fn()
@@ -25,13 +33,96 @@ describe('EventsService', () => {
       providers: [
         EventsService,
         { provide: getModelToken(Event.name), useValue: eventModelMock },
-        { provide: EventSubscriptionService, useValue: {} },
+        { provide: EventSubscriptionService, useValue: eventSubscriptionServiceMock },
         { provide: PracticesService, useValue: practicesServiceMock },
         { provide: ModuleRef, useValue: { get: jest.fn() } }
       ]
     }).compile()
 
     service = module.get<EventsService>(EventsService)
+  })
+
+  describe('addEvent', () => {
+    const eventDto = {
+      namespace: EventNamespace.ORDERS,
+      type: EventType.ORDER_CREATED,
+      providerId: 'idexx',
+      practiceId: 'practice-a',
+      integrationId: 'integration-a',
+      accessionId: 'accession-a',
+      data: { orderId: 'order-a' }
+    } as unknown as AddEventDto
+
+    // A Cosmos DB 429 as the driver surfaces it
+    const throttledError = (): Error => Object.assign(
+      new Error("Error=16500, RetryAfterMs=1, Details='Response status code does not indicate success: TooManyRequests (429); Substatus: 3200'"),
+      { name: 'MongoServerError', code: 16500 }
+    )
+
+    let warnSpy: jest.SpyInstance
+
+    beforeEach(() => {
+      eventModelMock.create.mockReset()
+      eventSubscriptionServiceMock.notifySubscriptions.mockReset()
+      warnSpy = jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined)
+    })
+
+    afterEach(() => {
+      warnSpy.mockRestore()
+    })
+
+    it('stores the event and notifies the subscriptions once', async () => {
+      const event = { _id: 'event-1', seq: 1, ...eventDto }
+      eventModelMock.create.mockResolvedValueOnce(event)
+
+      await expect(service.addEvent(eventDto)).resolves.toBe(event)
+
+      expect(eventModelMock.create).toHaveBeenCalledTimes(1)
+      expect(eventModelMock.create).toHaveBeenCalledWith(eventDto)
+      expect(eventSubscriptionServiceMock.notifySubscriptions).toHaveBeenCalledTimes(1)
+      expect(eventSubscriptionServiceMock.notifySubscriptions).toHaveBeenCalledWith(event)
+      expect(warnSpy).not.toHaveBeenCalled()
+    })
+
+    it('retries a throttled insert and notifies the subscriptions once it is stored', async () => {
+      const event = { _id: 'event-1', seq: 2, ...eventDto }
+      eventModelMock.create
+        .mockRejectedValueOnce(throttledError())
+        .mockResolvedValueOnce(event)
+
+      await expect(service.addEvent(eventDto)).resolves.toBe(event)
+
+      expect(eventModelMock.create).toHaveBeenCalledTimes(2)
+      expect(eventSubscriptionServiceMock.notifySubscriptions).toHaveBeenCalledTimes(1)
+      expect(eventSubscriptionServiceMock.notifySubscriptions).toHaveBeenCalledWith(event)
+      expect(warnSpy).toHaveBeenCalledTimes(1)
+      expect(warnSpy.mock.calls[0][0]).toContain(`Write of '${EventType.ORDER_CREATED}' event throttled by the database (attempt 1, retrying in 100 ms)`)
+      expect(warnSpy.mock.calls[0][0]).toContain('TooManyRequests (429)')
+    })
+
+    it('rejects with the last throttled error once the retries are spent, and notifies nobody', async () => {
+      const third = throttledError()
+      eventModelMock.create
+        .mockRejectedValueOnce(throttledError())
+        .mockRejectedValueOnce(throttledError())
+        .mockRejectedValueOnce(third)
+
+      await expect(service.addEvent(eventDto)).rejects.toBe(third)
+
+      expect(eventModelMock.create).toHaveBeenCalledTimes(3)
+      expect(eventSubscriptionServiceMock.notifySubscriptions).not.toHaveBeenCalled()
+    })
+
+    it('rejects at once when the insert fails for another reason', async () => {
+      const duplicate = Object.assign(new Error('E11000 duplicate key error'), { name: 'MongoServerError', code: 11000 })
+      eventModelMock.create.mockRejectedValueOnce(duplicate)
+
+      await expect(service.addEvent(eventDto)).rejects.toBe(duplicate)
+
+      expect(eventModelMock.create).toHaveBeenCalledTimes(1)
+      expect(eventSubscriptionServiceMock.notifySubscriptions).not.toHaveBeenCalled()
+      expect(warnSpy).not.toHaveBeenCalled()
+    })
   })
 
   describe('getEventsForOrganization', () => {
