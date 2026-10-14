@@ -76,13 +76,18 @@ export class AuthController {
     return res.sent || res.raw.headersSent || res.getHeader('location') != null
   }
 
+  /** Only URLs inside this app, so `/auth/login?redirect=` can't send a user elsewhere after logging in. */
+  private safeRedirect (url: unknown): string | undefined {
+    if (typeof url !== 'string') return undefined
+    return url.startsWith(`${this.baseUrl}/`) && !/^\/[/\\]/.test(url) ? url : undefined
+  }
+
   @Get('login')
   async login (@Req() req: FastifyRequest, @Res() res: FastifyReply): Promise<void> {
-    // Capture the redirect query parameter and store it in the session.
     const query = req.query as { redirect?: string }
-    if (query.redirect) {
-      req.session.redirectUrl = query.redirect
-      this.logger.debug(`Stored redirect URL: ${query.redirect}`)
+    const redirectUrl = this.safeRedirect(query.redirect)
+    if (query.redirect != null && redirectUrl == null) {
+      this.logger.warn(`Ignoring redirect outside the app: ${query.redirect}`)
     }
 
     try {
@@ -92,8 +97,12 @@ export class AuthController {
         failureRedirect: `${this.baseUrl}/ui/login`,
         authInfo: false,
         failureMessage: true,
+        // Stored with this flow's OIDC state, so concurrent logins each return to their own page
+        state: redirectUrl,
       }) as (req: FastifyRequest, res: FastifyReply) => Promise<void>
 
+      // Nest already set the route's 200, and passport's `failureRedirect` keeps whatever status is set
+      res.code(302)
       await authenticate(req, res)
       this.logger.debug('Authentication initiated successfully')
     } catch (error) {
@@ -105,7 +114,7 @@ export class AuthController {
         this.logger.error('A response was already committed; not redirecting again')
         return
       }
-      return await res.redirect(`${this.baseUrl}/ui/login?error=auth_failed`)
+      return await res.redirect(`${this.baseUrl}/ui/login?error=auth_failed`, 302)
     }
   }
 
@@ -120,9 +129,10 @@ export class AuthController {
       this.logger.error(`Okta authentication error: ${query.error}`)
       this.logger.error(`Error description: ${query.error_description}`)
       return await res.redirect(
-        `${this.baseUrl}/ui/login?error=${query.error}&description=${encodeURIComponent(
+        `${this.baseUrl}/ui/login?error=${encodeURIComponent(query.error)}&description=${encodeURIComponent(
           query.error_description || '',
         )}`,
+        302,
       )
     }
 
@@ -133,24 +143,21 @@ export class AuthController {
     // enough to kill a replica (#356). Answer it here, before passport ever runs.
     if (query.code == null || query.code === '') {
       this.logger.warn('Callback received without an authorization code; redirecting to login')
-      return await res.redirect(`${this.baseUrl}/ui/login?error=auth_failed`)
+      return await res.redirect(`${this.baseUrl}/ui/login?error=auth_failed`, 302)
     }
 
     try {
-      // Retrieve the originally requested URL from the session.
-      const redirectUrl = req.session.redirectUrl || `${this.baseUrl}/ui` // default fallback
-      this.logger.debug(`Retrieved redirect URL from session: ${redirectUrl}`)
-
-      // Clean up the stored redirect so it doesn't persist for future requests.
-      delete req.session.redirectUrl
-
       // We still need this to complete the authentication process
       const authenticate = fastifyPassport.authenticate('oidc', {
         session: true,
         failureRedirect: `${this.baseUrl}/ui/login`,
+        // Login regenerates the session: keep the other pending OIDC states so concurrent logins still verify
+        keepSessionInfo: true,
       }) as (req: FastifyRequest, res: FastifyReply) => Promise<void>
 
-      // Complete the authentication
+      // Nest already set the route's 200, and passport's `failureRedirect` keeps whatever status is set.
+      // A failed state check used to answer an empty 200: a blank page.
+      res.code(302)
       this.logger.debug('Completing authentication...')
       await authenticate(req, res)
 
@@ -164,8 +171,11 @@ export class AuthController {
       // At this point, the user should be authenticated and the session established
       if (req.user == null) {
         this.logger.error('Authentication completed but no user was set')
-        return await res.redirect(`${this.baseUrl}/ui/login?error=auth_failed`)
+        return await res.redirect(`${this.baseUrl}/ui/login?error=auth_failed`, 302)
       }
+
+      // The page that started this login, carried in its OIDC state (see `login()`)
+      const redirectUrl = this.safeRedirect(req.authInfo?.state) ?? `${this.baseUrl}/ui`
 
       this.logger.debug(
         `User authenticated: ${JSON.stringify(
@@ -192,7 +202,7 @@ export class AuthController {
         this.logger.error('A response was already committed; not redirecting again')
         return
       }
-      return await res.redirect(`${this.baseUrl}/ui/login?error=auth_failed`)
+      return await res.redirect(`${this.baseUrl}/ui/login?error=auth_failed`, 302)
     }
   }
 
