@@ -15,6 +15,9 @@ import { ProviderConfiguration } from '../entities/provider-configuration.entity
 import { Provider } from '../entities/provider.entity'
 import { ProviderOption } from '../entities/provider-option.entity'
 import { Practice } from '../../practices/entities/practice.entity'
+import { BadRequestException, GatewayTimeoutException, HttpException, NotFoundException } from '@nestjs/common'
+import { ProviderError } from '@nominal-systems/dmi-engine-common'
+import { of, throwError } from 'rxjs'
 
 const configServiceMock = {
   get: jest.fn()
@@ -26,7 +29,8 @@ const integrationRepositoryMock = {
 }
 const providerConfigurationRepositoryMock = {}
 const clientProxyMock = {
-  emit: jest.fn()
+  emit: jest.fn(),
+  send: jest.fn()
 }
 const providersRepositoryMock = {
   findOne: jest.fn((obj) => obj),
@@ -340,6 +344,185 @@ describe('ProvidersService', () => {
       jest.spyOn(providerExternalRequestsModel, 'countDocuments').mockResolvedValue(5 as never)
 
       expect(await service.countExternalRequests({ provider: 'idexx' })).toEqual(12)
+    })
+  })
+  describe('getDevices()', () => {
+    // An engine's error reply arrives as parsed JSON, not as the class it was thrown as.
+    const overTheWire = (error: unknown): any => JSON.parse(JSON.stringify(error))
+    const failure = async (providerId = 'idexx'): Promise<HttpException> => await service.getDevices(providerId, 'integration-1').then(
+      () => { throw new Error('expected getDevices to fail') },
+      (error) => error
+    )
+
+    beforeEach(() => {
+      jest.spyOn(integrationsService, 'findOne').mockResolvedValue({
+        providerConfiguration: { providerId: 'idexx', configurationOptions: {} },
+        integrationOptions: {}
+      } as unknown as Integration)
+    })
+
+    it('should return the devices the engine lists', async () => {
+      clientProxyMock.send.mockReturnValue(of([{ serialNumber: 'SN-1' }]))
+
+      expect(await service.getDevices('idexx', 'integration-1')).toEqual([{ serialNumber: 'SN-1' }])
+    })
+
+    it('should answer 404 for an unknown integration, without asking the engine', async () => {
+      jest.spyOn(integrationsService, 'findOne').mockRejectedValue(new NotFoundException('The integration was not found'))
+
+      const error = await failure()
+
+      expect(error.getStatus()).toEqual(404)
+      expect(error.message).toEqual('The integration was not found')
+      expect(clientProxyMock.send).not.toHaveBeenCalled()
+    })
+
+    it('should answer 404 for an integration of another provider, without asking the engine', async () => {
+      const error = await failure('zoetis')
+
+      expect(error.getStatus()).toEqual(404)
+      expect(error.message).toEqual('The integration was not found')
+      expect(clientProxyMock.send).not.toHaveBeenCalled()
+    })
+
+    it('should rethrow the engine timeout as it was raised: a 504 naming it', async () => {
+      const timeout = new GatewayTimeoutException('The engine did not respond in time')
+      clientProxyMock.send.mockReturnValue(throwError(() => timeout))
+
+      const error = await failure()
+
+      expect(error).toBe(timeout)
+      expect(error.getStatus()).toEqual(504)
+      expect(error.message).toEqual('The engine did not respond in time')
+    })
+
+    it('should answer 502 naming the provider and its errors when the provider fails', async () => {
+      clientProxyMock.send.mockReturnValue(throwError(() => overTheWire(new ProviderError({
+        provider: 'idexx',
+        code: 500,
+        message: 'Internal Server Error',
+        error: ['A request to /api/v1/ivls/devices failed with 500 status code.']
+      }))))
+
+      const error = await failure()
+
+      expect(error.getStatus()).toEqual(502)
+      expect(error.message).toEqual(
+        'The provider idexx failed to list devices with status 500: A request to /api/v1/ivls/devices failed with 500 status code.'
+      )
+    })
+
+    it('should answer 504 when the provider timed out on the engine', async () => {
+      clientProxyMock.send.mockReturnValue(throwError(() => overTheWire(new ProviderError({
+        provider: 'idexx',
+        code: 504,
+        message: 'idexx did not respond within 30000 ms: GET /api/v1/ivls/devices.',
+        error: ['idexx did not respond within 30000 ms: GET /api/v1/ivls/devices.']
+      }))))
+
+      const error = await failure()
+
+      expect(error.getStatus()).toEqual(504)
+      expect(error.message).toEqual(
+        'The provider idexx failed to list devices with status 504: idexx did not respond within 30000 ms: GET /api/v1/ivls/devices.'
+      )
+    })
+
+    it.each([
+      ['an empty error list, as the antech-v6 and wisdom engines send', []],
+      ['no error list', undefined]
+    ])('should fall back to the provider\'s message for %s', async (_, errors) => {
+      clientProxyMock.send.mockReturnValue(throwError(() => overTheWire(new ProviderError({
+        provider: 'antech-v6',
+        code: 500,
+        message: 'Failed to authenticate',
+        error: errors
+      }))))
+
+      const error = await failure()
+
+      expect(error.getStatus()).toEqual(502)
+      expect(error.message).toEqual('The provider antech-v6 failed to list devices with status 500: Failed to authenticate')
+    })
+
+    it('should answer 400 when the provider refuses the integration\'s configuration', async () => {
+      // As the idexx engine reports a 401: the clinic's credentials are no longer valid.
+      clientProxyMock.send.mockReturnValue(throwError(() => overTheWire(new ProviderError({
+        provider: 'idexx',
+        code: 401,
+        message: 'Unauthorized',
+        error: ['A request to /api/v1/ivls/devices failed with 401 status code.']
+      }))))
+
+      const error = await failure()
+
+      expect(error.getStatus()).toEqual(400)
+      expect(error.message).toEqual(
+        'The provider idexx failed to list devices with status 401: A request to /api/v1/ivls/devices failed with 401 status code.'
+      )
+    })
+
+    it.each([408, 429])('should answer 502 for a provider %s, which a retry can get past', async (code) => {
+      clientProxyMock.send.mockReturnValue(throwError(() => overTheWire(new ProviderError({
+        provider: 'idexx',
+        code,
+        message: 'Try again later',
+        error: ['Try again later']
+      }))))
+
+      const error = await failure()
+
+      expect(error.getStatus()).toEqual(502)
+      expect(error.message).toEqual(`The provider idexx failed to list devices with status ${code}: Try again later`)
+    })
+
+    it('should leave the status out when the provider error carries none', async () => {
+      clientProxyMock.send.mockReturnValue(throwError(() => overTheWire(new ProviderError({
+        provider: 'idexx',
+        message: 'Service Unavailable',
+        error: ['The device registry is unavailable']
+      }))))
+
+      const error = await failure()
+
+      expect(error.getStatus()).toEqual(502)
+      expect(error.message).toEqual('The provider idexx failed to list devices: The device registry is unavailable')
+    })
+
+    it('should keep the status of an HTTP error the engine sent', async () => {
+      clientProxyMock.send.mockReturnValue(throwError(() => overTheWire(new BadRequestException('The integration has no username'))))
+
+      const error = await failure()
+
+      expect(error.getStatus()).toEqual(400)
+      expect(error.message).toEqual('The integration has no username')
+    })
+
+    it('should keep a 404 the engine sent, as classic Antech answers a device lookup', async () => {
+      clientProxyMock.send.mockReturnValue(throwError(() => overTheWire(new NotFoundException('Method not implemented.'))))
+
+      const error = await failure()
+
+      expect(error.getStatus()).toEqual(404)
+      expect(error.message).toEqual('Method not implemented.')
+    })
+
+    it('should answer 502 naming the request when it fails before any engine answers', async () => {
+      clientProxyMock.send.mockReturnValue(throwError(() => new Error('connect ECONNREFUSED 127.0.0.1:1883')))
+
+      const error = await failure()
+
+      expect(error.getStatus()).toEqual(502)
+      expect(error.message).toEqual('The request to the engine failed: connect ECONNREFUSED 127.0.0.1:1883')
+    })
+
+    it('should answer 502 when the engine fails without a provider error', async () => {
+      clientProxyMock.send.mockReturnValue(throwError(() => ({ status: 'error', message: 'Internal server error' })))
+
+      const error = await failure()
+
+      expect(error.getStatus()).toEqual(502)
+      expect(error.message).toEqual('The engine failed to list devices: Internal server error')
     })
   })
   describe('checkLabRequisitionParameters()', () => {
