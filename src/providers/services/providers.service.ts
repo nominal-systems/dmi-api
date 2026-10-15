@@ -617,15 +617,23 @@ function deviceLookupFailure (error: any): HttpException {
   // The engine reached the provider and the provider failed. One that timed out on the engine stays a timeout.
   if (error?.name === ProviderError.name && error.response != null) {
     const { provider, code, message, error: errors } = error.response
-    const details = (Array.isArray(errors) ? errors : [errors ?? message])
+    const listed = (Array.isArray(errors) ? errors : [errors])
       .filter((detail) => detail != null && detail !== '')
       .map((detail) => typeof detail === 'string' ? detail : JSON.stringify(detail))
       .join('; ')
-    const description = `The provider ${String(provider)} failed to list devices with status ${String(code)}` +
+    // An empty error list falls back to the provider's message, as a missing one does: the antech-v6 and wisdom
+    // engines send `error: []` when they have nothing to list.
+    const details = listed !== '' ? listed : String(message ?? '')
+    const description = `The provider ${String(provider)} failed to list devices` +
+      (code != null ? ` with status ${String(code)}` : '') +
       (details !== '' ? `: ${details}` : '')
-    return code === HttpStatus.GATEWAY_TIMEOUT
-      ? new GatewayTimeoutException(description, { cause: error })
-      : new BadGatewayException(description, { cause: error })
+    if (code === HttpStatus.GATEWAY_TIMEOUT) {
+      return new GatewayTimeoutException(description, { cause: error })
+    }
+    if (refusesConfiguration(code)) {
+      return new BadRequestException(description, { cause: error })
+    }
+    return new BadGatewayException(description, { cause: error })
   }
   // An HTTP error the engine chose to send keeps its status.
   if (typeof error?.status === 'number' && error.status >= 400 && error.status < 600) {
@@ -637,4 +645,13 @@ function deviceLookupFailure (error: any): HttpException {
     `The engine failed to list devices: ${String(error?.message ?? 'no reason given')}`,
     { cause: error }
   )
+}
+
+// A provider 4xx refuses the integration's own configuration — its credentials (a 401 once a password expires), its
+// settings — which the customer has to fix and a retry will not: a 400, as a provider's refusal of `POST /orders` is,
+// so it is not counted as an outage. A provider that timed out waiting for the request (408) or is rate limiting (429)
+// has refused nothing, and a retry can succeed, so those stay gateway errors with the provider's 5xx.
+function refusesConfiguration (code: unknown): boolean {
+  return typeof code === 'number' && code >= 400 && code < 500 &&
+    code !== HttpStatus.REQUEST_TIMEOUT && code !== HttpStatus.TOO_MANY_REQUESTS
 }

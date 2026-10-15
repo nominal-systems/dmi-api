@@ -349,7 +349,7 @@ describe('ProvidersService', () => {
   describe('getDevices()', () => {
     // An engine's error reply arrives as parsed JSON, not as the class it was thrown as.
     const overTheWire = (error: unknown): any => JSON.parse(JSON.stringify(error))
-    const failure = async (): Promise<HttpException> => await service.getDevices('idexx', 'integration-1').then(
+    const failure = async (providerId = 'idexx'): Promise<HttpException> => await service.getDevices(providerId, 'integration-1').then(
       () => { throw new Error('expected getDevices to fail') },
       (error) => error
     )
@@ -378,10 +378,7 @@ describe('ProvidersService', () => {
     })
 
     it('should answer 404 for an integration of another provider, without asking the engine', async () => {
-      const error = await service.getDevices('zoetis', 'integration-1').then(
-        () => { throw new Error('expected getDevices to fail') },
-        (error) => error
-      )
+      const error = await failure('zoetis')
 
       expect(error.getStatus()).toEqual(404)
       expect(error.message).toEqual('The integration was not found')
@@ -431,17 +428,65 @@ describe('ProvidersService', () => {
       )
     })
 
-    it('should fall back to the provider\'s message when it lists no errors', async () => {
+    it.each([
+      ['an empty error list, as the antech-v6 and wisdom engines send', []],
+      ['no error list', undefined]
+    ])('should fall back to the provider\'s message for %s', async (_, errors) => {
       clientProxyMock.send.mockReturnValue(throwError(() => overTheWire(new ProviderError({
         provider: 'antech-v6',
-        code: 401,
-        message: 'Unauthorized'
+        code: 500,
+        message: 'Failed to authenticate',
+        error: errors
       }))))
 
       const error = await failure()
 
       expect(error.getStatus()).toEqual(502)
-      expect(error.message).toEqual('The provider antech-v6 failed to list devices with status 401: Unauthorized')
+      expect(error.message).toEqual('The provider antech-v6 failed to list devices with status 500: Failed to authenticate')
+    })
+
+    it('should answer 400 when the provider refuses the integration\'s configuration', async () => {
+      // As the idexx engine reports a 401: the clinic's credentials are no longer valid.
+      clientProxyMock.send.mockReturnValue(throwError(() => overTheWire(new ProviderError({
+        provider: 'idexx',
+        code: 401,
+        message: 'Unauthorized',
+        error: ['A request to /api/v1/ivls/devices failed with 401 status code.']
+      }))))
+
+      const error = await failure()
+
+      expect(error.getStatus()).toEqual(400)
+      expect(error.message).toEqual(
+        'The provider idexx failed to list devices with status 401: A request to /api/v1/ivls/devices failed with 401 status code.'
+      )
+    })
+
+    it.each([408, 429])('should answer 502 for a provider %s, which a retry can get past', async (code) => {
+      clientProxyMock.send.mockReturnValue(throwError(() => overTheWire(new ProviderError({
+        provider: 'idexx',
+        code,
+        message: 'Try again later',
+        error: ['Try again later']
+      }))))
+
+      const error = await failure()
+
+      expect(error.getStatus()).toEqual(502)
+      expect(error.message).toEqual(`The provider idexx failed to list devices with status ${code}: Try again later`)
+    })
+
+    it('should leave the status out when the provider error carries none', async () => {
+      clientProxyMock.send.mockReturnValue(throwError(() => overTheWire(new ProviderError({
+        provider: 'idexx',
+        message: 'Service Unavailable',
+        error: ['The device registry is unavailable']
+      }))))
+
+      const error = await failure()
+
+      expect(error.getStatus()).toEqual(502)
+      expect(error.message).toEqual('The provider idexx failed to list devices: The device registry is unavailable')
     })
 
     it('should keep the status of an HTTP error the engine sent', async () => {
