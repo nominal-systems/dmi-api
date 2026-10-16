@@ -4,6 +4,7 @@ export interface AppConfig {
   nodeEnv: string
   baseUrl: string
   port: number
+  shutdownDelayMs: number
   secretKey: string
   admin: AdminConfig
   activeMQ: ActiveMQConfig

@@ -61,6 +61,8 @@ async function bootstrap (): Promise<void> {
 
   // Start the application
   const PORT = configService.get<number>('port', 3000)
+  // Drain in-flight requests on SIGTERM instead of dying mid-request
+  app.enableShutdownHooks()
   await app.startAllMicroservices()
   await app.listen(PORT, '0.0.0.0')
 }

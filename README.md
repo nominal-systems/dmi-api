@@ -106,6 +106,7 @@ The following environment variables are accepted to configure the application:
 | Name                        | Description                                                                                                    |
 |-----------------------------|----------------------------------------------------------------------------------------------------------------|
 | `PORT`                      | The port where the application will listen for HTTP connections.                                               |
+| `SHUTDOWN_DELAY_MS`         | Milliseconds to keep serving after `SIGTERM` before closing, so the pod can leave the Service endpoints. `0` disables it. Default `3000`. |
 | `BASE_URL`                  | Base URL used when generating redirect URIs.                                                                   |
 | `JWT_SECRET_KEY`            | Symmetric key for signing/verifying the [JWT](https://jwt.io/) token for authentication.                       |
 | `SECRET_KEY`                | The raw key used for AES-256 CTR database encryption.                                                          |
