@@ -16,6 +16,9 @@ import fastifyPassport from '@fastify/passport'
 import { AdminUserCredentialsDto } from '../../users/dtos/admin-user-credentials.dto'
 import { JwtService } from '@nestjs/jwt'
 
+// Stands in for the app's origin when BASE_URL is a path (empty in local and dev)
+const PATH_BASE_ORIGIN = 'http://app.invalid'
+
 @Controller('auth')
 export class AuthController {
   private readonly logger = new Logger(AuthController.name)
@@ -78,8 +81,21 @@ export class AuthController {
 
   /** Only URLs inside this app, so `/auth/login?redirect=` can't send a user elsewhere after logging in. */
   private safeRedirect (url: unknown): string | undefined {
-    if (typeof url !== 'string') return undefined
-    return url.startsWith(`${this.baseUrl}/`) && !/^\/[/\\]/.test(url) ? url : undefined
+    // A CR or LF would reach the Location header, and Node's refusal of it takes down the process
+    if (typeof url !== 'string' || /[\x00-\x1F\x7F]/.test(url)) return undefined
+
+    // Resolved as the browser will, so `//host`, `/\host` and dot segments are judged by where they land
+    const base = new URL(`${this.baseUrl}/`, PATH_BASE_ORIGIN)
+    let target: URL
+    try {
+      target = new URL(url, base)
+    } catch {
+      return undefined
+    }
+    if (target.origin !== base.origin || !target.pathname.startsWith(base.pathname)) return undefined
+
+    // Serialized by URL, so percent-encoded; a path base gives back a path
+    return base.origin === PATH_BASE_ORIGIN ? target.href.slice(PATH_BASE_ORIGIN.length) : target.href
   }
 
   @Get('login')

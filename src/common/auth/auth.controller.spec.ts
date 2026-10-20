@@ -154,17 +154,32 @@ describe('AuthController', () => {
   // Regression: dmi-api-admin-ui#138 — Nest sets the route's 200 before the handler, and a redirect without
   // a code kept it: a failed login answered an empty 200, a blank page.
   describe('explicit 302 redirects', () => {
-    it('sets 302 before passport runs, so its failureRedirect is not a 200', async () => {
+    it.each(['login', 'callback'] as const)('%s sets 302 before passport runs, so its failureRedirect is not a 200', async (route) => {
       const req: any = { query: { code: 'okta-code', state: 'unknown' }, session: {} }
       const res = createReply()
+      let codesBeforePassport: number[] = []
       ;(fastifyPassport.authenticate as jest.Mock).mockReturnValue(async () => {
-        expect(res.code).toHaveBeenCalledWith(302)
+        codesBeforePassport = res.code.mock.calls.map(([code]: [number]) => code)
         res.redirect('https://dmi.example.com/dmi/ui/login')
       })
 
+      await controller[route](req, res)
+
+      expect(codesBeforePassport).toEqual([302])
+      expect(res.sends).toBe(1)
+    })
+
+    // A CR or LF in the Location header makes Node throw from @fastify/session's onSend, which takes down the process
+    it('encodes the Okta error it forwards to the login page', async () => {
+      const req: any = { query: { error: 'access_denied\r\nX-Injected: 1', error_description: 'line\none' }, session: {} }
+      const res = createReply()
+
       await controller.callback(req, res)
 
-      expect(res.sends).toBe(1)
+      expect(res.redirect).toHaveBeenCalledWith(
+        'https://dmi.example.com/dmi/ui/login?error=access_denied%0D%0AX-Injected%3A%201&description=line%0Aone',
+        302,
+      )
     })
 
     it.each([
@@ -207,18 +222,61 @@ describe('AuthController', () => {
       expect(res.code).toHaveBeenCalledWith(302)
     })
 
+    const stateSentFor = async (redirect: string, target = controller): Promise<unknown> => {
+      const req: any = { query: { redirect }, session: {} }
+      ;(fastifyPassport.authenticate as jest.Mock).mockReturnValue(async () => {})
+
+      await target.login(req, createReply())
+
+      return (fastifyPassport.authenticate as jest.Mock).mock.calls[0][1].state
+    }
+
     it.each([
       'https://evil.example.com/dmi/ui',
       'https://dmi.example.com/dmiother',
       '//evil.example.com',
-    ])('ignores a redirect outside the app: %s', async (redirect) => {
-      const req: any = { query: { redirect }, session: {} }
-      const res = createReply()
-      ;(fastifyPassport.authenticate as jest.Mock).mockReturnValue(async () => {})
+      // Same origin, but outside the app once the browser resolves the dot segments
+      'https://dmi.example.com/dmi/../x',
+      'https://dmi.example.com/dmi/%2e%2e/x',
+      // A CR or LF in the Location header crashed the process after login
+      'https://dmi.example.com/dmi/ui\n',
+      'https://dmi.example.com/dmi/ui\r\nX-Injected: 1',
+    ])('ignores a redirect outside the app: %j', async (redirect) => {
+      expect(await stateSentFor(redirect)).toBeUndefined()
+    })
 
-      await controller.login(req, res)
+    it('keeps the query of a redirect inside the app, percent-encoded', async () => {
+      expect(await stateSentFor('https://dmi.example.com/dmi/ui/events?code=café €')).toBe(
+        'https://dmi.example.com/dmi/ui/events?code=caf%C3%A9%20%E2%82%AC',
+      )
+    })
 
-      expect(fastifyPassport.authenticate).toHaveBeenCalledWith('oidc', expect.objectContaining({ state: undefined }))
+    // Local and dev run with an empty BASE_URL, where redirects are paths
+    describe('with an empty base URL', () => {
+      let pathController: AuthController
+
+      beforeEach(() => {
+        const get = jest.fn((key: string, defaultValue?: any) =>
+          key === 'baseUrl' ? '' : (configServiceMock.get as jest.Mock)(key, defaultValue),
+        )
+        pathController = new AuthController({ get } as unknown as ConfigService, jwtServiceMock)
+      })
+
+      it('keeps a path inside the app', async () => {
+        expect(await stateSentFor('/ui/events?code=abc', pathController)).toBe('/ui/events?code=abc')
+      })
+
+      it.each([
+        '//evil.example.com',
+        '/\\evil.example.com',
+        // The browser strips the tab and reads `//evil.example.com`
+        '/\t/evil.example.com',
+        '/\n/x',
+        '/\r/x',
+        'https://evil.example.com/ui',
+      ])('ignores %j', async (redirect) => {
+        expect(await stateSentFor(redirect, pathController)).toBeUndefined()
+      })
     })
 
     it('keeps the other pending OIDC states when the login regenerates the session', async () => {

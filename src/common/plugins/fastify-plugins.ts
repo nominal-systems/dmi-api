@@ -1,5 +1,5 @@
 import { INestApplication } from '@nestjs/common'
-import { FastifyInstance } from 'fastify'
+import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import fastifyCookie from '@fastify/cookie'
 import fastifySession from '@fastify/session'
 import fastifyPassport from '@fastify/passport'
@@ -52,34 +52,7 @@ export async function registerFastifyPlugins (app: INestApplication): Promise<vo
 
   await fastify.register(fastifyPassport.initialize())
 
-  // Register a preHandler hook to polyfill Express-style methods on Fastify’s reply and request,
-  // ensure headers and .end() calls work, add a session.set helper, and populate req.user from passport
-  fastify.addHook('preHandler', async (req, reply) => {
-      const res = reply as any
-
-      if (typeof res.setHeader !== 'function') {
-        res.setHeader = reply.header.bind(reply)
-      }
-
-      if (typeof res.end !== 'function') {
-        res.end = function(data?: any) {
-          return reply.send(data)
-        }
-      }
-
-      if (req.session && typeof req.session.set !== 'function') {
-        (req.session as any).set = function(key: string, value: any) {
-          this[key] = value
-        }
-      }
-
-      if (req.session?.passport?.user?.profile?.username) {
-        req.user = req.session.passport.user
-      } else if (req.session?.passport?.profile?.username) {
-        req.user = req.session.passport
-      }
-    }
-  )
+  fastify.addHook('preHandler', passportCompatHook)
 
   fastifyPassport.registerUserSerializer(async (user: any) => {
     return user
@@ -88,4 +61,32 @@ export async function registerFastifyPlugins (app: INestApplication): Promise<vo
   fastifyPassport.registerUserDeserializer(async (user: any) => {
     return user
   })
+}
+
+// Polyfills Express-style methods on Fastify's reply and request, ensures headers and .end() calls work,
+// adds a session.set helper, and populates req.user from passport
+export async function passportCompatHook (req: FastifyRequest, reply: FastifyReply): Promise<void> {
+  const res = reply as any
+
+  if (typeof res.setHeader !== 'function') {
+    res.setHeader = reply.header.bind(reply)
+  }
+
+  if (typeof res.end !== 'function') {
+    res.end = function(data?: any) {
+      return reply.send(data)
+    }
+  }
+
+  if (req.session && typeof req.session.set !== 'function') {
+    (req.session as any).set = function(key: string, value: any) {
+      this[key] = value
+    }
+  }
+
+  if (req.session?.passport?.user?.profile?.username) {
+    req.user = req.session.passport.user
+  } else if (req.session?.passport?.profile?.username) {
+    req.user = req.session.passport
+  }
 }

@@ -11,6 +11,7 @@ import { AddressInfo } from 'net'
 import { AuthController } from '../../src/common/auth/auth.controller'
 import { OktaStrategy } from '../../src/common/auth/okta.strategy'
 import { OidcAuthGuard } from '../../src/common/guards/oidc-auth.guard'
+import { passportCompatHook } from '../../src/common/plugins/fastify-plugins'
 
 /**
  * Regression tests for dmi-api-admin-ui#138: a blank page after re-login through Okta.
@@ -130,10 +131,7 @@ describe('Okta login flow (e2e)', () => {
     await fastify.register(fastifyPassport.initialize() as any)
     fastifyPassport.registerUserSerializer(async (user: any) => user)
     fastifyPassport.registerUserDeserializer(async (user: any) => user)
-    // Restores req.user from the session, as registerFastifyPlugins does
-    fastify.addHook('preHandler', async (req: any) => {
-      if (req.session?.passport?.profile?.username) req.user = req.session.passport
-    })
+    fastify.addHook('preHandler', passportCompatHook as any)
 
     await app.init()
     await fastify.ready()
@@ -221,12 +219,26 @@ describe('Okta login flow (e2e)', () => {
     expect(res.headers.get('location')).toContain(`${BASE_URL}/ui/login?error=`)
   })
 
-  it('ignores a redirect outside the app', async () => {
-    const login = await startLogin('https://evil.example.com/')
+  it.each([
+    ['outside the app', 'https://evil.example.com/'],
+    // Written into Location, a CR or LF made Node throw from @fastify/session's onSend and took down the process
+    ['with a line break', `${BASE_URL}/ui\r\nX-Injected: 1`],
+  ])('ignores a redirect %s', async (_name, redirect) => {
+    const login = await startLogin(redirect)
 
     const res = await get(`/auth/callback?code=okta-code&state=${login.state}`, login.cookie)
 
     expect(res.status).toBe(302)
     expect(res.headers.get('location')).toBe(`${BASE_URL}/ui`)
+  })
+
+  // Same crash through Okta's `error`, and without a login: a cookie-less /auth/login hands out the session it needs
+  it('encodes a line break in the Okta error it forwards', async () => {
+    const { cookie } = await startLogin(`${BASE_URL}/ui`)
+
+    const res = await get('/auth/callback?error=access_denied%0D%0AX-Injected:%201', cookie)
+
+    expect(res.status).toBe(302)
+    expect(res.headers.get('location')).toBe(`${BASE_URL}/ui/login?error=access_denied%0D%0AX-Injected%3A%201&description=`)
   })
 })
