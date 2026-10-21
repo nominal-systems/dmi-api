@@ -879,33 +879,31 @@ describe('OrdersService', () => {
           expect.objectContaining({ id: ORDER_ID, status: OrderStatus.SUBMITTED }),
         )
         expect(eventsServiceMock.addEvent).toHaveBeenCalledTimes(3)
-        expect(eventsServiceMock.addEvent).toHaveBeenNthCalledWith(
-          1,
-          expect.objectContaining({
-            namespace: EventNamespace.ORDERS,
-            type: EventType.ORDER_CREATED,
-            providerId: 'idexx',
-            practiceId: 'practice-1',
-            integrationId: 'integration-idexx',
-            data: expect.objectContaining({ orderId: ORDER_ID, order }),
-          }),
-        )
-        expect(eventsServiceMock.addEvent).toHaveBeenNthCalledWith(
-          2,
-          expect.objectContaining({
-            namespace: EventNamespace.ORDERS,
-            type: EventType.ORDER_UPDATED,
-            data: expect.objectContaining({ orderId: ORDER_ID, status: OrderStatus.SUBMITTED }),
-          }),
-        )
-        expect(eventsServiceMock.addEvent).toHaveBeenNthCalledWith(
-          3,
-          expect.objectContaining({
-            namespace: EventNamespace.REPORTS,
-            type: EventType.REPORT_CREATED,
-            data: expect.objectContaining({ orderId: ORDER_ID, reportId: 'report-1' }),
-          }),
-        )
+        const base = {
+          providerId: 'idexx',
+          practiceId: 'practice-1',
+          integrationId: 'integration-idexx',
+          accessionId: REQUISITION_ID,
+        }
+        const practice = { id: 'practice-1' }
+        expect(eventsServiceMock.addEvent).toHaveBeenNthCalledWith(1, {
+          ...base,
+          namespace: EventNamespace.ORDERS,
+          type: EventType.ORDER_CREATED,
+          data: { practice, orderId: ORDER_ID, order },
+        })
+        expect(eventsServiceMock.addEvent).toHaveBeenNthCalledWith(2, {
+          ...base,
+          namespace: EventNamespace.ORDERS,
+          type: EventType.ORDER_UPDATED,
+          data: { practice, orderId: ORDER_ID, status: OrderStatus.SUBMITTED, order },
+        })
+        expect(eventsServiceMock.addEvent).toHaveBeenNthCalledWith(3, {
+          ...base,
+          namespace: EventNamespace.REPORTS,
+          type: EventType.REPORT_CREATED,
+          data: { practice, orderId: ORDER_ID, reportId: 'report-1', report: { id: 'report-1' } },
+        })
         expect(errorSpy).not.toHaveBeenCalled()
       })
     })
