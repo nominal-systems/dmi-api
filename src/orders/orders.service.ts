@@ -310,11 +310,7 @@ export class OrdersService {
     return order
   }
 
-  /* Records an order event without letting its failure fail the request. The order is the
-   * patient-facing outcome; an event that could not be stored, or was stored but not delivered
-   * (addEvent notifies the subscriptions after the insert), is logged with the order id. A 500
-   * here — before the engine call, or worse after the provider has accepted the order — would
-   * make the PIMS re-place an order the provider may already have. (#371) */
+  // Records an order event best-effort: a failure to store or deliver it is logged, not thrown
   private async addOrderEvent(
     integration: Integration,
     order: Order,

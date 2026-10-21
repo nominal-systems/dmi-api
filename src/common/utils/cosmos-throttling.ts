@@ -1,11 +1,4 @@
-/*
- * Azure Cosmos DB (API for MongoDB) answers a request that exceeds the provisioned throughput with
- * HTTP 429, which the driver surfaces as a server error with code 16500 and a message of the form
- * "Error=16500, RetryAfterMs=14, Details='Response status code does not indicate success:
- * TooManyRequests (429); ...'". Neither the driver nor the server retries it. These helpers
- * recognise that error and retry an operation a bounded number of times, waiting as long as the
- * server asks.
- */
+// Cosmos DB answers a throttled request with error code 16500 (HTTP 429): recognise and retry it
 
 export const COSMOS_THROTTLED_ERROR_CODE = 16500
 
@@ -68,12 +61,7 @@ async function sleepFor (ms: number): Promise<void> {
   await new Promise<void>((resolve) => setTimeout(resolve, ms))
 }
 
-/*
- * Runs the operation, and runs it again while it fails with a throttled error, up to `attempts`
- * calls in all. Each wait is the server's RetryAfterMs hint (or `fallbackDelayMs` without one),
- * never less than `minDelayMs`. A retry whose wait would take the total time slept past
- * `budgetMs` is not attempted. Any other error, and the last throttled one, is rethrown as is.
- */
+// Retries the operation while it is throttled, up to the option limits; other errors are rethrown
 export async function retryWhenThrottled<T> (
   operation: () => Promise<T>,
   options: ThrottleRetryOptions = {}
