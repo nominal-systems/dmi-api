@@ -46,6 +46,7 @@ import {
   ExternalResultEventData,
 } from '../common/typings/internal-event-data.interface'
 import { NamedLockService, orderLockKey } from '../common/services/named-lock.service'
+import { isThrottledError } from '../common/utils/cosmos-throttling'
 
 interface OrderTestCancelOrAddParams {
   orderId: string
@@ -363,8 +364,9 @@ export class OrdersService {
     try {
       await this.eventsService.addEvent(eventDto)
     } catch (error) {
+      const cause = isThrottledError(error) ? 'still throttled after retries' : 'unexpected error'
       this.logger.error(
-        `Could not record or deliver the '${eventDto.type}' event for order ${orderId}: ${error?.message}`,
+        `Could not record or deliver the '${eventDto.type}' event for order ${orderId} (accession ${eventDto.accessionId}, integration ${eventDto.integrationId}), ${cause}: ${error?.message}`,
         error?.stack,
       )
     }

@@ -695,6 +695,7 @@ describe('OrdersService', () => {
         fs.readFileSync(path.join(__dirname, '..', '..', 'test', 'orders', 'order.json'), 'utf8'),
       )
       const ORDER_ID = 'order-371'
+      const REQUISITION_ID = 'REQ-371'
       // A Cosmos DB 429 as the driver surfaces it, after EventsService has given up retrying
       const throttledError = (): Error =>
         Object.assign(
@@ -718,6 +719,7 @@ describe('OrdersService', () => {
       const placeOrder = async (): Promise<Order> =>
         await ordersService.createOrder(organization, {
           integrationId: 'integration-idexx',
+          requisitionId: REQUISITION_ID,
           ...exampleOrder,
         } as CreateOrderDto)
       const recordedTypes = (): string[] =>
@@ -779,8 +781,29 @@ describe('OrdersService', () => {
         expect(errorSpy).toHaveBeenCalledTimes(1)
         expect(errorSpy).toHaveBeenCalledWith(
           expect.stringContaining(
-            `Could not record or deliver the '${EventType.ORDER_CREATED}' event for order ${ORDER_ID}: Error=16500`,
+            `Could not record or deliver the '${EventType.ORDER_CREATED}' event for order ${ORDER_ID} (accession ${REQUISITION_ID}, integration integration-idexx), still throttled after retries: Error=16500`,
           ),
+          expect.any(String),
+        )
+      })
+
+      it('still sends the order to the provider when order:created fails with an unexpected error', async () => {
+        eventsServiceMock.addEvent.mockRejectedValueOnce(new Error('validation failed'))
+        customPromise.toPromise.mockResolvedValueOnce({ status: OrderStatus.SUBMITTED })
+
+        const order = await placeOrder()
+
+        expect(order.status).toBe(OrderStatus.SUBMITTED)
+        expect(clientMock.send).toHaveBeenCalledTimes(1)
+        expect(savedStatuses).toEqual([OrderStatus.ACCEPTED, OrderStatus.SUBMITTED])
+        expect(recordedTypes()).toEqual([
+          EventType.ORDER_CREATED,
+          EventType.ORDER_UPDATED,
+          EventType.REPORT_CREATED,
+        ])
+        expect(errorSpy).toHaveBeenCalledTimes(1)
+        expect(errorSpy).toHaveBeenCalledWith(
+          `Could not record or deliver the '${EventType.ORDER_CREATED}' event for order ${ORDER_ID} (accession ${REQUISITION_ID}, integration integration-idexx), unexpected error: validation failed`,
           expect.any(String),
         )
       })
