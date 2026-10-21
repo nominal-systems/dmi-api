@@ -10,6 +10,7 @@ import { ClientProxy } from '@nestjs/microservices'
 import { InjectRepository } from '@nestjs/typeorm'
 import { EntityManager, FindManyOptions, In, Repository } from 'typeorm'
 import { IntegrationsService } from '../integrations/integrations.service'
+import { Integration } from '../integrations/entities/integration.entity'
 import { CreateOrderDto } from './dtos/create-order.dto'
 import { Order } from './entities/order.entity'
 import { FindOneOfTypeOptions, toFindOneOptions } from '../common/typings/find-one-of-type-options.interface'
@@ -17,6 +18,8 @@ import { Organization } from '../organizations/entities/organization.entity'
 import { ConfigService } from '@nestjs/config'
 import ieMessageBuilder from '../common/utils/ieMessageBuilder'
 import { EventsService } from '../events/services/events.service'
+import { AddEventDto } from '../events/dto/add-event.dto'
+import { EventData } from '../events/interfaces/event-data.interface'
 import { OrderSearchQueryParams } from './dtos/order-search-queryparams.dto'
 import { Test } from './entities/test.entity'
 import {
@@ -45,6 +48,12 @@ import {
   ExternalResultEventData,
 } from '../common/typings/internal-event-data.interface'
 import { NamedLockService, orderLockKey } from '../common/services/named-lock.service'
+import { isThrottledError } from '../common/utils/cosmos-throttling'
+
+// Each EventData payload without the practice and order id, which addOrderEvent fills in
+type OrderEventExtraData<T extends EventData = EventData> = T extends unknown
+  ? Omit<T, 'practice' | 'orderId'>
+  : never
 
 interface OrderTestCancelOrAddParams {
   orderId: string
@@ -242,18 +251,8 @@ export class OrdersService {
     }
     // Save order
     const newOrder = await this.ordersRepository.save(order)
-    await this.eventsService.addEvent({
-      namespace: EventNamespace.ORDERS,
-      type: EventType.ORDER_CREATED,
-      providerId: integration.providerConfiguration.providerId,
-      practiceId: integration.practice.id,
-      integrationId: integration.id,
-      accessionId: order.requisitionId,
-      data: {
-        practice: integration.practice,
-        orderId: order.id,
-        order: newOrder,
-      },
+    await this.addOrderEvent(integration, order, EventNamespace.ORDERS, EventType.ORDER_CREATED, {
+      order: newOrder,
     })
     try {
       if (this.nodeEnv === 'seed') return order
@@ -282,19 +281,9 @@ export class OrdersService {
       this.logger.error(`Error sending order to ${providerId} provider`)
       order.status = OrderStatus.ERROR
       await this.ordersRepository.save(order)
-      await this.eventsService.addEvent({
-        namespace: EventNamespace.ORDERS,
-        type: EventType.ORDER_UPDATED,
-        providerId: integration.providerConfiguration.providerId,
-        practiceId: integration.practice.id,
-        integrationId: integration.id,
-        accessionId: order.requisitionId,
-        data: {
-          practice: integration.practice,
-          orderId: order.id,
-          status: order.status,
-          order: order,
-        },
+      await this.addOrderEvent(integration, order, EventNamespace.ORDERS, EventType.ORDER_UPDATED, {
+        status: order.status,
+        order,
       })
       if (error.name === ProviderError.name) {
         error.response.message = `Error while trying to place an order with ${providerId}`
@@ -306,39 +295,47 @@ export class OrdersService {
 
     // Update order
     await this.ordersRepository.save(order)
-    await this.eventsService.addEvent({
-      namespace: EventNamespace.ORDERS,
-      type: EventType.ORDER_UPDATED,
-      providerId: integration.providerConfiguration.providerId,
-      practiceId: integration.practice.id,
-      integrationId: integration.id,
-      accessionId: order.requisitionId,
-      data: {
-        practice: integration.practice,
-        orderId: order.id,
-        status: order.status,
-        order: order,
-      },
+    await this.addOrderEvent(integration, order, EventNamespace.ORDERS, EventType.ORDER_UPDATED, {
+      status: order.status,
+      order,
     })
 
     // Register report
     const report = await this.reportsService.registerForOrder(order)
-    await this.eventsService.addEvent({
-      namespace: EventNamespace.REPORTS,
-      type: EventType.REPORT_CREATED,
+    await this.addOrderEvent(integration, order, EventNamespace.REPORTS, EventType.REPORT_CREATED, {
+      reportId: report.id,
+      report,
+    })
+
+    return order
+  }
+
+  // Records an order event best-effort: a failure to store or deliver it is logged, not thrown
+  private async addOrderEvent(
+    integration: Integration,
+    order: Order,
+    namespace: EventNamespace,
+    type: EventType,
+    extraData: OrderEventExtraData,
+  ): Promise<void> {
+    const eventDto: AddEventDto = {
+      namespace,
+      type,
       providerId: integration.providerConfiguration.providerId,
       practiceId: integration.practice.id,
       integrationId: integration.id,
       accessionId: order.requisitionId,
-      data: {
-        practice: integration.practice,
-        orderId: order.id,
-        reportId: report.id,
-        report: report,
-      },
-    })
-
-    return order
+      data: { practice: integration.practice, orderId: order.id, ...extraData },
+    }
+    try {
+      await this.eventsService.addEvent(eventDto)
+    } catch (error) {
+      const cause = isThrottledError(error) ? 'still throttled after retries' : 'unexpected error'
+      this.logger.error(
+        `Could not record or deliver the '${type}' event for order ${order.id} (accession ${order.requisitionId}, integration ${integration.id}), ${cause}: ${error?.message}`,
+        error?.stack,
+      )
+    }
   }
 
   async cancelOrder(organization: Organization, orderId: string): Promise<void> {
