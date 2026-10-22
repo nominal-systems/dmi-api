@@ -5,6 +5,7 @@ export interface AppConfig {
   baseUrl: string
   port: number
   shutdownDelayMs: number
+  shutdownTimeoutMs: number
   secretKey: string
   admin: AdminConfig
   activeMQ: ActiveMQConfig
