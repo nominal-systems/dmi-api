@@ -20,6 +20,7 @@ import { AdminModule } from './admin/admin.module'
 import { HealthModule } from './health/health.module'
 import { AllExceptionsFilter } from './common/interceptors/all-exceptions.filter'
 import { ResultsModule } from './results/results.module'
+import { ShutdownDelayService } from './common/services/shutdown-delay.service'
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { ResultsModule } from './results/results.module'
     FrontendController
   ],
   providers: [
+    ShutdownDelayService,
     {
       provide: APP_INTERCEPTOR,
       useClass: RpcExceptionInterceptor

@@ -61,6 +61,9 @@ async function bootstrap (): Promise<void> {
 
   // Start the application
   const PORT = configService.get<number>('port', 3000)
+  // Drain in-flight requests on SIGTERM instead of dying mid-request. Only these two signals:
+  // a JS listener on SIGSEGV and the like can leave a crashed process hanging.
+  app.enableShutdownHooks(['SIGTERM', 'SIGINT'])
   await app.startAllMicroservices()
   await app.listen(PORT, '0.0.0.0')
 }
