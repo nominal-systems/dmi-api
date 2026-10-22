@@ -3,4 +3,5 @@ export interface TransactionLog {
   type: 'order' | 'event' | 'external-request' | 'internal-event',
   id: string
   data: any
+  reportId?: string
 }

@@ -1,3 +1,7 @@
+import { SubscriptionDeliveryResult } from '../events/interfaces/subscription-delivery-result.interface'
+import { describeError } from '../common/utils/describe-error'
+import { DeliveryResponse } from './interfaces/republish-report-response.interface'
+
 export function getStatusRanges (statusCodes: string[]): Array<[number, number]> {
   const statusMap: { [key: string]: [number, number] } = {
     '2xx': [200, 299],
@@ -26,4 +30,17 @@ export function getStatusRanges (statusCodes: string[]): Array<[number, number]>
   }
 
   return mergeRanges(ranges)
+}
+
+// Okta session user, else the jwt/Okta bearer subject ("Admin" with the jwt strategy)
+export function getRequestedBy (user: any): string {
+  return user?.profile?.username ?? user?.sub ?? 'unknown'
+}
+
+// The error stack stays in the server log
+export function toDeliveryResponse (delivery: SubscriptionDeliveryResult): DeliveryResponse {
+  if (delivery.status === 'error') {
+    return { subscriptionId: delivery.subscriptionId, status: 'error', message: describeError(delivery.error) }
+  }
+  return delivery
 }

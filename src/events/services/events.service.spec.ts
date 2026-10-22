@@ -80,7 +80,7 @@ describe('EventsService', () => {
       expect(eventModelMock.create).toHaveBeenCalledTimes(1)
       expect(eventModelMock.create).toHaveBeenCalledWith(eventDto)
       expect(eventSubscriptionServiceMock.notifySubscriptions).toHaveBeenCalledTimes(1)
-      expect(eventSubscriptionServiceMock.notifySubscriptions).toHaveBeenCalledWith(event)
+      expect(eventSubscriptionServiceMock.notifySubscriptions).toHaveBeenCalledWith(event, undefined)
       expect(warnSpy).not.toHaveBeenCalled()
     })
 
@@ -94,7 +94,7 @@ describe('EventsService', () => {
 
       expect(eventModelMock.create).toHaveBeenCalledTimes(2)
       expect(eventSubscriptionServiceMock.notifySubscriptions).toHaveBeenCalledTimes(1)
-      expect(eventSubscriptionServiceMock.notifySubscriptions).toHaveBeenCalledWith(event)
+      expect(eventSubscriptionServiceMock.notifySubscriptions).toHaveBeenCalledWith(event, undefined)
       expect(warnSpy).toHaveBeenCalledTimes(1)
       expect(warnSpy.mock.calls[0][0]).toContain(`Write of '${EventType.ORDER_CREATED}' event throttled by the database (attempt 1, retrying in 100 ms)`)
       expect(warnSpy.mock.calls[0][0]).toContain('TooManyRequests (429)')
@@ -191,6 +191,42 @@ describe('EventsService', () => {
       expect(result.total).toBe(3)
       expect(result.data).toHaveLength(2)
       expect(result.data[0]).toMatchObject({ _id: 'e1', practiceId: 'practice-a' })
+    })
+  })
+
+  describe('publishEvent()', () => {
+    it('should persist the event, notify subscriptions and return both', async () => {
+      const dto = { type: 'report:updated', integrationId: 'integration-1' } as AddEventDto
+      const created = { _id: 'event-1', seq: 7, ...dto }
+      const deliveries = [{ subscriptionId: 'subscription-1', status: 'sent' }]
+      eventModelMock.create.mockResolvedValueOnce(created)
+      eventSubscriptionServiceMock.notifySubscriptions.mockResolvedValueOnce(deliveries)
+
+      await expect(service.publishEvent(dto)).resolves.toEqual({ event: created, deliveries })
+      expect(eventModelMock.create).toHaveBeenCalledWith(dto)
+      expect(eventSubscriptionServiceMock.notifySubscriptions).toHaveBeenCalledWith(created, undefined)
+    })
+
+    it('should pass the delivery options on to the subscriptions', async () => {
+      const created = { _id: 'event-1', seq: 7 }
+      const deliveryOptions = { retryOptions: { maxRetries: 1 }, timeoutInMs: 20000 }
+      eventModelMock.create.mockResolvedValueOnce(created)
+      eventSubscriptionServiceMock.notifySubscriptions.mockResolvedValueOnce([])
+
+      await service.publishEvent({ type: 'report:updated' } as AddEventDto, deliveryOptions)
+
+      expect(eventSubscriptionServiceMock.notifySubscriptions).toHaveBeenCalledWith(created, deliveryOptions)
+    })
+  })
+
+  describe('addEvent()', () => {
+    it('should still return only the persisted event', async () => {
+      const created = { _id: 'event-1', seq: 7 }
+      eventModelMock.create.mockResolvedValueOnce(created)
+      eventSubscriptionServiceMock.notifySubscriptions.mockResolvedValueOnce([])
+
+      await expect(service.addEvent({ type: 'order:created' } as AddEventDto)).resolves.toBe(created)
+      expect(eventSubscriptionServiceMock.notifySubscriptions).toHaveBeenCalledWith(created, undefined)
     })
   })
 })

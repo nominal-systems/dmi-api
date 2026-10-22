@@ -11,6 +11,8 @@ import { EventSubscriptionService } from './event-subscription.service'
 import { stringifyId } from '../../common/utils/shared.utils'
 import { PaginationDto } from '../../common/dtos/pagination.dto'
 import { PracticesService } from '../../practices/practices.service'
+import { PublishedEvent } from '../interfaces/published-event.interface'
+import { DeliveryOptions } from '../interfaces/delivery-options.interface'
 import { retryWhenThrottled } from '../../common/utils/cosmos-throttling'
 
 @Injectable()
@@ -69,6 +71,14 @@ export class EventsService implements OnModuleInit {
   async addEvent (
     eventDto: AddEventDto
   ): Promise<Event> {
+    const { event } = await this.publishEvent(eventDto)
+    return event
+  }
+
+  async publishEvent (
+    eventDto: AddEventDto,
+    deliveryOptions?: DeliveryOptions
+  ): Promise<PublishedEvent> {
     this.logger.debug(`Event: '${eventDto.type}'`)
     // A throttled insert (Cosmos DB 429) is retried within a bounded policy; anything else, or a
     // throttle that outlasts the policy, still reaches the caller.
@@ -79,8 +89,8 @@ export class EventsService implements OnModuleInit {
         )
       }
     })
-    await this.eventSubscriptionService.notifySubscriptions(event)
-    return event
+    const deliveries = await this.eventSubscriptionService.notifySubscriptions(event, deliveryOptions)
+    return { event, deliveries }
   }
 
   async getEventsForOrganization (
