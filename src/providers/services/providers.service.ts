@@ -1,4 +1,15 @@
-import { BadRequestException, Inject, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common'
+import {
+  BadGatewayException,
+  BadRequestException,
+  GatewayTimeoutException,
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+  OnModuleInit
+} from '@nestjs/common'
 import { ClientProxy } from '@nestjs/microservices'
 import { IntegrationsService } from '../../integrations/integrations.service'
 import ieMessageBuilder from '../../common/utils/ieMessageBuilder'
@@ -7,6 +18,7 @@ import {
   Breed,
   Device,
   Operation,
+  ProviderError,
   ReferenceDataResponse,
   Resource,
   Service,
@@ -185,7 +197,7 @@ export class ProvidersService implements OnModuleInit {
     integrationId: string
   ): Promise<Device[]> {
     const {
-      providerConfiguration: { configurationOptions },
+      providerConfiguration: { providerId: integrationProviderId, configurationOptions },
       integrationOptions
     } = await this.integrationsService.findOne({
       id: integrationId,
@@ -193,6 +205,11 @@ export class ProvidersService implements OnModuleInit {
         relations: ['providerConfiguration']
       }
     })
+    // An integration of another provider is not found here either: asked of the engine in the path, it would
+    // be sent this integration's credentials, and an unknown provider would only time out (#364).
+    if (integrationProviderId !== providerId) {
+      throw new NotFoundException('The integration was not found')
+    }
 
     const { message, messagePattern } = ieMessageBuilder(providerId, {
       resource: Resource.Devices,
@@ -208,7 +225,7 @@ export class ProvidersService implements OnModuleInit {
       return await this.client.send(messagePattern, message).toPromise()
     } catch (error) {
       this.logger.error(error)
-      throw new NotFoundException(error)
+      throw deviceLookupFailure(error)
     }
   }
 
@@ -582,4 +599,59 @@ export class ProvidersService implements OnModuleInit {
     }
     return Array.from(byBucket.values())
   }
+}
+
+// What a failed device lookup tells the caller (#364). Only the integration lookup before the round trip may
+// answer 404: everything past it used to be reported as "not found" too, so an engine that timed out or a
+// provider that failed looked like a missing integration, and alerting that counts 5xx saw nothing.
+function deviceLookupFailure (error: any): HttpException {
+  // TimeoutClientMqtt's 504: raised in this process, so it is an HttpException already.
+  if (error instanceof HttpException) {
+    return error
+  }
+  // An engine's reply arrives as parsed JSON, so an Error instance was raised here, before any engine answered:
+  // the broker connection, most likely.
+  if (error instanceof Error) {
+    return new BadGatewayException(`The request to the engine failed: ${error.message}`, { cause: error })
+  }
+  // The engine reached the provider and the provider failed. One that timed out on the engine stays a timeout.
+  if (error?.name === ProviderError.name && error.response != null) {
+    const { provider, code, message, error: errors } = error.response
+    const listed = (Array.isArray(errors) ? errors : [errors])
+      .filter((detail) => detail != null && detail !== '')
+      .map((detail) => typeof detail === 'string' ? detail : JSON.stringify(detail))
+      .join('; ')
+    // An empty error list falls back to the provider's message, as a missing one does: the antech-v6 and wisdom
+    // engines send `error: []` when they have nothing to list.
+    const details = listed !== '' ? listed : String(message ?? '')
+    const description = `The provider ${String(provider)} failed to list devices` +
+      (code != null ? ` with status ${String(code)}` : '') +
+      (details !== '' ? `: ${details}` : '')
+    if (code === HttpStatus.GATEWAY_TIMEOUT) {
+      return new GatewayTimeoutException(description, { cause: error })
+    }
+    if (refusesConfiguration(code)) {
+      return new BadRequestException(description, { cause: error })
+    }
+    return new BadGatewayException(description, { cause: error })
+  }
+  // An HTTP error the engine chose to send keeps its status.
+  if (typeof error?.status === 'number' && error.status >= 400 && error.status < 600) {
+    return new HttpException(error.response ?? String(error.message), error.status, { cause: error })
+  }
+  // Anything else is the engine failing. A handler that throws a plain Error replies with Nest's
+  // `{ status: 'error', message: 'Internal server error' }`.
+  return new BadGatewayException(
+    `The engine failed to list devices: ${String(error?.message ?? 'no reason given')}`,
+    { cause: error }
+  )
+}
+
+// A provider 4xx refuses the integration's own configuration — its credentials (a 401 once a password expires), its
+// settings — which the customer has to fix and a retry will not: a 400, as a provider's refusal of `POST /orders` is,
+// so it is not counted as an outage. A provider that timed out waiting for the request (408) or is rate limiting (429)
+// has refused nothing, and a retry can succeed, so those stay gateway errors with the provider's 5xx.
+function refusesConfiguration (code: unknown): boolean {
+  return typeof code === 'number' && code >= 400 && code < 500 &&
+    code !== HttpStatus.REQUEST_TIMEOUT && code !== HttpStatus.TOO_MANY_REQUESTS
 }
