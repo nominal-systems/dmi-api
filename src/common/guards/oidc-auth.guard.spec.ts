@@ -1,46 +1,25 @@
-import { ExecutionContext } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
+import { ExecutionContext, UnauthorizedException } from '@nestjs/common'
 import { OidcAuthGuard } from './oidc-auth.guard'
 
 describe('OidcAuthGuard', () => {
-  let guard: OidcAuthGuard
-  const configService = {} as ConfigService
-  const baseProto = Object.getPrototypeOf(OidcAuthGuard.prototype)
+  const guard = new OidcAuthGuard()
 
-  beforeEach(() => {
-    guard = new OidcAuthGuard(configService)
-    jest.clearAllMocks()
-  })
-
-  const createContext = (url: string, authenticated = false): ExecutionContext =>
+  const createContext = (authenticated: boolean): ExecutionContext =>
     ({
       switchToHttp: () => ({
         getRequest: () => ({
-          url,
+          url: '/admin/providers',
           isAuthenticated: () => authenticated,
         }),
       }),
     } as unknown as ExecutionContext)
 
-  it('returns true for auth paths', async () => {
-    const spy = jest.spyOn(baseProto, 'canActivate')
-    const result = await guard.canActivate(createContext('/auth/login'))
-    expect(result).toBe(true)
-    expect(spy).not.toHaveBeenCalled()
+  it('returns true for authenticated requests', () => {
+    expect(guard.canActivate(createContext(true))).toBe(true)
   })
 
-  it('returns true for authenticated requests', async () => {
-    const spy = jest.spyOn(baseProto, 'canActivate')
-    const result = await guard.canActivate(createContext('/admin', true))
-    expect(result).toBe(true)
-    expect(spy).not.toHaveBeenCalled()
-  })
-
-  it('executes strategy for unauthenticated requests', async () => {
-    const ctx = createContext('/admin')
-    const spy = jest.spyOn(baseProto, 'canActivate').mockResolvedValue(true as any)
-    const result = await guard.canActivate(ctx)
-    expect(spy).toHaveBeenCalledWith(ctx)
-    expect(result).toBe(true)
+  // Regression: dmi-api-admin-ui#138 — starting the OIDC flow here overwrote the state of the login in progress
+  it('answers 401 for unauthenticated requests instead of starting a login', () => {
+    expect(() => guard.canActivate(createContext(false))).toThrow(UnauthorizedException)
   })
 })

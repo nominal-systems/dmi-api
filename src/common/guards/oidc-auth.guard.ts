@@ -1,23 +1,17 @@
-import { ExecutionContext, Injectable } from '@nestjs/common'
-import { AuthGuard } from '@nestjs/passport'
-import { ConfigService } from '@nestjs/config'
+import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common'
 
+/**
+ * Admin API guard for the Okta session. Answers 401 instead of starting a login: every flow started from an API
+ * request overwrote the OIDC state of the login in progress. Clients restart the login with a browser navigation
+ * (`/ui` → `/auth/login`).
+ */
 @Injectable()
-export class OidcAuthGuard extends AuthGuard('oidc') {
-  constructor (private readonly configService: ConfigService) {
-    super()
-  }
-
-  async canActivate (context: ExecutionContext): Promise<boolean> {
+export class OidcAuthGuard implements CanActivate {
+  canActivate (context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest()
-
-    // Allow requests that are already authenticated or part of the auth flow
-    const isAuthPath: boolean = request.url.startsWith('/auth/')
-    if (isAuthPath || request.isAuthenticated()) {
+    if (request.isAuthenticated()) {
       return true
     }
-
-    // Begin Passport authentication flow when unauthenticated
-    return super.canActivate(context) as Promise<boolean>
+    throw new UnauthorizedException()
   }
 }
