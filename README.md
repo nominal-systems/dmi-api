@@ -151,7 +151,7 @@ Feature flags resolve through one of two providers, selected at startup by the `
 
 ## Admin UI
 
-The Admin UI is served from `/ui` and every route is protected by `FrontendAuthGuard`, which initiates the login flow for unauthenticated users. API clients should redirect the browser to `/auth/login` whenever a `401` or `403` response is encountered to restart authentication.
+The Admin UI is served from `/ui` and every route is protected by `FrontendAuthGuard`, which initiates the login flow for unauthenticated users (`/auth/login?redirect=<page>`). The admin API (`/admin/*`) never starts a login: without a session it answers `401`, and the client reloads the page so `FrontendAuthGuard` restarts authentication and brings the user back to it. Each login keeps its own OIDC state in the session, so neither an admin API request nor another tab's login during the Okta round trip breaks it. Requests that write the session at the same moment can still drop a state, since the session is saved whole; that login lands on `/ui/login`, where the user can retry.
 
 ## Application
 
