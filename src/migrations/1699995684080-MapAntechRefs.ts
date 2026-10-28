@@ -347038,7 +347038,46 @@ const mappings = [
     ]
 ]
 
+// Antech species whose dmi counterpart in the species lines would be wrong for the breeds filed
+// under them, so those breeds get no species rather than a wrong one: "Other species" (49) pairs
+// with "Other Carnivores", wrong for most of its 5,955 (primates, cetaceans, bats, giraffes, …);
+// "Camelid" (63) pairs with "Alpacas and Vicunas", wrong for 8 of its 12 (camels, llamas, a
+// guanaco). "Lagomorph" (40) is kept under "Rabbit" — coarse for its hares and pikas, not another
+// family — as are the polecats under "Ferret" (8).
+const ANTECH_SPECIES_WITHOUT_DMI_SPECIES = new Set(['49', '63'])
+
+// Antech species code -> dmi species code, read off the species lines above.
+const dmiSpeciesByAntechSpecies = new Map<string, string>()
+for (const [, APICode, code, , type] of mappings) {
+    if (type === 'species' && APICode && code && !ANTECH_SPECIES_WITHOUT_DMI_SPECIES.has(code)) {
+        dmiSpeciesByAntechSpecies.set(code, APICode)
+    }
+}
+
+// The dmi species (a `ref` code) a breed line's Antech species code stands for, or null.
+function mapSpecies (species: string | number | null): string | null {
+    if (species === null) return null
+    return dmiSpeciesByAntechSpecies.get(String(species)) ?? null
+}
+
 export class MapAntechRefs1699995684080 implements MigrationInterface {
+
+    /**
+     * Every breed ref this migration creates, by code, with the species `up()` gives it: the same
+     * walk over the mapping lines, first line per code wins. A static method rather than a
+     * module-level export because TypeORM loads every function exported from a file in the
+     * migrations directory as a migration.
+     */
+    public static seededBreedSpecies (): Map<string, string | null> {
+        const seen = new Set<string>(refs.map(ref => ref.code))
+        const breeds = new Map<string, string | null>()
+        for (const [, APICode, , species] of mappings) {
+            if (!APICode || seen.has(APICode)) continue
+            seen.add(APICode)
+            breeds.set(APICode, mapSpecies(species))
+        }
+        return breeds
+    }
 
     public async up (queryRunner: QueryRunner): Promise<void> {
         let ref
@@ -347084,14 +347123,6 @@ export class MapAntechRefs1699995684080 implements MigrationInterface {
                 INSERT INTO provider_ref (name, code, species, type, provider, refId)
                 VALUES (?, ?, ?, ?, ?, ?)`, [name, code, species, type, trimmedProvider, ref])
                 seenProviderRefs.add(providerRefKey)
-            }
-        }
-
-        function mapSpecies (species: string | number | null) {
-            for (const ref of refs) {
-                if (ref.name === species) {
-                    return ref.code
-                }
             }
         }
     }
