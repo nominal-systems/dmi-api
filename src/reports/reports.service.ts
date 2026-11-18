@@ -68,35 +68,15 @@ function isChanged<T extends object> (
   return fields.some(field => entity[field] !== undefined && !isSameValue(before[field], entity[field]))
 }
 
-// Columns that cannot be null: a delivery without a value for one leaves it as stored
-const NOT_NULL_FIELDS: ReadonlySet<string> = new Set(['status'])
-
-interface ClearedField {
-  entity: Record<string, unknown>
-  field: string
-  // The merge deleted the property rather than assigning undefined to it
-  deleted: boolean
-}
-
-// Where the merge cleared a stored value, by deleting the property or assigning undefined to it,
-// set it to null: TypeORM does not write undefined, and an undefined value is no change. As null
-// the clearing is a change and is stored, so the next delivery without the value changes nothing.
-function nullClearedFields<T extends object> (
+// Whether the merge deleted a stored interpretation because the delivery has none: the one value
+// it clears on purpose. Other values a delivery omits are assigned undefined, which TypeORM does
+// not write, so they stay as stored and are no change.
+function isWithdrawnInterpretation (
   stored: Map<object, object>,
-  entity: T,
-  fields: Array<keyof T>
-): ClearedField[] {
-  const before = stored.get(entity) as Record<string, unknown> | undefined
-  if (before === undefined) return []
-  const values = entity as Record<string, unknown>
-  const cleared: ClearedField[] = []
-  for (const field of fields as string[]) {
-    if (values[field] === undefined && !isNil(before[field]) && !NOT_NULL_FIELDS.has(field)) {
-      cleared.push({ entity: values, field, deleted: !(field in values) })
-      values[field] = null
-    }
-  }
-  return cleared
+  observation: Observation
+): boolean {
+  const before = stored.get(observation) as Observation | undefined
+  return before !== undefined && observation.interpretation === undefined && !isNil(before.interpretation)
 }
 
 function pdfContent ({ contentType, data }: AttachmentEntity): Partial<AttachmentEntity> {
@@ -539,10 +519,14 @@ export class ReportsService {
       }
     }
 
-    const cleared = report.testResultsSet.flatMap(testResult => [
-      ...nullClearedFields(stored, testResult, TEST_RESULT_DELIVERED_FIELDS),
-      ...(testResult.observations ?? []).flatMap(observation => nullClearedFields(stored, observation, OBSERVATION_DELIVERED_FIELDS))
-    ])
+    // TypeORM would not write the deleted interpretation, so write null: withdrawing it is then a
+    // change and is stored, and the next delivery without it changes nothing
+    const withdrawn = report.testResultsSet
+      .flatMap(testResult => testResult.observations ?? [])
+      .filter(observation => isWithdrawnInterpretation(stored, observation))
+    for (const observation of withdrawn) {
+      Object.assign(observation, { interpretation: null })
+    }
     const testResultsChanged = report.testResultsSet.some(testResult =>
       isChanged(stored, testResult, TEST_RESULT_DELIVERED_FIELDS) ||
       (testResult.observations ?? []).some(observation => isChanged(stored, observation, OBSERVATION_DELIVERED_FIELDS))
@@ -553,13 +537,9 @@ export class ReportsService {
       report.status = resultStatusMapper(reportStatus)
       await this.reportsRepository.save(report)
     }
-    // Stored as null, a cleared value is left out of the report again, as the merge left it
-    for (const { entity, field, deleted } of cleared) {
-      if (deleted) {
-        delete entity[field]
-      } else {
-        entity[field] = undefined
-      }
+    // Stored as null, a withdrawn interpretation is left out of the report again, as the merge left it
+    for (const observation of withdrawn) {
+      delete observation.interpretation
     }
 
     return updatePerformed

@@ -1964,8 +1964,45 @@ describe('ReportsService', () => {
         expect(reportsRepositoryMock.save).not.toHaveBeenCalled()
       })
 
-      describe('a delivery that withdraws a value the merge clears', () => {
-        // The values each cleared column had when the report was saved
+      // The merge assigns a value a delivery omits as undefined, which TypeORM does not write: the
+      // stored value stays, so a provider that omits it on one delivery does not wipe it
+      it('should not take omitted test result notes for a change, and not write them', async () => {
+        const report = storedReport()
+        report.testResultsSet[0].notes = 'Lipemic sample'
+
+        expect(await reportsService.updateReportResults(report, redelivery())).toBe(false)
+        expect(reportsRepositoryMock.save).not.toHaveBeenCalled()
+      })
+
+      it('should not take an omitted test result device for a change, and not write it', async () => {
+        const report = storedReport()
+        report.testResultsSet[0].deviceId = 'analyzer-1'
+
+        expect(await reportsService.updateReportResults(report, redelivery())).toBe(false)
+        expect(reportsRepositoryMock.save).not.toHaveBeenCalled()
+      })
+
+      it('should not take an omitted test result sequence for a change, and not write it', async () => {
+        // Matched by code and sequence, a test result delivered without one is a new one, so this
+        // needs test results matched by name
+        (reportsService as any).featureFlags.isEnabled.mockReturnValueOnce(true)
+        const results = redelivery()
+        delete results[0].testResults[0].seq
+
+        expect(await reportsService.updateReportResults(storedReport(), results)).toBe(false)
+        expect(reportsRepositoryMock.save).not.toHaveBeenCalled()
+      })
+
+      it('should not take an omitted observation sequence for a change, and not write it', async () => {
+        const results = redelivery()
+        delete results[0].testResults[0].items[2].seq
+
+        expect(await reportsService.updateReportResults(storedReport(), results)).toBe(false)
+        expect(reportsRepositoryMock.save).not.toHaveBeenCalled()
+      })
+
+      describe('a delivery that withdraws an interpretation', () => {
+        // The values a column had when the report was saved
         const savedValues = (read: (report: Report) => unknown): unknown[] => {
           const saved: unknown[] = []
           const save = reportsRepositoryMock.save as jest.Mock
@@ -1990,37 +2027,6 @@ describe('ReportsService', () => {
           // Delivered again: stored as null, nothing changes
           const cleared = storedReport()
           cleared.testResultsSet[0].observations[1].interpretation = null as any
-          expect(await reportsService.updateReportResults(cleared, results)).toBe(false)
-          expect(reportsRepositoryMock.save).toHaveBeenCalledTimes(1)
-        })
-
-        it('should save test result notes and a device the delivery no longer has as null, once', async () => {
-          const saved = savedValues(report => [report.testResultsSet[0].notes, report.testResultsSet[0].deviceId])
-          const report = storedReport()
-          report.testResultsSet[0].notes = 'Lipemic sample'
-          report.testResultsSet[0].deviceId = 'analyzer-1'
-
-          expect(await reportsService.updateReportResults(report, redelivery())).toBe(true)
-          expect(saved).toEqual([[null, null]])
-          // Undefined in the report afterwards, as the merge assigns them
-          expect(report.testResultsSet[0].notes).toBeUndefined()
-          expect(report.testResultsSet[0].deviceId).toBeUndefined()
-
-          // Delivered again: stored as null, nothing changes
-          expect(await reportsService.updateReportResults(storedReport(), redelivery())).toBe(false)
-          expect(reportsRepositoryMock.save).toHaveBeenCalledTimes(1)
-        })
-
-        it('should save an observation sequence the delivery no longer has as null, once', async () => {
-          const saved = savedValues(report => report.testResultsSet[0].observations[2].seq)
-          const results = redelivery()
-          delete results[0].testResults[0].items[2].seq
-
-          expect(await reportsService.updateReportResults(storedReport(), results)).toBe(true)
-          expect(saved).toEqual([null])
-
-          const cleared = storedReport()
-          cleared.testResultsSet[0].observations[2].seq = null as any
           expect(await reportsService.updateReportResults(cleared, results)).toBe(false)
           expect(reportsRepositoryMock.save).toHaveBeenCalledTimes(1)
         })
