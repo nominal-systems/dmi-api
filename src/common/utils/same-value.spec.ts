@@ -23,14 +23,35 @@ describe('isSameValue()', () => {
     expect(isSameValue([], {})).toBe(false)
   })
 
+  it('should take a number that is not finite for "no value", as JSON stores it', () => {
+    expect(isSameValue(null, NaN)).toBe(true)
+    expect(isSameValue(NaN, NaN)).toBe(true)
+    expect(isSameValue(null, Infinity)).toBe(true)
+    expect(isSameValue(undefined, -Infinity)).toBe(true)
+    expect(isSameValue({ low: null, high: null }, { low: NaN, high: NaN })).toBe(true)
+    expect(isSameValue(0, NaN)).toBe(false)
+    expect(isSameValue('NaN', NaN)).toBe(false)
+  })
+
   it('should take a number for the same number as a string, as a string or decimal column reads it back', () => {
     expect(isSameValue('12.50', 12.5)).toBe(true)
     expect(isSameValue('7', 7)).toBe(true)
+    expect(isSameValue('-12.50', -12.5)).toBe(true)
+    expect(isSameValue('+7', 7)).toBe(true)
     expect(isSameValue('12.51', 12.5)).toBe(false)
     expect(isSameValue('', 0)).toBe(false)
     expect(isSameValue('abc', 1)).toBe(false)
     // Two strings stay strings
     expect(isSameValue('007', '7')).toBe(false)
+  })
+
+  it('should take only a plain decimal string for a number', () => {
+    expect(isSameValue('0x10', 16)).toBe(false)
+    expect(isSameValue(' 5 ', 5)).toBe(false)
+    expect(isSameValue('1e3', 1000)).toBe(false)
+    expect(isSameValue('5.', 5)).toBe(false)
+    expect(isSameValue('.5', 0.5)).toBe(false)
+    expect(isSameValue('Infinity', Infinity)).toBe(false)
   })
 
   it('should compare dates by time', () => {

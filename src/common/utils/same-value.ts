@@ -3,17 +3,18 @@ import { isNil, isObject } from './shared.utils'
 /**
  * Whether a stored value, as MySQL reads it back, equals the value a provider delivers,
  * so that a redelivery is not mistaken for a change (issue #409):
- * - null and undefined are both "no value": a nullable column reads back null where a
- *   payload leaves the key out, and a JSON object may carry a null key or omit it;
+ * - null, undefined and a number that is not finite are all "no value": a nullable column
+ *   reads back null where a payload leaves the key out, a JSON object may carry a null key
+ *   or omit it, and JSON, so a simple-json column, stores NaN and Infinity as null;
  * - object keys and array elements compare in any order, since a simple-json column keeps
  *   whatever order it was written in;
- * - a number equals the same number as a string, which is how a string or decimal column
- *   reads a delivered number back;
+ * - a number equals the same number written as a plain decimal string, which is how a string
+ *   or decimal column reads a delivered number back;
  * - dates compare by time.
  */
 export function isSameValue (stored: unknown, delivered: unknown): boolean {
   if (stored === delivered) return true
-  if (isNil(stored) || isNil(delivered)) return isNil(stored) && isNil(delivered)
+  if (isNoValue(stored) || isNoValue(delivered)) return isNoValue(stored) && isNoValue(delivered)
   if (typeof stored === 'number' || typeof delivered === 'number') {
     return toNumber(stored) === toNumber(delivered)
   }
@@ -30,6 +31,10 @@ export function isSameValue (stored: unknown, delivered: unknown): boolean {
   return false
 }
 
+function isNoValue (value: unknown): boolean {
+  return isNil(value) || (typeof value === 'number' && !Number.isFinite(value))
+}
+
 function isSameElements (stored: unknown[], delivered: unknown[]): boolean {
   if (stored.length !== delivered.length) return false
   const unmatched = [...delivered]
@@ -41,8 +46,11 @@ function isSameElements (stored: unknown[], delivered: unknown[]): boolean {
   return true
 }
 
+// An optional sign, digits and an optional fraction: no hex, exponent, blanks or other forms Number() reads
+const PLAIN_DECIMAL = /^[+-]?\d+(\.\d+)?$/
+
 function toNumber (value: unknown): number | undefined {
   if (typeof value === 'number') return value
-  if (typeof value === 'string' && value.trim() !== '') return Number(value)
+  if (typeof value === 'string' && PLAIN_DECIMAL.test(value)) return Number(value)
   return undefined
 }

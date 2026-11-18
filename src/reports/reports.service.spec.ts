@@ -1942,6 +1942,17 @@ describe('ReportsService', () => {
         expect(reportsRepositoryMock.save).not.toHaveBeenCalled()
       })
 
+      it('should not take a reference range without bounds, delivered as NaN, for a change', async () => {
+        // A range such as "Negative-Positive" parses to NaN bounds, which simple-json stores as null
+        const report = storedReport()
+        report.testResultsSet[0].observations[0].referenceRange = [{ type: 'NORMAL', text: 'Negative-Positive', low: null, high: null }] as any
+        const results = redelivery()
+        results[0].testResults[0].items[0].referenceRange = [{ type: 'NORMAL', text: 'Negative-Positive', low: NaN, high: NaN }]
+
+        expect(await reportsService.updateReportResults(report, results)).toBe(false)
+        expect(reportsRepositoryMock.save).not.toHaveBeenCalled()
+      })
+
       it.each<[string, (report: Report, results: ProviderResult[]) => void]>([
         ['a changed observation value', (_report, results) => {
           results[0].testResults[0].items[0].valueQuantity = { value: 101.2, units: 'mg/dL' }
@@ -3547,6 +3558,18 @@ describe('ReportsService', () => {
           expect(reportsRepositoryMock.save).toHaveBeenCalledTimes(1)
           expect(eventsServiceMock.addEvent).toHaveBeenCalledTimes(1)
           expect(reportUpdatedEvents()).toHaveLength(1)
+        })
+
+        it('should emit no report:updated for a reference range without bounds, delivered as NaN', async () => {
+          const report = storedReport()
+          report.testResultsSet[0].observations[0].referenceRange = [{ type: 'NORMAL', text: 'Negative-Positive', low: null, high: null }] as any
+          const results = redelivery()
+          results[0].testResults[0].items[0].referenceRange = [{ type: 'NORMAL', text: 'Negative-Positive', low: NaN, high: NaN }]
+
+          await deliver(report, results)
+
+          expect(reportsRepositoryMock.save).not.toHaveBeenCalled()
+          expect(eventsServiceMock.addEvent).not.toHaveBeenCalled()
         })
       })
 
