@@ -145,6 +145,11 @@ describe('AdminController', () => {
     })
     const metadata: ArgumentMetadata = { type: 'query', metatype: ExternalRequestsQueryDto }
 
+    beforeEach(() => {
+      providersServiceMock.findExternalRequests.mockClear()
+      providersServiceMock.countExternalRequests.mockClear()
+    })
+
     it('should validate and transform query parameters correctly', async () => {
       const query: ExternalRequestsQueryDto = {
         providers: ['provider1', 'provider2'],
@@ -200,6 +205,79 @@ describe('AdminController', () => {
       expect(transformedQuery).toBeInstanceOf(ExternalRequestsQueryDto)
       expect(transformedQuery.limit).toBe(PAGINATION_PAGE_LIMIT)
       expect(transformedQuery.page).toBe(1)
+      expect(transformedQuery.accessionId).toBeUndefined()
+    })
+
+    it('should filter on an accession ID, as typed, uppercased and lowercased, with the other filters', async () => {
+      providersServiceMock.findExternalRequests.mockResolvedValueOnce([])
+      providersServiceMock.countExternalRequests.mockResolvedValueOnce(0)
+
+      await adminController.getExternalRequests({
+        status: ['4xx'],
+        accessionId: '10001-Voy-0000000001',
+        startDate: '2026-11-01T00:00:00.000Z',
+        endDate: '2026-11-01T23:59:59.999Z',
+        page: 1,
+        limit: 10,
+      })
+
+      const expectedOptions = {
+        $or: [{ status: { $gte: 400, $lte: 499 } }],
+        accessionIds: { $in: ['10001-Voy-0000000001', '10001-VOY-0000000001', '10001-voy-0000000001'] },
+        createdAt: {
+          $gte: new Date('2026-11-01T00:00:00.000Z'),
+          $lte: new Date('2026-11-01T23:59:59.999Z'),
+        },
+      }
+      expect(providersServiceMock.findExternalRequests).toHaveBeenCalledWith(expectedOptions, {
+        page: 1,
+        limit: 10,
+      })
+      expect(providersServiceMock.countExternalRequests).toHaveBeenCalledWith(expectedOptions)
+    })
+
+    it('should try an accession ID in each case once', async () => {
+      providersServiceMock.findExternalRequests.mockResolvedValueOnce([])
+      providersServiceMock.countExternalRequests.mockResolvedValueOnce(0)
+
+      await adminController.getExternalRequests({ accessionId: 'req-0000abcd', page: 1, limit: 10 })
+
+      expect(providersServiceMock.findExternalRequests.mock.calls[0][0].accessionIds).toEqual({
+        $in: ['req-0000abcd', 'REQ-0000ABCD'],
+      })
+    })
+
+    it('should try an accession ID once when it has no letters', async () => {
+      providersServiceMock.findExternalRequests.mockResolvedValueOnce([])
+      providersServiceMock.countExternalRequests.mockResolvedValueOnce(0)
+
+      await adminController.getExternalRequests({ accessionId: '30061234', page: 1, limit: 10 })
+
+      expect(providersServiceMock.findExternalRequests.mock.calls[0][0].accessionIds).toEqual({ $in: ['30061234'] })
+    })
+
+    it('should not filter on accession IDs when accessionId is absent', async () => {
+      providersServiceMock.findExternalRequests.mockResolvedValueOnce([])
+      providersServiceMock.countExternalRequests.mockResolvedValueOnce(0)
+
+      await adminController.getExternalRequests({ page: 1, limit: 10 })
+
+      expect(providersServiceMock.findExternalRequests.mock.calls[0][0]).not.toHaveProperty('accessionIds')
+      expect(providersServiceMock.countExternalRequests.mock.calls[0][0]).not.toHaveProperty('accessionIds')
+    })
+
+    it('should trim accessionId and treat a blank one as absent', async () => {
+      const trimmed = await validationPipe.transform({ accessionId: '  30061234  ' }, metadata)
+      expect(trimmed.accessionId).toBe('30061234')
+
+      const blank = await validationPipe.transform({ accessionId: '   ' }, metadata)
+      expect(blank.accessionId).toBeUndefined()
+    })
+
+    it('should reject a repeated accessionId', async () => {
+      await expect(validationPipe.transform({ accessionId: ['a', 'b'] }, metadata)).rejects.toThrow(
+        BadRequestException,
+      )
     })
   })
 
