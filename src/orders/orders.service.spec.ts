@@ -2175,6 +2175,158 @@ describe('OrdersService', () => {
         )
       })
     })
+
+    // Regression for https://github.com/nominal-systems/dmi-api/issues/409
+    // A provider that delivers a result again, unchanged, must cost no order write and no
+    // order:updated event.
+    describe('redelivery of a stored result (issue #409)', () => {
+      const INTEGRATION_ID = 'integration-409'
+
+      const storedOrder = (status: OrderStatus): Order =>
+        ({
+          id: 'order-409',
+          integrationId: INTEGRATION_ID,
+          externalId: 'ACC-409',
+          status,
+          orphan: false,
+          notes: null,
+          patient: { id: 'patient-409', name: 'Rex', identifier: [] },
+          client: { id: 'client-409', lastName: 'Anderson', identifier: [] },
+          veterinarian: { id: 'veterinarian-409', lastName: 'Vetson' },
+          tests: [{ code: 'CHEM' }, { code: 'HEM' }],
+        }) as unknown as Order
+
+      // A result that embeds its order, the stored tests listed once per test result
+      const result = (status: string, orderStatus: OrderStatus): ProviderResult =>
+        ({
+          id: 'result-409',
+          orderId: 'ACC-409',
+          status,
+          order: {
+            externalId: 'ACC-409',
+            status: orderStatus,
+            patient: { name: 'Rex', species: 'Canine', sex: 'M' },
+            client: { firstName: 'Alice', lastName: 'Anderson' },
+            veterinarian: { lastName: 'Vetson' },
+            tests: [{ code: 'CHEM' }, { code: 'HEM' }, { code: 'CHEM' }],
+          },
+          testResults: [],
+        }) as unknown as ProviderResult
+
+      describe('updateOrderFromResults()', () => {
+        it('should neither save nor report an update when the result changes nothing', async () => {
+          const order = storedOrder(OrderStatus.COMPLETED)
+
+          const updated = await ordersService.updateOrderFromResults(
+            order,
+            result(ResultStatus.COMPLETED, OrderStatus.COMPLETED),
+          )
+
+          expect(updated).toBe(false)
+          expect(ordersRepositoryMock.save).not.toHaveBeenCalled()
+        })
+
+        it('should neither save nor report an update for a result without an order that changes nothing', async () => {
+          const order = storedOrder(OrderStatus.COMPLETED)
+          const { order: _order, ...withoutOrder } = result(
+            ResultStatus.COMPLETED,
+            OrderStatus.COMPLETED,
+          )
+
+          expect(await ordersService.updateOrderFromResults(order, withoutOrder)).toBe(false)
+          expect(ordersRepositoryMock.save).not.toHaveBeenCalled()
+        })
+
+        it('should not take a CANCELLED order delivered as CANCELLED again for a change', async () => {
+          const order = storedOrder(OrderStatus.CANCELLED)
+
+          expect(
+            await ordersService.updateOrderFromResults(
+              order,
+              result(ResultStatus.CANCELLED, OrderStatus.CANCELLED),
+            ),
+          ).toBe(false)
+          expect(ordersRepositoryMock.save).not.toHaveBeenCalled()
+        })
+
+        it("should not take a status the result's order moves back from for a change", async () => {
+          // The result's status sets PARTIAL first, then its order sets COMPLETED again
+          const order = storedOrder(OrderStatus.COMPLETED)
+
+          expect(
+            await ordersService.updateOrderFromResults(
+              order,
+              result(ResultStatus.PARTIAL, OrderStatus.COMPLETED),
+            ),
+          ).toBe(false)
+          expect(order.status).toBe(OrderStatus.COMPLETED)
+          expect(ordersRepositoryMock.save).not.toHaveBeenCalled()
+        })
+
+        it('should save and report an update for a status change', async () => {
+          const order = storedOrder(OrderStatus.SUBMITTED)
+
+          expect(
+            await ordersService.updateOrderFromResults(
+              order,
+              result(ResultStatus.COMPLETED, OrderStatus.COMPLETED),
+            ),
+          ).toBe(true)
+          expect(order.status).toBe(OrderStatus.COMPLETED)
+          expect(ordersRepositoryMock.save).toHaveBeenCalledTimes(1)
+        })
+
+        it('should save and report an update for a test the order does not have yet', async () => {
+          const order = storedOrder(OrderStatus.COMPLETED)
+          const withNewTest = result(ResultStatus.COMPLETED, OrderStatus.COMPLETED)
+          withNewTest.order?.tests.push({ code: 'UA' })
+
+          expect(await ordersService.updateOrderFromResults(order, withNewTest)).toBe(true)
+          expect(ordersRepositoryMock.save).toHaveBeenCalledTimes(1)
+        })
+      })
+
+      describe('handleExternalOrderResults()', () => {
+        it('should emit no order:updated and log the order as unchanged', async () => {
+          jest
+            .spyOn(ordersService, 'findOneByExternalId')
+            .mockResolvedValueOnce(storedOrder(OrderStatus.COMPLETED))
+          const log = jest.spyOn((ordersService as any).logger, 'log')
+
+          await ordersService.handleExternalOrderResults({
+            integrationId: INTEGRATION_ID,
+            results: [result(ResultStatus.COMPLETED, OrderStatus.COMPLETED)],
+          })
+
+          expect(ordersRepositoryMock.save).not.toHaveBeenCalled()
+          expect(eventsServiceMock.addEvent).not.toHaveBeenCalled()
+          expect(log).toHaveBeenCalledWith(
+            `external_order_results -> Got 1 results from ${INTEGRATION_ID}: 0 orders updated, 1 orders unchanged`,
+          )
+        })
+
+        it('should emit one order:updated for a status change', async () => {
+          jest
+            .spyOn(ordersService, 'findOneByExternalId')
+            .mockResolvedValueOnce(storedOrder(OrderStatus.SUBMITTED))
+
+          await ordersService.handleExternalOrderResults({
+            integrationId: INTEGRATION_ID,
+            results: [result(ResultStatus.COMPLETED, OrderStatus.COMPLETED)],
+          })
+
+          expect(ordersRepositoryMock.save).toHaveBeenCalledTimes(1)
+          expect(eventsServiceMock.addEvent).toHaveBeenCalledTimes(1)
+          expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(
+            expect.objectContaining({
+              namespace: EventNamespace.ORDERS,
+              type: EventType.ORDER_UPDATED,
+              data: expect.objectContaining({ status: OrderStatus.COMPLETED }),
+            }),
+          )
+        })
+      })
+    })
   })
 
   describe('getOrderReport()', () => {

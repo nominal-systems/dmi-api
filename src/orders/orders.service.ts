@@ -32,7 +32,7 @@ import {
   ProviderResult,
   Resource,
 } from '@nominal-systems/dmi-engine-common'
-import { updateOrder } from '../common/utils/order-status.helper'
+import { orderUpdateKey, updateOrder } from '../common/utils/order-status.helper'
 import { EventNamespace } from '../events/constants/event-namespace.enum'
 import { EventType } from '../events/constants/event-type.enum'
 import { ReportsService } from '../reports/reports.service'
@@ -622,6 +622,8 @@ export class OrdersService {
 
     const updatedOrders: Order[] = []
     let failedOrders = 0
+    // Orders a result left as they were: a provider redelivering what it sent before
+    let unchangedOrders = 0
     for (const externalOrderId of externalOrderIds) {
       const result = results.find((result) => result.orderId === externalOrderId)
 
@@ -650,6 +652,8 @@ export class OrdersService {
         if (updated) {
           updatedOrders.push(order)
           this.logger.debug(`Updated Order/${order.id} status to ${order.status}`)
+        } else {
+          unchangedOrders++
         }
       } catch (error) {
         if (error instanceof NotFoundException) {
@@ -684,7 +688,7 @@ export class OrdersService {
     }
 
     this.logger.log(
-      `external_order_results -> Got ${results.length} results from ${integration.providerConfiguration.providerId}: ${updatedOrders.length} orders updated${failedOrders > 0 ? `, ${failedOrders} orders failed` : ''}`,
+      `external_order_results -> Got ${results.length} results from ${integration.providerConfiguration.providerId}: ${updatedOrders.length} orders updated, ${unchangedOrders} orders unchanged${failedOrders > 0 ? `, ${failedOrders} orders failed` : ''}`,
     )
   }
 
@@ -810,24 +814,28 @@ export class OrdersService {
 
   async updateOrderFromResults(order: Order, result: ProviderResult): Promise<boolean> {
     const orderStatus = order.status
+    const before = orderUpdateKey(order)
     ProviderResultUtils.setOrderStatusFromResult(result, order)
 
-    let updated = false
     if (result.order !== undefined) {
-      updated = updateOrder(order, result.order)
+      updateOrder(order, result.order)
     }
+    // Compare the order before and after both steps: the result's status can move the order to
+    // a status its order then moves back from, which updateOrder alone sees as a change (issue #409)
+    const updated = orderUpdateKey(order) !== before
     if (orderStatus !== order.status) {
       this.logger.debug(
         `updateOrderStatusFromResults: Order/${order.externalId} status changed from ${orderStatus} to ${order.status}`,
       )
-      updated = true
     } else {
       this.logger.debug(
         `updateOrderStatusFromResults: Order/${order.externalId} status not changed. Current status: ${order.status}, result status: ${result.status}`,
       )
     }
 
-    await this.ordersRepository.save(order)
+    if (updated) {
+      await this.ordersRepository.save(order)
+    }
     return updated
   }
 

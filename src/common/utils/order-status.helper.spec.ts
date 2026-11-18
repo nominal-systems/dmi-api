@@ -82,5 +82,57 @@ describe('OrderStatusHelper', () => {
       expect(updated).toBe(true)
       expect(existingOrder.tests).toHaveLength(externalOrder.tests.length)
     })
+
+    // Issue #409: updateOrder reports what it changed, so a redelivered order is no update
+    describe('redelivery of a stored order (issue #409)', () => {
+      const storedOrder = (status: OrderStatus): Order => Object.assign(new Order(), {
+        status,
+        notes: null,
+        patient: { id: 'patient-409', ...patient },
+        client: { id: 'client-409', ...client },
+        veterinarian: { id: 'veterinarian-409', ...veterinarian },
+        tests: [{ code: 'SA665' }, { code: 'SA380' }]
+      })
+
+      it.each([OrderStatus.CANCELLED, OrderStatus.ERROR])('should not report a change when %s is delivered again', (status) => {
+        const existingOrder = storedOrder(status)
+        const updated = updateOrder(existingOrder, { ...externalOrder, status, tests: [{ code: 'SA665' }, { code: 'SA380' }] })
+        expect(updated).toBe(false)
+        expect(existingOrder.status).toBe(status)
+      })
+
+      it('should not report a change when the stored tests are delivered with a code listed twice', () => {
+        // Tests are stored once per code, so the stored list stays shorter than the delivered one
+        const existingOrder = storedOrder(OrderStatus.COMPLETED)
+        const updated = updateOrder(existingOrder, {
+          ...externalOrder,
+          status: OrderStatus.COMPLETED,
+          tests: [{ code: 'SA665' }, { code: 'SA380' }, { code: 'SA380' }]
+        })
+        expect(updated).toBe(false)
+      })
+
+      it('should report a change for a test code the order does not have', () => {
+        const existingOrder = storedOrder(OrderStatus.COMPLETED)
+        const updated = updateOrder(existingOrder, {
+          ...externalOrder,
+          status: OrderStatus.COMPLETED,
+          tests: [{ code: 'SA665' }, { code: 'SA380' }, { code: 'T805' }]
+        })
+        expect(updated).toBe(true)
+      })
+
+      it('should report a change for changed notes, which it writes', () => {
+        const existingOrder = storedOrder(OrderStatus.COMPLETED)
+        const updated = updateOrder(existingOrder, {
+          ...externalOrder,
+          status: OrderStatus.COMPLETED,
+          tests: [{ code: 'SA665' }],
+          notes: 'Failure reason: sample-failed'
+        })
+        expect(updated).toBe(true)
+        expect(existingOrder.notes).toBe('Failure reason: sample-failed')
+      })
+    })
   })
 })

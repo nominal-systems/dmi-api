@@ -34,6 +34,8 @@ export function updateOrder (
   localOrder: DeepPartial<Order>,
   externalOrder: ExternalOrder
 ): boolean {
+  const before = orderUpdateKey(localOrder)
+
   // Status
   const statusChange = (localOrder.status != null) && isValidStatusChange(externalOrder.status, OrderStatus[localOrder.status])
   if (statusChange) {
@@ -69,7 +71,25 @@ export function updateOrder (
     localOrder.notes = externalOrder.notes
   }
 
-  return statusChange || patientChange || clientChange || veterinarianChange || testsChange
+  // Whether the order now differs, not whether a guard above let a value through: CANCELLED
+  // and ERROR are always a valid status change, so re-applying them is one, and a provider that
+  // lists a test code twice keeps its list longer than the distinct tests stored (issue #409)
+  return orderUpdateKey(localOrder) !== before
+}
+
+// What updateOrder and a result's status can change on an order, as it is stored: the tests are
+// a many-to-many keyed by code, so they are a set of codes
+export function orderUpdateKey (
+  order: DeepPartial<Order>
+): string {
+  return JSON.stringify([
+    order.status ?? null,
+    order.notes ?? null,
+    isNonEmptyObject(order.patient),
+    isNonEmptyObject(order.client),
+    isNonEmptyObject(order.veterinarian),
+    [...new Set(order.tests?.map(test => test?.code))].sort()
+  ])
 }
 
 function isNonEmptyObject (obj): boolean {
