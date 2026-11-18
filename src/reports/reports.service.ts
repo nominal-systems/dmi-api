@@ -23,7 +23,7 @@ import { OrdersService } from '../orders/orders.service'
 import { Organization } from '../organizations/entities/organization.entity'
 import { resultStatusMapper, testResultStatusMapper } from '../common/utils/result-status.helper'
 import { ProviderResultUtils } from '../common/utils/provider-result-utils'
-import { isNullOrEmpty } from '../common/utils/shared.utils'
+import { isNil, isNullOrEmpty } from '../common/utils/shared.utils'
 import { Attachment as AttachmentEntity } from '../common/entities/attachment.entity'
 import { ExternalResultEventData } from '../common/typings/internal-event-data.interface'
 import { FEATURE_FLAG_PROVIDER, FeatureFlagProvider, TEST_RESULT_MATCH_BY_NAME_FLAG } from '../feature-flags/feature-flag.interface'
@@ -66,6 +66,37 @@ function isChanged<T extends object> (
   if (before === undefined) return true
   // TypeORM does not write a property that is undefined, so only a defined value can change a column
   return fields.some(field => entity[field] !== undefined && !isSameValue(before[field], entity[field]))
+}
+
+// Columns that cannot be null: a delivery without a value for one leaves it as stored
+const NOT_NULL_FIELDS: ReadonlySet<string> = new Set(['status'])
+
+interface ClearedField {
+  entity: Record<string, unknown>
+  field: string
+  // The merge deleted the property rather than assigning undefined to it
+  deleted: boolean
+}
+
+// Where the merge cleared a stored value, by deleting the property or assigning undefined to it,
+// set it to null: TypeORM does not write undefined, and an undefined value is no change. As null
+// the clearing is a change and is stored, so the next delivery without the value changes nothing.
+function nullClearedFields<T extends object> (
+  stored: Map<object, object>,
+  entity: T,
+  fields: Array<keyof T>
+): ClearedField[] {
+  const before = stored.get(entity) as Record<string, unknown> | undefined
+  if (before === undefined) return []
+  const values = entity as Record<string, unknown>
+  const cleared: ClearedField[] = []
+  for (const field of fields as string[]) {
+    if (values[field] === undefined && !isNil(before[field]) && !NOT_NULL_FIELDS.has(field)) {
+      cleared.push({ entity: values, field, deleted: !(field in values) })
+      values[field] = null
+    }
+  }
+  return cleared
 }
 
 function pdfContent ({ contentType, data }: AttachmentEntity): Partial<AttachmentEntity> {
@@ -508,6 +539,10 @@ export class ReportsService {
       }
     }
 
+    const cleared = report.testResultsSet.flatMap(testResult => [
+      ...nullClearedFields(stored, testResult, TEST_RESULT_DELIVERED_FIELDS),
+      ...(testResult.observations ?? []).flatMap(observation => nullClearedFields(stored, observation, OBSERVATION_DELIVERED_FIELDS))
+    ])
     const testResultsChanged = report.testResultsSet.some(testResult =>
       isChanged(stored, testResult, TEST_RESULT_DELIVERED_FIELDS) ||
       (testResult.observations ?? []).some(observation => isChanged(stored, observation, OBSERVATION_DELIVERED_FIELDS))
@@ -517,6 +552,14 @@ export class ReportsService {
       report.testResultsSet = report.testResultsSet.concat(createdTestResults)
       report.status = resultStatusMapper(reportStatus)
       await this.reportsRepository.save(report)
+    }
+    // Stored as null, a cleared value is left out of the report again, as the merge left it
+    for (const { entity, field, deleted } of cleared) {
+      if (deleted) {
+        delete entity[field]
+      } else {
+        entity[field] = undefined
+      }
     }
 
     return updatePerformed

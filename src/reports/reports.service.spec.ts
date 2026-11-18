@@ -8,7 +8,7 @@ import { TestResult } from './entities/test-result.entity'
 import { IntegrationsService } from '../integrations/integrations.service'
 import { EventsService } from '../events/services/events.service'
 import { OrdersService } from '../orders/orders.service'
-import { OrderStatus, PimsIdentifiers, ProviderResult, ReportStatus, TestResultItemStatus } from '@nominal-systems/dmi-engine-common'
+import { OrderStatus, PimsIdentifiers, ProviderResult, ProviderTestResultItem, ReportStatus, TestResultItemStatus } from '@nominal-systems/dmi-engine-common'
 import { reportRepositoryMockFactory } from './test/report.repository.mock'
 import { EventNamespace } from '../events/constants/event-namespace.enum'
 import { EventType } from '../events/constants/event-type.enum'
@@ -1933,15 +1933,6 @@ describe('ReportsService', () => {
         expect(reportsRepositoryMock.save).not.toHaveBeenCalled()
       })
 
-      it('should not take an omitted interpretation for a change, since saving leaves the stored one in place', async () => {
-        // The merge deletes the property, and TypeORM does not write an undefined property
-        const results = redelivery()
-        delete results[0].testResults[0].items[1].interpretation
-
-        expect(await reportsService.updateReportResults(storedReport(), results)).toBe(false)
-        expect(reportsRepositoryMock.save).not.toHaveBeenCalled()
-      })
-
       it('should not take a reference range without bounds, delivered as NaN, for a change', async () => {
         // A range such as "Negative-Positive" parses to NaN bounds, which simple-json stores as null
         const report = storedReport()
@@ -1951,6 +1942,88 @@ describe('ReportsService', () => {
 
         expect(await reportsService.updateReportResults(report, results)).toBe(false)
         expect(reportsRepositoryMock.save).not.toHaveBeenCalled()
+      })
+
+      it('should not take a value the merge keeps when a delivery omits it for a change', async () => {
+        // An observation keeps its stored value, units, reference range and notes when the delivery has none
+        const results = redelivery()
+        delete results[0].testResults[0].items[0].valueQuantity
+        delete results[0].testResults[0].items[0].units
+        delete results[0].testResults[0].items[0].referenceRange
+        delete results[0].testResults[0].items[1].notes
+
+        expect(await reportsService.updateReportResults(storedReport(), results)).toBe(false)
+        expect(reportsRepositoryMock.save).not.toHaveBeenCalled()
+      })
+
+      it('should not take an omitted observation status for a change, since the column cannot be cleared', async () => {
+        const results = redelivery()
+        delete (results[0].testResults[0].items[2] as Partial<ProviderTestResultItem>).status
+
+        expect(await reportsService.updateReportResults(storedReport(), results)).toBe(false)
+        expect(reportsRepositoryMock.save).not.toHaveBeenCalled()
+      })
+
+      describe('a delivery that withdraws a value the merge clears', () => {
+        // The values each cleared column had when the report was saved
+        const savedValues = (read: (report: Report) => unknown): unknown[] => {
+          const saved: unknown[] = []
+          const save = reportsRepositoryMock.save as jest.Mock
+          save.mockImplementation(async (report: Report) => {
+            saved.push(read(report))
+            return report
+          })
+          return saved
+        }
+
+        it('should save an interpretation the delivery no longer has as null, once', async () => {
+          const saved = savedValues(report => report.testResultsSet[0].observations[1].interpretation)
+          const results = redelivery()
+          delete results[0].testResults[0].items[1].interpretation
+          const report = storedReport()
+
+          expect(await reportsService.updateReportResults(report, results)).toBe(true)
+          expect(saved).toEqual([null])
+          // Left out of the report afterwards, as the merge leaves it
+          expect(report.testResultsSet[0].observations[1]).not.toHaveProperty('interpretation')
+
+          // Delivered again: stored as null, nothing changes
+          const cleared = storedReport()
+          cleared.testResultsSet[0].observations[1].interpretation = null as any
+          expect(await reportsService.updateReportResults(cleared, results)).toBe(false)
+          expect(reportsRepositoryMock.save).toHaveBeenCalledTimes(1)
+        })
+
+        it('should save test result notes and a device the delivery no longer has as null, once', async () => {
+          const saved = savedValues(report => [report.testResultsSet[0].notes, report.testResultsSet[0].deviceId])
+          const report = storedReport()
+          report.testResultsSet[0].notes = 'Lipemic sample'
+          report.testResultsSet[0].deviceId = 'analyzer-1'
+
+          expect(await reportsService.updateReportResults(report, redelivery())).toBe(true)
+          expect(saved).toEqual([[null, null]])
+          // Undefined in the report afterwards, as the merge assigns them
+          expect(report.testResultsSet[0].notes).toBeUndefined()
+          expect(report.testResultsSet[0].deviceId).toBeUndefined()
+
+          // Delivered again: stored as null, nothing changes
+          expect(await reportsService.updateReportResults(storedReport(), redelivery())).toBe(false)
+          expect(reportsRepositoryMock.save).toHaveBeenCalledTimes(1)
+        })
+
+        it('should save an observation sequence the delivery no longer has as null, once', async () => {
+          const saved = savedValues(report => report.testResultsSet[0].observations[2].seq)
+          const results = redelivery()
+          delete results[0].testResults[0].items[2].seq
+
+          expect(await reportsService.updateReportResults(storedReport(), results)).toBe(true)
+          expect(saved).toEqual([null])
+
+          const cleared = storedReport()
+          cleared.testResultsSet[0].observations[2].seq = null as any
+          expect(await reportsService.updateReportResults(cleared, results)).toBe(false)
+          expect(reportsRepositoryMock.save).toHaveBeenCalledTimes(1)
+        })
       })
 
       it.each<[string, (report: Report, results: ProviderResult[]) => void]>([
@@ -3570,6 +3643,27 @@ describe('ReportsService', () => {
 
           expect(reportsRepositoryMock.save).not.toHaveBeenCalled()
           expect(eventsServiceMock.addEvent).not.toHaveBeenCalled()
+        })
+
+        it('should emit one report:updated for a withdrawn interpretation, without it, and none when that is delivered again', async () => {
+          const results = redelivery()
+          delete results[0].testResults[0].items[1].interpretation
+
+          await deliver(storedReport(), results)
+
+          expect(reportsRepositoryMock.save).toHaveBeenCalledTimes(1)
+          expect(eventsServiceMock.addEvent).toHaveBeenCalledTimes(1)
+          const [[event]] = eventsServiceMock.addEvent.mock.calls
+          expect(event.type).toBe(EventType.REPORT_UPDATED)
+          expect(event.data.report.testResultsSet[0].observations[1]).not.toHaveProperty('interpretation')
+
+          // The report as stored now: the interpretation is null
+          const cleared = storedReport()
+          cleared.testResultsSet[0].observations[1].interpretation = null as any
+          await deliver(cleared, results)
+
+          expect(reportsRepositoryMock.save).toHaveBeenCalledTimes(1)
+          expect(eventsServiceMock.addEvent).toHaveBeenCalledTimes(1)
         })
       })
 
