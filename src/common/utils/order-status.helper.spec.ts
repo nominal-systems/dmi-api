@@ -122,7 +122,7 @@ describe('OrderStatusHelper', () => {
         expect(updated).toBe(true)
       })
 
-      it('should report a change for changed notes, which it writes', () => {
+      it('should not report changed notes alone as a change, though it writes them', () => {
         const existingOrder = storedOrder(OrderStatus.COMPLETED)
         const updated = updateOrder(existingOrder, {
           ...externalOrder,
@@ -130,7 +130,7 @@ describe('OrderStatusHelper', () => {
           tests: [{ code: 'SA665' }],
           notes: 'Failure reason: sample-failed'
         })
-        expect(updated).toBe(true)
+        expect(updated).toBe(false)
         expect(existingOrder.notes).toBe('Failure reason: sample-failed')
       })
     })

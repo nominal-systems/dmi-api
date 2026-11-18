@@ -508,8 +508,8 @@ export class OrdersService {
       let updated = updateOrder(existingOrder, externalOrder)
       if (externalOrder.manifest != null) {
         // The manifest the order already has is no update (issue #409). So the stored order form
-        // is refreshed when the order is saved for another reason (status, tests, notes), not on
-        // every delivery of it.
+        // is refreshed when the order is saved for another reason (its status or tests, say),
+        // not on every delivery of it.
         existingOrder.manifest = externalOrder.manifest as any
         updated =
           updated ||

@@ -71,20 +71,20 @@ export function updateOrder (
     localOrder.notes = externalOrder.notes
   }
 
-  // Whether the order now differs, not whether a guard above let a value through: CANCELLED
+  // Whether the order now differs in its update key, not whether a guard above let a value through: CANCELLED
   // and ERROR are always a valid status change, so re-applying them is one, and a provider that
   // lists a test code twice keeps its list longer than the distinct tests stored (issue #409)
   return orderUpdateKey(localOrder) !== before
 }
 
-// What updateOrder and a result's status can change on an order, as it is stored: the tests are
-// a many-to-many keyed by code, so they are a set of codes
+// What makes an order updated, as it is stored: its status, whether it has a patient, client and
+// veterinarian, and its tests, a many-to-many keyed by code and so a set of codes. Notes are not
+// part of it: updateOrder writes them, but they are saved only with another change.
 export function orderUpdateKey (
   order: DeepPartial<Order>
 ): string {
   return JSON.stringify([
     order.status ?? null,
-    order.notes ?? null,
     isNonEmptyObject(order.patient),
     isNonEmptyObject(order.client),
     isNonEmptyObject(order.veterinarian),

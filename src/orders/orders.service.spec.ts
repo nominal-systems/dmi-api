@@ -1338,6 +1338,75 @@ describe('OrdersService', () => {
       })
     })
 
+    // Notes alone are no update: updateOrder writes them, and they are saved with another change
+    describe('an order delivered with other notes (issue #409)', () => {
+      const storedOrder = (id: string, externalId: string, status: OrderStatus): Order =>
+        ({
+          id,
+          externalId,
+          status,
+          notes: null,
+          patient: { id: `patient-${id}`, name: 'Rex', identifier: [] },
+          client: { id: `client-${id}`, lastName: 'Anderson', identifier: [] },
+          veterinarian: { id: `veterinarian-${id}`, lastName: 'Vetson' },
+          tests: [{ code: 'T805' }],
+        }) as unknown as Order
+      const delivered = (externalId: string, status: OrderStatus, notes: string): unknown => ({
+        externalId,
+        status,
+        patient: { name: 'Rex', sex: 'M', species: 'Canine' },
+        client: { firstName: 'Alice', lastName: 'Anderson' },
+        veterinarian: { lastName: 'Vetson' },
+        tests: [{ code: 'T805' }],
+        notes,
+      })
+      const deliver = async (stored: Order[], externalOrders: unknown[]): Promise<void> => {
+        jest.spyOn(ordersRepositoryMock, 'find').mockResolvedValueOnce(stored)
+        await ordersService.handleExternalOrders({
+          integrationId: 'integration-409',
+          orders: externalOrders as ExternalOrdersEventData['orders'],
+        })
+      }
+
+      it('should neither save nor emit order:updated for an order that differs only in its notes', async () => {
+        await deliver(
+          [storedOrder('order-1', 'ACC-409', OrderStatus.SUBMITTED)],
+          [delivered('ACC-409', OrderStatus.SUBMITTED, '')],
+        )
+
+        expect(ordersRepositoryMock.save).not.toHaveBeenCalled()
+        expect(eventsServiceMock.addEvent).not.toHaveBeenCalled()
+      })
+
+      it('should save the notes with a status change, and only for the order that changed', async () => {
+        const saved: unknown[] = []
+        jest.spyOn(ordersRepositoryMock, 'save').mockImplementation(async (order: any) => {
+          saved.push({ id: order.id, notes: order.notes })
+          return order
+        })
+
+        await deliver(
+          [
+            storedOrder('order-1', 'ACC-409', OrderStatus.SUBMITTED),
+            storedOrder('order-2', 'ACC-410', OrderStatus.SUBMITTED),
+          ],
+          [
+            delivered('ACC-409', OrderStatus.SUBMITTED, 'Collected after fasting'),
+            delivered('ACC-410', OrderStatus.COMPLETED, 'Repeat sample'),
+          ],
+        )
+
+        expect(saved).toEqual([{ id: 'order-2', notes: 'Repeat sample' }])
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledTimes(1)
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(
+          expect.objectContaining({
+            type: EventType.ORDER_UPDATED,
+            data: expect.objectContaining({ orderId: 'order-2' }),
+          }),
+        )
+      })
+    })
+
     describe('concurrent creation (issue #320)', () => {
       it('should serialize order creation with a named lock per (integrationId, externalId)', async () => {
         jest.spyOn(ordersRepositoryMock, 'find').mockResolvedValueOnce([])
@@ -2474,6 +2543,19 @@ describe('OrdersService', () => {
           expect(await ordersService.updateOrderFromResults(order, withNewTest)).toBe(true)
           expect(ordersRepositoryMock.save).toHaveBeenCalledTimes(1)
         })
+
+        it('should neither save nor report an update for a result whose order differs only in its notes', async () => {
+          const order = storedOrder(OrderStatus.COMPLETED)
+          const withNotes = result(ResultStatus.COMPLETED, OrderStatus.COMPLETED)
+          // The stored tests exactly, so only the notes differ
+          if (withNotes.order != null) {
+            withNotes.order.tests = [{ code: 'CHEM' }, { code: 'HEM' }]
+            withNotes.order.notes = 'Collected after fasting'
+          }
+
+          expect(await ordersService.updateOrderFromResults(order, withNotes)).toBe(false)
+          expect(ordersRepositoryMock.save).not.toHaveBeenCalled()
+        })
       })
 
       describe('handleExternalOrderResults()', () => {
@@ -2514,6 +2596,26 @@ describe('OrdersService', () => {
               data: expect.objectContaining({ status: OrderStatus.COMPLETED }),
             }),
           )
+        })
+
+        it('should emit no order:updated for a result whose order differs only in its notes', async () => {
+          jest
+            .spyOn(ordersService, 'findOneByExternalId')
+            .mockResolvedValueOnce(storedOrder(OrderStatus.COMPLETED))
+          const withNotes = result(ResultStatus.COMPLETED, OrderStatus.COMPLETED)
+          // The stored tests exactly, so only the notes differ
+          if (withNotes.order != null) {
+            withNotes.order.tests = [{ code: 'CHEM' }, { code: 'HEM' }]
+            withNotes.order.notes = 'Collected after fasting'
+          }
+
+          await ordersService.handleExternalOrderResults({
+            integrationId: INTEGRATION_ID,
+            results: [withNotes],
+          })
+
+          expect(ordersRepositoryMock.save).not.toHaveBeenCalled()
+          expect(eventsServiceMock.addEvent).not.toHaveBeenCalled()
         })
       })
     })
