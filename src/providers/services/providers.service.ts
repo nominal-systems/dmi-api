@@ -53,6 +53,9 @@ import { isNullOrEmpty, stringifyId } from '../../common/utils/shared.utils'
 // against the internal `_ts` (last-modified) timestamp.
 const EXTERNAL_REQUESTS_TTL_SECONDS = Number(process.env.EXTERNAL_REQUESTS_TTL_SECONDS ?? 2592000)
 
+// The highest total countExternalRequests reports; above it the total is flagged as capped.
+export const EXTERNAL_REQUESTS_COUNT_CAP = 1000
+
 @Injectable()
 export class ProvidersService implements OnModuleInit {
   private readonly logger = new Logger(ProvidersService.name)
@@ -538,12 +541,17 @@ export class ProvidersService implements OnModuleInit {
 
   async countExternalRequests (
     options: FilterQuery<ProviderExternalRequestDocument>
-  ): Promise<number> {
+  ): Promise<{ total: number, capped: boolean }> {
+    // An exact count reads every matching request, which over a busy day exhausts the database's
+    // throughput (Cosmos 429s). Each collection's count stops one past the cap instead.
     const [v3Count, v2Count] = await Promise.all([
-      this.providerExternalRequestsV3Model.countDocuments(options),
-      this.providerExternalRequestsModel.countDocuments(options)
+      this.providerExternalRequestsV3Model.countDocuments(options, { limit: EXTERNAL_REQUESTS_COUNT_CAP + 1 }),
+      this.providerExternalRequestsModel.countDocuments(options, { limit: EXTERNAL_REQUESTS_COUNT_CAP + 1 })
     ])
-    return v3Count + v2Count
+    const total = v3Count + v2Count
+    return total > EXTERNAL_REQUESTS_COUNT_CAP
+      ? { total: EXTERNAL_REQUESTS_COUNT_CAP, capped: true }
+      : { total, capped: false }
   }
 
   async update (
