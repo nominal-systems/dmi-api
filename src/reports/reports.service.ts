@@ -412,7 +412,7 @@ export class ReportsService {
       await this.eventsService.addEvent(this.buildReportEvent(report, integration, EventType.REPORT_UPDATED))
     }
 
-    this.logger.log(`external_results -> Got ${results.length} results from ${integration.providerConfiguration.providerId}: ${createdReports.length} reports created, ${updatedReports.length} reports updated, orders ${[...createdOrders, ...dummyOrders].length} orders created, ${unchangedReports} reports unchanged`)
+    this.logger.log(`external_results -> Got ${results.length} results from ${integration.providerConfiguration.providerId}: ${createdReports.length} reports created, ${updatedReports.length} reports updated, orders ${[...createdOrders, ...dummyOrders].length} orders created, ${unchangedReports} reports unchanged (integration ${integrationId})`)
   }
 
   private reportGraphQuery (): SelectQueryBuilder<Report> {

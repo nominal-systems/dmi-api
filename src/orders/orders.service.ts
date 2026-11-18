@@ -539,7 +539,7 @@ export class OrdersService {
 
     // Nothing to do, return
     if (nonExistingExternalOrders.length === 0 && updatedOrders.length === 0) {
-      const summary = `Got ${orders.length} external orders: 0 created, 0 updated, ${unchangedOrders} orders unchanged`
+      const summary = `Got ${orders.length} external orders: 0 created, 0 updated, ${unchangedOrders} orders unchanged (integration ${integrationId})`
       // Orders a delivery left as they were are a provider redelivering them: keep that visible
       if (unchangedOrders > 0) {
         this.logger.log(summary)
@@ -624,7 +624,7 @@ export class OrdersService {
     }
 
     const failed = failedOrders > 0 ? `, ${failedOrders} failed` : ''
-    const summary = `Got ${orders.length} external orders: ${newOrders.length} created, ${savedUpdates} updated, ${unchangedOrders} orders unchanged${failed}`
+    const summary = `Got ${orders.length} external orders: ${newOrders.length} created, ${savedUpdates} updated, ${unchangedOrders} orders unchanged${failed} (${integration.providerConfiguration.providerId}, integration ${integrationId})`
     // A batch whose new orders were all created concurrently changed nothing: debug, as before.
     // Orders a delivery left as they were are a provider redelivering them: keep that visible
     if (newOrders.length === 0 && savedUpdates === 0 && failedOrders === 0 && unchangedOrders === 0) {
@@ -770,7 +770,7 @@ export class OrdersService {
     }
 
     this.logger.log(
-      `external_order_results -> Got ${results.length} results from ${integration.providerConfiguration.providerId}: ${updatedOrders.length} orders updated, ${unchangedOrders} orders unchanged${failedOrders > 0 ? `, ${failedOrders} orders failed` : ''}`,
+      `external_order_results -> Got ${results.length} results from ${integration.providerConfiguration.providerId}: ${updatedOrders.length} orders updated, ${unchangedOrders} orders unchanged${failedOrders > 0 ? `, ${failedOrders} orders failed` : ''} (integration ${integrationId})`,
     )
   }
 

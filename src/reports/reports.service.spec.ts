@@ -3618,7 +3618,7 @@ describe('ReportsService', () => {
           expect(reportsRepositoryMock.save).not.toHaveBeenCalled()
           expect(eventsServiceMock.addEvent).not.toHaveBeenCalled()
           expect(log).toHaveBeenCalledWith(
-            `external_results -> Got 1 results from ${INTEGRATION_ID}: 0 reports created, 0 reports updated, orders 0 orders created, 1 reports unchanged`
+            `external_results -> Got 1 results from ${INTEGRATION_ID}: 0 reports created, 0 reports updated, orders 0 orders created, 1 reports unchanged (integration ${INTEGRATION_ID})`
           )
         })
 
@@ -3704,7 +3704,7 @@ describe('ReportsService', () => {
           expect(ordersServiceMock.saveOrder).not.toHaveBeenCalled()
           expect(reportsRepositoryMock.save).not.toHaveBeenCalled()
           expect(eventsServiceMock.addEvent).not.toHaveBeenCalled()
-          expect(log).toHaveBeenCalledWith(expect.stringMatching(/: 0 reports created, 0 reports updated, .*, 1 reports unchanged$/))
+          expect(log).toHaveBeenCalledWith(expect.stringMatching(/: 0 reports created, 0 reports updated, .*, 1 reports unchanged \(integration integration-409\)$/))
         })
 
         it('should emit one report:updated when the delivery changes the report', async () => {

@@ -1214,7 +1214,7 @@ describe('OrdersService', () => {
             .spyOn(ordersRepositoryMock, 'createQueryBuilder')
             .mockImplementation(() => rawQueryBuilder(storedManifests) as any)
           await ordersService.handleExternalOrders({
-            integrationId: '1',
+            integrationId: 'integration-409',
             orders: externalOrders as ExternalOrdersEventData['orders'],
           })
         }
@@ -1245,7 +1245,7 @@ describe('OrdersService', () => {
           // The uri decides: the stored data is not read
           expect(ordersRepositoryMock.createQueryBuilder).toHaveBeenCalledTimes(1)
           expect(log).toHaveBeenCalledWith(
-            'Got 1 external orders: 0 created, 0 updated, 1 orders unchanged',
+            'Got 1 external orders: 0 created, 0 updated, 1 orders unchanged (integration integration-409)',
           )
         })
 
@@ -1332,7 +1332,7 @@ describe('OrdersService', () => {
             }),
           )
           expect(log).toHaveBeenCalledWith(
-            'Got 2 external orders: 0 created, 1 updated, 1 orders unchanged',
+            'Got 2 external orders: 0 created, 1 updated, 1 orders unchanged (integration-409, integration integration-409)',
           )
         })
       })
@@ -2491,7 +2491,7 @@ describe('OrdersService', () => {
           expect(ordersRepositoryMock.save).not.toHaveBeenCalled()
           expect(eventsServiceMock.addEvent).not.toHaveBeenCalled()
           expect(log).toHaveBeenCalledWith(
-            `external_order_results -> Got 1 results from ${INTEGRATION_ID}: 0 orders updated, 1 orders unchanged`,
+            `external_order_results -> Got 1 results from ${INTEGRATION_ID}: 0 orders updated, 1 orders unchanged (integration ${INTEGRATION_ID})`,
           )
         })
 
