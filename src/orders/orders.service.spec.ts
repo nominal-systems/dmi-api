@@ -33,12 +33,24 @@ import { ProvidersService } from '../providers/services/providers.service'
 import { ExternalOrdersEventData } from '../common/typings/internal-event-data.interface'
 import { NamedLockService } from '../common/services/named-lock.service'
 import { In } from 'typeorm'
+import { createHash } from 'crypto'
+
+// A query whose getRawMany() resolves to the given rows, and getRawOne() to the first
+const rawQueryBuilder = (rows: unknown[]): unknown => ({
+  innerJoin: jest.fn().mockReturnThis(),
+  select: jest.fn().mockReturnThis(),
+  addSelect: jest.fn().mockReturnThis(),
+  where: jest.fn().mockReturnThis(),
+  getRawMany: jest.fn().mockResolvedValue(rows),
+  getRawOne: jest.fn().mockResolvedValue(rows[0]),
+})
 
 export const repositoryMockFactory: () => MockUtils<Repository<any>> = jest.fn(() => ({
   find: jest.fn((entity) => entity),
   findOne: jest.fn((entity) => entity),
   create: jest.fn((entity) => entity),
   save: jest.fn((entity) => entity),
+  createQueryBuilder: jest.fn(() => rawQueryBuilder([])),
 }))
 
 describe('OrdersService', () => {
@@ -1145,6 +1157,184 @@ describe('OrdersService', () => {
             }),
           }),
         )
+      })
+
+      // Regression for https://github.com/nominal-systems/dmi-api/issues/409
+      // A provider that delivers an order again with the manifest it already has must cost no
+      // order write (which would store the PDF again) and no order:updated event. A provider may
+      // render the same order form anew on every fetch, so with a uri the data is not compared.
+      describe('redelivery of a stored order (issue #409)', () => {
+        const URI = 'https://lab.example/LabOrders/TRF/ACC-409'
+        const FORM = 'JVBERi0xLjQKJcfsj6IK'
+        // The same order form, fetched and rendered again
+        const FORM_RENDERED_AGAIN = 'JVBERi0xLjQKJeLjz9MK'
+        const sha256 = (data: string): string => createHash('sha256').update(data).digest('hex')
+        // The stored manifest as the manifest queries read it: its uri and content type, and its
+        // data as the digest MySQL computes
+        const storedManifestRow = (
+          orderId: string,
+          { uri = URI, data = FORM }: { uri?: string | null; data?: string } = {},
+        ): unknown => ({ orderId, uri, contentType: 'application/pdf', dataDigest: sha256(data) })
+        const manifest = ({
+          uri = URI,
+          data = FORM,
+          contentType = 'application/pdf',
+        }: { uri?: string | null; data?: string; contentType?: string } = {}): unknown => ({
+          contentType,
+          data,
+          ...(uri != null ? { uri } : {}),
+        })
+        const storedOrder = (id: string, externalId: string, status: OrderStatus): Order =>
+          ({
+            id,
+            externalId,
+            status,
+            notes: null,
+            patient: { id: `patient-${id}`, name: 'Rex', identifier: [] },
+            client: { id: `client-${id}`, lastName: 'Anderson', identifier: [] },
+            veterinarian: { id: `veterinarian-${id}`, lastName: 'Vetson' },
+            tests: [{ code: 'T805' }],
+          }) as unknown as Order
+        const delivered = (externalId: string, status: OrderStatus, withManifest: unknown): unknown => ({
+          externalId,
+          status,
+          patient: { name: 'Rex', sex: 'M', species: 'Canine' },
+          client: { firstName: 'Alice', lastName: 'Anderson' },
+          veterinarian: { lastName: 'Vetson' },
+          tests: [{ code: 'T805' }],
+          manifest: withManifest,
+        })
+        const deliver = async (
+          stored: Order[],
+          storedManifests: unknown[],
+          externalOrders: unknown[],
+        ): Promise<void> => {
+          jest.spyOn(ordersRepositoryMock, 'find').mockResolvedValueOnce(stored)
+          jest
+            .spyOn(ordersRepositoryMock, 'createQueryBuilder')
+            .mockImplementation(() => rawQueryBuilder(storedManifests) as any)
+          await ordersService.handleExternalOrders({
+            integrationId: '1',
+            orders: externalOrders as ExternalOrdersEventData['orders'],
+          })
+        }
+        const expectOneOrderUpdated = (withManifest: unknown): void => {
+          expect(ordersRepositoryMock.save).toHaveBeenCalledTimes(1)
+          expect(eventsServiceMock.addEvent).toHaveBeenCalledTimes(1)
+          expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(
+            expect.objectContaining({
+              type: EventType.ORDER_UPDATED,
+              data: expect.objectContaining({
+                order: expect.objectContaining({ manifest: withManifest }),
+              }),
+            }),
+          )
+        }
+
+        it('should neither save nor emit order:updated for the order form it has, rendered anew', async () => {
+          const log = jest.spyOn((ordersService as any).logger, 'log')
+
+          await deliver(
+            [storedOrder('order-1', 'ACC-409', OrderStatus.SUBMITTED)],
+            [storedManifestRow('order-1')],
+            [delivered('ACC-409', OrderStatus.SUBMITTED, manifest({ data: FORM_RENDERED_AGAIN }))],
+          )
+
+          expect(ordersRepositoryMock.save).not.toHaveBeenCalled()
+          expect(eventsServiceMock.addEvent).not.toHaveBeenCalled()
+          // The uri decides: the stored data is not read
+          expect(ordersRepositoryMock.createQueryBuilder).toHaveBeenCalledTimes(1)
+          expect(log).toHaveBeenCalledWith(
+            'Got 1 external orders: 0 created, 0 updated, 1 orders unchanged',
+          )
+        })
+
+        it('should save and emit one order:updated for a manifest the order does not have', async () => {
+          await deliver(
+            [storedOrder('order-1', 'ACC-409', OrderStatus.SUBMITTED)],
+            [],
+            [delivered('ACC-409', OrderStatus.SUBMITTED, manifest())],
+          )
+
+          expectOneOrderUpdated(manifest())
+        })
+
+        it('should save and emit one order:updated for a manifest with another uri', async () => {
+          const otherForm = manifest({ uri: 'https://lab.example/LabOrders/TRF/ACC-409-2' })
+
+          await deliver(
+            [storedOrder('order-1', 'ACC-409', OrderStatus.SUBMITTED)],
+            [storedManifestRow('order-1')],
+            [delivered('ACC-409', OrderStatus.SUBMITTED, otherForm)],
+          )
+
+          expectOneOrderUpdated(otherForm)
+        })
+
+        it('should save and emit one order:updated for a manifest with another content type', async () => {
+          const otherType = manifest({ contentType: 'image/png' })
+
+          await deliver(
+            [storedOrder('order-1', 'ACC-409', OrderStatus.SUBMITTED)],
+            [storedManifestRow('order-1')],
+            [delivered('ACC-409', OrderStatus.SUBMITTED, otherType)],
+          )
+
+          expectOneOrderUpdated(otherType)
+        })
+
+        it('should neither save nor emit order:updated for a manifest without a uri and with the data stored', async () => {
+          await deliver(
+            [storedOrder('order-1', 'ACC-409', OrderStatus.SUBMITTED)],
+            [storedManifestRow('order-1', { uri: null })],
+            [delivered('ACC-409', OrderStatus.SUBMITTED, manifest({ uri: null }))],
+          )
+
+          expect(ordersRepositoryMock.save).not.toHaveBeenCalled()
+          expect(eventsServiceMock.addEvent).not.toHaveBeenCalled()
+          // Without a uri the data decides: its stored digest is read
+          expect(ordersRepositoryMock.createQueryBuilder).toHaveBeenCalledTimes(2)
+        })
+
+        it('should save and emit one order:updated for a manifest without a uri whose data differs', async () => {
+          const otherData = manifest({ uri: null, data: FORM_RENDERED_AGAIN })
+
+          await deliver(
+            [storedOrder('order-1', 'ACC-409', OrderStatus.SUBMITTED)],
+            [storedManifestRow('order-1', { uri: null })],
+            [delivered('ACC-409', OrderStatus.SUBMITTED, otherData)],
+          )
+
+          expectOneOrderUpdated(otherData)
+        })
+
+        it('should emit one order:updated, for the status change, when both are delivered with the order form they have', async () => {
+          const log = jest.spyOn((ordersService as any).logger, 'log')
+
+          await deliver(
+            [
+              storedOrder('order-1', 'ACC-409', OrderStatus.SUBMITTED),
+              storedOrder('order-2', 'ACC-410', OrderStatus.SUBMITTED),
+            ],
+            [storedManifestRow('order-1'), storedManifestRow('order-2')],
+            [
+              delivered('ACC-409', OrderStatus.COMPLETED, manifest({ data: FORM_RENDERED_AGAIN })),
+              delivered('ACC-410', OrderStatus.SUBMITTED, manifest({ data: FORM_RENDERED_AGAIN })),
+            ],
+          )
+
+          expect(ordersRepositoryMock.save).toHaveBeenCalledTimes(1)
+          expect(eventsServiceMock.addEvent).toHaveBeenCalledTimes(1)
+          expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(
+            expect.objectContaining({
+              type: EventType.ORDER_UPDATED,
+              data: expect.objectContaining({ orderId: 'order-1', status: OrderStatus.COMPLETED }),
+            }),
+          )
+          expect(log).toHaveBeenCalledWith(
+            'Got 2 external orders: 0 created, 1 updated, 1 orders unchanged',
+          )
+        })
       })
     })
 
