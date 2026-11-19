@@ -599,6 +599,7 @@ export class OrdersService {
     )
 
     const updatedOrders: Order[] = []
+    let failedOrders = 0
     for (const externalOrderId of externalOrderIds) {
       const result = results.find((result) => result.orderId === externalOrderId)
 
@@ -630,6 +631,12 @@ export class OrdersService {
       } catch (error) {
         if (error.status === 404) {
           this.logger.debug(`Order ${externalOrderId} doesn't exist in the system`)
+        } else {
+          failedOrders++
+          this.logger.error(
+            `Could not update the order with external ID ${externalOrderId} from its result (${integration.providerConfiguration.providerId}, integration ${integrationId}): ${error.message}`,
+            error.stack,
+          )
         }
       }
     }
@@ -653,7 +660,7 @@ export class OrdersService {
     }
 
     this.logger.log(
-      `external_order_results -> Got ${results.length} results from ${integration.providerConfiguration.providerId}: ${updatedOrders.length} orders updated`,
+      `external_order_results -> Got ${results.length} results from ${integration.providerConfiguration.providerId}: ${updatedOrders.length} orders updated${failedOrders > 0 ? `, ${failedOrders} orders failed` : ''}`,
     )
   }
 
