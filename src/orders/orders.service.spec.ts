@@ -4,7 +4,7 @@ import { ConfigService } from '@nestjs/config'
 import { getRepositoryToken } from '@nestjs/typeorm'
 import { Order } from './entities/order.entity'
 import { MockUtils } from '../common/test/mock-utils'
-import { Repository } from 'typeorm'
+import { QueryFailedError, Repository } from 'typeorm'
 import { ReportsService } from '../reports/reports.service'
 import { IntegrationsService } from '../integrations/integrations.service'
 import { EventsService } from '../events/services/events.service'
@@ -26,7 +26,7 @@ import {
   CreateOrderDtoClient,
   CreateOrderDtoPatient,
 } from './dtos/create-order.dto'
-import { ForbiddenException, HttpException, Logger } from '@nestjs/common'
+import { ForbiddenException, HttpException, Logger, NotFoundException } from '@nestjs/common'
 import { v4 as uuidv4 } from 'uuid'
 import { Patient } from './entities/patient.entity'
 import { ProvidersService } from '../providers/services/providers.service'
@@ -1189,22 +1189,242 @@ describe('OrdersService', () => {
         expect(eventsServiceMock.addEvent).not.toHaveBeenCalled()
       })
 
-      it('should propagate transient re-check errors instead of treating them as a missing order', async () => {
+      it('should leave the order out, not treat it as missing, when its re-check fails with a transient error', async () => {
         // A transient error during the re-check under the lock is NOT "order
         // missing": proceeding would insert a duplicate of an order that may
-        // already exist (issue #320 review).
+        // already exist (issue #320 review). The order is logged and left out
+        // instead, like any order that cannot be saved (issue #411).
         jest.spyOn(ordersRepositoryMock, 'find').mockResolvedValueOnce([])
         jest.spyOn(ordersRepositoryMock, 'findOne').mockRejectedValueOnce(new Error('connection lost'))
+        const errorSpy = jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined)
 
-        await expect(
-          ordersService.handleExternalOrders({
+        try {
+          await ordersService.handleExternalOrders({
             integrationId: 'integration-1',
             orders: [{ externalId: '123', status: 'SUBMITTED', tests: [] }] as any,
-          }),
-        ).rejects.toThrow('connection lost')
+          })
 
-        expect(ordersRepositoryMock.save).not.toHaveBeenCalled()
+          expect(ordersRepositoryMock.save).not.toHaveBeenCalled()
+          expect(eventsServiceMock.addEvent).not.toHaveBeenCalled()
+          expect(errorSpy).toHaveBeenCalledWith(
+            expect.stringMatching(/^Could not create order 123 .*: connection lost$/),
+            expect.any(String),
+          )
+        } finally {
+          errorSpy.mockRestore()
+        }
+      })
+    })
+
+    describe('one order that cannot be saved (issue #411)', () => {
+      const INTEGRATION_ID = 'integration-1'
+      const PROVIDER_ID = 'wisdom-panel'
+      const practice = { id: 'practice-1' }
+      // What MySQL answers for a client without a last name, as TypeORM surfaces it
+      const nullLastName = (): QueryFailedError =>
+        new QueryFailedError('INSERT INTO `client` ...', [], new Error("Column 'lastName' cannot be null"))
+
+      const defaultFindById = integrationsServiceMock.findById.getMockImplementation()
+      let errorSpy: jest.SpyInstance
+      let logSpy: jest.SpyInstance
+
+      const externalOrder = (externalId: string, status = 'SUBMITTED'): any => ({
+        externalId,
+        status,
+        patient: { name: `Pet ${externalId}`, sex: 'female', species: 'cat' },
+        client: { firstName: 'Sam', lastName: 'Poe' },
+        tests: [{ code: 'KIT' }],
+        veterinarian: { firstName: 'Kim Vet' },
+      })
+      // An order dmi already holds, SUBMITTED, so an external COMPLETED is an update
+      const existingOrder = (externalId: string): Order =>
+        ({
+          id: `order-${externalId}`,
+          externalId,
+          status: 'SUBMITTED',
+          patient: { name: `Pet ${externalId}` },
+          client: { lastName: 'Poe' },
+          veterinarian: { firstName: 'Kim Vet' },
+          tests: [{ code: 'KIT' }],
+        }) as unknown as Order
+      const handle = async (orders: any[]): Promise<void> =>
+        await ordersService.handleExternalOrders({ integrationId: INTEGRATION_ID, orders })
+
+      // Every save gives the order an id, except for the orders named, whose save fails
+      const failSavesOf = (...externalIds: string[]): void => {
+        // @ts-expect-error: compiler type error
+        ordersRepositoryMock.save.mockImplementation(async (order: Order) => {
+          if (externalIds.includes(order.externalId)) throw nullLastName()
+          return Object.assign(order, { id: order.id ?? `order-${order.externalId}` })
+        })
+      }
+      const savedExternalIds = (): string[] =>
+        (ordersRepositoryMock.save as jest.Mock).mock.calls.map(([order]) => order.externalId)
+      const events = (): Array<{ type: string, orderId: string }> =>
+        eventsServiceMock.addEvent.mock.calls.map(([event]) => ({ type: event.type, orderId: event.data.orderId }))
+      const errorMessages = (): string[] => errorSpy.mock.calls.map(([message]) => message)
+      const summaries = (): string[] =>
+        logSpy.mock.calls.map(([message]) => message).filter((message) => String(message).startsWith('Got '))
+
+      beforeEach(() => {
+        integrationsServiceMock.findById.mockImplementation(async (id: string) => ({
+          id,
+          providerConfiguration: { providerId: PROVIDER_ID },
+          practice,
+        }))
+        jest.spyOn(ordersRepositoryMock, 'find').mockResolvedValueOnce([])
+        jest.spyOn(ordersRepositoryMock, 'findOne').mockResolvedValue(null)
+        // @ts-expect-error: compiler type error
+        ordersRepositoryMock.create.mockImplementation((item) => Object.assign(new Order(), item))
+        failSavesOf()
+        errorSpy = jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined)
+        logSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation(() => undefined)
+      })
+
+      afterEach(() => {
+        errorSpy.mockRestore()
+        logSpy.mockRestore()
+        integrationsServiceMock.findById.mockImplementation(defaultFindById)
+        // clearAllMocks() keeps implementations: drop the ones these tests program
+        eventsServiceMock.addEvent.mockReset()
+      })
+
+      it('creates and announces the orders before and after a new order whose save fails, and logs that one', async () => {
+        failSavesOf('B')
+
+        await handle([externalOrder('A'), externalOrder('B'), externalOrder('C')])
+
+        expect(savedExternalIds()).toEqual(['A', 'B', 'C'])
+        expect(events()).toEqual([
+          { type: EventType.ORDER_CREATED, orderId: 'order-A' },
+          { type: EventType.ORDER_CREATED, orderId: 'order-C' },
+        ])
+        expect(errorSpy).toHaveBeenCalledTimes(1)
+        expect(errorSpy).toHaveBeenCalledWith(
+          `Could not create order B from ${PROVIDER_ID} (integration ${INTEGRATION_ID}), left it out of the batch: Column 'lastName' cannot be null`,
+          expect.stringContaining("Column 'lastName' cannot be null"),
+        )
+        expect(summaries()).toEqual(['Got 3 external orders: 2 created, 0 updated, 1 failed'])
+      })
+
+      it('saves and announces the other updates when one update cannot be saved, and logs that one', async () => {
+        ;(ordersRepositoryMock.find as jest.Mock)
+          .mockReset()
+          .mockResolvedValueOnce([existingOrder('X'), existingOrder('Y'), existingOrder('Z')])
+        failSavesOf('Y')
+
+        await handle([externalOrder('X', 'COMPLETED'), externalOrder('Y', 'COMPLETED'), externalOrder('Z', 'COMPLETED')])
+
+        expect(savedExternalIds()).toEqual(['X', 'Y', 'Z'])
+        expect(events()).toEqual([
+          { type: EventType.ORDER_UPDATED, orderId: 'order-X' },
+          { type: EventType.ORDER_UPDATED, orderId: 'order-Z' },
+        ])
+        expect(eventsServiceMock.addEvent.mock.calls.map(([event]) => event.data.status)).toEqual([
+          'COMPLETED',
+          'COMPLETED',
+        ])
+        expect(errorSpy).toHaveBeenCalledTimes(1)
+        expect(errorSpy).toHaveBeenCalledWith(
+          `Could not update order Y from ${PROVIDER_ID} (integration ${INTEGRATION_ID}), left it out of the batch: Column 'lastName' cannot be null`,
+          expect.stringContaining("Column 'lastName' cannot be null"),
+        )
+        expect(summaries()).toEqual(['Got 3 external orders: 0 created, 2 updated, 1 failed'])
+      })
+
+      it('logs every order and counts them all when no order of the batch can be saved', async () => {
+        ;(ordersRepositoryMock.find as jest.Mock).mockReset().mockResolvedValueOnce([existingOrder('X')])
+        failSavesOf('A', 'X')
+
+        await handle([externalOrder('A'), externalOrder('X', 'COMPLETED')])
+
+        expect(savedExternalIds()).toEqual(['A', 'X'])
         expect(eventsServiceMock.addEvent).not.toHaveBeenCalled()
+        expect(errorMessages()).toEqual([
+          expect.stringMatching(/^Could not create order A from wisdom-panel /),
+          expect.stringMatching(/^Could not update order X from wisdom-panel /),
+        ])
+        expect(summaries()).toEqual(['Got 2 external orders: 0 created, 0 updated, 2 failed'])
+      })
+
+      it('leaves out, and never inserts, an order whose re-check fails with a transient error, and creates the rest (issue #320)', async () => {
+        // Only "not found" means missing: an order whose re-check under the lock fails for another
+        // reason may exist already, so inserting it could duplicate it
+        jest.spyOn(ordersService, 'findOneByExternalId').mockImplementation(async (externalId: string) => {
+          if (externalId === 'B') throw new Error('connection lost')
+          throw new NotFoundException('The order was not found')
+        })
+
+        await handle([externalOrder('A'), externalOrder('B'), externalOrder('C')])
+
+        expect(savedExternalIds()).toEqual(['A', 'C'])
+        expect(events()).toEqual([
+          { type: EventType.ORDER_CREATED, orderId: 'order-A' },
+          { type: EventType.ORDER_CREATED, orderId: 'order-C' },
+        ])
+        expect(errorMessages()).toEqual([
+          `Could not create order B from ${PROVIDER_ID} (integration ${INTEGRATION_ID}), left it out of the batch: connection lost`,
+        ])
+        expect(summaries()).toEqual(['Got 3 external orders: 2 created, 0 updated, 1 failed'])
+      })
+
+      it('goes on with the batch when the order:created or order:updated event of a saved order cannot be recorded', async () => {
+        ;(ordersRepositoryMock.find as jest.Mock)
+          .mockReset()
+          .mockResolvedValueOnce([existingOrder('X'), existingOrder('Y')])
+        eventsServiceMock.addEvent.mockImplementation(async (event) => {
+          const refused =
+            (event.type === EventType.ORDER_CREATED && event.data.orderId === 'order-A') ||
+            (event.type === EventType.ORDER_UPDATED && event.data.orderId === 'order-X')
+          if (refused) throw new Error('event store unavailable')
+        })
+
+        await handle([
+          externalOrder('A'),
+          externalOrder('B'),
+          externalOrder('X', 'COMPLETED'),
+          externalOrder('Y', 'COMPLETED'),
+        ])
+
+        // Every order is saved, and every event is attempted
+        expect(savedExternalIds()).toEqual(['A', 'B', 'X', 'Y'])
+        expect(events()).toEqual([
+          { type: EventType.ORDER_CREATED, orderId: 'order-A' },
+          { type: EventType.ORDER_CREATED, orderId: 'order-B' },
+          { type: EventType.ORDER_UPDATED, orderId: 'order-X' },
+          { type: EventType.ORDER_UPDATED, orderId: 'order-Y' },
+        ])
+        expect(errorMessages()).toEqual([
+          expect.stringMatching(/^Could not record or deliver the 'order:created' event for order order-A .*: event store unavailable$/),
+          expect.stringMatching(/^Could not record or deliver the 'order:updated' event for order order-X .*: event store unavailable$/),
+        ])
+        // The orders were saved: an event that could not be recorded fails no order
+        expect(summaries()).toEqual(['Got 4 external orders: 2 created, 2 updated'])
+      })
+
+      it('changes nothing for a batch in which every order is saved: the same events and the same summary line', async () => {
+        ;(ordersRepositoryMock.find as jest.Mock).mockReset().mockResolvedValueOnce([existingOrder('X')])
+
+        await handle([externalOrder('A'), externalOrder('B'), externalOrder('X', 'COMPLETED')])
+
+        const event = (type: EventType, orderId: string, extra: Record<string, unknown> = {}): unknown => ({
+          namespace: EventNamespace.ORDERS,
+          type,
+          providerId: PROVIDER_ID,
+          practiceId: practice.id,
+          integrationId: INTEGRATION_ID,
+          accessionId: undefined,
+          data: { practice, orderId, ...extra, order: expect.objectContaining({ id: orderId }) },
+        })
+        expect(eventsServiceMock.addEvent.mock.calls.map(([dto]) => dto)).toEqual([
+          event(EventType.ORDER_CREATED, 'order-A'),
+          event(EventType.ORDER_CREATED, 'order-B'),
+          event(EventType.ORDER_UPDATED, 'order-X', { status: 'COMPLETED' }),
+        ])
+        expect(savedExternalIds()).toEqual(['A', 'B', 'X'])
+        expect(integrationsServiceMock.findById).toHaveBeenCalledTimes(1)
+        expect(errorSpy).not.toHaveBeenCalled()
+        expect(summaries()).toEqual(['Got 3 external orders: 2 created, 1 updated'])
       })
     })
   })
