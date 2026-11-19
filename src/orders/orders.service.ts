@@ -586,9 +586,13 @@ export class OrdersService {
     }
 
     const failed = failedOrders > 0 ? `, ${failedOrders} failed` : ''
-    this.logger.log(
-      `Got ${orders.length} external orders: ${newOrders.length} created, ${savedUpdates} updated${failed}`,
-    )
+    const summary = `Got ${orders.length} external orders: ${newOrders.length} created, ${savedUpdates} updated${failed}`
+    // A batch whose new orders were all created concurrently changed nothing: debug, as before
+    if (newOrders.length === 0 && savedUpdates === 0 && failedOrders === 0) {
+      this.logger.debug(summary)
+    } else {
+      this.logger.log(summary)
+    }
   }
 
   // An order of an external_orders batch that cannot be saved: logged, and the batch goes on without it
@@ -596,11 +600,13 @@ export class OrdersService {
     integration: Integration,
     externalId: string,
     action: 'create' | 'update',
-    error: any,
+    error: unknown,
   ): void {
+    // Whatever was thrown names the cause, an Error or not; only an Error has a stack
+    const cause = error instanceof Error ? error.message : String(error)
     this.logger.error(
-      `Could not ${action} order ${externalId} from ${integration.providerConfiguration.providerId} (integration ${integration.id}), left it out of the batch: ${error?.message}`,
-      error?.stack,
+      `Could not ${action} order ${externalId} from ${integration.providerConfiguration.providerId} (integration ${integration.id}), left it out of the batch: ${cause}`,
+      error instanceof Error ? error.stack : undefined,
     )
   }
 

@@ -1227,6 +1227,7 @@ describe('OrdersService', () => {
       const defaultFindById = integrationsServiceMock.findById.getMockImplementation()
       let errorSpy: jest.SpyInstance
       let logSpy: jest.SpyInstance
+      let debugSpy: jest.SpyInstance
 
       const externalOrder = (externalId: string, status = 'SUBMITTED'): any => ({
         externalId,
@@ -1265,6 +1266,8 @@ describe('OrdersService', () => {
       const errorMessages = (): string[] => errorSpy.mock.calls.map(([message]) => message)
       const summaries = (): string[] =>
         logSpy.mock.calls.map(([message]) => message).filter((message) => String(message).startsWith('Got '))
+      const debugSummaries = (): string[] =>
+        debugSpy.mock.calls.map(([message]) => message).filter((message) => String(message).startsWith('Got '))
 
       beforeEach(() => {
         integrationsServiceMock.findById.mockImplementation(async (id: string) => ({
@@ -1279,11 +1282,13 @@ describe('OrdersService', () => {
         failSavesOf()
         errorSpy = jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined)
         logSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation(() => undefined)
+        debugSpy = jest.spyOn(Logger.prototype, 'debug').mockImplementation(() => undefined)
       })
 
       afterEach(() => {
         errorSpy.mockRestore()
         logSpy.mockRestore()
+        debugSpy.mockRestore()
         integrationsServiceMock.findById.mockImplementation(defaultFindById)
         // clearAllMocks() keeps implementations: drop the ones these tests program
         eventsServiceMock.addEvent.mockReset()
@@ -1345,6 +1350,48 @@ describe('OrdersService', () => {
           expect.stringMatching(/^Could not update order X from wisdom-panel /),
         ])
         expect(summaries()).toEqual(['Got 2 external orders: 0 created, 0 updated, 2 failed'])
+      })
+
+      it('names the cause when what a save throws is not an Error, and goes on with the batch', async () => {
+        // @ts-expect-error: compiler type error
+        ordersRepositoryMock.save.mockImplementation(async (order: Order) => {
+          if (order.externalId === 'B') throw 'deadlock found when trying to get lock'
+          if (order.externalId === 'C') throw null
+          return Object.assign(order, { id: `order-${order.externalId}` })
+        })
+
+        await handle([externalOrder('A'), externalOrder('B'), externalOrder('C'), externalOrder('D')])
+
+        expect(events()).toEqual([
+          { type: EventType.ORDER_CREATED, orderId: 'order-A' },
+          { type: EventType.ORDER_CREATED, orderId: 'order-D' },
+        ])
+        // The cause is in the line; there is no stack to pass
+        expect(errorSpy.mock.calls).toEqual([
+          [
+            `Could not create order B from ${PROVIDER_ID} (integration ${INTEGRATION_ID}), left it out of the batch: deadlock found when trying to get lock`,
+            undefined,
+          ],
+          [
+            `Could not create order C from ${PROVIDER_ID} (integration ${INTEGRATION_ID}), left it out of the batch: null`,
+            undefined,
+          ],
+        ])
+        expect(summaries()).toEqual(['Got 4 external orders: 2 created, 0 updated, 2 failed'])
+      })
+
+      it('logs the summary at debug, as before, for a batch whose new orders were all created concurrently', async () => {
+        // The batch lookup misses both orders, and the re-check under each lock finds it: another
+        // handler created them meanwhile, so this batch changes nothing
+        jest.spyOn(ordersRepositoryMock, 'findOne').mockResolvedValue({ id: 'winner', externalId: 'A' } as Order)
+
+        await handle([externalOrder('A'), externalOrder('B')])
+
+        expect(ordersRepositoryMock.save).not.toHaveBeenCalled()
+        expect(eventsServiceMock.addEvent).not.toHaveBeenCalled()
+        expect(errorSpy).not.toHaveBeenCalled()
+        expect(summaries()).toEqual([])
+        expect(debugSummaries()).toEqual(['Got 2 external orders: 0 created, 0 updated'])
       })
 
       it('leaves out, and never inserts, an order whose re-check fails with a transient error, and creates the rest (issue #320)', async () => {
