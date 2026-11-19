@@ -1334,6 +1334,7 @@ describe('OrdersService', () => {
       let errorSpy: jest.SpyInstance
       let logSpy: jest.SpyInstance
       let debugSpy: jest.SpyInstance
+      let warnSpy: jest.SpyInstance
 
       // A database error as TypeORM surfaces it: the driver's error wrapped, its fields copied
       const queryFailed = (message: string, fields: Record<string, unknown>): QueryFailedError =>
@@ -1365,6 +1366,13 @@ describe('OrdersService', () => {
         jest.spyOn(ordersRepositoryMock, 'findOne').mockImplementation(findStored as any)
       }
 
+      // The save of one order fails with the value given; the others are saved
+      const failSaveOf = (externalId: string, thrown: unknown): jest.SpyInstance =>
+        jest.spyOn(ordersRepositoryMock, 'save').mockImplementation((async (order: Order) => {
+          if (order.externalId === externalId) return await Promise.reject(thrown)
+          return order
+        }) as any)
+
       const handleResults = async (orderIds: string[]): Promise<void> =>
         await ordersService.handleExternalOrderResults({
           integrationId: INTEGRATION_ID,
@@ -1386,12 +1394,14 @@ describe('OrdersService', () => {
         errorSpy = jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined)
         logSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation(() => undefined)
         debugSpy = jest.spyOn(Logger.prototype, 'debug').mockImplementation(() => undefined)
+        warnSpy = jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined)
       })
 
       afterEach(() => {
         errorSpy.mockRestore()
         logSpy.mockRestore()
         debugSpy.mockRestore()
+        warnSpy.mockRestore()
       })
 
       it('logs an order whose save fails, and still updates and announces the rest of the batch', async () => {
@@ -1400,10 +1410,7 @@ describe('OrdersService', () => {
           code: 'ER_LOCK_DEADLOCK',
           errno: 1213,
         })
-        const saveSpy = jest.spyOn(ordersRepositoryMock, 'save').mockImplementation((async (order: Order) => {
-          if (order.externalId === 'ORD-412-2') throw deadlock
-          return order
-        }) as any)
+        const saveSpy = failSaveOf('ORD-412-2', deadlock)
 
         await handleResults(['ORD-412-1', 'ORD-412-2', 'ORD-412-3'])
 
@@ -1421,7 +1428,7 @@ describe('OrdersService', () => {
         // ...and the failed one is logged with what identifies it, the error and its stack
         expect(errorSpy.mock.calls).toEqual([
           [
-            `Could not update the order with external ID ORD-412-2 from its result (${PROVIDER_ID}, integration ${INTEGRATION_ID}): Deadlock found when trying to get lock; try restarting transaction`,
+            `Could not update the order with external ID ORD-412-2 (order order-ORD-412-2) from its result (${PROVIDER_ID}, integration ${INTEGRATION_ID}): Deadlock found when trying to get lock; try restarting transaction`,
             deadlock.stack,
           ],
         ])
@@ -1453,6 +1460,98 @@ describe('OrdersService', () => {
         ])
         expect(logSpy.mock.calls).toEqual([
           [`external_order_results -> Got 2 results from ${PROVIDER_ID}: 1 orders updated, 1 orders failed`],
+        ])
+      })
+
+      it('logs and counts an error from the save that carries a 404 status, not as "doesn\'t exist"', async () => {
+        storeOrders(['ORD-412-1', 'ORD-412-2'])
+        // Only the lookup's NotFoundException means the order is missing
+        const statusNotFound = Object.assign(new Error('Request failed with status code 404'), { status: 404 })
+        failSaveOf('ORD-412-1', statusNotFound)
+
+        await handleResults(['ORD-412-1', 'ORD-412-2'])
+
+        expect(updatedEvents()).toEqual([{ orderId: 'order-ORD-412-2', status: OrderStatus.COMPLETED }])
+        expect(debugSpy).not.toHaveBeenCalledWith("Order ORD-412-1 doesn't exist in the system")
+        expect(errorSpy.mock.calls).toEqual([
+          [
+            `Could not update the order with external ID ORD-412-1 (order order-ORD-412-1) from its result (${PROVIDER_ID}, integration ${INTEGRATION_ID}): Request failed with status code 404`,
+            statusNotFound.stack,
+          ],
+        ])
+        expect(logSpy.mock.calls).toEqual([
+          [`external_order_results -> Got 2 results from ${PROVIDER_ID}: 1 orders updated, 1 orders failed`],
+        ])
+      })
+
+      it('logs a thrown string as the message, without a stack', async () => {
+        storeOrders(['ORD-412-1'])
+        failSaveOf('ORD-412-1', 'save refused')
+
+        await handleResults(['ORD-412-1'])
+
+        expect(errorSpy.mock.calls).toEqual([
+          [
+            `Could not update the order with external ID ORD-412-1 (order order-ORD-412-1) from its result (${PROVIDER_ID}, integration ${INTEGRATION_ID}): save refused`,
+            undefined,
+          ],
+        ])
+        expect(logSpy.mock.calls).toEqual([
+          [`external_order_results -> Got 1 results from ${PROVIDER_ID}: 0 orders updated, 1 orders failed`],
+        ])
+      })
+
+      it('goes on past a thrown null in the middle of a batch, and updates and announces the rest', async () => {
+        storeOrders(['ORD-412-1', 'ORD-412-2', 'ORD-412-3'])
+        failSaveOf('ORD-412-2', null)
+
+        await handleResults(['ORD-412-1', 'ORD-412-2', 'ORD-412-3'])
+
+        expect(updatedEvents()).toEqual([
+          { orderId: 'order-ORD-412-1', status: OrderStatus.COMPLETED },
+          { orderId: 'order-ORD-412-3', status: OrderStatus.COMPLETED },
+        ])
+        expect(errorSpy.mock.calls).toEqual([
+          [
+            `Could not update the order with external ID ORD-412-2 (order order-ORD-412-2) from its result (${PROVIDER_ID}, integration ${INTEGRATION_ID}): null`,
+            undefined,
+          ],
+        ])
+        expect(logSpy.mock.calls).toEqual([
+          [`external_order_results -> Got 3 results from ${PROVIDER_ID}: 2 orders updated, 1 orders failed`],
+        ])
+      })
+
+      it('logs a result the identity guard refuses as a warning, neither as an error nor as failed', async () => {
+        storeOrders(['ORD-412-1', 'ORD-412-2'])
+        // The stored order is another patient's than the one the result names
+        Object.assign(stored.get('ORD-412-2') as Order, {
+          patient: { name: 'Whiskers', identifier: [] },
+          client: { lastName: 'Brown', identifier: [] },
+        })
+        await ordersService.handleExternalOrderResults({
+          integrationId: INTEGRATION_ID,
+          results: [
+            completedResult('ORD-412-1'),
+            {
+              ...completedResult('ORD-412-2'),
+              order: {
+                externalId: 'ORD-412-2',
+                status: OrderStatus.COMPLETED,
+                patient: { name: 'Rex', identifier: [] },
+                client: { lastName: 'Anderson', identifier: [] },
+              },
+            } as unknown as ProviderResult,
+          ],
+        })
+
+        expect(warnSpy.mock.calls).toEqual([
+          ['Skipping order update for order-ORD-412-2: patient/client mismatch (externalId=ORD-412-2)'],
+        ])
+        expect(updatedEvents()).toEqual([{ orderId: 'order-ORD-412-1', status: OrderStatus.COMPLETED }])
+        expect(errorSpy).not.toHaveBeenCalled()
+        expect(logSpy.mock.calls).toEqual([
+          [`external_order_results -> Got 2 results from ${PROVIDER_ID}: 1 orders updated`],
         ])
       })
 
