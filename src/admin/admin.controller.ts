@@ -738,6 +738,13 @@ export class AdminController {
     if (query.practiceId !== undefined) {
       options.practiceId = { $in: query.practiceId }
     }
+    if (query.accessionId !== undefined) {
+      // Exact matches, so the accessionIds index applies. The ID is also tried uppercased and lowercased:
+      // one order's requests can store it in different cases (Antech keeps the PIMS's case on the order
+      // it was sent, and the lab's uppercase on its results), and people type it either way.
+      const id = query.accessionId
+      options.accessionIds = { $in: [...new Set([id, id.toUpperCase(), id.toLowerCase()])] }
+    }
 
     if (query.startDate !== undefined) {
       options.createdAt = { $gte: new Date(query.startDate) }
