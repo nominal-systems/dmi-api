@@ -505,87 +505,108 @@ export class OrdersService {
         !existingOrdersRequisitionIds.includes(order.externalId),
     )
 
-    const newOrders: Order[] = []
-    for (const externalOrder of nonExistingExternalOrders) {
-      // Serialize find-or-create per (integrationId, externalId) so a concurrent
-      // external_results/external_orders handler can't insert the same order
-      // twice (issue #320).
-      const newOrder = await this.namedLockService.withLock(
-        orderLockKey(integrationId, externalOrder.externalId),
-        async (manager) => {
-          // Re-check under the lock: the order may have been created between the
-          // batch lookup above and here.
-          let existing: Order | null = null
-          try {
-            existing = await this.findOneByExternalId(externalOrder.externalId, integrationId, manager)
-          } catch (error) {
-            // Only "not found" means missing: a transient error must abort the
-            // event instead of being treated as missing, which would insert a
-            // duplicate of an order that may already exist (issue #320 review).
-            if (!(error instanceof NotFoundException)) throw error
-            existing = null
-          }
-          if (existing != null) {
-            this.logger.debug(
-              `Order ${externalOrder.externalId} was created concurrently, skipping creation`,
-            )
-            return null
-          }
-          const repo = this.orderRepo(manager)
-          return await repo.save(repo.create(mapper.mapOrder(externalOrder, integrationId)))
-        },
-      )
-      if (newOrder != null) {
-        newOrders.push(newOrder)
-      }
-    }
-
     // Nothing to do, return
-    if (newOrders.length === 0 && updatedOrders.length === 0) {
+    if (nonExistingExternalOrders.length === 0 && updatedOrders.length === 0) {
       this.logger.debug(`Got ${orders.length} external orders: 0 created, 0 updated`)
       return
     }
 
-    // Notify about new orders
+    // Looked up before the orders are saved, so that one that cannot be saved is logged with its provider
     const integration = await this.integrationsService.findById(integrationId)
+
+    // One order that cannot be saved is logged and left out, and the rest of the batch is handled
+    // without it. A throw out of this handler is not redelivered, so it would lose every order after
+    // it, and the events of every order before it (issue #411).
+    let failedOrders = 0
+
+    const newOrders: Order[] = []
+    for (const externalOrder of nonExistingExternalOrders) {
+      try {
+        // Serialize find-or-create per (integrationId, externalId) so a concurrent
+        // external_results/external_orders handler can't insert the same order
+        // twice (issue #320).
+        const newOrder = await this.namedLockService.withLock(
+          orderLockKey(integrationId, externalOrder.externalId),
+          async (manager) => {
+            // Re-check under the lock: the order may have been created between the
+            // batch lookup above and here.
+            let existing: Order | null = null
+            try {
+              existing = await this.findOneByExternalId(externalOrder.externalId, integrationId, manager)
+            } catch (error) {
+              // Only "not found" means missing: a transient error must leave this
+              // order out instead of being treated as missing, which would insert a
+              // duplicate of an order that may already exist (issue #320 review).
+              if (!(error instanceof NotFoundException)) throw error
+              existing = null
+            }
+            if (existing != null) {
+              this.logger.debug(
+                `Order ${externalOrder.externalId} was created concurrently, skipping creation`,
+              )
+              return null
+            }
+            const repo = this.orderRepo(manager)
+            return await repo.save(repo.create(mapper.mapOrder(externalOrder, integrationId)))
+          },
+        )
+        if (newOrder != null) {
+          newOrders.push(newOrder)
+        }
+      } catch (error) {
+        failedOrders++
+        this.logOrderNotSaved(integration, externalOrder.externalId, 'create', error)
+      }
+    }
+
+    // Notify about new orders
     for (const newOrder of newOrders) {
-      await this.eventsService.addEvent({
-        namespace: EventNamespace.ORDERS,
-        type: EventType.ORDER_CREATED,
-        providerId: integration.providerConfiguration.providerId,
-        practiceId: integration.practice.id,
-        integrationId: integrationId,
-        accessionId: newOrder.requisitionId,
-        data: {
-          practice: integration.practice,
-          orderId: newOrder.id,
-          order: newOrder,
-        },
+      await this.addOrderEvent(integration, newOrder, EventNamespace.ORDERS, EventType.ORDER_CREATED, {
+        order: newOrder,
       })
     }
 
     // Notify about updated orders
+    let savedUpdates = 0
     for (const order of updatedOrders) {
-      // TODO(gb): make this more efficient by saving in batch
-      const updatedOrder = await this.ordersRepository.save(order)
-      await this.eventsService.addEvent({
-        namespace: EventNamespace.ORDERS,
-        type: EventType.ORDER_UPDATED,
-        providerId: integration.providerConfiguration.providerId,
-        practiceId: integration.practice.id,
-        integrationId: integrationId,
-        accessionId: updatedOrder.requisitionId,
-        data: {
-          practice: integration.practice,
-          orderId: updatedOrder.id,
-          status: updatedOrder.status,
-          order: updatedOrder,
-        },
+      let updatedOrder: Order
+      try {
+        // TODO(gb): make this more efficient by saving in batch
+        updatedOrder = await this.ordersRepository.save(order)
+      } catch (error) {
+        failedOrders++
+        this.logOrderNotSaved(integration, order.externalId, 'update', error)
+        continue
+      }
+      savedUpdates++
+      await this.addOrderEvent(integration, updatedOrder, EventNamespace.ORDERS, EventType.ORDER_UPDATED, {
+        status: updatedOrder.status,
+        order: updatedOrder,
       })
     }
 
-    this.logger.log(
-      `Got ${orders.length} external orders: ${newOrders.length} created, ${updatedOrders.length} updated`,
+    const failed = failedOrders > 0 ? `, ${failedOrders} failed` : ''
+    const summary = `Got ${orders.length} external orders: ${newOrders.length} created, ${savedUpdates} updated${failed}`
+    // A batch whose new orders were all created concurrently changed nothing: debug, as before
+    if (newOrders.length === 0 && savedUpdates === 0 && failedOrders === 0) {
+      this.logger.debug(summary)
+    } else {
+      this.logger.log(summary)
+    }
+  }
+
+  // An order of an external_orders batch that cannot be saved: logged, and the batch goes on without it
+  private logOrderNotSaved(
+    integration: Integration,
+    externalId: string,
+    action: 'create' | 'update',
+    error: unknown,
+  ): void {
+    // Whatever was thrown names the cause, an Error or not; only an Error has a stack
+    const cause = error instanceof Error ? error.message : String(error)
+    this.logger.error(
+      `Could not ${action} order ${externalId} from ${integration.providerConfiguration.providerId} (integration ${integration.id}), left it out of the batch: ${cause}`,
+      error instanceof Error ? error.stack : undefined,
     )
   }
 
