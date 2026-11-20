@@ -32,7 +32,7 @@ import {
   ProviderResult,
   Resource,
 } from '@nominal-systems/dmi-engine-common'
-import { updateOrder } from '../common/utils/order-status.helper'
+import { orderUpdateKey, updateOrder } from '../common/utils/order-status.helper'
 import { EventNamespace } from '../events/constants/event-namespace.enum'
 import { EventType } from '../events/constants/event-type.enum'
 import { ReportsService } from '../reports/reports.service'
@@ -50,6 +50,9 @@ import {
 } from '../common/typings/internal-event-data.interface'
 import { NamedLockService, orderLockKey } from '../common/services/named-lock.service'
 import { isThrottledError } from '../common/utils/cosmos-throttling'
+import { isSameValue } from '../common/utils/same-value'
+import { isNullOrEmpty } from '../common/utils/shared.utils'
+import { createHash } from 'crypto'
 
 // Each EventData payload without the practice and order id, which addOrderEvent fills in
 type OrderEventExtraData<T extends EventData = EventData> = T extends unknown
@@ -60,6 +63,12 @@ interface OrderTestCancelOrAddParams {
   orderId: string
   tests: Test[]
   organizationId: string
+}
+
+// An order's stored manifest, without its data
+interface StoredManifest {
+  uri: string | null
+  contentType: string | null
 }
 
 @Injectable()
@@ -478,7 +487,18 @@ export class OrdersService {
 
     // Handle existing orders
     const existingOrders = await this.findOrdersByExternalIds(externalOrdersIds, integrationId)
+    const storedManifests = await this.findStoredManifests(
+      existingOrders
+        .filter((existingOrder) =>
+          orders.some(
+            (order) => order.externalId === existingOrder.externalId && order.manifest != null,
+          ),
+        )
+        .map((existingOrder) => existingOrder.id),
+    )
     const updatedOrders: Order[] = []
+    // Orders a delivery left as they were: a provider redelivering what it sent before
+    let unchangedOrders = 0
     for (const existingOrder of existingOrders) {
       const externalOrder = orders.find((order) => order.externalId === existingOrder.externalId)
 
@@ -487,12 +507,23 @@ export class OrdersService {
       // Will only update existing order if a valid status change occurred
       let updated = updateOrder(existingOrder, externalOrder)
       if (externalOrder.manifest != null) {
+        // The manifest the order already has is no update (issue #409). So the stored order form
+        // is refreshed when the order is saved for another reason (its status or tests, say),
+        // not on every delivery of it.
         existingOrder.manifest = externalOrder.manifest as any
-        updated = true
+        updated =
+          updated ||
+          !(await this.isStoredManifest(
+            existingOrder.id,
+            storedManifests.get(existingOrder.id),
+            externalOrder.manifest,
+          ))
       }
 
       if (updated) {
         updatedOrders.push(existingOrder)
+      } else {
+        unchangedOrders++
       }
     }
 
@@ -508,7 +539,13 @@ export class OrdersService {
 
     // Nothing to do, return
     if (nonExistingExternalOrders.length === 0 && updatedOrders.length === 0) {
-      this.logger.debug(`Got ${orders.length} external orders: 0 created, 0 updated`)
+      const summary = `Got ${orders.length} external orders: 0 created, 0 updated, ${unchangedOrders} orders unchanged (integration ${integrationId})`
+      // Orders a delivery left as they were are a provider redelivering them: keep that visible
+      if (unchangedOrders > 0) {
+        this.logger.log(summary)
+      } else {
+        this.logger.debug(summary)
+      }
       return
     }
 
@@ -587,9 +624,10 @@ export class OrdersService {
     }
 
     const failed = failedOrders > 0 ? `, ${failedOrders} failed` : ''
-    const summary = `Got ${orders.length} external orders: ${newOrders.length} created, ${savedUpdates} updated${failed}`
-    // A batch whose new orders were all created concurrently changed nothing: debug, as before
-    if (newOrders.length === 0 && savedUpdates === 0 && failedOrders === 0) {
+    const summary = `Got ${orders.length} external orders: ${newOrders.length} created, ${savedUpdates} updated, ${unchangedOrders} orders unchanged${failed} (${integration.providerConfiguration.providerId}, integration ${integrationId})`
+    // A batch whose new orders were all created concurrently changed nothing: debug, as before.
+    // Orders a delivery left as they were are a provider redelivering them: keep that visible
+    if (newOrders.length === 0 && savedUpdates === 0 && failedOrders === 0 && unchangedOrders === 0) {
       this.logger.debug(summary)
     } else {
       this.logger.log(summary)
@@ -611,6 +649,50 @@ export class OrdersService {
     )
   }
 
+  // Whether a delivered manifest is the one an order has (issue #409). The uri names the document,
+  // and a provider may render it anew on every fetch, so with a uri on both sides the same uri and
+  // content type make it the same manifest whatever its data. Without one, the data decides.
+  private async isStoredManifest(
+    orderId: string,
+    stored: StoredManifest | undefined,
+    delivered: NonNullable<ExternalOrder['manifest']>,
+  ): Promise<boolean> {
+    if (stored === undefined || !isSameValue(stored.contentType, delivered.contentType)) {
+      return false
+    }
+    if (!isNullOrEmpty(stored.uri) && !isNullOrEmpty(delivered.uri)) {
+      return stored.uri === delivered.uri
+    }
+    const deliveredDigest =
+      delivered.data == null ? null : createHash('sha256').update(delivered.data).digest('hex')
+    return isSameValue(await this.findStoredManifestDigest(orderId), deliveredDigest)
+  }
+
+  // The stored manifests of the given orders, without their data, a PDF
+  private async findStoredManifests(orderIds: string[]): Promise<Map<string, StoredManifest>> {
+    if (orderIds.length === 0) return new Map()
+    const rows: Array<StoredManifest & { orderId: string }> = await this.ordersRepository
+      .createQueryBuilder('order')
+      .innerJoin('order.manifest', 'manifest')
+      .select('order.id', 'orderId')
+      .addSelect('manifest.uri', 'uri')
+      .addSelect('manifest.contentType', 'contentType')
+      .where('order.id IN (:...orderIds)', { orderIds })
+      .getRawMany()
+    return new Map(rows.map(({ orderId, ...manifest }) => [orderId, manifest]))
+  }
+
+  // The SHA-256 digest of an order's stored manifest data, computed by MySQL so no PDF is transferred
+  private async findStoredManifestDigest(orderId: string): Promise<string | null> {
+    const row: { dataDigest: string | null } | undefined = await this.ordersRepository
+      .createQueryBuilder('order')
+      .innerJoin('order.manifest', 'manifest')
+      .select('SHA2(manifest.data, 256)', 'dataDigest')
+      .where('order.id = :orderId', { orderId })
+      .getRawOne()
+    return row?.dataDigest ?? null
+  }
+
   async handleExternalOrderResults({
     integrationId,
     results,
@@ -622,6 +704,8 @@ export class OrdersService {
 
     const updatedOrders: Order[] = []
     let failedOrders = 0
+    // Orders a result left as they were: a provider redelivering what it sent before
+    let unchangedOrders = 0
     for (const externalOrderId of externalOrderIds) {
       const result = results.find((result) => result.orderId === externalOrderId)
 
@@ -650,6 +734,8 @@ export class OrdersService {
         if (updated) {
           updatedOrders.push(order)
           this.logger.debug(`Updated Order/${order.id} status to ${order.status}`)
+        } else {
+          unchangedOrders++
         }
       } catch (error) {
         if (error instanceof NotFoundException) {
@@ -684,7 +770,7 @@ export class OrdersService {
     }
 
     this.logger.log(
-      `external_order_results -> Got ${results.length} results from ${integration.providerConfiguration.providerId}: ${updatedOrders.length} orders updated${failedOrders > 0 ? `, ${failedOrders} orders failed` : ''}`,
+      `external_order_results -> Got ${results.length} results from ${integration.providerConfiguration.providerId}: ${updatedOrders.length} orders updated, ${unchangedOrders} orders unchanged${failedOrders > 0 ? `, ${failedOrders} orders failed` : ''} (integration ${integrationId})`,
     )
   }
 
@@ -810,24 +896,28 @@ export class OrdersService {
 
   async updateOrderFromResults(order: Order, result: ProviderResult): Promise<boolean> {
     const orderStatus = order.status
+    const before = orderUpdateKey(order)
     ProviderResultUtils.setOrderStatusFromResult(result, order)
 
-    let updated = false
     if (result.order !== undefined) {
-      updated = updateOrder(order, result.order)
+      updateOrder(order, result.order)
     }
+    // Compare the order before and after both steps: the result's status can move the order to
+    // a status its order then moves back from, which updateOrder alone sees as a change (issue #409)
+    const updated = orderUpdateKey(order) !== before
     if (orderStatus !== order.status) {
       this.logger.debug(
         `updateOrderStatusFromResults: Order/${order.externalId} status changed from ${orderStatus} to ${order.status}`,
       )
-      updated = true
     } else {
       this.logger.debug(
         `updateOrderStatusFromResults: Order/${order.externalId} status not changed. Current status: ${order.status}, result status: ${result.status}`,
       )
     }
 
-    await this.ordersRepository.save(order)
+    if (updated) {
+      await this.ordersRepository.save(order)
+    }
     return updated
   }
 

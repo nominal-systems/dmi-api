@@ -23,7 +23,7 @@ import { OrdersService } from '../orders/orders.service'
 import { Organization } from '../organizations/entities/organization.entity'
 import { resultStatusMapper, testResultStatusMapper } from '../common/utils/result-status.helper'
 import { ProviderResultUtils } from '../common/utils/provider-result-utils'
-import { isNullOrEmpty } from '../common/utils/shared.utils'
+import { isNil, isNullOrEmpty } from '../common/utils/shared.utils'
 import { Attachment as AttachmentEntity } from '../common/entities/attachment.entity'
 import { ExternalResultEventData } from '../common/typings/internal-event-data.interface'
 import { FEATURE_FLAG_PROVIDER, FeatureFlagProvider, TEST_RESULT_MATCH_BY_NAME_FLAG } from '../feature-flags/feature-flag.interface'
@@ -33,6 +33,55 @@ import { AddEventDto } from '../events/dto/add-event.dto'
 import { REPUBLISH_DELIVERY_OPTIONS, ReportEventType, RepublishReportOptions } from './interfaces/republish.interface'
 import { EventDocument } from '../events/entities/event.entity'
 import { PublishedEvent } from '../events/interfaces/published-event.interface'
+import { isSameValue } from '../common/utils/same-value'
+
+// The columns a delivery writes on a test result or observation it already has: the
+// assignments in updateReportResults and updateObservationValue. Keep them in step.
+const TEST_RESULT_DELIVERED_FIELDS: Array<keyof TestResult> = ['seq', 'status', 'deviceId', 'notes']
+const OBSERVATION_DELIVERED_FIELDS: Array<keyof Observation> = [
+  'seq', 'status', 'valueString', 'valueQuantity', 'units', 'referenceRange', 'interpretation', 'notes'
+]
+
+// Shallow copies of a report's test results and observations before a delivery is merged.
+// The merge assigns new values rather than mutating the stored ones, so a shallow copy
+// keeps what is stored.
+function storedValues (report: Report): Map<object, object> {
+  const stored = new Map<object, object>()
+  for (const testResult of report.testResultsSet) {
+    stored.set(testResult, { ...testResult })
+    for (const observation of testResult.observations ?? []) {
+      stored.set(observation, { ...observation })
+    }
+  }
+  return stored
+}
+
+function isChanged<T extends object> (
+  stored: Map<object, object>,
+  entity: T,
+  fields: Array<keyof T>
+): boolean {
+  const before = stored.get(entity) as Partial<T> | undefined
+  // Not there before the delivery: created by it
+  if (before === undefined) return true
+  // TypeORM does not write a property that is undefined, so only a defined value can change a column
+  return fields.some(field => entity[field] !== undefined && !isSameValue(before[field], entity[field]))
+}
+
+// Whether the merge deleted a stored interpretation because the delivery has none: the one value
+// it clears on purpose. Other values a delivery omits are assigned undefined, which TypeORM does
+// not write, so they stay as stored and are no change.
+function isWithdrawnInterpretation (
+  stored: Map<object, object>,
+  observation: Observation
+): boolean {
+  const before = stored.get(observation) as Observation | undefined
+  return before !== undefined && observation.interpretation === undefined && !isNil(before.interpretation)
+}
+
+function pdfContent ({ contentType, data }: AttachmentEntity): Partial<AttachmentEntity> {
+  return { contentType, data }
+}
 
 @Injectable()
 export class ReportsService {
@@ -164,6 +213,8 @@ export class ReportsService {
     const createdReports: Report[] = []
     const updatedReports: Report[] = []
     const createdOrders: Order[] = []
+    // Existing reports a delivery left as they were: a provider redelivering what it sent before
+    let unchangedReports = 0
 
     // Update existing reports with new results
     const existingReports = await this.findReportsByExternalOrderIds(externalOrderIds, integrationId)
@@ -172,6 +223,8 @@ export class ReportsService {
       const updated = await this.updateReportResults(report, resultsForReport)
       if (updated) {
         updatedReports.push(report)
+      } else {
+        unchangedReports++
       }
     }
 
@@ -293,11 +346,15 @@ export class ReportsService {
         report.testResultsSet = []
         report.patient = patient
         createdReports.push(report)
+        await this.updateReportResults(report, [orphanResult])
       } else {
         report.patient = patient
-        updatedReports.push(report)
+        if (await this.updateReportResults(report, [orphanResult])) {
+          updatedReports.push(report)
+        } else {
+          unchangedReports++
+        }
       }
-      await this.updateReportResults(report, [orphanResult])
     }
 
     // Notify about new orders
@@ -335,7 +392,7 @@ export class ReportsService {
       await this.eventsService.addEvent(this.buildReportEvent(report, integration, EventType.REPORT_UPDATED))
     }
 
-    this.logger.log(`external_results -> Got ${results.length} results from ${integration.providerConfiguration.providerId}: ${createdReports.length} reports created, ${updatedReports.length} reports updated, orders ${[...createdOrders, ...dummyOrders].length} orders created`)
+    this.logger.log(`external_results -> Got ${results.length} results from ${integration.providerConfiguration.providerId}: ${createdReports.length} reports created, ${updatedReports.length} reports updated, orders ${[...createdOrders, ...dummyOrders].length} orders created, ${unchangedReports} reports unchanged (integration ${integrationId})`)
   }
 
   private reportGraphQuery (): SelectQueryBuilder<Report> {
@@ -415,16 +472,22 @@ export class ReportsService {
       .filter(result => result.pdfReport !== undefined)
       .map(result => result.pdfReport)
       .reduce<any[]>((a, v) => a.concat(v), [])
+    let pdfChanged = false
     if (pdfReport.length > 0) {
+      // The results flow loads reports without their PDF, so read the stored one to compare
+      const storedPdf = report.presentedFrom ?? await this.findStoredPresentedForm(report.id)
       this.attachPdfReport(report, pdfReport)
+      pdfChanged = !isSameValue(storedPdf.map(pdfContent), (report.presentedFrom ?? []).map(pdfContent))
     }
 
     // Build test results set
     const integrationId = report.order?.integrationId
     const matchByName = this.featureFlags.isEnabled(TEST_RESULT_MATCH_BY_NAME_FLAG, { integrationId })
 
+    // A redelivery matches every test result and observation, so tell an update from it
+    // by comparing what is stored before and after the merge (issue #409)
+    const stored = storedValues(report)
     const createdTestResults: TestResult[] = []
-    const updatedTestResults: TestResult[] = []
     for (const providerTestResult of providerTestResults) {
       const providerTestResultItemStatus = Array.from(new Set<string>(providerTestResult.items.map(testResult => testResult.status)))
       const testResultStatus = testResultStatusMapper(providerTestResultItemStatus[0])
@@ -442,7 +505,6 @@ export class ReportsService {
         existingTestResult.deviceId = providerTestResult.deviceId
         existingTestResult.notes = providerTestResult.notes
         this.updateTestResultObservations(existingTestResult, providerTestResult.items)
-        updatedTestResults.push(existingTestResult)
       } else {
         const testResult = new TestResult()
         testResult.seq = providerTestResult.seq
@@ -457,11 +519,27 @@ export class ReportsService {
       }
     }
 
-    const updatePerformed = createdTestResults.concat(updatedTestResults).length > 0 || report.status !== reportStatus
+    // TypeORM would not write the deleted interpretation, so write null: withdrawing it is then a
+    // change and is stored, and the next delivery without it changes nothing
+    const withdrawn = report.testResultsSet
+      .flatMap(testResult => testResult.observations ?? [])
+      .filter(observation => isWithdrawnInterpretation(stored, observation))
+    for (const observation of withdrawn) {
+      Object.assign(observation, { interpretation: null })
+    }
+    const testResultsChanged = report.testResultsSet.some(testResult =>
+      isChanged(stored, testResult, TEST_RESULT_DELIVERED_FIELDS) ||
+      (testResult.observations ?? []).some(observation => isChanged(stored, observation, OBSERVATION_DELIVERED_FIELDS))
+    )
+    const updatePerformed = createdTestResults.length > 0 || testResultsChanged || pdfChanged || report.status !== reportStatus
     if (updatePerformed) {
       report.testResultsSet = report.testResultsSet.concat(createdTestResults)
       report.status = resultStatusMapper(reportStatus)
       await this.reportsRepository.save(report)
+    }
+    // Stored as null, a withdrawn interpretation is left out of the report again, as the merge left it
+    for (const observation of withdrawn) {
+      delete observation.interpretation
     }
 
     return updatePerformed
@@ -667,6 +745,18 @@ export class ReportsService {
       }
       return attachmentEntity
     })
+  }
+
+  private async findStoredPresentedForm (
+    reportId?: string
+  ): Promise<AttachmentEntity[]> {
+    // A report that is not stored yet has no PDF
+    if (reportId == null) return []
+    const stored = await this.reportsRepository.createQueryBuilder('report')
+      .leftJoinAndSelect('report.presentedFrom', 'presentedFrom')
+      .where('report.id = :reportId', { reportId })
+      .getOne()
+    return stored?.presentedFrom ?? []
   }
 
   private printReport (

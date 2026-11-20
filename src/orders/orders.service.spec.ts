@@ -33,12 +33,24 @@ import { ProvidersService } from '../providers/services/providers.service'
 import { ExternalOrdersEventData } from '../common/typings/internal-event-data.interface'
 import { NamedLockService } from '../common/services/named-lock.service'
 import { In } from 'typeorm'
+import { createHash } from 'crypto'
+
+// A query whose getRawMany() resolves to the given rows, and getRawOne() to the first
+const rawQueryBuilder = (rows: unknown[]): unknown => ({
+  innerJoin: jest.fn().mockReturnThis(),
+  select: jest.fn().mockReturnThis(),
+  addSelect: jest.fn().mockReturnThis(),
+  where: jest.fn().mockReturnThis(),
+  getRawMany: jest.fn().mockResolvedValue(rows),
+  getRawOne: jest.fn().mockResolvedValue(rows[0]),
+})
 
 export const repositoryMockFactory: () => MockUtils<Repository<any>> = jest.fn(() => ({
   find: jest.fn((entity) => entity),
   findOne: jest.fn((entity) => entity),
   create: jest.fn((entity) => entity),
   save: jest.fn((entity) => entity),
+  createQueryBuilder: jest.fn(() => rawQueryBuilder([])),
 }))
 
 describe('OrdersService', () => {
@@ -1146,6 +1158,253 @@ describe('OrdersService', () => {
           }),
         )
       })
+
+      // Regression for https://github.com/nominal-systems/dmi-api/issues/409
+      // A provider that delivers an order again with the manifest it already has must cost no
+      // order write (which would store the PDF again) and no order:updated event. A provider may
+      // render the same order form anew on every fetch, so with a uri the data is not compared.
+      describe('redelivery of a stored order (issue #409)', () => {
+        const URI = 'https://lab.example/LabOrders/TRF/ACC-409'
+        const FORM = 'JVBERi0xLjQKJcfsj6IK'
+        // The same order form, fetched and rendered again
+        const FORM_RENDERED_AGAIN = 'JVBERi0xLjQKJeLjz9MK'
+        const sha256 = (data: string): string => createHash('sha256').update(data).digest('hex')
+        // The stored manifest as the manifest queries read it: its uri and content type, and its
+        // data as the digest MySQL computes
+        const storedManifestRow = (
+          orderId: string,
+          { uri = URI, data = FORM }: { uri?: string | null; data?: string } = {},
+        ): unknown => ({ orderId, uri, contentType: 'application/pdf', dataDigest: sha256(data) })
+        const manifest = ({
+          uri = URI,
+          data = FORM,
+          contentType = 'application/pdf',
+        }: { uri?: string | null; data?: string; contentType?: string } = {}): unknown => ({
+          contentType,
+          data,
+          ...(uri != null ? { uri } : {}),
+        })
+        const storedOrder = (id: string, externalId: string, status: OrderStatus): Order =>
+          ({
+            id,
+            externalId,
+            status,
+            notes: null,
+            patient: { id: `patient-${id}`, name: 'Rex', identifier: [] },
+            client: { id: `client-${id}`, lastName: 'Anderson', identifier: [] },
+            veterinarian: { id: `veterinarian-${id}`, lastName: 'Vetson' },
+            tests: [{ code: 'T805' }],
+          }) as unknown as Order
+        const delivered = (externalId: string, status: OrderStatus, withManifest: unknown): unknown => ({
+          externalId,
+          status,
+          patient: { name: 'Rex', sex: 'M', species: 'Canine' },
+          client: { firstName: 'Alice', lastName: 'Anderson' },
+          veterinarian: { lastName: 'Vetson' },
+          tests: [{ code: 'T805' }],
+          manifest: withManifest,
+        })
+        const deliver = async (
+          stored: Order[],
+          storedManifests: unknown[],
+          externalOrders: unknown[],
+        ): Promise<void> => {
+          jest.spyOn(ordersRepositoryMock, 'find').mockResolvedValueOnce(stored)
+          jest
+            .spyOn(ordersRepositoryMock, 'createQueryBuilder')
+            .mockImplementation(() => rawQueryBuilder(storedManifests) as any)
+          await ordersService.handleExternalOrders({
+            integrationId: 'integration-409',
+            orders: externalOrders as ExternalOrdersEventData['orders'],
+          })
+        }
+        const expectOneOrderUpdated = (withManifest: unknown): void => {
+          expect(ordersRepositoryMock.save).toHaveBeenCalledTimes(1)
+          expect(eventsServiceMock.addEvent).toHaveBeenCalledTimes(1)
+          expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(
+            expect.objectContaining({
+              type: EventType.ORDER_UPDATED,
+              data: expect.objectContaining({
+                order: expect.objectContaining({ manifest: withManifest }),
+              }),
+            }),
+          )
+        }
+
+        it('should neither save nor emit order:updated for the order form it has, rendered anew', async () => {
+          const log = jest.spyOn((ordersService as any).logger, 'log')
+
+          await deliver(
+            [storedOrder('order-1', 'ACC-409', OrderStatus.SUBMITTED)],
+            [storedManifestRow('order-1')],
+            [delivered('ACC-409', OrderStatus.SUBMITTED, manifest({ data: FORM_RENDERED_AGAIN }))],
+          )
+
+          expect(ordersRepositoryMock.save).not.toHaveBeenCalled()
+          expect(eventsServiceMock.addEvent).not.toHaveBeenCalled()
+          // The uri decides: the stored data is not read
+          expect(ordersRepositoryMock.createQueryBuilder).toHaveBeenCalledTimes(1)
+          expect(log).toHaveBeenCalledWith(
+            'Got 1 external orders: 0 created, 0 updated, 1 orders unchanged (integration integration-409)',
+          )
+        })
+
+        it('should save and emit one order:updated for a manifest the order does not have', async () => {
+          await deliver(
+            [storedOrder('order-1', 'ACC-409', OrderStatus.SUBMITTED)],
+            [],
+            [delivered('ACC-409', OrderStatus.SUBMITTED, manifest())],
+          )
+
+          expectOneOrderUpdated(manifest())
+        })
+
+        it('should save and emit one order:updated for a manifest with another uri', async () => {
+          const otherForm = manifest({ uri: 'https://lab.example/LabOrders/TRF/ACC-409-2' })
+
+          await deliver(
+            [storedOrder('order-1', 'ACC-409', OrderStatus.SUBMITTED)],
+            [storedManifestRow('order-1')],
+            [delivered('ACC-409', OrderStatus.SUBMITTED, otherForm)],
+          )
+
+          expectOneOrderUpdated(otherForm)
+        })
+
+        it('should save and emit one order:updated for a manifest with another content type', async () => {
+          const otherType = manifest({ contentType: 'image/png' })
+
+          await deliver(
+            [storedOrder('order-1', 'ACC-409', OrderStatus.SUBMITTED)],
+            [storedManifestRow('order-1')],
+            [delivered('ACC-409', OrderStatus.SUBMITTED, otherType)],
+          )
+
+          expectOneOrderUpdated(otherType)
+        })
+
+        it('should neither save nor emit order:updated for a manifest without a uri and with the data stored', async () => {
+          await deliver(
+            [storedOrder('order-1', 'ACC-409', OrderStatus.SUBMITTED)],
+            [storedManifestRow('order-1', { uri: null })],
+            [delivered('ACC-409', OrderStatus.SUBMITTED, manifest({ uri: null }))],
+          )
+
+          expect(ordersRepositoryMock.save).not.toHaveBeenCalled()
+          expect(eventsServiceMock.addEvent).not.toHaveBeenCalled()
+          // Without a uri the data decides: its stored digest is read
+          expect(ordersRepositoryMock.createQueryBuilder).toHaveBeenCalledTimes(2)
+        })
+
+        it('should save and emit one order:updated for a manifest without a uri whose data differs', async () => {
+          const otherData = manifest({ uri: null, data: FORM_RENDERED_AGAIN })
+
+          await deliver(
+            [storedOrder('order-1', 'ACC-409', OrderStatus.SUBMITTED)],
+            [storedManifestRow('order-1', { uri: null })],
+            [delivered('ACC-409', OrderStatus.SUBMITTED, otherData)],
+          )
+
+          expectOneOrderUpdated(otherData)
+        })
+
+        it('should emit one order:updated, for the status change, when both are delivered with the order form they have', async () => {
+          const log = jest.spyOn((ordersService as any).logger, 'log')
+
+          await deliver(
+            [
+              storedOrder('order-1', 'ACC-409', OrderStatus.SUBMITTED),
+              storedOrder('order-2', 'ACC-410', OrderStatus.SUBMITTED),
+            ],
+            [storedManifestRow('order-1'), storedManifestRow('order-2')],
+            [
+              delivered('ACC-409', OrderStatus.COMPLETED, manifest({ data: FORM_RENDERED_AGAIN })),
+              delivered('ACC-410', OrderStatus.SUBMITTED, manifest({ data: FORM_RENDERED_AGAIN })),
+            ],
+          )
+
+          expect(ordersRepositoryMock.save).toHaveBeenCalledTimes(1)
+          expect(eventsServiceMock.addEvent).toHaveBeenCalledTimes(1)
+          expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(
+            expect.objectContaining({
+              type: EventType.ORDER_UPDATED,
+              data: expect.objectContaining({ orderId: 'order-1', status: OrderStatus.COMPLETED }),
+            }),
+          )
+          expect(log).toHaveBeenCalledWith(
+            'Got 2 external orders: 0 created, 1 updated, 1 orders unchanged (integration-409, integration integration-409)',
+          )
+        })
+      })
+    })
+
+    // Notes alone are no update: updateOrder writes them, and they are saved with another change
+    describe('an order delivered with other notes (issue #409)', () => {
+      const storedOrder = (id: string, externalId: string, status: OrderStatus): Order =>
+        ({
+          id,
+          externalId,
+          status,
+          notes: null,
+          patient: { id: `patient-${id}`, name: 'Rex', identifier: [] },
+          client: { id: `client-${id}`, lastName: 'Anderson', identifier: [] },
+          veterinarian: { id: `veterinarian-${id}`, lastName: 'Vetson' },
+          tests: [{ code: 'T805' }],
+        }) as unknown as Order
+      const delivered = (externalId: string, status: OrderStatus, notes: string): unknown => ({
+        externalId,
+        status,
+        patient: { name: 'Rex', sex: 'M', species: 'Canine' },
+        client: { firstName: 'Alice', lastName: 'Anderson' },
+        veterinarian: { lastName: 'Vetson' },
+        tests: [{ code: 'T805' }],
+        notes,
+      })
+      const deliver = async (stored: Order[], externalOrders: unknown[]): Promise<void> => {
+        jest.spyOn(ordersRepositoryMock, 'find').mockResolvedValueOnce(stored)
+        await ordersService.handleExternalOrders({
+          integrationId: 'integration-409',
+          orders: externalOrders as ExternalOrdersEventData['orders'],
+        })
+      }
+
+      it('should neither save nor emit order:updated for an order that differs only in its notes', async () => {
+        await deliver(
+          [storedOrder('order-1', 'ACC-409', OrderStatus.SUBMITTED)],
+          [delivered('ACC-409', OrderStatus.SUBMITTED, '')],
+        )
+
+        expect(ordersRepositoryMock.save).not.toHaveBeenCalled()
+        expect(eventsServiceMock.addEvent).not.toHaveBeenCalled()
+      })
+
+      it('should save the notes with a status change, and only for the order that changed', async () => {
+        const saved: unknown[] = []
+        jest.spyOn(ordersRepositoryMock, 'save').mockImplementation(async (order: any) => {
+          saved.push({ id: order.id, notes: order.notes })
+          return order
+        })
+
+        await deliver(
+          [
+            storedOrder('order-1', 'ACC-409', OrderStatus.SUBMITTED),
+            storedOrder('order-2', 'ACC-410', OrderStatus.SUBMITTED),
+          ],
+          [
+            delivered('ACC-409', OrderStatus.SUBMITTED, 'Collected after fasting'),
+            delivered('ACC-410', OrderStatus.COMPLETED, 'Repeat sample'),
+          ],
+        )
+
+        expect(saved).toEqual([{ id: 'order-2', notes: 'Repeat sample' }])
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledTimes(1)
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(
+          expect.objectContaining({
+            type: EventType.ORDER_UPDATED,
+            data: expect.objectContaining({ orderId: 'order-2' }),
+          }),
+        )
+      })
     })
 
     describe('concurrent creation (issue #320)', () => {
@@ -1309,7 +1568,7 @@ describe('OrdersService', () => {
           `Could not create order B from ${PROVIDER_ID} (integration ${INTEGRATION_ID}), left it out of the batch: Column 'lastName' cannot be null`,
           expect.stringContaining("Column 'lastName' cannot be null"),
         )
-        expect(summaries()).toEqual(['Got 3 external orders: 2 created, 0 updated, 1 failed'])
+        expect(summaries()).toEqual(['Got 3 external orders: 2 created, 0 updated, 0 orders unchanged, 1 failed (wisdom-panel, integration integration-1)'])
       })
 
       it('saves and announces the other updates when one update cannot be saved, and logs that one', async () => {
@@ -1334,7 +1593,7 @@ describe('OrdersService', () => {
           `Could not update order Y from ${PROVIDER_ID} (integration ${INTEGRATION_ID}), left it out of the batch: Column 'lastName' cannot be null`,
           expect.stringContaining("Column 'lastName' cannot be null"),
         )
-        expect(summaries()).toEqual(['Got 3 external orders: 0 created, 2 updated, 1 failed'])
+        expect(summaries()).toEqual(['Got 3 external orders: 0 created, 2 updated, 0 orders unchanged, 1 failed (wisdom-panel, integration integration-1)'])
       })
 
       it('logs every order and counts them all when no order of the batch can be saved', async () => {
@@ -1349,7 +1608,7 @@ describe('OrdersService', () => {
           expect.stringMatching(/^Could not create order A from wisdom-panel /),
           expect.stringMatching(/^Could not update order X from wisdom-panel /),
         ])
-        expect(summaries()).toEqual(['Got 2 external orders: 0 created, 0 updated, 2 failed'])
+        expect(summaries()).toEqual(['Got 2 external orders: 0 created, 0 updated, 0 orders unchanged, 2 failed (wisdom-panel, integration integration-1)'])
       })
 
       it('names the cause when what a save throws is not an Error, and goes on with the batch', async () => {
@@ -1377,7 +1636,7 @@ describe('OrdersService', () => {
             undefined,
           ],
         ])
-        expect(summaries()).toEqual(['Got 4 external orders: 2 created, 0 updated, 2 failed'])
+        expect(summaries()).toEqual(['Got 4 external orders: 2 created, 0 updated, 0 orders unchanged, 2 failed (wisdom-panel, integration integration-1)'])
       })
 
       it('logs the summary at debug, as before, for a batch whose new orders were all created concurrently', async () => {
@@ -1391,7 +1650,7 @@ describe('OrdersService', () => {
         expect(eventsServiceMock.addEvent).not.toHaveBeenCalled()
         expect(errorSpy).not.toHaveBeenCalled()
         expect(summaries()).toEqual([])
-        expect(debugSummaries()).toEqual(['Got 2 external orders: 0 created, 0 updated'])
+        expect(debugSummaries()).toEqual(['Got 2 external orders: 0 created, 0 updated, 0 orders unchanged (wisdom-panel, integration integration-1)'])
       })
 
       it('leaves out, and never inserts, an order whose re-check fails with a transient error, and creates the rest (issue #320)', async () => {
@@ -1412,7 +1671,7 @@ describe('OrdersService', () => {
         expect(errorMessages()).toEqual([
           `Could not create order B from ${PROVIDER_ID} (integration ${INTEGRATION_ID}), left it out of the batch: connection lost`,
         ])
-        expect(summaries()).toEqual(['Got 3 external orders: 2 created, 0 updated, 1 failed'])
+        expect(summaries()).toEqual(['Got 3 external orders: 2 created, 0 updated, 0 orders unchanged, 1 failed (wisdom-panel, integration integration-1)'])
       })
 
       it('goes on with the batch when the order:created or order:updated event of a saved order cannot be recorded', async () => {
@@ -1446,7 +1705,7 @@ describe('OrdersService', () => {
           expect.stringMatching(/^Could not record or deliver the 'order:updated' event for order order-X .*: event store unavailable$/),
         ])
         // The orders were saved: an event that could not be recorded fails no order
-        expect(summaries()).toEqual(['Got 4 external orders: 2 created, 2 updated'])
+        expect(summaries()).toEqual(['Got 4 external orders: 2 created, 2 updated, 0 orders unchanged (wisdom-panel, integration integration-1)'])
       })
 
       it('changes nothing for a batch in which every order is saved: the same events and the same summary line', async () => {
@@ -1471,7 +1730,7 @@ describe('OrdersService', () => {
         expect(savedExternalIds()).toEqual(['A', 'B', 'X'])
         expect(integrationsServiceMock.findById).toHaveBeenCalledTimes(1)
         expect(errorSpy).not.toHaveBeenCalled()
-        expect(summaries()).toEqual(['Got 3 external orders: 2 created, 1 updated'])
+        expect(summaries()).toEqual(['Got 3 external orders: 2 created, 1 updated, 0 orders unchanged (wisdom-panel, integration integration-1)'])
       })
     })
   })
@@ -1700,7 +1959,7 @@ describe('OrdersService', () => {
           ],
         ])
         expect(logSpy.mock.calls).toEqual([
-          [`external_order_results -> Got 3 results from ${PROVIDER_ID}: 2 orders updated, 1 orders failed`],
+          [`external_order_results -> Got 3 results from ${PROVIDER_ID}: 2 orders updated, 0 orders unchanged, 1 orders failed (integration integration-412)`],
         ])
       })
 
@@ -1726,7 +1985,7 @@ describe('OrdersService', () => {
           ],
         ])
         expect(logSpy.mock.calls).toEqual([
-          [`external_order_results -> Got 2 results from ${PROVIDER_ID}: 1 orders updated, 1 orders failed`],
+          [`external_order_results -> Got 2 results from ${PROVIDER_ID}: 1 orders updated, 0 orders unchanged, 1 orders failed (integration integration-412)`],
         ])
       })
 
@@ -1747,7 +2006,7 @@ describe('OrdersService', () => {
           ],
         ])
         expect(logSpy.mock.calls).toEqual([
-          [`external_order_results -> Got 2 results from ${PROVIDER_ID}: 1 orders updated, 1 orders failed`],
+          [`external_order_results -> Got 2 results from ${PROVIDER_ID}: 1 orders updated, 0 orders unchanged, 1 orders failed (integration integration-412)`],
         ])
       })
 
@@ -1764,7 +2023,7 @@ describe('OrdersService', () => {
           ],
         ])
         expect(logSpy.mock.calls).toEqual([
-          [`external_order_results -> Got 1 results from ${PROVIDER_ID}: 0 orders updated, 1 orders failed`],
+          [`external_order_results -> Got 1 results from ${PROVIDER_ID}: 0 orders updated, 0 orders unchanged, 1 orders failed (integration integration-412)`],
         ])
       })
 
@@ -1785,7 +2044,7 @@ describe('OrdersService', () => {
           ],
         ])
         expect(logSpy.mock.calls).toEqual([
-          [`external_order_results -> Got 3 results from ${PROVIDER_ID}: 2 orders updated, 1 orders failed`],
+          [`external_order_results -> Got 3 results from ${PROVIDER_ID}: 2 orders updated, 0 orders unchanged, 1 orders failed (integration integration-412)`],
         ])
       })
 
@@ -1818,7 +2077,7 @@ describe('OrdersService', () => {
         expect(updatedEvents()).toEqual([{ orderId: 'order-ORD-412-1', status: OrderStatus.COMPLETED }])
         expect(errorSpy).not.toHaveBeenCalled()
         expect(logSpy.mock.calls).toEqual([
-          [`external_order_results -> Got 2 results from ${PROVIDER_ID}: 1 orders updated`],
+          [`external_order_results -> Got 2 results from ${PROVIDER_ID}: 1 orders updated, 0 orders unchanged (integration integration-412)`],
         ])
       })
 
@@ -1834,7 +2093,7 @@ describe('OrdersService', () => {
         expect(debugSpy).toHaveBeenCalledWith("Order ORD-412-2 doesn't exist in the system")
         expect(errorSpy).not.toHaveBeenCalled()
         expect(logSpy.mock.calls).toEqual([
-          [`external_order_results -> Got 3 results from ${PROVIDER_ID}: 2 orders updated`],
+          [`external_order_results -> Got 3 results from ${PROVIDER_ID}: 2 orders updated, 0 orders unchanged (integration integration-412)`],
         ])
       })
 
@@ -1846,7 +2105,7 @@ describe('OrdersService', () => {
         expect(updatedEvents()).toHaveLength(3)
         expect(errorSpy).not.toHaveBeenCalled()
         expect(logSpy.mock.calls).toEqual([
-          [`external_order_results -> Got 3 results from ${PROVIDER_ID}: 3 orders updated`],
+          [`external_order_results -> Got 3 results from ${PROVIDER_ID}: 3 orders updated, 0 orders unchanged (integration integration-412)`],
         ])
       })
     })
@@ -2173,6 +2432,191 @@ describe('OrdersService', () => {
             type: EventType.ORDER_UPDATED,
           }),
         )
+      })
+    })
+
+    // Regression for https://github.com/nominal-systems/dmi-api/issues/409
+    // A provider that delivers a result again, unchanged, must cost no order write and no
+    // order:updated event.
+    describe('redelivery of a stored result (issue #409)', () => {
+      const INTEGRATION_ID = 'integration-409'
+
+      const storedOrder = (status: OrderStatus): Order =>
+        ({
+          id: 'order-409',
+          integrationId: INTEGRATION_ID,
+          externalId: 'ACC-409',
+          status,
+          orphan: false,
+          notes: null,
+          patient: { id: 'patient-409', name: 'Rex', identifier: [] },
+          client: { id: 'client-409', lastName: 'Anderson', identifier: [] },
+          veterinarian: { id: 'veterinarian-409', lastName: 'Vetson' },
+          tests: [{ code: 'CHEM' }, { code: 'HEM' }],
+        }) as unknown as Order
+
+      // A result that embeds its order, the stored tests listed once per test result
+      const result = (status: string, orderStatus: OrderStatus): ProviderResult =>
+        ({
+          id: 'result-409',
+          orderId: 'ACC-409',
+          status,
+          order: {
+            externalId: 'ACC-409',
+            status: orderStatus,
+            patient: { name: 'Rex', species: 'Canine', sex: 'M' },
+            client: { firstName: 'Alice', lastName: 'Anderson' },
+            veterinarian: { lastName: 'Vetson' },
+            tests: [{ code: 'CHEM' }, { code: 'HEM' }, { code: 'CHEM' }],
+          },
+          testResults: [],
+        }) as unknown as ProviderResult
+
+      describe('updateOrderFromResults()', () => {
+        it('should neither save nor report an update when the result changes nothing', async () => {
+          const order = storedOrder(OrderStatus.COMPLETED)
+
+          const updated = await ordersService.updateOrderFromResults(
+            order,
+            result(ResultStatus.COMPLETED, OrderStatus.COMPLETED),
+          )
+
+          expect(updated).toBe(false)
+          expect(ordersRepositoryMock.save).not.toHaveBeenCalled()
+        })
+
+        it('should neither save nor report an update for a result without an order that changes nothing', async () => {
+          const order = storedOrder(OrderStatus.COMPLETED)
+          const { order: _order, ...withoutOrder } = result(
+            ResultStatus.COMPLETED,
+            OrderStatus.COMPLETED,
+          )
+
+          expect(await ordersService.updateOrderFromResults(order, withoutOrder)).toBe(false)
+          expect(ordersRepositoryMock.save).not.toHaveBeenCalled()
+        })
+
+        it('should not take a CANCELLED order delivered as CANCELLED again for a change', async () => {
+          const order = storedOrder(OrderStatus.CANCELLED)
+
+          expect(
+            await ordersService.updateOrderFromResults(
+              order,
+              result(ResultStatus.CANCELLED, OrderStatus.CANCELLED),
+            ),
+          ).toBe(false)
+          expect(ordersRepositoryMock.save).not.toHaveBeenCalled()
+        })
+
+        it("should not take a status the result's order moves back from for a change", async () => {
+          // The result's status sets PARTIAL first, then its order sets COMPLETED again
+          const order = storedOrder(OrderStatus.COMPLETED)
+
+          expect(
+            await ordersService.updateOrderFromResults(
+              order,
+              result(ResultStatus.PARTIAL, OrderStatus.COMPLETED),
+            ),
+          ).toBe(false)
+          expect(order.status).toBe(OrderStatus.COMPLETED)
+          expect(ordersRepositoryMock.save).not.toHaveBeenCalled()
+        })
+
+        it('should save and report an update for a status change', async () => {
+          const order = storedOrder(OrderStatus.SUBMITTED)
+
+          expect(
+            await ordersService.updateOrderFromResults(
+              order,
+              result(ResultStatus.COMPLETED, OrderStatus.COMPLETED),
+            ),
+          ).toBe(true)
+          expect(order.status).toBe(OrderStatus.COMPLETED)
+          expect(ordersRepositoryMock.save).toHaveBeenCalledTimes(1)
+        })
+
+        it('should save and report an update for a test the order does not have yet', async () => {
+          const order = storedOrder(OrderStatus.COMPLETED)
+          const withNewTest = result(ResultStatus.COMPLETED, OrderStatus.COMPLETED)
+          withNewTest.order?.tests.push({ code: 'UA' })
+
+          expect(await ordersService.updateOrderFromResults(order, withNewTest)).toBe(true)
+          expect(ordersRepositoryMock.save).toHaveBeenCalledTimes(1)
+        })
+
+        it('should neither save nor report an update for a result whose order differs only in its notes', async () => {
+          const order = storedOrder(OrderStatus.COMPLETED)
+          const withNotes = result(ResultStatus.COMPLETED, OrderStatus.COMPLETED)
+          // The stored tests exactly, so only the notes differ
+          if (withNotes.order != null) {
+            withNotes.order.tests = [{ code: 'CHEM' }, { code: 'HEM' }]
+            withNotes.order.notes = 'Collected after fasting'
+          }
+
+          expect(await ordersService.updateOrderFromResults(order, withNotes)).toBe(false)
+          expect(ordersRepositoryMock.save).not.toHaveBeenCalled()
+        })
+      })
+
+      describe('handleExternalOrderResults()', () => {
+        it('should emit no order:updated and log the order as unchanged', async () => {
+          jest
+            .spyOn(ordersService, 'findOneByExternalId')
+            .mockResolvedValueOnce(storedOrder(OrderStatus.COMPLETED))
+          const log = jest.spyOn((ordersService as any).logger, 'log')
+
+          await ordersService.handleExternalOrderResults({
+            integrationId: INTEGRATION_ID,
+            results: [result(ResultStatus.COMPLETED, OrderStatus.COMPLETED)],
+          })
+
+          expect(ordersRepositoryMock.save).not.toHaveBeenCalled()
+          expect(eventsServiceMock.addEvent).not.toHaveBeenCalled()
+          expect(log).toHaveBeenCalledWith(
+            `external_order_results -> Got 1 results from ${INTEGRATION_ID}: 0 orders updated, 1 orders unchanged (integration ${INTEGRATION_ID})`,
+          )
+        })
+
+        it('should emit one order:updated for a status change', async () => {
+          jest
+            .spyOn(ordersService, 'findOneByExternalId')
+            .mockResolvedValueOnce(storedOrder(OrderStatus.SUBMITTED))
+
+          await ordersService.handleExternalOrderResults({
+            integrationId: INTEGRATION_ID,
+            results: [result(ResultStatus.COMPLETED, OrderStatus.COMPLETED)],
+          })
+
+          expect(ordersRepositoryMock.save).toHaveBeenCalledTimes(1)
+          expect(eventsServiceMock.addEvent).toHaveBeenCalledTimes(1)
+          expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(
+            expect.objectContaining({
+              namespace: EventNamespace.ORDERS,
+              type: EventType.ORDER_UPDATED,
+              data: expect.objectContaining({ status: OrderStatus.COMPLETED }),
+            }),
+          )
+        })
+
+        it('should emit no order:updated for a result whose order differs only in its notes', async () => {
+          jest
+            .spyOn(ordersService, 'findOneByExternalId')
+            .mockResolvedValueOnce(storedOrder(OrderStatus.COMPLETED))
+          const withNotes = result(ResultStatus.COMPLETED, OrderStatus.COMPLETED)
+          // The stored tests exactly, so only the notes differ
+          if (withNotes.order != null) {
+            withNotes.order.tests = [{ code: 'CHEM' }, { code: 'HEM' }]
+            withNotes.order.notes = 'Collected after fasting'
+          }
+
+          await ordersService.handleExternalOrderResults({
+            integrationId: INTEGRATION_ID,
+            results: [withNotes],
+          })
+
+          expect(ordersRepositoryMock.save).not.toHaveBeenCalled()
+          expect(eventsServiceMock.addEvent).not.toHaveBeenCalled()
+        })
       })
     })
   })
