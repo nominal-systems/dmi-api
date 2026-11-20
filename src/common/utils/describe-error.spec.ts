@@ -17,4 +17,12 @@ describe('describeError()', () => {
     expect(describeError(Object.assign(new Error(''), { code: 'ECONNRESET' }))).toBe('ECONNRESET')
     expect(describeError(Object.assign(new Error(''), { name: 'ServiceUnavailableError' }))).toBe('ServiceUnavailableError')
   })
+
+  it('should describe a thrown value that is not an Error', () => {
+    // An engine's error arrives over MQTT as a plain object, not an Error
+    expect(describeError({ status: 'error', message: 'Internal server error' })).toBe('Internal server error')
+    expect(describeError('save refused')).toBe('save refused')
+    expect(describeError(null)).toBe('null')
+    expect(describeError(undefined)).toBe('undefined')
+  })
 })

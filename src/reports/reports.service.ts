@@ -18,6 +18,7 @@ import { TestResult } from './entities/test-result.entity'
 import { Observation } from './entities/observation.entity'
 import { IntegrationsService } from '../integrations/integrations.service'
 import { arrayDiff } from '../common/utils/array-diff'
+import { describeError } from '../common/utils/describe-error'
 import { OrdersService } from '../orders/orders.service'
 import { Organization } from '../organizations/entities/organization.entity'
 import { resultStatusMapper, testResultStatusMapper } from '../common/utils/result-status.helper'
@@ -225,7 +226,8 @@ export class ReportsService {
         await this.ordersService.updateOrderFromResults(order, resultForOrder[0])
         externalOrders.push(externalOrder)
       } catch (error) {
-        this.logger.warn(`Order from provider not found -> External ID: ${externalOrderId}`)
+        // "Not found" is the provider returning no order, handled above: anything here is a failure
+        this.logger.error(`Could not fetch or store the order with external ID ${externalOrderId} for its results (${integration.providerConfiguration.providerId}, integration ${integrationId}): ${describeError(error)}`, error instanceof Error ? error.stack : undefined)
       }
     }
 

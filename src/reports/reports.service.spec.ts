@@ -14,7 +14,7 @@ import { EventNamespace } from '../events/constants/event-namespace.enum'
 import { EventType } from '../events/constants/event-type.enum'
 import { FileUtils } from '../common/utils/file-utils'
 import { Order } from '../orders/entities/order.entity'
-import { BadRequestException, ConflictException, ForbiddenException, HttpException, HttpStatus, NotFoundException } from '@nestjs/common'
+import { BadRequestException, ConflictException, ForbiddenException, HttpException, HttpStatus, Logger, NotFoundException } from '@nestjs/common'
 import { ExternalResultEventData } from '../common/typings/internal-event-data.interface'
 import { TestResultItemInterpretationCode } from '@nominal-systems/dmi-engine-common'
 import { FEATURE_FLAG_PROVIDER } from '../feature-flags/feature-flag.interface'
@@ -2491,6 +2491,91 @@ describe('ReportsService', () => {
 
         expect(ordersServiceMock.saveOrder).not.toHaveBeenCalled()
         jest.clearAllMocks()
+      })
+    })
+    // Regression for https://github.com/nominal-systems/dmi-api/issues/412
+    // A result's order that dmi-api does not have is fetched from the provider and stored.
+    // A failure there must be logged as one, naming the order, not as "not found".
+    describe('an order that cannot be fetched or stored (issue #412)', () => {
+      const INTEGRATION_ID = 'integration-412'
+      const PROVIDER_ID = 'idexx'
+      let errorSpy: jest.SpyInstance
+      let warnSpy: jest.SpyInstance
+
+      const resultsFor = (orderIds: string[]): ProviderResult[] =>
+        orderIds.map(orderId => ({ id: `result-${orderId}`, orderId, status: 'COMPLETED', testResults: [] })) as unknown as ProviderResult[]
+      const providerOrder = (externalId: string): any => ({ externalId, status: OrderStatus.COMPLETED })
+      const createdExternalIds = (): string[] =>
+        ordersServiceMock.createExternalOrder.mock.calls.map(([, externalOrder]) => externalOrder.externalId)
+
+      beforeEach(() => {
+        jest.spyOn(integrationsServiceMock, 'findById').mockResolvedValueOnce({
+          id: INTEGRATION_ID,
+          providerConfiguration: { providerId: PROVIDER_ID },
+          practice: { id: 'practice-412' }
+        })
+        jest.spyOn(reportsService, 'findReportsByExternalOrderIds').mockResolvedValueOnce([])
+        ordersServiceMock.findOrdersByExternalIds.mockResolvedValueOnce([])
+        errorSpy = jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined)
+        warnSpy = jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined)
+      })
+
+      afterEach(() => {
+        errorSpy.mockRestore()
+        warnSpy.mockRestore()
+      })
+
+      it('logs an order whose status update fails as an error, and goes on to the next', async () => {
+        const deadlock = new Error('Deadlock found when trying to get lock; try restarting transaction')
+        ordersServiceMock.getOrderFromProvider
+          .mockResolvedValueOnce(providerOrder('EXT-412-1'))
+          .mockResolvedValueOnce(providerOrder('EXT-412-2'))
+        // Neither is in dmi-api yet when the lock is held
+        ordersServiceMock.findOneByExternalId
+          .mockRejectedValueOnce(new NotFoundException('The order was not found'))
+          .mockRejectedValueOnce(new NotFoundException('The order was not found'))
+        ordersServiceMock.updateOrderFromResults.mockRejectedValueOnce(deadlock)
+
+        await reportsService.handleExternalResults({ integrationId: INTEGRATION_ID, results: resultsFor(['EXT-412-1', 'EXT-412-2']) })
+
+        expect(createdExternalIds()).toEqual(['EXT-412-1', 'EXT-412-2'])
+        expect(ordersServiceMock.updateOrderFromResults.mock.calls.map(([order]) => order.externalId)).toEqual(['EXT-412-1', 'EXT-412-2'])
+        expect(errorSpy.mock.calls).toEqual([
+          [
+            `Could not fetch or store the order with external ID EXT-412-1 for its results (${PROVIDER_ID}, integration ${INTEGRATION_ID}): Deadlock found when trying to get lock; try restarting transaction`,
+            deadlock.stack
+          ]
+        ])
+        expect(warnSpy).not.toHaveBeenCalledWith('Order from provider not found -> External ID: EXT-412-1')
+      })
+
+      it('logs a failed provider fetch, an engine error that is not an Error, by its message', async () => {
+        // An engine's error arrives over MQTT as a plain object
+        ordersServiceMock.getOrderFromProvider
+          .mockRejectedValueOnce({ status: 'error', message: 'Internal server error' })
+          .mockResolvedValueOnce(providerOrder('EXT-412-2'))
+        ordersServiceMock.findOneByExternalId.mockRejectedValueOnce(new NotFoundException('The order was not found'))
+
+        await reportsService.handleExternalResults({ integrationId: INTEGRATION_ID, results: resultsFor(['EXT-412-1', 'EXT-412-2']) })
+
+        expect(createdExternalIds()).toEqual(['EXT-412-2'])
+        expect(errorSpy.mock.calls).toEqual([
+          [
+            `Could not fetch or store the order with external ID EXT-412-1 for its results (${PROVIDER_ID}, integration ${INTEGRATION_ID}): Internal server error`,
+            undefined
+          ]
+        ])
+        expect(warnSpy).not.toHaveBeenCalledWith('Order from provider not found -> External ID: EXT-412-1')
+      })
+
+      it('still logs an order the provider does not return as not found, at warn', async () => {
+        ordersServiceMock.getOrderFromProvider.mockResolvedValueOnce(null)
+
+        await reportsService.handleExternalResults({ integrationId: INTEGRATION_ID, results: resultsFor(['EXT-412-1']) })
+
+        expect(createdExternalIds()).toEqual([])
+        expect(warnSpy.mock.calls).toEqual([['Order from provider not found -> External ID: EXT-412-1']])
+        expect(errorSpy).not.toHaveBeenCalled()
       })
     })
     describe('Antech', () => {

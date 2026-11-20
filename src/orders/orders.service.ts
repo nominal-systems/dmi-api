@@ -39,6 +39,7 @@ import { ReportsService } from '../reports/reports.service'
 import { Report } from '../reports/entities/report.entity'
 import { ExternalOrderMapper } from './mappers/external-order.mapper'
 import { ProviderResultUtils } from '../common/utils/provider-result-utils'
+import { describeError } from '../common/utils/describe-error'
 import { ProviderConfiguration } from '../providers/entities/provider-configuration.entity'
 import { RefsService } from '../refs/refs.service'
 import { Attachment } from '../common/entities/attachment.entity'
@@ -620,13 +621,15 @@ export class OrdersService {
     )
 
     const updatedOrders: Order[] = []
+    let failedOrders = 0
     for (const externalOrderId of externalOrderIds) {
       const result = results.find((result) => result.orderId === externalOrderId)
 
       if (result == null) continue
 
+      let order: Order | undefined
       try {
-        const order = await this.findOneByExternalId(externalOrderId, integrationId)
+        order = await this.findOneByExternalId(externalOrderId, integrationId)
 
         // Validate that the existing order matches the incoming result data, and
         // that we are not reconciling into a stale orphan order whose externalId
@@ -649,8 +652,15 @@ export class OrdersService {
           this.logger.debug(`Updated Order/${order.id} status to ${order.status}`)
         }
       } catch (error) {
-        if (error.status === 404) {
+        if (error instanceof NotFoundException) {
           this.logger.debug(`Order ${externalOrderId} doesn't exist in the system`)
+        } else {
+          failedOrders++
+          const orderRef = order != null ? ` (order ${order.id})` : ''
+          this.logger.error(
+            `Could not update the order with external ID ${externalOrderId}${orderRef} from its result (${integration.providerConfiguration.providerId}, integration ${integrationId}): ${describeError(error)}`,
+            error instanceof Error ? error.stack : undefined,
+          )
         }
       }
     }
@@ -674,7 +684,7 @@ export class OrdersService {
     }
 
     this.logger.log(
-      `external_order_results -> Got ${results.length} results from ${integration.providerConfiguration.providerId}: ${updatedOrders.length} orders updated`,
+      `external_order_results -> Got ${results.length} results from ${integration.providerConfiguration.providerId}: ${updatedOrders.length} orders updated${failedOrders > 0 ? `, ${failedOrders} orders failed` : ''}`,
     )
   }
 
