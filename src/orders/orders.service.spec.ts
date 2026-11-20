@@ -1568,7 +1568,7 @@ describe('OrdersService', () => {
           `Could not create order B from ${PROVIDER_ID} (integration ${INTEGRATION_ID}), left it out of the batch: Column 'lastName' cannot be null`,
           expect.stringContaining("Column 'lastName' cannot be null"),
         )
-        expect(summaries()).toEqual(['Got 3 external orders: 2 created, 0 updated, 1 failed'])
+        expect(summaries()).toEqual(['Got 3 external orders: 2 created, 0 updated, 0 orders unchanged, 1 failed (wisdom-panel, integration integration-1)'])
       })
 
       it('saves and announces the other updates when one update cannot be saved, and logs that one', async () => {
@@ -1593,7 +1593,7 @@ describe('OrdersService', () => {
           `Could not update order Y from ${PROVIDER_ID} (integration ${INTEGRATION_ID}), left it out of the batch: Column 'lastName' cannot be null`,
           expect.stringContaining("Column 'lastName' cannot be null"),
         )
-        expect(summaries()).toEqual(['Got 3 external orders: 0 created, 2 updated, 1 failed'])
+        expect(summaries()).toEqual(['Got 3 external orders: 0 created, 2 updated, 0 orders unchanged, 1 failed (wisdom-panel, integration integration-1)'])
       })
 
       it('logs every order and counts them all when no order of the batch can be saved', async () => {
@@ -1608,7 +1608,7 @@ describe('OrdersService', () => {
           expect.stringMatching(/^Could not create order A from wisdom-panel /),
           expect.stringMatching(/^Could not update order X from wisdom-panel /),
         ])
-        expect(summaries()).toEqual(['Got 2 external orders: 0 created, 0 updated, 2 failed'])
+        expect(summaries()).toEqual(['Got 2 external orders: 0 created, 0 updated, 0 orders unchanged, 2 failed (wisdom-panel, integration integration-1)'])
       })
 
       it('names the cause when what a save throws is not an Error, and goes on with the batch', async () => {
@@ -1636,7 +1636,7 @@ describe('OrdersService', () => {
             undefined,
           ],
         ])
-        expect(summaries()).toEqual(['Got 4 external orders: 2 created, 0 updated, 2 failed'])
+        expect(summaries()).toEqual(['Got 4 external orders: 2 created, 0 updated, 0 orders unchanged, 2 failed (wisdom-panel, integration integration-1)'])
       })
 
       it('logs the summary at debug, as before, for a batch whose new orders were all created concurrently', async () => {
@@ -1650,7 +1650,7 @@ describe('OrdersService', () => {
         expect(eventsServiceMock.addEvent).not.toHaveBeenCalled()
         expect(errorSpy).not.toHaveBeenCalled()
         expect(summaries()).toEqual([])
-        expect(debugSummaries()).toEqual(['Got 2 external orders: 0 created, 0 updated'])
+        expect(debugSummaries()).toEqual(['Got 2 external orders: 0 created, 0 updated, 0 orders unchanged (wisdom-panel, integration integration-1)'])
       })
 
       it('leaves out, and never inserts, an order whose re-check fails with a transient error, and creates the rest (issue #320)', async () => {
@@ -1671,7 +1671,7 @@ describe('OrdersService', () => {
         expect(errorMessages()).toEqual([
           `Could not create order B from ${PROVIDER_ID} (integration ${INTEGRATION_ID}), left it out of the batch: connection lost`,
         ])
-        expect(summaries()).toEqual(['Got 3 external orders: 2 created, 0 updated, 1 failed'])
+        expect(summaries()).toEqual(['Got 3 external orders: 2 created, 0 updated, 0 orders unchanged, 1 failed (wisdom-panel, integration integration-1)'])
       })
 
       it('goes on with the batch when the order:created or order:updated event of a saved order cannot be recorded', async () => {
@@ -1705,7 +1705,7 @@ describe('OrdersService', () => {
           expect.stringMatching(/^Could not record or deliver the 'order:updated' event for order order-X .*: event store unavailable$/),
         ])
         // The orders were saved: an event that could not be recorded fails no order
-        expect(summaries()).toEqual(['Got 4 external orders: 2 created, 2 updated'])
+        expect(summaries()).toEqual(['Got 4 external orders: 2 created, 2 updated, 0 orders unchanged (wisdom-panel, integration integration-1)'])
       })
 
       it('changes nothing for a batch in which every order is saved: the same events and the same summary line', async () => {
@@ -1730,7 +1730,7 @@ describe('OrdersService', () => {
         expect(savedExternalIds()).toEqual(['A', 'B', 'X'])
         expect(integrationsServiceMock.findById).toHaveBeenCalledTimes(1)
         expect(errorSpy).not.toHaveBeenCalled()
-        expect(summaries()).toEqual(['Got 3 external orders: 2 created, 1 updated'])
+        expect(summaries()).toEqual(['Got 3 external orders: 2 created, 1 updated, 0 orders unchanged (wisdom-panel, integration integration-1)'])
       })
     })
   })
@@ -1959,7 +1959,7 @@ describe('OrdersService', () => {
           ],
         ])
         expect(logSpy.mock.calls).toEqual([
-          [`external_order_results -> Got 3 results from ${PROVIDER_ID}: 2 orders updated, 1 orders failed`],
+          [`external_order_results -> Got 3 results from ${PROVIDER_ID}: 2 orders updated, 0 orders unchanged, 1 orders failed (integration integration-412)`],
         ])
       })
 
@@ -1985,7 +1985,7 @@ describe('OrdersService', () => {
           ],
         ])
         expect(logSpy.mock.calls).toEqual([
-          [`external_order_results -> Got 2 results from ${PROVIDER_ID}: 1 orders updated, 1 orders failed`],
+          [`external_order_results -> Got 2 results from ${PROVIDER_ID}: 1 orders updated, 0 orders unchanged, 1 orders failed (integration integration-412)`],
         ])
       })
 
@@ -2006,7 +2006,7 @@ describe('OrdersService', () => {
           ],
         ])
         expect(logSpy.mock.calls).toEqual([
-          [`external_order_results -> Got 2 results from ${PROVIDER_ID}: 1 orders updated, 1 orders failed`],
+          [`external_order_results -> Got 2 results from ${PROVIDER_ID}: 1 orders updated, 0 orders unchanged, 1 orders failed (integration integration-412)`],
         ])
       })
 
@@ -2023,7 +2023,7 @@ describe('OrdersService', () => {
           ],
         ])
         expect(logSpy.mock.calls).toEqual([
-          [`external_order_results -> Got 1 results from ${PROVIDER_ID}: 0 orders updated, 1 orders failed`],
+          [`external_order_results -> Got 1 results from ${PROVIDER_ID}: 0 orders updated, 0 orders unchanged, 1 orders failed (integration integration-412)`],
         ])
       })
 
@@ -2044,7 +2044,7 @@ describe('OrdersService', () => {
           ],
         ])
         expect(logSpy.mock.calls).toEqual([
-          [`external_order_results -> Got 3 results from ${PROVIDER_ID}: 2 orders updated, 1 orders failed`],
+          [`external_order_results -> Got 3 results from ${PROVIDER_ID}: 2 orders updated, 0 orders unchanged, 1 orders failed (integration integration-412)`],
         ])
       })
 
@@ -2077,7 +2077,7 @@ describe('OrdersService', () => {
         expect(updatedEvents()).toEqual([{ orderId: 'order-ORD-412-1', status: OrderStatus.COMPLETED }])
         expect(errorSpy).not.toHaveBeenCalled()
         expect(logSpy.mock.calls).toEqual([
-          [`external_order_results -> Got 2 results from ${PROVIDER_ID}: 1 orders updated`],
+          [`external_order_results -> Got 2 results from ${PROVIDER_ID}: 1 orders updated, 0 orders unchanged (integration integration-412)`],
         ])
       })
 
@@ -2093,7 +2093,7 @@ describe('OrdersService', () => {
         expect(debugSpy).toHaveBeenCalledWith("Order ORD-412-2 doesn't exist in the system")
         expect(errorSpy).not.toHaveBeenCalled()
         expect(logSpy.mock.calls).toEqual([
-          [`external_order_results -> Got 3 results from ${PROVIDER_ID}: 2 orders updated`],
+          [`external_order_results -> Got 3 results from ${PROVIDER_ID}: 2 orders updated, 0 orders unchanged (integration integration-412)`],
         ])
       })
 
@@ -2105,7 +2105,7 @@ describe('OrdersService', () => {
         expect(updatedEvents()).toHaveLength(3)
         expect(errorSpy).not.toHaveBeenCalled()
         expect(logSpy.mock.calls).toEqual([
-          [`external_order_results -> Got 3 results from ${PROVIDER_ID}: 3 orders updated`],
+          [`external_order_results -> Got 3 results from ${PROVIDER_ID}: 3 orders updated, 0 orders unchanged (integration integration-412)`],
         ])
       })
     })
