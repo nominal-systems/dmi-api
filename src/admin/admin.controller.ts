@@ -748,8 +748,10 @@ export class AdminController {
 
     const { page, limit } = query
     const data = await this.providersService.findExternalRequests(options, { page, limit })
+    const { total, capped } = await this.providersService.countExternalRequests(options)
     return {
-      total: await this.providersService.countExternalRequests(options),
+      total,
+      totalCapped: capped,
       page,
       limit,
       data,

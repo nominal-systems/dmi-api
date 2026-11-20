@@ -165,13 +165,14 @@ describe('AdminController', () => {
 
       const expectedResult: PaginationResult<ProviderExternalRequests> = {
         total: 2,
+        totalCapped: false,
         page: 1,
         limit: 10,
         data: [],
       }
 
       providersServiceMock.findExternalRequests.mockResolvedValueOnce(expectedResult.data)
-      providersServiceMock.countExternalRequests.mockResolvedValueOnce(expectedResult.total)
+      providersServiceMock.countExternalRequests.mockResolvedValueOnce({ total: 2, capped: false })
 
       const result = await adminController.getExternalRequests(query)
 
@@ -181,6 +182,15 @@ describe('AdminController', () => {
       })
       expect(providersServiceMock.countExternalRequests).toHaveBeenCalledWith(expectedOptions)
       expect(result).toEqual(expectedResult)
+    })
+
+    it('should flag a capped total', async () => {
+      providersServiceMock.findExternalRequests.mockResolvedValueOnce([])
+      providersServiceMock.countExternalRequests.mockResolvedValueOnce({ total: 1000, capped: true })
+
+      const result = await adminController.getExternalRequests({ page: 1, limit: 10 })
+
+      expect(result).toMatchObject({ total: 1000, totalCapped: true })
     })
 
     it('should throw BadRequestException for invalid query parameters', async () => {

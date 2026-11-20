@@ -1,6 +1,6 @@
 import { ClientProxy } from '@nestjs/microservices'
 import { IntegrationsService } from '../../integrations/integrations.service'
-import { ProvidersService } from './providers.service'
+import { EXTERNAL_REQUESTS_COUNT_CAP, ProvidersService } from './providers.service'
 import { Model } from 'mongoose'
 import * as fs from 'fs'
 import * as path from 'path'
@@ -339,11 +339,34 @@ describe('ProvidersService', () => {
     })
   })
   describe('countExternalRequests', () => {
-    it('should sum counts from v3 and the draining v2 collection', async () => {
-      jest.spyOn(providerExternalRequestsV3Model, 'countDocuments').mockResolvedValue(7 as never)
-      jest.spyOn(providerExternalRequestsModel, 'countDocuments').mockResolvedValue(5 as never)
+    const counts = (v3: number, v2: number): void => {
+      jest.spyOn(providerExternalRequestsV3Model, 'countDocuments').mockResolvedValue(v3 as never)
+      jest.spyOn(providerExternalRequestsModel, 'countDocuments').mockResolvedValue(v2 as never)
+    }
 
-      expect(await service.countExternalRequests({ provider: 'idexx' })).toEqual(12)
+    it('should sum counts from v3 and the draining v2 collection', async () => {
+      counts(7, 5)
+
+      expect(await service.countExternalRequests({ provider: 'idexx' })).toEqual({ total: 12, capped: false })
+    })
+    it('should stop each count one past the cap', async () => {
+      counts(7, 5)
+
+      await service.countExternalRequests({ provider: 'idexx' })
+
+      const options = { limit: EXTERNAL_REQUESTS_COUNT_CAP + 1 }
+      expect(providerExternalRequestsV3Model.countDocuments).toHaveBeenCalledWith({ provider: 'idexx' }, options)
+      expect(providerExternalRequestsModel.countDocuments).toHaveBeenCalledWith({ provider: 'idexx' }, options)
+    })
+    it('should report the cap, flagged, when the counts add up to more', async () => {
+      counts(EXTERNAL_REQUESTS_COUNT_CAP - 100, 101)
+
+      expect(await service.countExternalRequests({})).toEqual({ total: EXTERNAL_REQUESTS_COUNT_CAP, capped: true })
+    })
+    it('should report a total of exactly the cap as exact', async () => {
+      counts(EXTERNAL_REQUESTS_COUNT_CAP - 100, 100)
+
+      expect(await service.countExternalRequests({})).toEqual({ total: EXTERNAL_REQUESTS_COUNT_CAP, capped: false })
     })
   })
   describe('getDevices()', () => {
