@@ -46,7 +46,7 @@ export class Observation {
     type: 'simple-json',
     nullable: true
   })
-  interpretation?: Interpretation
+  interpretation?: Interpretation | null
 
   @Column({
     type: 'simple-json',

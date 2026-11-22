@@ -2026,7 +2026,7 @@ describe('ReportsService', () => {
 
           // Delivered again: stored as null, nothing changes
           const cleared = storedReport()
-          cleared.testResultsSet[0].observations[1].interpretation = null as any
+          cleared.testResultsSet[0].observations[1].interpretation = null
           expect(await reportsService.updateReportResults(cleared, results)).toBe(false)
           expect(reportsRepositoryMock.save).toHaveBeenCalledTimes(1)
         })
@@ -3665,7 +3665,7 @@ describe('ReportsService', () => {
 
           // The report as stored now: the interpretation is null
           const cleared = storedReport()
-          cleared.testResultsSet[0].observations[1].interpretation = null as any
+          cleared.testResultsSet[0].observations[1].interpretation = null
           await deliver(cleared, results)
 
           expect(reportsRepositoryMock.save).toHaveBeenCalledTimes(1)

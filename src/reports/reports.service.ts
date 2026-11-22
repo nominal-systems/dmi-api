@@ -525,7 +525,7 @@ export class ReportsService {
       .flatMap(testResult => testResult.observations ?? [])
       .filter(observation => isWithdrawnInterpretation(stored, observation))
     for (const observation of withdrawn) {
-      Object.assign(observation, { interpretation: null })
+      observation.interpretation = null
     }
     const testResultsChanged = report.testResultsSet.some(testResult =>
       isChanged(stored, testResult, TEST_RESULT_DELIVERED_FIELDS) ||
