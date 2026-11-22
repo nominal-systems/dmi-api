@@ -2061,6 +2061,30 @@ describe('ReportsService', () => {
         }],
         ['changed observation notes', (_report, results) => {
           results[0].testResults[0].items[1].notes = 'Repeated twice'
+        }],
+        // Every other value the merge writes: each is compared because the merge writes it
+        ['a changed observation string value', (_report, results) => {
+          results[0].testResults[0].items[2].valueString = 'Moderate hemolysis'
+        }],
+        ['changed observation units', (_report, results) => {
+          results[0].testResults[0].items[0].units = 'mmol/L'
+        }],
+        ['a changed observation reference range', (_report, results) => {
+          results[0].testResults[0].items[0].referenceRange = [{ type: 'NORMAL', low: 70, high: 110, text: '70 - 110' }]
+        }],
+        ['a changed observation status', (_report, results) => {
+          results[0].testResults[0].items[2].status = TestResultItemStatus.CANCELLED
+        }],
+        ['a changed observation sequence', (_report, results) => {
+          results[0].testResults[0].items[2].seq = 4
+        }],
+        ['a changed test result device', (_report, results) => {
+          results[0].testResults[0].deviceId = 'analyzer-2'
+        }],
+        ['a changed test result sequence, with test results matched by name', (_report, results) => {
+          // Matched by code and sequence, a test result with another sequence is a new one
+          (reportsService as any).featureFlags.isEnabled.mockReturnValueOnce(true)
+          results[0].testResults[0].seq = 2
         }]
       ])('should save and report an update for %s', async (_change, change) => {
         const report = storedReport()

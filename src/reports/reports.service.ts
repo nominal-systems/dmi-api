@@ -35,48 +35,63 @@ import { EventDocument } from '../events/entities/event.entity'
 import { PublishedEvent } from '../events/interfaces/published-event.interface'
 import { matchesStoredValue } from '../common/utils/matches-stored-value'
 
-// The columns a delivery writes on a test result or observation it already has: the
-// assignments in updateReportResults and updateObservationValue. Keep them in step.
-const TEST_RESULT_DELIVERED_FIELDS: Array<keyof TestResult> = ['seq', 'status', 'deviceId', 'notes']
-const OBSERVATION_DELIVERED_FIELDS: Array<keyof Observation> = [
-  'seq', 'status', 'valueString', 'valueQuantity', 'units', 'referenceRange', 'interpretation', 'notes'
-]
+// A delivery merged into the test results and observations of a report (issue #409): what they
+// stored before the merge, and the fields the merge writes on them. The merge writes every
+// delivered value through assign() or removeInterpretation(), which record the field, so the
+// change check compares exactly the fields a delivery writes, with no list of them to keep in step.
+export class ResultsMerge {
+  // Shallow copies: the merge assigns new values rather than mutating the stored ones, so a
+  // shallow copy keeps what is stored
+  private readonly stored = new Map<object, Record<string, unknown>>()
+  private readonly written = new Map<object, Set<string>>()
 
-// Shallow copies of a report's test results and observations before a delivery is merged.
-// The merge assigns new values rather than mutating the stored ones, so a shallow copy
-// keeps what is stored.
-function storedValues (report: Report): Map<object, object> {
-  const stored = new Map<object, object>()
-  for (const testResult of report.testResultsSet) {
-    stored.set(testResult, { ...testResult })
-    for (const observation of testResult.observations ?? []) {
-      stored.set(observation, { ...observation })
+  constructor (testResults: TestResult[] = []) {
+    for (const testResult of testResults) {
+      this.stored.set(testResult, { ...testResult })
+      for (const observation of testResult.observations ?? []) {
+        this.stored.set(observation, { ...observation })
+      }
     }
   }
-  return stored
-}
 
-function isChanged<T extends object> (
-  stored: Map<object, object>,
-  entity: T,
-  fields: Array<keyof T>
-): boolean {
-  const before = stored.get(entity) as Partial<T> | undefined
-  // Not there before the delivery: created by it
-  if (before === undefined) return true
-  // TypeORM does not write a property that is undefined, so only a defined value can change a column
-  return fields.some(field => entity[field] !== undefined && !matchesStoredValue(before[field], entity[field]))
-}
+  assign<T extends object, K extends keyof T & string> (entity: T, field: K, value: T[K]): void {
+    entity[field] = value
+    this.record(entity, field)
+  }
 
-// Whether the merge deleted a stored interpretation because the delivery has none: the one value
-// it clears on purpose. Other values a delivery omits are assigned undefined, which TypeORM does
-// not write, so they stay as stored and are no change.
-function isWithdrawnInterpretation (
-  stored: Map<object, object>,
-  observation: Observation
-): boolean {
-  const before = stored.get(observation) as Observation | undefined
-  return before !== undefined && observation.interpretation === undefined && !isNil(before.interpretation)
+  // The interpretation is the one value the merge deletes when a delivery has none
+  removeInterpretation (observation: Observation): void {
+    delete observation.interpretation
+    this.record(observation, 'interpretation')
+  }
+
+  // Whether the merge changed what the entity stores. The fields it wrote are compared once the
+  // merge is done, not as each is written: items sharing a code are applied in turn, so a value
+  // can pass through another and back.
+  isChanged (entity: object): boolean {
+    const before = this.stored.get(entity)
+    // Not there before the delivery: created by it
+    if (before === undefined) return true
+    const after = entity as Record<string, unknown>
+    // TypeORM does not write a property that is undefined, so only a defined value can change a column
+    return [...this.written.get(entity) ?? []].some(field =>
+      after[field] !== undefined && !matchesStoredValue(before[field], after[field])
+    )
+  }
+
+  // Whether the merge deleted a stored interpretation because the delivery has none: the one value
+  // it clears on purpose. Other values a delivery omits are assigned undefined, which TypeORM does
+  // not write, so they stay as stored and are no change.
+  isWithdrawnInterpretation (observation: Observation): boolean {
+    const before = this.stored.get(observation)
+    return before !== undefined && observation.interpretation === undefined && !isNil(before.interpretation)
+  }
+
+  private record (entity: object, field: string): void {
+    const fields = this.written.get(entity) ?? new Set<string>()
+    fields.add(field)
+    this.written.set(entity, fields)
+  }
 }
 
 function pdfContent ({ contentType, data }: AttachmentEntity): Partial<AttachmentEntity> {
@@ -486,7 +501,7 @@ export class ReportsService {
 
     // A redelivery matches every test result and observation, so tell an update from it
     // by comparing what is stored before and after the merge (issue #409)
-    const stored = storedValues(report)
+    const merge = new ResultsMerge(report.testResultsSet)
     const createdTestResults: TestResult[] = []
     for (const providerTestResult of providerTestResults) {
       const providerTestResultItemStatus = Array.from(new Set<string>(providerTestResult.items.map(testResult => testResult.status)))
@@ -500,11 +515,11 @@ export class ReportsService {
         : report.testResultsSet.find(testResult => testResult.code === providerTestResult.code && testResult.seq === providerTestResult.seq)
 
       if (existingTestResult != null) {
-        existingTestResult.seq = providerTestResult.seq
-        existingTestResult.status = testResultStatus
-        existingTestResult.deviceId = providerTestResult.deviceId
-        existingTestResult.notes = providerTestResult.notes
-        this.updateTestResultObservations(existingTestResult, providerTestResult.items)
+        merge.assign(existingTestResult, 'seq', providerTestResult.seq)
+        merge.assign(existingTestResult, 'status', testResultStatus)
+        merge.assign(existingTestResult, 'deviceId', providerTestResult.deviceId)
+        merge.assign(existingTestResult, 'notes', providerTestResult.notes)
+        this.updateTestResultObservations(existingTestResult, providerTestResult.items, merge)
       } else {
         const testResult = new TestResult()
         testResult.seq = providerTestResult.seq
@@ -514,7 +529,7 @@ export class ReportsService {
         testResult.status = testResultStatus
         testResult.deviceId = providerTestResult.deviceId
         testResult.notes = providerTestResult.notes
-        this.updateTestResultObservations(testResult, providerTestResult.items)
+        this.updateTestResultObservations(testResult, providerTestResult.items, merge)
         createdTestResults.push(testResult)
       }
     }
@@ -523,13 +538,13 @@ export class ReportsService {
     // change and is stored, and the next delivery without it changes nothing
     const withdrawn = report.testResultsSet
       .flatMap(testResult => testResult.observations ?? [])
-      .filter(observation => isWithdrawnInterpretation(stored, observation))
+      .filter(observation => merge.isWithdrawnInterpretation(observation))
     for (const observation of withdrawn) {
-      observation.interpretation = null
+      merge.assign(observation, 'interpretation', null)
     }
     const testResultsChanged = report.testResultsSet.some(testResult =>
-      isChanged(stored, testResult, TEST_RESULT_DELIVERED_FIELDS) ||
-      (testResult.observations ?? []).some(observation => isChanged(stored, observation, OBSERVATION_DELIVERED_FIELDS))
+      merge.isChanged(testResult) ||
+      (testResult.observations ?? []).some(observation => merge.isChanged(observation))
     )
     const updatePerformed = createdTestResults.length > 0 || testResultsChanged || pdfChanged || report.status !== reportStatus
     if (updatePerformed) {
@@ -547,7 +562,8 @@ export class ReportsService {
 
   public updateTestResultObservations (
     testResult: TestResult,
-    items: ProviderTestResultItem[]
+    items: ProviderTestResultItem[],
+    merge: ResultsMerge = new ResultsMerge()
   ): void {
     const observationMap: Map<string, Observation> = new Map(
       testResult.observations.map(observation => [observation.code, observation])
@@ -560,7 +576,7 @@ export class ReportsService {
       const providerItems = items.filter(item => item.code === existingObservationCode)
       if (existingObservation === undefined || providerItems.length === 0) continue
       for (const providerItem of providerItems) {
-        this.updateObservationValue(existingObservation, providerItem)
+        this.updateObservationValue(existingObservation, providerItem, merge)
       }
     }
 
@@ -579,7 +595,7 @@ export class ReportsService {
       for (const item of filteredItems) {
         observation.code = item.code
         observation.name = item.name
-        this.updateObservationValue(observation, item)
+        this.updateObservationValue(observation, item, merge)
         newObservationCodesSet.add(observation.code)
       }
 
@@ -589,46 +605,48 @@ export class ReportsService {
     testResult.observations = testResult.observations.concat(newObservations)
   }
 
+  // Every delivered value is written through the merge, so a redelivery can be told from an update
   private updateObservationValue (
     observation: Observation,
-    item: ProviderTestResultItem
+    item: ProviderTestResultItem,
+    merge: ResultsMerge
   ): void {
     // Seq
-    observation.seq = item.seq
+    merge.assign(observation, 'seq', item.seq)
 
     // Status
-    observation.status = item.status
+    merge.assign(observation, 'status', item.status)
 
     // ValueX
     if (item.valueQuantity != null) {
-      observation.valueQuantity = item.valueQuantity
+      merge.assign(observation, 'valueQuantity', item.valueQuantity)
     } else if (item.valueString != null) {
-      observation.valueString = item.valueString
+      merge.assign(observation, 'valueString', item.valueString)
     }
 
     // Units
     if (item.units != null) {
-      observation.units = item.units
+      merge.assign(observation, 'units', item.units)
     }
 
     // Reference Range
     if (item.referenceRange != null) {
-      observation.referenceRange = item.referenceRange
+      merge.assign(observation, 'referenceRange', item.referenceRange)
     }
 
     // Interpretation
     if (isNullOrEmpty(item.interpretation)) {
-      delete observation.interpretation
+      merge.removeInterpretation(observation)
     } else {
-      observation.interpretation = {
+      merge.assign(observation, 'interpretation', {
         code: item.interpretation?.code,
         text: item.interpretation?.text
-      }
+      })
     }
 
     // Notes
     if (item.notes != null) {
-      observation.notes = item.notes
+      merge.assign(observation, 'notes', item.notes)
     }
   }
 
