@@ -34,6 +34,7 @@ import { REPUBLISH_DELIVERY_OPTIONS, ReportEventType, RepublishReportOptions } f
 import { EventDocument } from '../events/entities/event.entity'
 import { PublishedEvent } from '../events/interfaces/published-event.interface'
 import { matchesStoredValue } from '../common/utils/matches-stored-value'
+import { createHash } from 'crypto'
 
 // A delivery merged into the test results and observations of a report (issue #409): what they
 // stored before the merge, and the fields the merge writes on them. The merge writes every
@@ -94,8 +95,15 @@ export class ResultsMerge {
   }
 }
 
-function pdfContent ({ contentType, data }: AttachmentEntity): Partial<AttachmentEntity> {
-  return { contentType, data }
+// A report PDF as a delivery is compared with the stored one: its content type and the SHA-256
+// digest of its data, which MySQL computes for a stored PDF so that none is read to compare
+interface PdfDigest {
+  contentType: string | null
+  dataDigest: string | null
+}
+
+function pdfDigest ({ contentType, data }: AttachmentEntity): PdfDigest {
+  return { contentType, dataDigest: data == null ? null : createHash('sha256').update(data).digest('hex') }
 }
 
 @Injectable()
@@ -489,10 +497,10 @@ export class ReportsService {
       .reduce<any[]>((a, v) => a.concat(v), [])
     let pdfChanged = false
     if (pdfReport.length > 0) {
-      // The results flow loads reports without their PDF, so read the stored one to compare
-      const storedPdf = report.presentedFrom ?? await this.findStoredPresentedForm(report.id)
+      // The results flow loads reports without their PDF, so have MySQL digest the stored one
+      const storedPdf = report.presentedFrom?.map(pdfDigest) ?? await this.findStoredPdfDigests(report.id)
       this.attachPdfReport(report, pdfReport)
-      pdfChanged = !matchesStoredValue(storedPdf.map(pdfContent), (report.presentedFrom ?? []).map(pdfContent))
+      pdfChanged = !matchesStoredValue(storedPdf, (report.presentedFrom ?? []).map(pdfDigest))
     }
 
     // Build test results set
@@ -765,16 +773,19 @@ export class ReportsService {
     })
   }
 
-  private async findStoredPresentedForm (
+  // The stored PDFs of a report as their content type and data digest, computed by MySQL so no PDF
+  // is transferred, the way the order manifest is compared
+  private async findStoredPdfDigests (
     reportId?: string
-  ): Promise<AttachmentEntity[]> {
+  ): Promise<PdfDigest[]> {
     // A report that is not stored yet has no PDF
     if (reportId == null) return []
-    const stored = await this.reportsRepository.createQueryBuilder('report')
-      .leftJoinAndSelect('report.presentedFrom', 'presentedFrom')
+    return await this.reportsRepository.createQueryBuilder('report')
+      .innerJoin('report.presentedFrom', 'presentedFrom')
+      .select('presentedFrom.contentType', 'contentType')
+      .addSelect('SHA2(presentedFrom.data, 256)', 'dataDigest')
       .where('report.id = :reportId', { reportId })
-      .getOne()
-    return stored?.presentedFrom ?? []
+      .getRawMany()
   }
 
   private printReport (

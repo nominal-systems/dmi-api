@@ -20,6 +20,7 @@ import { TestResultItemInterpretationCode } from '@nominal-systems/dmi-engine-co
 import { FEATURE_FLAG_PROVIDER } from '../feature-flags/feature-flag.interface'
 import { NamedLockService } from '../common/services/named-lock.service'
 import { Integration } from '../integrations/entities/integration.entity'
+import { createHash } from 'crypto'
 
 const repositoryMockFactory: () => MockUtils<Repository<any>> = jest.fn(() => ({
   findOne: jest.fn(entity => entity),
@@ -560,11 +561,13 @@ describe('ReportsService', () => {
     }
   ]
 
-  // A report repository query whose getOne() resolves to the given report
-  const queryBuilderResolving = (report: Partial<Report> | null): any => ({
-    leftJoinAndSelect: jest.fn().mockReturnThis(),
+  // A report repository query whose getRawMany() resolves to the given rows
+  const rawQueryBuilder = (rows: unknown[]): any => ({
+    innerJoin: jest.fn().mockReturnThis(),
+    select: jest.fn().mockReturnThis(),
+    addSelect: jest.fn().mockReturnThis(),
     where: jest.fn().mockReturnThis(),
-    getOne: jest.fn().mockResolvedValue(report)
+    getRawMany: jest.fn().mockResolvedValue(rows)
   })
 
   describe('updateReportResults()', () => {
@@ -2097,35 +2100,56 @@ describe('ReportsService', () => {
 
       describe('PDF', () => {
         const storedPdf = { id: 'attachment-1', uri: null, contentType: 'application/pdf', data: 'JVBERi0xLjQK' }
+        const OTHER_PDF = 'JVBERi0xLjcK'
+        const sha256 = (data: string): string => createHash('sha256').update(data).digest('hex')
+        // The stored PDF as its query reads it: its content type, and its data as the digest MySQL computes
+        const storedPdfRow = (data = storedPdf.data): unknown => ({ contentType: 'application/pdf', dataDigest: sha256(data) })
         const withPdf = (data: string): ProviderResult[] => {
           const results = redelivery()
           results[0].pdfReport = [{ contentType: 'application/pdf', data }]
           return results
         }
 
-        it('should read the stored PDF and not take the same PDF delivered again for a change', async () => {
+        it('should read the stored PDF digest and not take the same PDF delivered again for a change', async () => {
           // The results flow loads reports without their PDF
-          (reportsRepositoryMock.createQueryBuilder as jest.Mock)
-            .mockReturnValueOnce(queryBuilderResolving({ presentedFrom: [storedPdf] } as unknown as Report))
+          const query = rawQueryBuilder([storedPdfRow()])
+          ;(reportsRepositoryMock.createQueryBuilder as jest.Mock).mockReturnValueOnce(query)
 
           expect(await reportsService.updateReportResults(storedReport(), withPdf(storedPdf.data))).toBe(false)
           expect(reportsRepositoryMock.createQueryBuilder).toHaveBeenCalledTimes(1)
+          // MySQL digests the stored data, so no PDF is read to compare
+          expect(query.addSelect).toHaveBeenCalledWith('SHA2(presentedFrom.data, 256)', 'dataDigest')
           expect(reportsRepositoryMock.save).not.toHaveBeenCalled()
         })
 
+        it('should save and report an update for a PDF whose stored digest differs', async () => {
+          (reportsRepositoryMock.createQueryBuilder as jest.Mock).mockReturnValueOnce(rawQueryBuilder([storedPdfRow()]))
+
+          expect(await reportsService.updateReportResults(storedReport(), withPdf(OTHER_PDF))).toBe(true)
+          expect(reportsRepositoryMock.save).toHaveBeenCalledTimes(1)
+        })
+
         it('should save and report an update for a PDF the report does not have yet', async () => {
-          (reportsRepositoryMock.createQueryBuilder as jest.Mock)
-            .mockReturnValueOnce(queryBuilderResolving({ presentedFrom: [] } as unknown as Report))
+          (reportsRepositoryMock.createQueryBuilder as jest.Mock).mockReturnValueOnce(rawQueryBuilder([]))
 
           expect(await reportsService.updateReportResults(storedReport(), withPdf(storedPdf.data))).toBe(true)
           expect(reportsRepositoryMock.save).toHaveBeenCalledTimes(1)
+        })
+
+        it('should not take the PDF a loaded report has, delivered again, for a change', async () => {
+          const report = storedReport()
+          report.presentedFrom = [storedPdf] as unknown as Report['presentedFrom']
+
+          expect(await reportsService.updateReportResults(report, withPdf(storedPdf.data))).toBe(false)
+          expect(reportsRepositoryMock.createQueryBuilder).not.toHaveBeenCalled()
+          expect(reportsRepositoryMock.save).not.toHaveBeenCalled()
         })
 
         it('should save and report an update for a changed PDF', async () => {
           const report = storedReport()
           report.presentedFrom = [storedPdf] as unknown as Report['presentedFrom']
 
-          expect(await reportsService.updateReportResults(report, withPdf('JVBERi0xLjcK'))).toBe(true)
+          expect(await reportsService.updateReportResults(report, withPdf(OTHER_PDF))).toBe(true)
           expect(reportsRepositoryMock.createQueryBuilder).not.toHaveBeenCalled()
           expect(reportsRepositoryMock.save).toHaveBeenCalledTimes(1)
         })
