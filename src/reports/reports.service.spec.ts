@@ -8,7 +8,7 @@ import { TestResult } from './entities/test-result.entity'
 import { IntegrationsService } from '../integrations/integrations.service'
 import { EventsService } from '../events/services/events.service'
 import { OrdersService } from '../orders/orders.service'
-import { OrderStatus, PimsIdentifiers, ProviderResult, ReportStatus, TestResultItemStatus } from '@nominal-systems/dmi-engine-common'
+import { OrderStatus, PimsIdentifiers, ProviderResult, ProviderTestResultItem, ReportStatus, TestResultItemStatus } from '@nominal-systems/dmi-engine-common'
 import { reportRepositoryMockFactory } from './test/report.repository.mock'
 import { EventNamespace } from '../events/constants/event-namespace.enum'
 import { EventType } from '../events/constants/event-type.enum'
@@ -20,6 +20,7 @@ import { TestResultItemInterpretationCode } from '@nominal-systems/dmi-engine-co
 import { FEATURE_FLAG_PROVIDER } from '../feature-flags/feature-flag.interface'
 import { NamedLockService } from '../common/services/named-lock.service'
 import { Integration } from '../integrations/entities/integration.entity'
+import { createHash } from 'crypto'
 
 const repositoryMockFactory: () => MockUtils<Repository<any>> = jest.fn(() => ({
   findOne: jest.fn(entity => entity),
@@ -440,6 +441,133 @@ describe('ReportsService', () => {
         ]
       })
     })
+  })
+
+  // Issue #409: a report as MySQL reads it back. Nullable columns are null, and simple-json
+  // columns are parsed in the key order they were written in.
+  const storedReport = (): Report => ({
+    id: 'report-409',
+    orderId: 'order-409',
+    status: ReportStatus.FINAL,
+    order: { id: 'order-409', externalId: 'ACC-409', integrationId: 'integration-409' },
+    patient: { id: 'patient-409', name: 'Rex' },
+    testResultsSet: [
+      {
+        id: 'test-result-1',
+        seq: 1,
+        code: 'CHEM',
+        name: 'Chemistry',
+        status: 'COMPLETED',
+        deviceId: null,
+        notes: null,
+        observations: [
+          {
+            id: 'observation-1',
+            seq: 1,
+            code: 'GLU',
+            name: 'Glucose',
+            status: 'DONE',
+            valueString: null,
+            valueQuantity: { units: 'mg/dL', value: 98.5 },
+            units: 'mg/dL',
+            interpretation: null,
+            referenceRange: [
+              { high: 120, low: 70, text: '70 - 120', type: 'NORMAL' },
+              { high: 40, low: 0, type: 'CRITICAL' }
+            ],
+            notes: null,
+            createdAt: new Date('2026-01-05T09:30:00.000Z'),
+            updatedAt: new Date('2026-01-05T09:30:00.000Z')
+          },
+          {
+            id: 'observation-2',
+            seq: 2,
+            code: 'ALT',
+            name: 'ALT',
+            status: 'DONE',
+            valueString: null,
+            valueQuantity: { units: 'U/L', value: 250 },
+            units: 'U/L',
+            interpretation: { code: TestResultItemInterpretationCode.HIGH, text: 'High' },
+            referenceRange: null,
+            notes: 'Repeated',
+            createdAt: new Date('2026-01-05T09:30:00.000Z'),
+            updatedAt: new Date('2026-01-05T09:30:00.000Z')
+          },
+          {
+            id: 'observation-3',
+            seq: 3,
+            code: 'COM',
+            name: 'Comment',
+            status: 'DONE',
+            valueString: 'Slight hemolysis',
+            valueQuantity: null,
+            units: null,
+            interpretation: null,
+            referenceRange: null,
+            notes: null,
+            createdAt: new Date('2026-01-05T09:30:00.000Z'),
+            updatedAt: new Date('2026-01-05T09:30:00.000Z')
+          }
+        ]
+      }
+    ]
+  }) as unknown as Report
+
+  // The stored result delivered again, as a provider sends it: keys without a value are left out
+  const redelivery = (): ProviderResult[] => [
+    {
+      id: 'result-409',
+      orderId: 'ACC-409',
+      status: 'COMPLETED',
+      testResults: [
+        {
+          seq: 1,
+          code: 'CHEM',
+          name: 'Chemistry',
+          items: [
+            {
+              seq: 1,
+              code: 'GLU',
+              name: 'Glucose',
+              status: TestResultItemStatus.DONE,
+              valueQuantity: { value: 98.5, units: 'mg/dL' },
+              units: 'mg/dL',
+              referenceRange: [
+                { type: 'NORMAL', low: 70, high: 120, text: '70 - 120' },
+                { type: 'CRITICAL', low: 0, high: 40 }
+              ]
+            },
+            {
+              seq: 2,
+              code: 'ALT',
+              name: 'ALT',
+              status: TestResultItemStatus.DONE,
+              valueQuantity: { value: 250, units: 'U/L' },
+              units: 'U/L',
+              interpretation: { code: TestResultItemInterpretationCode.HIGH, text: 'High' },
+              notes: 'Repeated'
+            },
+            {
+              seq: 3,
+              code: 'COM',
+              name: 'Comment',
+              status: TestResultItemStatus.DONE,
+              valueString: 'Slight hemolysis'
+            }
+          ]
+        }
+      ]
+    }
+  ]
+
+  // A report repository query whose getRawMany() resolves to the given rows
+  const rawQueryBuilder = (rows: unknown[]): any => ({
+    innerJoin: jest.fn().mockReturnThis(),
+    select: jest.fn().mockReturnThis(),
+    addSelect: jest.fn().mockReturnThis(),
+    where: jest.fn().mockReturnThis(),
+    getRawMany: jest.fn().mockResolvedValue(rows)
   })
 
   describe('updateReportResults()', () => {
@@ -1775,6 +1903,257 @@ describe('ReportsService', () => {
           ]
         }
       ))
+    })
+
+    describe('redelivery of a stored result (issue #409)', () => {
+      it('should neither save nor report an update when the stored result is delivered again', async () => {
+        const updated = await reportsService.updateReportResults(storedReport(), redelivery())
+
+        expect(updated).toBe(false)
+        expect(reportsRepositoryMock.save).not.toHaveBeenCalled()
+      })
+
+      it('should not take reference ranges delivered in another order for a change', async () => {
+        const results = redelivery()
+        results[0].testResults[0].items[0].referenceRange?.reverse()
+
+        expect(await reportsService.updateReportResults(storedReport(), results)).toBe(false)
+        expect(reportsRepositoryMock.save).not.toHaveBeenCalled()
+      })
+
+      it('should not take a code delivered twice for a change when the last delivery of it is stored', async () => {
+        // Items sharing a code are applied in turn, so the value passes through 'Pending' and back
+        const results = redelivery()
+        results[0].testResults[0].items.splice(2, 0, {
+          seq: 3,
+          code: 'COM',
+          name: 'Comment',
+          status: TestResultItemStatus.DONE,
+          valueString: 'Pending'
+        })
+
+        expect(await reportsService.updateReportResults(storedReport(), results)).toBe(false)
+        expect(reportsRepositoryMock.save).not.toHaveBeenCalled()
+      })
+
+      it('should not take a reference range without bounds, delivered as NaN, for a change', async () => {
+        // A range such as "Negative-Positive" parses to NaN bounds, which simple-json stores as null
+        const report = storedReport()
+        report.testResultsSet[0].observations[0].referenceRange = [{ type: 'NORMAL', text: 'Negative-Positive', low: null, high: null }] as any
+        const results = redelivery()
+        results[0].testResults[0].items[0].referenceRange = [{ type: 'NORMAL', text: 'Negative-Positive', low: NaN, high: NaN }]
+
+        expect(await reportsService.updateReportResults(report, results)).toBe(false)
+        expect(reportsRepositoryMock.save).not.toHaveBeenCalled()
+      })
+
+      it('should not take a value the merge keeps when a delivery omits it for a change', async () => {
+        // An observation keeps its stored value, units, reference range and notes when the delivery has none
+        const results = redelivery()
+        delete results[0].testResults[0].items[0].valueQuantity
+        delete results[0].testResults[0].items[0].units
+        delete results[0].testResults[0].items[0].referenceRange
+        delete results[0].testResults[0].items[1].notes
+
+        expect(await reportsService.updateReportResults(storedReport(), results)).toBe(false)
+        expect(reportsRepositoryMock.save).not.toHaveBeenCalled()
+      })
+
+      it('should not take an omitted observation status for a change, since the column cannot be cleared', async () => {
+        const results = redelivery()
+        delete (results[0].testResults[0].items[2] as Partial<ProviderTestResultItem>).status
+
+        expect(await reportsService.updateReportResults(storedReport(), results)).toBe(false)
+        expect(reportsRepositoryMock.save).not.toHaveBeenCalled()
+      })
+
+      // The merge assigns a value a delivery omits as undefined, which TypeORM does not write: the
+      // stored value stays, so a provider that omits it on one delivery does not wipe it
+      it('should not take omitted test result notes for a change, and not write them', async () => {
+        const report = storedReport()
+        report.testResultsSet[0].notes = 'Lipemic sample'
+
+        expect(await reportsService.updateReportResults(report, redelivery())).toBe(false)
+        expect(reportsRepositoryMock.save).not.toHaveBeenCalled()
+      })
+
+      it('should not take an omitted test result device for a change, and not write it', async () => {
+        const report = storedReport()
+        report.testResultsSet[0].deviceId = 'analyzer-1'
+
+        expect(await reportsService.updateReportResults(report, redelivery())).toBe(false)
+        expect(reportsRepositoryMock.save).not.toHaveBeenCalled()
+      })
+
+      it('should not take an omitted test result sequence for a change, and not write it', async () => {
+        // Matched by code and sequence, a test result delivered without one is a new one, so this
+        // needs test results matched by name
+        (reportsService as any).featureFlags.isEnabled.mockReturnValueOnce(true)
+        const results = redelivery()
+        delete results[0].testResults[0].seq
+
+        expect(await reportsService.updateReportResults(storedReport(), results)).toBe(false)
+        expect(reportsRepositoryMock.save).not.toHaveBeenCalled()
+      })
+
+      it('should not take an omitted observation sequence for a change, and not write it', async () => {
+        const results = redelivery()
+        delete results[0].testResults[0].items[2].seq
+
+        expect(await reportsService.updateReportResults(storedReport(), results)).toBe(false)
+        expect(reportsRepositoryMock.save).not.toHaveBeenCalled()
+      })
+
+      describe('a delivery that withdraws an interpretation', () => {
+        // The values a column had when the report was saved
+        const savedValues = (read: (report: Report) => unknown): unknown[] => {
+          const saved: unknown[] = []
+          const save = reportsRepositoryMock.save as jest.Mock
+          save.mockImplementation(async (report: Report) => {
+            saved.push(read(report))
+            return report
+          })
+          return saved
+        }
+
+        it('should save an interpretation the delivery no longer has as null, once', async () => {
+          const saved = savedValues(report => report.testResultsSet[0].observations[1].interpretation)
+          const results = redelivery()
+          delete results[0].testResults[0].items[1].interpretation
+          const report = storedReport()
+
+          expect(await reportsService.updateReportResults(report, results)).toBe(true)
+          expect(saved).toEqual([null])
+          // Left out of the report afterwards, as the merge leaves it
+          expect(report.testResultsSet[0].observations[1]).not.toHaveProperty('interpretation')
+
+          // Delivered again: stored as null, nothing changes
+          const cleared = storedReport()
+          cleared.testResultsSet[0].observations[1].interpretation = null
+          expect(await reportsService.updateReportResults(cleared, results)).toBe(false)
+          expect(reportsRepositoryMock.save).toHaveBeenCalledTimes(1)
+        })
+      })
+
+      it.each<[string, (report: Report, results: ProviderResult[]) => void]>([
+        ['a changed observation value', (_report, results) => {
+          results[0].testResults[0].items[0].valueQuantity = { value: 101.2, units: 'mg/dL' }
+        }],
+        ['a changed observation interpretation', (_report, results) => {
+          results[0].testResults[0].items[1].interpretation = { code: TestResultItemInterpretationCode.CRITICAL_HIGH, text: 'Critical high' }
+        }],
+        ['a new observation', (_report, results) => {
+          results[0].testResults[0].items.push({ seq: 4, code: 'BUN', name: 'BUN', status: TestResultItemStatus.DONE, valueString: '18' })
+        }],
+        ['a new test result', (_report, results) => {
+          results[0].testResults.push({
+            seq: 2,
+            code: 'HEM',
+            name: 'Hematology',
+            items: [{ seq: 1, code: 'HCT', name: 'Hematocrit', status: TestResultItemStatus.DONE, valueString: '45' }]
+          })
+        }],
+        ['a changed test result status', (report) => {
+          report.testResultsSet[0].status = 'PENDING'
+        }],
+        ['a changed report status', (_report, results) => {
+          results[0].status = 'PARTIAL'
+        }],
+        ['changed test result notes', (_report, results) => {
+          results[0].testResults[0].notes = 'Lipemic sample'
+        }],
+        ['changed observation notes', (_report, results) => {
+          results[0].testResults[0].items[1].notes = 'Repeated twice'
+        }],
+        // Every other value the merge writes: each is compared because the merge writes it
+        ['a changed observation string value', (_report, results) => {
+          results[0].testResults[0].items[2].valueString = 'Moderate hemolysis'
+        }],
+        ['changed observation units', (_report, results) => {
+          results[0].testResults[0].items[0].units = 'mmol/L'
+        }],
+        ['a changed observation reference range', (_report, results) => {
+          results[0].testResults[0].items[0].referenceRange = [{ type: 'NORMAL', low: 70, high: 110, text: '70 - 110' }]
+        }],
+        ['a changed observation status', (_report, results) => {
+          results[0].testResults[0].items[2].status = TestResultItemStatus.CANCELLED
+        }],
+        ['a changed observation sequence', (_report, results) => {
+          results[0].testResults[0].items[2].seq = 4
+        }],
+        ['a changed test result device', (_report, results) => {
+          results[0].testResults[0].deviceId = 'analyzer-2'
+        }],
+        ['a changed test result sequence, with test results matched by name', (_report, results) => {
+          // Matched by code and sequence, a test result with another sequence is a new one
+          (reportsService as any).featureFlags.isEnabled.mockReturnValueOnce(true)
+          results[0].testResults[0].seq = 2
+        }]
+      ])('should save and report an update for %s', async (_change, change) => {
+        const report = storedReport()
+        const results = redelivery()
+        change(report, results)
+
+        expect(await reportsService.updateReportResults(report, results)).toBe(true)
+        expect(reportsRepositoryMock.save).toHaveBeenCalledTimes(1)
+      })
+
+      describe('PDF', () => {
+        const storedPdf = { id: 'attachment-1', uri: null, contentType: 'application/pdf', data: 'JVBERi0xLjQK' }
+        const OTHER_PDF = 'JVBERi0xLjcK'
+        const sha256 = (data: string): string => createHash('sha256').update(data).digest('hex')
+        // The stored PDF as its query reads it: its content type, and its data as the digest MySQL computes
+        const storedPdfRow = (data = storedPdf.data): unknown => ({ contentType: 'application/pdf', dataDigest: sha256(data) })
+        const withPdf = (data: string): ProviderResult[] => {
+          const results = redelivery()
+          results[0].pdfReport = [{ contentType: 'application/pdf', data }]
+          return results
+        }
+
+        it('should read the stored PDF digest and not take the same PDF delivered again for a change', async () => {
+          // The results flow loads reports without their PDF
+          const query = rawQueryBuilder([storedPdfRow()])
+          ;(reportsRepositoryMock.createQueryBuilder as jest.Mock).mockReturnValueOnce(query)
+
+          expect(await reportsService.updateReportResults(storedReport(), withPdf(storedPdf.data))).toBe(false)
+          expect(reportsRepositoryMock.createQueryBuilder).toHaveBeenCalledTimes(1)
+          // MySQL digests the stored data, so no PDF is read to compare
+          expect(query.addSelect).toHaveBeenCalledWith('SHA2(presentedFrom.data, 256)', 'dataDigest')
+          expect(reportsRepositoryMock.save).not.toHaveBeenCalled()
+        })
+
+        it('should save and report an update for a PDF whose stored digest differs', async () => {
+          (reportsRepositoryMock.createQueryBuilder as jest.Mock).mockReturnValueOnce(rawQueryBuilder([storedPdfRow()]))
+
+          expect(await reportsService.updateReportResults(storedReport(), withPdf(OTHER_PDF))).toBe(true)
+          expect(reportsRepositoryMock.save).toHaveBeenCalledTimes(1)
+        })
+
+        it('should save and report an update for a PDF the report does not have yet', async () => {
+          (reportsRepositoryMock.createQueryBuilder as jest.Mock).mockReturnValueOnce(rawQueryBuilder([]))
+
+          expect(await reportsService.updateReportResults(storedReport(), withPdf(storedPdf.data))).toBe(true)
+          expect(reportsRepositoryMock.save).toHaveBeenCalledTimes(1)
+        })
+
+        it('should not take the PDF a loaded report has, delivered again, for a change', async () => {
+          const report = storedReport()
+          report.presentedFrom = [storedPdf] as unknown as Report['presentedFrom']
+
+          expect(await reportsService.updateReportResults(report, withPdf(storedPdf.data))).toBe(false)
+          expect(reportsRepositoryMock.createQueryBuilder).not.toHaveBeenCalled()
+          expect(reportsRepositoryMock.save).not.toHaveBeenCalled()
+        })
+
+        it('should save and report an update for a changed PDF', async () => {
+          const report = storedReport()
+          report.presentedFrom = [storedPdf] as unknown as Report['presentedFrom']
+
+          expect(await reportsService.updateReportResults(report, withPdf(OTHER_PDF))).toBe(true)
+          expect(reportsRepositoryMock.createQueryBuilder).not.toHaveBeenCalled()
+          expect(reportsRepositoryMock.save).toHaveBeenCalledTimes(1)
+        })
+      })
     })
   })
 
@@ -3267,6 +3646,131 @@ describe('ReportsService', () => {
         })
 
         expectFiledAgainst(order, byOrderId)
+      })
+    })
+
+    // Regression for https://github.com/nominal-systems/dmi-api/issues/409
+    // A provider that delivers a result again, unchanged, must cost no report write and no
+    // report:updated event, on both paths that update an existing report.
+    describe('redelivery of a stored result (issue #409)', () => {
+      const INTEGRATION_ID = 'integration-409'
+      const reportUpdatedEvents = (): unknown[] => eventsServiceMock.addEvent.mock.calls
+        .filter(([event]) => event.type === EventType.REPORT_UPDATED)
+
+      describe('into the report of the order the result names', () => {
+        const deliver = async (report: Report, results: ProviderResult[]): Promise<void> => {
+          jest.spyOn(reportsService, 'findReportsByExternalOrderIds').mockResolvedValueOnce([report])
+          ordersServiceMock.findOrdersByExternalIds.mockResolvedValueOnce([])
+          await reportsService.handleExternalResults({ integrationId: INTEGRATION_ID, results })
+        }
+
+        it('should emit no report:updated and log the report as unchanged', async () => {
+          const log = jest.spyOn((reportsService as any).logger, 'log')
+
+          await deliver(storedReport(), redelivery())
+
+          expect(reportsRepositoryMock.save).not.toHaveBeenCalled()
+          expect(eventsServiceMock.addEvent).not.toHaveBeenCalled()
+          expect(log).toHaveBeenCalledWith(
+            `external_results -> Got 1 results from ${INTEGRATION_ID}: 0 reports created, 0 reports updated, orders 0 orders created, 1 reports unchanged (integration ${INTEGRATION_ID})`
+          )
+        })
+
+        it('should emit one report:updated when the delivery changes the report', async () => {
+          const results = redelivery()
+          results[0].testResults[0].items[0].valueQuantity = { value: 101.2, units: 'mg/dL' }
+
+          await deliver(storedReport(), results)
+
+          expect(reportsRepositoryMock.save).toHaveBeenCalledTimes(1)
+          expect(eventsServiceMock.addEvent).toHaveBeenCalledTimes(1)
+          expect(reportUpdatedEvents()).toHaveLength(1)
+        })
+
+        it('should emit no report:updated for a reference range without bounds, delivered as NaN', async () => {
+          const report = storedReport()
+          report.testResultsSet[0].observations[0].referenceRange = [{ type: 'NORMAL', text: 'Negative-Positive', low: null, high: null }] as any
+          const results = redelivery()
+          results[0].testResults[0].items[0].referenceRange = [{ type: 'NORMAL', text: 'Negative-Positive', low: NaN, high: NaN }]
+
+          await deliver(report, results)
+
+          expect(reportsRepositoryMock.save).not.toHaveBeenCalled()
+          expect(eventsServiceMock.addEvent).not.toHaveBeenCalled()
+        })
+
+        it('should emit one report:updated for a withdrawn interpretation, without it, and none when that is delivered again', async () => {
+          const results = redelivery()
+          delete results[0].testResults[0].items[1].interpretation
+
+          await deliver(storedReport(), results)
+
+          expect(reportsRepositoryMock.save).toHaveBeenCalledTimes(1)
+          expect(eventsServiceMock.addEvent).toHaveBeenCalledTimes(1)
+          const [[event]] = eventsServiceMock.addEvent.mock.calls
+          expect(event.type).toBe(EventType.REPORT_UPDATED)
+          expect(event.data.report.testResultsSet[0].observations[1]).not.toHaveProperty('interpretation')
+
+          // The report as stored now: the interpretation is null
+          const cleared = storedReport()
+          cleared.testResultsSet[0].observations[1].interpretation = null
+          await deliver(cleared, results)
+
+          expect(reportsRepositoryMock.save).toHaveBeenCalledTimes(1)
+          expect(eventsServiceMock.addEvent).toHaveBeenCalledTimes(1)
+        })
+      })
+
+      describe('into the existing order a result that carries its order is reconciled with', () => {
+        // The order the result's embedded order matches: same integration, patient and client
+        const existingOrder = (): Order => ({
+          id: 'order-409',
+          integrationId: INTEGRATION_ID,
+          externalId: 'ACC-409',
+          status: OrderStatus.COMPLETED,
+          orphan: false,
+          patient: { id: 'patient-409', name: 'Rex', identifier: [] },
+          client: { lastName: 'Anderson', identifier: [] }
+        }) as unknown as Order
+        const withOrder = (results: ProviderResult[]): ProviderResult[] => results.map(result => ({
+          ...result,
+          order: {
+            externalId: 'ACC-409',
+            status: OrderStatus.COMPLETED,
+            patient: { name: 'Rex', species: 'Canine', sex: 'M' },
+            client: { firstName: 'Alice', lastName: 'Anderson' },
+            veterinarian: { lastName: 'Vetson' },
+            tests: [{ code: 'CHEM' }]
+          }
+        })) as unknown as ProviderResult[]
+        const deliver = async (report: Report, results: ProviderResult[]): Promise<void> => {
+          ordersServiceMock.findOneByExternalId.mockResolvedValueOnce(existingOrder())
+          ordersServiceMock.findOrdersByExternalIds.mockResolvedValueOnce([])
+          jest.spyOn(reportsService, 'findReportByOrderId').mockResolvedValueOnce(report)
+          await reportsService.handleExternalResults({ integrationId: INTEGRATION_ID, results: withOrder(results) })
+        }
+
+        it('should emit no report:updated and log the report as unchanged', async () => {
+          const log = jest.spyOn((reportsService as any).logger, 'log')
+
+          await deliver(storedReport(), redelivery())
+
+          expect(ordersServiceMock.saveOrder).not.toHaveBeenCalled()
+          expect(reportsRepositoryMock.save).not.toHaveBeenCalled()
+          expect(eventsServiceMock.addEvent).not.toHaveBeenCalled()
+          expect(log).toHaveBeenCalledWith(expect.stringMatching(/: 0 reports created, 0 reports updated, .*, 1 reports unchanged \(integration integration-409\)$/))
+        })
+
+        it('should emit one report:updated when the delivery changes the report', async () => {
+          const results = redelivery()
+          results[0].testResults[0].items.push({ seq: 4, code: 'BUN', name: 'BUN', status: TestResultItemStatus.DONE, valueString: '18' })
+
+          await deliver(storedReport(), results)
+
+          expect(reportsRepositoryMock.save).toHaveBeenCalledTimes(1)
+          expect(eventsServiceMock.addEvent).toHaveBeenCalledTimes(1)
+          expect(reportUpdatedEvents()).toHaveLength(1)
+        })
       })
     })
   })

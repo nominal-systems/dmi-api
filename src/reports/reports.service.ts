@@ -23,7 +23,7 @@ import { OrdersService } from '../orders/orders.service'
 import { Organization } from '../organizations/entities/organization.entity'
 import { resultStatusMapper, testResultStatusMapper } from '../common/utils/result-status.helper'
 import { ProviderResultUtils } from '../common/utils/provider-result-utils'
-import { isNullOrEmpty } from '../common/utils/shared.utils'
+import { isNil, isNullOrEmpty } from '../common/utils/shared.utils'
 import { Attachment as AttachmentEntity } from '../common/entities/attachment.entity'
 import { ExternalResultEventData } from '../common/typings/internal-event-data.interface'
 import { FEATURE_FLAG_PROVIDER, FeatureFlagProvider, TEST_RESULT_MATCH_BY_NAME_FLAG } from '../feature-flags/feature-flag.interface'
@@ -33,6 +33,78 @@ import { AddEventDto } from '../events/dto/add-event.dto'
 import { REPUBLISH_DELIVERY_OPTIONS, ReportEventType, RepublishReportOptions } from './interfaces/republish.interface'
 import { EventDocument } from '../events/entities/event.entity'
 import { PublishedEvent } from '../events/interfaces/published-event.interface'
+import { matchesStoredValue } from '../common/utils/matches-stored-value'
+import { createHash } from 'crypto'
+
+// A delivery merged into the test results and observations of a report (issue #409): what they
+// stored before the merge, and the fields the merge writes on them. The merge writes every
+// delivered value through assign() or removeInterpretation(), which record the field, so the
+// change check compares exactly the fields a delivery writes, with no list of them to keep in step.
+export class ResultsMerge {
+  // Shallow copies: the merge assigns new values rather than mutating the stored ones, so a
+  // shallow copy keeps what is stored
+  private readonly stored = new Map<object, Record<string, unknown>>()
+  private readonly written = new Map<object, Set<string>>()
+
+  constructor (testResults: TestResult[] = []) {
+    for (const testResult of testResults) {
+      this.stored.set(testResult, { ...testResult })
+      for (const observation of testResult.observations ?? []) {
+        this.stored.set(observation, { ...observation })
+      }
+    }
+  }
+
+  assign<T extends object, K extends keyof T & string> (entity: T, field: K, value: T[K]): void {
+    entity[field] = value
+    this.record(entity, field)
+  }
+
+  // The interpretation is the one value the merge deletes when a delivery has none
+  removeInterpretation (observation: Observation): void {
+    delete observation.interpretation
+    this.record(observation, 'interpretation')
+  }
+
+  // Whether the merge changed what the entity stores. The fields it wrote are compared once the
+  // merge is done, not as each is written: items sharing a code are applied in turn, so a value
+  // can pass through another and back.
+  isChanged (entity: object): boolean {
+    const before = this.stored.get(entity)
+    // Not there before the delivery: created by it
+    if (before === undefined) return true
+    const after = entity as Record<string, unknown>
+    // TypeORM does not write a property that is undefined, so only a defined value can change a column
+    return [...this.written.get(entity) ?? []].some(field =>
+      after[field] !== undefined && !matchesStoredValue(before[field], after[field])
+    )
+  }
+
+  // Whether the merge deleted a stored interpretation because the delivery has none: the one value
+  // it clears on purpose. Other values a delivery omits are assigned undefined, which TypeORM does
+  // not write, so they stay as stored and are no change.
+  isWithdrawnInterpretation (observation: Observation): boolean {
+    const before = this.stored.get(observation)
+    return before !== undefined && observation.interpretation === undefined && !isNil(before.interpretation)
+  }
+
+  private record (entity: object, field: string): void {
+    const fields = this.written.get(entity) ?? new Set<string>()
+    fields.add(field)
+    this.written.set(entity, fields)
+  }
+}
+
+// A report PDF as a delivery is compared with the stored one: its content type and the SHA-256
+// digest of its data, which MySQL computes for a stored PDF so that none is read to compare
+interface PdfDigest {
+  contentType: string | null
+  dataDigest: string | null
+}
+
+function pdfDigest ({ contentType, data }: AttachmentEntity): PdfDigest {
+  return { contentType, dataDigest: data == null ? null : createHash('sha256').update(data).digest('hex') }
+}
 
 @Injectable()
 export class ReportsService {
@@ -164,6 +236,8 @@ export class ReportsService {
     const createdReports: Report[] = []
     const updatedReports: Report[] = []
     const createdOrders: Order[] = []
+    // Existing reports a delivery left as they were: a provider redelivering what it sent before
+    let unchangedReports = 0
 
     // Update existing reports with new results
     const existingReports = await this.findReportsByExternalOrderIds(externalOrderIds, integrationId)
@@ -172,6 +246,8 @@ export class ReportsService {
       const updated = await this.updateReportResults(report, resultsForReport)
       if (updated) {
         updatedReports.push(report)
+      } else {
+        unchangedReports++
       }
     }
 
@@ -293,11 +369,15 @@ export class ReportsService {
         report.testResultsSet = []
         report.patient = patient
         createdReports.push(report)
+        await this.updateReportResults(report, [orphanResult])
       } else {
         report.patient = patient
-        updatedReports.push(report)
+        if (await this.updateReportResults(report, [orphanResult])) {
+          updatedReports.push(report)
+        } else {
+          unchangedReports++
+        }
       }
-      await this.updateReportResults(report, [orphanResult])
     }
 
     // Notify about new orders
@@ -335,7 +415,7 @@ export class ReportsService {
       await this.eventsService.addEvent(this.buildReportEvent(report, integration, EventType.REPORT_UPDATED))
     }
 
-    this.logger.log(`external_results -> Got ${results.length} results from ${integration.providerConfiguration.providerId}: ${createdReports.length} reports created, ${updatedReports.length} reports updated, orders ${[...createdOrders, ...dummyOrders].length} orders created`)
+    this.logger.log(`external_results -> Got ${results.length} results from ${integration.providerConfiguration.providerId}: ${createdReports.length} reports created, ${updatedReports.length} reports updated, orders ${[...createdOrders, ...dummyOrders].length} orders created, ${unchangedReports} reports unchanged (integration ${integrationId})`)
   }
 
   private reportGraphQuery (): SelectQueryBuilder<Report> {
@@ -415,16 +495,22 @@ export class ReportsService {
       .filter(result => result.pdfReport !== undefined)
       .map(result => result.pdfReport)
       .reduce<any[]>((a, v) => a.concat(v), [])
+    let pdfChanged = false
     if (pdfReport.length > 0) {
+      // The results flow loads reports without their PDF, so have MySQL digest the stored one
+      const storedPdf = report.presentedFrom?.map(pdfDigest) ?? await this.findStoredPdfDigests(report.id)
       this.attachPdfReport(report, pdfReport)
+      pdfChanged = !matchesStoredValue(storedPdf, (report.presentedFrom ?? []).map(pdfDigest))
     }
 
     // Build test results set
     const integrationId = report.order?.integrationId
     const matchByName = this.featureFlags.isEnabled(TEST_RESULT_MATCH_BY_NAME_FLAG, { integrationId })
 
+    // A redelivery matches every test result and observation, so tell an update from it
+    // by comparing what is stored before and after the merge (issue #409)
+    const merge = new ResultsMerge(report.testResultsSet)
     const createdTestResults: TestResult[] = []
-    const updatedTestResults: TestResult[] = []
     for (const providerTestResult of providerTestResults) {
       const providerTestResultItemStatus = Array.from(new Set<string>(providerTestResult.items.map(testResult => testResult.status)))
       const testResultStatus = testResultStatusMapper(providerTestResultItemStatus[0])
@@ -437,12 +523,11 @@ export class ReportsService {
         : report.testResultsSet.find(testResult => testResult.code === providerTestResult.code && testResult.seq === providerTestResult.seq)
 
       if (existingTestResult != null) {
-        existingTestResult.seq = providerTestResult.seq
-        existingTestResult.status = testResultStatus
-        existingTestResult.deviceId = providerTestResult.deviceId
-        existingTestResult.notes = providerTestResult.notes
-        this.updateTestResultObservations(existingTestResult, providerTestResult.items)
-        updatedTestResults.push(existingTestResult)
+        merge.assign(existingTestResult, 'seq', providerTestResult.seq)
+        merge.assign(existingTestResult, 'status', testResultStatus)
+        merge.assign(existingTestResult, 'deviceId', providerTestResult.deviceId)
+        merge.assign(existingTestResult, 'notes', providerTestResult.notes)
+        this.updateTestResultObservations(existingTestResult, providerTestResult.items, merge)
       } else {
         const testResult = new TestResult()
         testResult.seq = providerTestResult.seq
@@ -452,16 +537,32 @@ export class ReportsService {
         testResult.status = testResultStatus
         testResult.deviceId = providerTestResult.deviceId
         testResult.notes = providerTestResult.notes
-        this.updateTestResultObservations(testResult, providerTestResult.items)
+        this.updateTestResultObservations(testResult, providerTestResult.items, merge)
         createdTestResults.push(testResult)
       }
     }
 
-    const updatePerformed = createdTestResults.concat(updatedTestResults).length > 0 || report.status !== reportStatus
+    // TypeORM would not write the deleted interpretation, so write null: withdrawing it is then a
+    // change and is stored, and the next delivery without it changes nothing
+    const withdrawn = report.testResultsSet
+      .flatMap(testResult => testResult.observations ?? [])
+      .filter(observation => merge.isWithdrawnInterpretation(observation))
+    for (const observation of withdrawn) {
+      merge.assign(observation, 'interpretation', null)
+    }
+    const testResultsChanged = report.testResultsSet.some(testResult =>
+      merge.isChanged(testResult) ||
+      (testResult.observations ?? []).some(observation => merge.isChanged(observation))
+    )
+    const updatePerformed = createdTestResults.length > 0 || testResultsChanged || pdfChanged || report.status !== reportStatus
     if (updatePerformed) {
       report.testResultsSet = report.testResultsSet.concat(createdTestResults)
       report.status = resultStatusMapper(reportStatus)
       await this.reportsRepository.save(report)
+    }
+    // Stored as null, a withdrawn interpretation is left out of the report again, as the merge left it
+    for (const observation of withdrawn) {
+      delete observation.interpretation
     }
 
     return updatePerformed
@@ -469,7 +570,8 @@ export class ReportsService {
 
   public updateTestResultObservations (
     testResult: TestResult,
-    items: ProviderTestResultItem[]
+    items: ProviderTestResultItem[],
+    merge: ResultsMerge = new ResultsMerge()
   ): void {
     const observationMap: Map<string, Observation> = new Map(
       testResult.observations.map(observation => [observation.code, observation])
@@ -482,7 +584,7 @@ export class ReportsService {
       const providerItems = items.filter(item => item.code === existingObservationCode)
       if (existingObservation === undefined || providerItems.length === 0) continue
       for (const providerItem of providerItems) {
-        this.updateObservationValue(existingObservation, providerItem)
+        this.updateObservationValue(existingObservation, providerItem, merge)
       }
     }
 
@@ -501,7 +603,7 @@ export class ReportsService {
       for (const item of filteredItems) {
         observation.code = item.code
         observation.name = item.name
-        this.updateObservationValue(observation, item)
+        this.updateObservationValue(observation, item, merge)
         newObservationCodesSet.add(observation.code)
       }
 
@@ -511,46 +613,48 @@ export class ReportsService {
     testResult.observations = testResult.observations.concat(newObservations)
   }
 
+  // Every delivered value is written through the merge, so a redelivery can be told from an update
   private updateObservationValue (
     observation: Observation,
-    item: ProviderTestResultItem
+    item: ProviderTestResultItem,
+    merge: ResultsMerge
   ): void {
     // Seq
-    observation.seq = item.seq
+    merge.assign(observation, 'seq', item.seq)
 
     // Status
-    observation.status = item.status
+    merge.assign(observation, 'status', item.status)
 
     // ValueX
     if (item.valueQuantity != null) {
-      observation.valueQuantity = item.valueQuantity
+      merge.assign(observation, 'valueQuantity', item.valueQuantity)
     } else if (item.valueString != null) {
-      observation.valueString = item.valueString
+      merge.assign(observation, 'valueString', item.valueString)
     }
 
     // Units
     if (item.units != null) {
-      observation.units = item.units
+      merge.assign(observation, 'units', item.units)
     }
 
     // Reference Range
     if (item.referenceRange != null) {
-      observation.referenceRange = item.referenceRange
+      merge.assign(observation, 'referenceRange', item.referenceRange)
     }
 
     // Interpretation
     if (isNullOrEmpty(item.interpretation)) {
-      delete observation.interpretation
+      merge.removeInterpretation(observation)
     } else {
-      observation.interpretation = {
+      merge.assign(observation, 'interpretation', {
         code: item.interpretation?.code,
         text: item.interpretation?.text
-      }
+      })
     }
 
     // Notes
     if (item.notes != null) {
-      observation.notes = item.notes
+      merge.assign(observation, 'notes', item.notes)
     }
   }
 
@@ -667,6 +771,21 @@ export class ReportsService {
       }
       return attachmentEntity
     })
+  }
+
+  // The stored PDFs of a report as their content type and data digest, computed by MySQL so no PDF
+  // is transferred, the way the order manifest is compared
+  private async findStoredPdfDigests (
+    reportId?: string
+  ): Promise<PdfDigest[]> {
+    // A report that is not stored yet has no PDF
+    if (reportId == null) return []
+    return await this.reportsRepository.createQueryBuilder('report')
+      .innerJoin('report.presentedFrom', 'presentedFrom')
+      .select('presentedFrom.contentType', 'contentType')
+      .addSelect('SHA2(presentedFrom.data, 256)', 'dataDigest')
+      .where('report.id = :reportId', { reportId })
+      .getRawMany()
   }
 
   private printReport (

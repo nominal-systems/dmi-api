@@ -15,6 +15,7 @@ export const reportRepositoryMockFactory: () => Partial<Repository<Report>> = ()
   createQueryBuilder: jest.fn(() => ({
     leftJoinAndSelect: jest.fn().mockReturnThis(),
     innerJoin: jest.fn().mockReturnThis(),
+    select: jest.fn().mockReturnThis(),
     addSelect: jest.fn().mockReturnThis(),
     where: jest.fn().mockReturnThis(),
     andWhere: jest.fn().mockReturnThis(),
@@ -22,6 +23,7 @@ export const reportRepositoryMockFactory: () => Partial<Repository<Report>> = ()
     addOrderBy: jest.fn().mockReturnThis(),
     getMany: jest.fn().mockResolvedValue([]),
     getOne: jest.fn().mockResolvedValue(null),
+    getRawMany: jest.fn().mockResolvedValue([]),
     getRawAndEntities: jest.fn().mockResolvedValue({ entities: [], raw: [] })
   }))
 })
