@@ -11,8 +11,9 @@ import { isNil, isObject } from './shared.utils'
  * - a number equals the same number written as a plain decimal string, which is how a string
  *   or decimal column reads a delivered number back;
  * - dates compare by time.
+ * It is equality across a MySQL round trip, not a deep equality: '7' matches 7 and NaN null.
  */
-export function isSameValue (stored: unknown, delivered: unknown): boolean {
+export function matchesStoredValue (stored: unknown, delivered: unknown): boolean {
   if (stored === delivered) return true
   if (isNoValue(stored) || isNoValue(delivered)) return isNoValue(stored) && isNoValue(delivered)
   if (typeof stored === 'number' || typeof delivered === 'number') {
@@ -26,7 +27,7 @@ export function isSameValue (stored: unknown, delivered: unknown): boolean {
   }
   if (isObject(stored) && isObject(delivered)) {
     const keys = new Set([...Object.keys(stored), ...Object.keys(delivered)])
-    return [...keys].every((key) => isSameValue(stored[key], delivered[key]))
+    return [...keys].every((key) => matchesStoredValue(stored[key], delivered[key]))
   }
   return false
 }
@@ -39,7 +40,7 @@ function isSameElements (stored: unknown[], delivered: unknown[]): boolean {
   if (stored.length !== delivered.length) return false
   const unmatched = [...delivered]
   for (const element of stored) {
-    const index = unmatched.findIndex((candidate) => isSameValue(element, candidate))
+    const index = unmatched.findIndex((candidate) => matchesStoredValue(element, candidate))
     if (index === -1) return false
     unmatched.splice(index, 1)
   }

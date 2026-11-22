@@ -50,7 +50,7 @@ import {
 } from '../common/typings/internal-event-data.interface'
 import { NamedLockService, orderLockKey } from '../common/services/named-lock.service'
 import { isThrottledError } from '../common/utils/cosmos-throttling'
-import { isSameValue } from '../common/utils/same-value'
+import { matchesStoredValue } from '../common/utils/matches-stored-value'
 import { isNullOrEmpty } from '../common/utils/shared.utils'
 import { createHash } from 'crypto'
 
@@ -657,7 +657,7 @@ export class OrdersService {
     stored: StoredManifest | undefined,
     delivered: NonNullable<ExternalOrder['manifest']>,
   ): Promise<boolean> {
-    if (stored === undefined || !isSameValue(stored.contentType, delivered.contentType)) {
+    if (stored === undefined || !matchesStoredValue(stored.contentType, delivered.contentType)) {
       return false
     }
     if (!isNullOrEmpty(stored.uri) && !isNullOrEmpty(delivered.uri)) {
@@ -665,7 +665,7 @@ export class OrdersService {
     }
     const deliveredDigest =
       delivered.data == null ? null : createHash('sha256').update(delivered.data).digest('hex')
-    return isSameValue(await this.findStoredManifestDigest(orderId), deliveredDigest)
+    return matchesStoredValue(await this.findStoredManifestDigest(orderId), deliveredDigest)
   }
 
   // The stored manifests of the given orders, without their data, a PDF

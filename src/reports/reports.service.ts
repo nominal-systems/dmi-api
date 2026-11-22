@@ -33,7 +33,7 @@ import { AddEventDto } from '../events/dto/add-event.dto'
 import { REPUBLISH_DELIVERY_OPTIONS, ReportEventType, RepublishReportOptions } from './interfaces/republish.interface'
 import { EventDocument } from '../events/entities/event.entity'
 import { PublishedEvent } from '../events/interfaces/published-event.interface'
-import { isSameValue } from '../common/utils/same-value'
+import { matchesStoredValue } from '../common/utils/matches-stored-value'
 
 // The columns a delivery writes on a test result or observation it already has: the
 // assignments in updateReportResults and updateObservationValue. Keep them in step.
@@ -65,7 +65,7 @@ function isChanged<T extends object> (
   // Not there before the delivery: created by it
   if (before === undefined) return true
   // TypeORM does not write a property that is undefined, so only a defined value can change a column
-  return fields.some(field => entity[field] !== undefined && !isSameValue(before[field], entity[field]))
+  return fields.some(field => entity[field] !== undefined && !matchesStoredValue(before[field], entity[field]))
 }
 
 // Whether the merge deleted a stored interpretation because the delivery has none: the one value
@@ -477,7 +477,7 @@ export class ReportsService {
       // The results flow loads reports without their PDF, so read the stored one to compare
       const storedPdf = report.presentedFrom ?? await this.findStoredPresentedForm(report.id)
       this.attachPdfReport(report, pdfReport)
-      pdfChanged = !isSameValue(storedPdf.map(pdfContent), (report.presentedFrom ?? []).map(pdfContent))
+      pdfChanged = !matchesStoredValue(storedPdf.map(pdfContent), (report.presentedFrom ?? []).map(pdfContent))
     }
 
     // Build test results set
