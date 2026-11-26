@@ -521,4 +521,142 @@ describe('AdminController', () => {
         .rejects.toBeInstanceOf(BadRequestException)
     })
   })
+
+  describe('getEvents()', () => {
+    let eventsServiceMock: { find: jest.Mock, countCapped: jest.Mock }
+    let queryBuilderMock: { where: jest.Mock, select: jest.Mock, getMany: jest.Mock }
+    let practicesRepositoryMock: { createQueryBuilder: jest.Mock }
+
+    beforeEach(() => {
+      jest.useFakeTimers().setSystemTime(new Date('2026-10-01T12:00:00.000Z'))
+      eventsServiceMock = {
+        find: jest.fn().mockResolvedValue([]),
+        countCapped: jest.fn().mockResolvedValue({ total: 0, capped: false }),
+      }
+      queryBuilderMock = {
+        where: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue([]),
+      }
+      practicesRepositoryMock = {
+        createQueryBuilder: jest.fn().mockReturnValue(queryBuilderMock),
+      }
+      ;(adminController as any).eventsService = eventsServiceMock
+      ;(adminController as any).practicesRepository = practicesRepositoryMock
+    })
+
+    afterEach(() => {
+      jest.useRealTimers()
+    })
+
+    it('defaults to the last 24 hours and returns bounded total metadata', async () => {
+      const data = [{ _id: 'e1' }]
+      eventsServiceMock.find.mockResolvedValueOnce(data)
+      eventsServiceMock.countCapped.mockResolvedValueOnce({ total: 5, capped: false })
+
+      const result = await adminController.getEvents({ page: 1, limit: 20 })
+
+      const expectedQuery = {
+        createdAt: {
+          $gte: new Date('2026-09-30T12:00:00.000Z'),
+          $lte: new Date('2026-10-01T12:00:00.000Z'),
+        },
+      }
+      expect(eventsServiceMock.find).toHaveBeenCalledWith(expectedQuery, { page: 1, limit: 20 })
+      expect(eventsServiceMock.countCapped).toHaveBeenCalledWith(expectedQuery)
+      expect(result).toEqual({
+        total: 5,
+        totalCapped: false,
+        page: 1,
+        limit: 20,
+        data,
+      })
+    })
+
+    it('flags totalCapped when countCapped reports a capped total', async () => {
+      eventsServiceMock.find.mockResolvedValueOnce([])
+      eventsServiceMock.countCapped.mockResolvedValueOnce({ total: 1000, capped: true })
+
+      const result = await adminController.getEvents({ page: 1, limit: 20 })
+
+      expect(result).toMatchObject({ total: 1000, totalCapped: true })
+    })
+
+    it('applies providers, integrations, types, date range, and practice search filters', async () => {
+      queryBuilderMock.getMany.mockResolvedValueOnce([{ id: 'practice-1' }, { id: 'practice-2' }])
+      eventsServiceMock.find.mockResolvedValueOnce([])
+      eventsServiceMock.countCapped.mockResolvedValueOnce({ total: 2, capped: false })
+
+      await adminController.getEvents({
+        providers: ['idexx'],
+        integrations: ['int-1'],
+        types: ['order:created'],
+        startDate: '2026-09-20T00:00:00.000Z',
+        endDate: '2026-09-25T23:59:59.999Z',
+        search: 'Vet',
+        page: 2,
+        limit: 10,
+      })
+
+      const expectedQuery = {
+        createdAt: {
+          $gte: new Date('2026-09-20T00:00:00.000Z'),
+          $lte: new Date('2026-09-25T23:59:59.999Z'),
+        },
+        providerId: { $in: ['idexx'] },
+        integrationId: { $in: ['int-1'] },
+        type: { $in: ['order:created'] },
+        practiceId: { $in: ['practice-1', 'practice-2'] },
+      }
+      expect(eventsServiceMock.find).toHaveBeenCalledWith(expectedQuery, { page: 2, limit: 10 })
+      expect(eventsServiceMock.countCapped).toHaveBeenCalledWith(expectedQuery)
+    })
+
+    it('short-circuits with empty results when search matches no practices', async () => {
+      queryBuilderMock.getMany.mockResolvedValueOnce([])
+
+      const result = await adminController.getEvents({ search: 'NonExistent', page: 1, limit: 20 })
+
+      expect(eventsServiceMock.find).not.toHaveBeenCalled()
+      expect(eventsServiceMock.countCapped).not.toHaveBeenCalled()
+      expect(result).toEqual({
+        total: 0,
+        totalCapped: false,
+        page: 1,
+        limit: 20,
+        data: [],
+      })
+    })
+
+    it('rejects ranges wider than 31 days without querying events or practices', async () => {
+      await expect(
+        adminController.getEvents({
+          startDate: '2026-08-01T00:00:00.000Z',
+          endDate: '2026-09-15T00:00:00.000Z',
+          search: 'Vet',
+          page: 1,
+          limit: 20,
+        }),
+      ).rejects.toBeInstanceOf(BadRequestException)
+
+      expect(practicesRepositoryMock.createQueryBuilder).not.toHaveBeenCalled()
+      expect(eventsServiceMock.find).not.toHaveBeenCalled()
+      expect(eventsServiceMock.countCapped).not.toHaveBeenCalled()
+    })
+
+    it('rejects invalid date strings or inverted ranges with BadRequestException', async () => {
+      await expect(
+        adminController.getEvents({ startDate: 'invalid', page: 1, limit: 20 }),
+      ).rejects.toBeInstanceOf(BadRequestException)
+
+      await expect(
+        adminController.getEvents({
+          startDate: '2026-10-01T00:00:00.000Z',
+          endDate: '2026-09-30T00:00:00.000Z',
+          page: 1,
+          limit: 20,
+        }),
+      ).rejects.toBeInstanceOf(BadRequestException)
+    })
+  })
 })

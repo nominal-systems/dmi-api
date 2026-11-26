@@ -1,6 +1,40 @@
+import { BadRequestException } from '@nestjs/common'
 import { SubscriptionDeliveryResult } from '../events/interfaces/subscription-delivery-result.interface'
 import { describeError } from '../common/utils/describe-error'
 import { DeliveryResponse } from './interfaces/republish-report-response.interface'
+
+export const DEFAULT_EVENTS_RANGE_MS = 24 * 60 * 60 * 1000
+export const MAX_EVENTS_RANGE_DAYS = 31
+export const MAX_EVENTS_RANGE_MS = MAX_EVENTS_RANGE_DAYS * 24 * 60 * 60 * 1000
+
+export function resolveBoundedDateRange (
+  startDate?: string,
+  endDate?: string,
+  now: Date = new Date()
+): { start: Date, end: Date } {
+  const parsedStart = startDate !== undefined ? new Date(startDate) : undefined
+  if (parsedStart !== undefined && Number.isNaN(parsedStart.getTime())) {
+    throw new BadRequestException('Invalid startDate')
+  }
+
+  const parsedEnd = endDate !== undefined ? new Date(endDate) : undefined
+  if (parsedEnd !== undefined && Number.isNaN(parsedEnd.getTime())) {
+    throw new BadRequestException('Invalid endDate')
+  }
+
+  const end = parsedEnd ?? now
+  const start = parsedStart ?? new Date(end.getTime() - DEFAULT_EVENTS_RANGE_MS)
+
+  if (start.getTime() > end.getTime()) {
+    throw new BadRequestException('startDate must be before or equal to endDate')
+  }
+
+  if (end.getTime() - start.getTime() > MAX_EVENTS_RANGE_MS) {
+    throw new BadRequestException(`Date range cannot exceed ${MAX_EVENTS_RANGE_DAYS} days`)
+  }
+
+  return { start, end }
+}
 
 export function getStatusRanges (statusCodes: string[]): Array<[number, number]> {
   const statusMap: { [key: string]: [number, number] } = {
