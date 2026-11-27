@@ -70,4 +70,18 @@ describe('resolveBoundedDateRange', () => {
     expect(() => resolveBoundedDateRange('not-a-date', undefined, now)).toThrow(BadRequestException)
     expect(() => resolveBoundedDateRange(undefined, 'not-a-date', now)).toThrow(BadRequestException)
   })
+
+  it('accepts a literal 31-calendar-day America/Chicago fall-back DST range and rejects 1ms past the 1h tolerance', () => {
+    const startDate = '2026-10-15T05:00:00.000Z'
+    const validEnd = '2026-11-15T05:59:59.999Z'
+    const oversizedEnd = '2026-11-15T06:00:00.001Z'
+
+    expect(resolveBoundedDateRange(startDate, validEnd, now)).toEqual({
+      start: new Date(startDate),
+      end: new Date(validEnd),
+    })
+    expect(() => resolveBoundedDateRange(startDate, oversizedEnd, now)).toThrow(
+      new BadRequestException('Date range cannot exceed 31 days'),
+    )
+  })
 })
