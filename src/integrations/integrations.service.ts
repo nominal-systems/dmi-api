@@ -31,8 +31,9 @@ const DEFAULT_RESTART_BACKOFF_MS = 1000
 /**
  * The statuses an organization's API key may start an integration from (#424). NEW is an integration created
  * through `POST /integrations`, which does not start it. Whether its organization may start it, or only one that
- * has run before, is still open: taking NEW out of this list is the whole change for the latter. READY and ERROR,
- * which nothing writes today, are left to the Admin API.
+ * has run before, is still open: taking NEW out of this list is the whole change for the latter. Start then refuses
+ * a NEW integration, and so does restart, which would otherwise stop it and leave it STOPPED. READY and ERROR, which
+ * nothing writes today, cannot be started with an organization key; stop stops them, as the admin stop does.
  */
 export const ORGANIZATION_STARTABLE_STATUSES: readonly string[] = [
   IntegrationStatus.NEW,
@@ -235,6 +236,16 @@ export class IntegrationsService {
     integrationId: string,
   ): Promise<Error | undefined> {
     const integration = await this.findOwned(organization, integrationId)
+    // A restart stops the integration first, which leaves a NEW one STOPPED, a status start takes. So an organization
+    // that may not start a NEW integration may not restart one either.
+    if (
+      integration.status === IntegrationStatus.NEW &&
+      !ORGANIZATION_STARTABLE_STATUSES.includes(IntegrationStatus.NEW)
+    ) {
+      throw new ConflictException(
+        `Integration ${integration.id} is NEW and cannot be restarted with an organization key`,
+      )
+    }
     return await this.restart(integration)
   }
 

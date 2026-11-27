@@ -1,4 +1,4 @@
-import { IntegrationsService } from './integrations.service'
+import { IntegrationsService, ORGANIZATION_STARTABLE_STATUSES } from './integrations.service'
 import { Test, TestingModule } from '@nestjs/testing'
 import { ConfigService } from '@nestjs/config'
 import { Integration } from './entities/integration.entity'
@@ -550,6 +550,64 @@ describe('IntegrationsService', () => {
           new BadGatewayException('Error stopping integration integration-id'),
         )
         expect(integrationRepositoryMock.update).not.toHaveBeenCalled()
+      })
+
+      it.each([IntegrationStatus.READY, IntegrationStatus.ERROR])(
+        'stops a %s integration, as the admin stop does',
+        async (status) => {
+          integrationRepositoryMock.findOne.mockResolvedValue(integrationIn(status))
+
+          const answer = await integrationsService.stopById(organization, 'integration-id')
+
+          expect(answer).toEqual({ ok: 'Integration stopped' })
+          expect(clientProxyMock.send).toHaveBeenCalledWith('idexx/integration/remove', expect.anything())
+          expect(integrationRepositoryMock.update).toHaveBeenCalledWith('integration-id', {
+            status: IntegrationStatus.STOPPED,
+          })
+        },
+      )
+    })
+
+    /* Whether an organization may start a NEW integration is still open, and limiting start to integrations that
+     * have run before must stay one change: taking NEW out of ORGANIZATION_STARTABLE_STATUSES. Restart has to
+     * follow it, or a restart would stop the NEW integration, leave it STOPPED, and let start take it. */
+    describe('the NEW rule is one list', () => {
+      it('while NEW is in it, a restart of a NEW integration stops it, as it always has', async () => {
+        integrationRepositoryMock.findOne.mockResolvedValue(integrationIn(IntegrationStatus.NEW))
+
+        await expect(integrationsService.restartById(organization, 'integration-id')).resolves.toBeUndefined()
+        expect(clientProxyMock.send).toHaveBeenCalledWith('idexx/integration/remove', expect.anything())
+        expect(integrationRepositoryMock.update).toHaveBeenCalledWith('integration-id', {
+          status: IntegrationStatus.STOPPED,
+        })
+      })
+
+      it('taken out of it, NEW can neither be started nor restarted, and nothing is sent', async () => {
+        const list = ORGANIZATION_STARTABLE_STATUSES as string[]
+        list.splice(list.indexOf(IntegrationStatus.NEW), 1)
+        try {
+          integrationRepositoryMock.findOne.mockResolvedValue(integrationIn(IntegrationStatus.NEW))
+
+          await expect(integrationsService.startById(organization, 'integration-id')).rejects.toThrow(
+            new ConflictException(
+              'Integration integration-id is NEW and cannot be started with an organization key',
+            ),
+          )
+          await expect(integrationsService.restartById(organization, 'integration-id')).rejects.toThrow(
+            new ConflictException(
+              'Integration integration-id is NEW and cannot be restarted with an organization key',
+            ),
+          )
+          expect(clientProxyMock.send).not.toHaveBeenCalled()
+          expect(integrationRepositoryMock.update).not.toHaveBeenCalled()
+
+          integrationRepositoryMock.findOne.mockResolvedValue(integrationIn(IntegrationStatus.STOPPED))
+          await expect(integrationsService.startById(organization, 'integration-id')).resolves.toEqual({
+            ok: 'Integration started',
+          })
+        } finally {
+          list.unshift(IntegrationStatus.NEW)
+        }
       })
     })
   })

@@ -72,8 +72,10 @@ export class IntegrationsController {
     return await this.integrationsService.delete(organization, integrationId)
   }
 
+  // 201, as the admin start and stop routes and this controller's restart answer, so a client written against them
+  // sees the same status
   @Post(':id/start')
-  @HttpCode(HttpStatus.OK)
+  @HttpCode(HttpStatus.CREATED)
   async startIntegration (
     @Organization() organization: OrganizationEntity,
     @Param('id') integrationId: string
@@ -82,7 +84,7 @@ export class IntegrationsController {
   }
 
   @Post(':id/stop')
-  @HttpCode(HttpStatus.OK)
+  @HttpCode(HttpStatus.CREATED)
   async stopIntegration (
     @Organization() organization: OrganizationEntity,
     @Param('id') integrationId: string
