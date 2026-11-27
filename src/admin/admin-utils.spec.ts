@@ -41,7 +41,7 @@ describe('resolveBoundedDateRange', () => {
     expect(() => resolveBoundedDateRange(startDate, undefined, now)).toThrow(BadRequestException)
   })
 
-  it('accepts an explicit range up to and including 31 days', () => {
+  it('accepts a 31-day range with up to 1h DST fall-back tolerance', () => {
     const startDate = '2026-08-31T12:00:00.000Z'
     const endDate = new Date(new Date(startDate).getTime() + MAX_EVENTS_RANGE_MS).toISOString()
 
@@ -51,7 +51,7 @@ describe('resolveBoundedDateRange', () => {
     })
   })
 
-  it('rejects a range wider than 31 days', () => {
+  it('rejects a range exceeding 31 days plus the 1h DST tolerance', () => {
     const startDate = '2026-08-31T12:00:00.000Z'
     const endDate = new Date(new Date(startDate).getTime() + MAX_EVENTS_RANGE_MS + 1).toISOString()
 

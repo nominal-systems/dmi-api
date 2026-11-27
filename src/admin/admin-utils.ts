@@ -5,7 +5,9 @@ import { DeliveryResponse } from './interfaces/republish-report-response.interfa
 
 export const DEFAULT_EVENTS_RANGE_MS = 24 * 60 * 60 * 1000
 export const MAX_EVENTS_RANGE_DAYS = 31
-export const MAX_EVENTS_RANGE_MS = MAX_EVENTS_RANGE_DAYS * 24 * 60 * 60 * 1000
+// +1h tolerance so a 31-calendar-day local range spanning a fall-back DST transition is accepted.
+export const MAX_EVENTS_RANGE_DST_TOLERANCE_MS = 60 * 60 * 1000
+export const MAX_EVENTS_RANGE_MS = MAX_EVENTS_RANGE_DAYS * 24 * 60 * 60 * 1000 + MAX_EVENTS_RANGE_DST_TOLERANCE_MS
 
 export function resolveBoundedDateRange (
   startDate?: string,

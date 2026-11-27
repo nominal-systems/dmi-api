@@ -38,7 +38,7 @@ import { ReferenceDataQueryParams } from '../providers/dtos/reference-data-query
 import { RefsService } from '../refs/refs.service'
 import { ProviderOptionDto } from '../providers/dtos/provider-option.dto'
 import { ProvidersService } from '../providers/services/providers.service'
-import { EventsService } from '../events/services/events.service'
+import { EVENTS_COUNT_CAP, EventsService } from '../events/services/events.service'
 import { Event, EventDocument } from '../events/entities/event.entity'
 import { Ref } from '../refs/entities/ref.entity'
 import { Provider } from '../providers/entities/provider.entity'
@@ -174,6 +174,9 @@ export class AdminController {
   async getEvents (@Query() query: EventsQueryDto): Promise<PaginationResult<Event>> {
     const { start, end } = resolveBoundedDateRange(query.startDate, query.endDate)
     const { page, limit } = query
+    if ((page - 1) * limit >= EVENTS_COUNT_CAP) {
+      throw new BadRequestException(`Pagination offset must be below ${EVENTS_COUNT_CAP}`)
+    }
     const options: FilterQuery<EventDocument> = {
       createdAt: { $gte: start, $lte: end },
     }
@@ -199,7 +202,10 @@ export class AdminController {
     }
 
     const data = await this.eventsService.find(options, { page, limit })
-    const { total, capped } = await this.eventsService.countCapped(options)
+    // A short first page already gives the exact total, skipping the count query for selective filters.
+    const { total, capped } = page === 1 && data.length < limit
+      ? { total: data.length, capped: false }
+      : await this.eventsService.countCapped(options)
 
     return {
       total,

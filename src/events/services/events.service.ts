@@ -59,6 +59,7 @@ export class EventsService implements OnModuleInit {
     const docs = await this.eventModel.find(query, { __v: 0, data: 0 }, {
       limit: limit,
       skip: (page - 1) * limit,
+      // Sort on createdAt to share the createdAt_1 index with the date range filter in Cosmos DB (no compound _id index exists).
       sort: { createdAt: -1 },
       lean: true
     })
@@ -71,6 +72,7 @@ export class EventsService implements OnModuleInit {
     return await this.eventModel.countDocuments(query)
   }
 
+  // Stops the count scan at cap + 1 docs ($match -> $limit -> $group) so wide filters cannot starve Cosmos DB writes.
   async countCapped (
     query: FilterQuery<EventDocument>,
     cap: number = EVENTS_COUNT_CAP

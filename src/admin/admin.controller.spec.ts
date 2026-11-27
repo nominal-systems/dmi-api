@@ -10,7 +10,7 @@ import { getRepositoryToken } from '@nestjs/typeorm'
 import { Integration } from '../integrations/entities/integration.entity'
 import { RefsService } from '../refs/refs.service'
 import { ProvidersService } from '../providers/services/providers.service'
-import { EventsService } from '../events/services/events.service'
+import { EVENTS_COUNT_CAP, EventsService } from '../events/services/events.service'
 import { ConfigService } from '@nestjs/config'
 import { ProviderRefService } from '../refs/providerRef.service'
 import { ProviderRef } from '../refs/entities/providerRef.entity'
@@ -18,6 +18,7 @@ import { Ref } from '../refs/entities/ref.entity'
 import { Practice } from '../practices/entities/practice.entity'
 import { OrdersService } from '../orders/orders.service'
 import { ExternalRequestsQueryDto } from './dtos/external-requests-query.dto'
+import { EventsQueryDto, MAX_EVENTS_PAGE_LIMIT } from './dtos/events-query.dto'
 import { PaginationResult } from '../common/classes/pagination-result'
 import { ProviderExternalRequests } from '../providers/entities/provider-external-requests.entity'
 import { ArgumentMetadata, BadRequestException, ValidationPipe } from '@nestjs/common'
@@ -554,7 +555,7 @@ describe('AdminController', () => {
       eventsServiceMock.find.mockResolvedValueOnce(data)
       eventsServiceMock.countCapped.mockResolvedValueOnce({ total: 5, capped: false })
 
-      const result = await adminController.getEvents({ page: 1, limit: 20 })
+      const result = await adminController.getEvents({ page: 1, limit: 1 })
 
       const expectedQuery = {
         createdAt: {
@@ -562,10 +563,37 @@ describe('AdminController', () => {
           $lte: new Date('2026-10-01T12:00:00.000Z'),
         },
       }
-      expect(eventsServiceMock.find).toHaveBeenCalledWith(expectedQuery, { page: 1, limit: 20 })
+      expect(eventsServiceMock.find).toHaveBeenCalledWith(expectedQuery, { page: 1, limit: 1 })
       expect(eventsServiceMock.countCapped).toHaveBeenCalledWith(expectedQuery)
       expect(result).toEqual({
         total: 5,
+        totalCapped: false,
+        page: 1,
+        limit: 1,
+        data,
+      })
+    })
+
+    it('flags totalCapped when countCapped reports a capped total', async () => {
+      eventsServiceMock.find.mockResolvedValueOnce([{ _id: 'e1' }])
+      eventsServiceMock.countCapped.mockResolvedValueOnce({ total: 1000, capped: true })
+
+      const result = await adminController.getEvents({ page: 1, limit: 1 })
+
+      expect(result).toMatchObject({ total: 1000, totalCapped: true })
+    })
+
+    it.each([
+      { label: 'non-empty short first page', data: [{ _id: 'e1' }, { _id: 'e2' }], expectedTotal: 2 },
+      { label: 'empty first page', data: [], expectedTotal: 0 },
+    ])('skips countCapped on $label when data.length < limit', async ({ data, expectedTotal }) => {
+      eventsServiceMock.find.mockResolvedValueOnce(data)
+
+      const result = await adminController.getEvents({ page: 1, limit: 20 })
+
+      expect(eventsServiceMock.countCapped).not.toHaveBeenCalled()
+      expect(result).toEqual({
+        total: expectedTotal,
         totalCapped: false,
         page: 1,
         limit: 20,
@@ -573,13 +601,28 @@ describe('AdminController', () => {
       })
     })
 
-    it('flags totalCapped when countCapped reports a capped total', async () => {
+    it.each([
+      { page: 51, limit: 20 },
+      { page: 11, limit: 100 },
+    ])('rejects deep pagination (page=$page, limit=$limit) at or past EVENTS_COUNT_CAP without querying', async ({ page, limit }) => {
+      await expect(
+        adminController.getEvents({ search: 'Vet', page, limit }),
+      ).rejects.toThrow(new BadRequestException(`Pagination offset must be below ${EVENTS_COUNT_CAP}`))
+
+      expect(practicesRepositoryMock.createQueryBuilder).not.toHaveBeenCalled()
+      expect(eventsServiceMock.find).not.toHaveBeenCalled()
+      expect(eventsServiceMock.countCapped).not.toHaveBeenCalled()
+    })
+
+    it('allows pagination just below EVENTS_COUNT_CAP', async () => {
       eventsServiceMock.find.mockResolvedValueOnce([])
-      eventsServiceMock.countCapped.mockResolvedValueOnce({ total: 1000, capped: true })
+      eventsServiceMock.countCapped.mockResolvedValueOnce({ total: 985, capped: false })
 
-      const result = await adminController.getEvents({ page: 1, limit: 20 })
+      const result = await adminController.getEvents({ page: 50, limit: 20 })
 
-      expect(result).toMatchObject({ total: 1000, totalCapped: true })
+      expect(eventsServiceMock.find).toHaveBeenCalled()
+      expect(eventsServiceMock.countCapped).toHaveBeenCalled()
+      expect(result.total).toBe(985)
     })
 
     it('applies providers, integrations, types, date range, and practice search filters', async () => {
@@ -657,6 +700,31 @@ describe('AdminController', () => {
           limit: 20,
         }),
       ).rejects.toBeInstanceOf(BadRequestException)
+    })
+  })
+
+  describe('EventsQueryDto validation', () => {
+    const validationPipe = new ValidationPipe({
+      transform: true,
+      transformOptions: { enableImplicitConversion: true },
+    })
+    const metadata: ArgumentMetadata = { type: 'query', metatype: EventsQueryDto }
+
+    it('defaults omitted limit to PAGINATION_PAGE_LIMIT', async () => {
+      await expect(validationPipe.transform({}, metadata)).resolves.toMatchObject({
+        limit: PAGINATION_PAGE_LIMIT,
+        page: 1,
+      })
+    })
+
+    it('accepts limit up to MAX_EVENTS_PAGE_LIMIT', async () => {
+      await expect(validationPipe.transform({ limit: String(MAX_EVENTS_PAGE_LIMIT) }, metadata))
+        .resolves.toMatchObject({ limit: MAX_EVENTS_PAGE_LIMIT })
+    })
+
+    it('rejects limit above MAX_EVENTS_PAGE_LIMIT with BadRequestException', async () => {
+      await expect(validationPipe.transform({ limit: String(MAX_EVENTS_PAGE_LIMIT + 1) }, metadata))
+        .rejects.toBeInstanceOf(BadRequestException)
     })
   })
 })
