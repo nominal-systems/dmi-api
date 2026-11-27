@@ -1,4 +1,12 @@
-import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common'
+import {
+  BadGatewayException,
+  BadRequestException,
+  ConflictException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { ClientProxy } from '@nestjs/microservices'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -19,6 +27,22 @@ import { Practice } from '../practices/entities/practice.entity'
 const DEFAULT_RESTART_CONCURRENCY = 5
 const DEFAULT_RESTART_ATTEMPTS = 3
 const DEFAULT_RESTART_BACKOFF_MS = 1000
+
+/**
+ * The statuses an organization's API key may start an integration from (#424). NEW is an integration created
+ * through `POST /integrations`, which does not start it. Whether its organization may start it, or only one that
+ * has run before, is still open: taking NEW out of this list is the whole change for the latter. READY and ERROR,
+ * which nothing writes today, are left to the Admin API.
+ */
+export const ORGANIZATION_STARTABLE_STATUSES: readonly string[] = [
+  IntegrationStatus.NEW,
+  IntegrationStatus.STOPPED,
+]
+
+/** What an organization's start or stop answers when it succeeds, in the shape the admin routes use. */
+export interface IntegrationActionAnswer {
+  ok: string
+}
 
 export interface EnsureStatusOptions {
   /** Statuses to restart. Defaults to RUNNING only. */
@@ -210,7 +234,67 @@ export class IntegrationsService {
     organization: Organization,
     integrationId: string,
   ): Promise<Error | undefined> {
-    const integration = await this.findOne({
+    const integration = await this.findOwned(organization, integrationId)
+    return await this.restart(integration)
+  }
+
+  /**
+   * Starts one of the organization's integrations (#424). One that is running already is left alone, and the
+   * engine is not asked. A status outside ORGANIZATION_STARTABLE_STATUSES is refused with a 409, and an engine
+   * that fails with a 502; either way the status is unchanged.
+   */
+  async startById(
+    organization: Organization,
+    integrationId: string,
+  ): Promise<IntegrationActionAnswer> {
+    const integration = await this.findOwned(organization, integrationId)
+    if (integration.status === IntegrationStatus.RUNNING) {
+      return { ok: 'Integration is already running' }
+    }
+    if (!ORGANIZATION_STARTABLE_STATUSES.includes(integration.status)) {
+      throw new ConflictException(
+        `Integration ${integration.id} is ${integration.status} and cannot be started with an organization key`,
+      )
+    }
+
+    const error = await this.doStart(
+      integration.id,
+      integration.providerConfiguration,
+      integration.integrationOptions,
+    )
+    if (error !== undefined) {
+      throw new BadGatewayException(error.message)
+    }
+    return { ok: 'Integration started' }
+  }
+
+  /**
+   * Stops one of the organization's integrations (#424). One that is stopped already, or has never been started,
+   * is left alone, and the engine is not asked. A NEW one stays NEW, so stopping it cannot make it count as one
+   * that has run (ORGANIZATION_STARTABLE_STATUSES). An engine that fails is a 502, and the status is unchanged.
+   */
+  async stopById(
+    organization: Organization,
+    integrationId: string,
+  ): Promise<IntegrationActionAnswer> {
+    const integration = await this.findOwned(organization, integrationId)
+    if (integration.status === IntegrationStatus.STOPPED) {
+      return { ok: 'Integration is already stopped' }
+    }
+    if (integration.status === IntegrationStatus.NEW) {
+      return { ok: 'Integration has not been started' }
+    }
+
+    const error = await this.doStop(integration)
+    if (error !== undefined) {
+      throw new BadGatewayException(error.message)
+    }
+    return { ok: 'Integration stopped' }
+  }
+
+  /** One of the organization's integrations, or a 404: another organization's is not found either. */
+  private async findOwned(organization: Organization, integrationId: string): Promise<Integration> {
+    return await this.findOne({
       options: {
         where: {
           id: integrationId as any,
@@ -219,7 +303,6 @@ export class IntegrationsService {
         relations: ['practice', 'providerConfiguration'],
       },
     })
-    return await this.restart(integration)
   }
 
   async delete(organization: Organization, integrationId: string): Promise<void> {
