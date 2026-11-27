@@ -25,6 +25,7 @@ import { DisableGuards } from '../common/decorators/disable-guards.decorator'
 import { SHARED_SUBSCRIPTION_GROUP } from '../common/constants/api.constant'
 import { ProviderRawDataDto } from './dtos/provider-raw-data.dto'
 import { Provider } from './entities/provider.entity'
+import { organizationActor } from '../integrations/constants/integration-log.constants'
 
 @Controller('providers')
 @UseGuards(ApiGuard)
@@ -163,7 +164,7 @@ export class ProvidersController {
         },
         relations: ['integrations']
       }
-    })
+    }, organizationActor(organization))
   }
 
   @Get(':id/devices')

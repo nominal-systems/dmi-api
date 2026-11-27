@@ -10,7 +10,13 @@ import { IntegrationStatus } from './constants/integration-status.enum'
 import { BadGatewayException, BadRequestException, ConflictException, NotFoundException } from '@nestjs/common'
 import { Practice } from '../practices/entities/practice.entity'
 import { IntegrationLogEntry } from './entities/integration-log-entry.entity'
-import { IntegrationActorType, IntegrationLogAction, SYSTEM_ACTOR, adminActor } from './constants/integration-log.constants'
+import {
+  IntegrationActorType,
+  IntegrationLogAction,
+  SYSTEM_ACTOR,
+  adminActor,
+  organizationActor,
+} from './constants/integration-log.constants'
 
 const organization = { id: 'org-1', name: 'Org One' } as Organization
 const admin = adminActor('jane.doe')
@@ -784,6 +790,15 @@ describe('IntegrationsService', () => {
           'Error stopping integration integration-id: engine unreachable',
         ),
         entry(IntegrationLogAction.RESTART, IntegrationActorType.SYSTEM, 'system'),
+      ])
+    })
+
+    it('records the deletes of integrations deleted with their provider configuration', async () => {
+      await integrationsService.recordDeletes(['a', 'b'], organizationActor(organization))
+
+      expect(entries()).toEqual([
+        { ...entry(IntegrationLogAction.DELETE, IntegrationActorType.ORGANIZATION, 'Org One'), integrationId: 'a' },
+        { ...entry(IntegrationLogAction.DELETE, IntegrationActorType.ORGANIZATION, 'Org One'), integrationId: 'b' },
       ])
     })
 

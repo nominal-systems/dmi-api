@@ -533,6 +533,16 @@ export class IntegrationsService {
     })
   }
 
+  /**
+   * Records the delete of integrations that were soft-deleted elsewhere: with their provider configuration, which
+   * deletes them without this service (#306).
+   */
+  async recordDeletes(integrationIds: string[], actor: IntegrationActor): Promise<void> {
+    for (const integrationId of integrationIds) {
+      await this.record(integrationId, IntegrationLogAction.DELETE, actor, undefined)
+    }
+  }
+
   /** The integration's log, newest first (#306). */
   async findLog(
     integrationId: string,

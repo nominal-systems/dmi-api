@@ -9,14 +9,16 @@ import { Integration } from '../../integrations/entities/integration.entity'
 import { BadRequestException, ForbiddenException } from '@nestjs/common'
 import { Organization } from '../../organizations/entities/organization.entity'
 import { IntegrationStatus } from '../../integrations/constants/integration-status.enum'
+import { organizationActor } from '../../integrations/constants/integration-log.constants'
 
 const providerConfigurationRepositoryMock = {
   findOne: jest.fn(),
   update: jest.fn(),
+  softDelete: jest.fn(),
 }
-const integrationsRepositoryMock = { find: jest.fn() }
+const integrationsRepositoryMock = { find: jest.fn(), softDelete: jest.fn() }
 const providersServiceMock = { findOneById: jest.fn() }
-const integrationsServiceMock = { updateJobs: jest.fn() }
+const integrationsServiceMock = { updateJobs: jest.fn(), recordDeletes: jest.fn() }
 const configServiceMock = {
   get: jest.fn(() => 'AAABBBCCCDDDEEEFFFGGGHHHIIIJJJKK'),
 }
@@ -104,5 +106,21 @@ describe('ProviderConfigurationsService', () => {
       runningIntegration.providerConfiguration,
       runningIntegration.integrationOptions,
     )
+  })
+
+  it("records the delete of each integration it deletes in that integration's log, with the organization (#306)", async () => {
+    providerConfigurationRepositoryMock.findOne.mockResolvedValue({
+      id: 'config',
+      integrations: [
+        { id: 'int-live', deletedAt: null },
+        { id: 'int-deleted-before', deletedAt: new Date('2026-01-01T00:00:00Z') },
+      ],
+    })
+    const actor = organizationActor({ name: 'Org One' })
+
+    await service.delete({ id: 'config' }, actor)
+
+    expect(integrationsRepositoryMock.softDelete).toHaveBeenCalledWith(['int-live', 'int-deleted-before'])
+    expect(integrationsServiceMock.recordDeletes).toHaveBeenCalledWith(['int-live'], actor)
   })
 })
