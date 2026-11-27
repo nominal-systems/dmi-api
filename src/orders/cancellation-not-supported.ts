@@ -9,13 +9,12 @@ export type CancellationTarget = 'order' | 'test'
 
 // Answered as dmi-api's own error body: `{ statusCode: 409, message: <sentence>, errors: ['CANCELLATION_NOT_SUPPORTED'],
 // path, timestamp }`. AllExceptionsFilter takes `message` from the exception and `errors` from the body's `message`,
-// so the body carries the token and the exception the sentence.
+// so the body carries the token and the exception the sentence. The body has no `error` key (the answer never shows
+// one): RpcExceptionInterceptor logs that key in place of the message when it is there, so without it its line
+// carries the sentence.
 export class CancellationNotSupportedException extends ConflictException {
   constructor(sentence: string, options?: HttpExceptionOptions) {
-    super(
-      { statusCode: HttpStatus.CONFLICT, message: [CANCELLATION_NOT_SUPPORTED], error: 'Conflict' },
-      options,
-    )
+    super({ statusCode: HttpStatus.CONFLICT, message: [CANCELLATION_NOT_SUPPORTED] }, options)
     this.message = sentence
   }
 }

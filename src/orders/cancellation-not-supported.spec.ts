@@ -7,12 +7,12 @@ import { ApiGuard } from '../common/guards/api.guard'
 import { AllExceptionsFilter } from '../common/interceptors/all-exceptions.filter'
 import { RpcExceptionInterceptor } from '../common/interceptors/rpc-exception.interceptor'
 import { InternalEventLoggingInterceptor } from '../internal-event-logging/internal-event-logging.interceptor'
-import { CANCELLATION_NOT_SUPPORTED, cancellationNotSupported } from './cancellation-not-supported'
+import { cancellationNotSupported } from './cancellation-not-supported'
 import { OrdersController } from './orders.controller'
 import { OrdersService } from './orders.service'
 
 // What the caller receives when the provider cannot cancel (#304): the two cancel routes, through the interceptor and
-// the filter dmi-api answers every request with.
+// the filter dmi-api answers every request with. The token is written out, not imported: it is what callers match on.
 describe('Cancelling with a provider that cannot cancel (HTTP answer)', () => {
   // An engine's error reply arrives as parsed JSON, not as the class it was thrown as.
   const overTheWire = (error: unknown): any => JSON.parse(JSON.stringify(error))
@@ -79,7 +79,7 @@ describe('Cancelling with a provider that cannot cancel (HTTP answer)', () => {
       statusCode: 409,
       message:
         'The provider antech-v6 does not support cancelling orders. The order was not cancelled.',
-      errors: [CANCELLATION_NOT_SUPPORTED],
+      errors: ['CANCELLATION_NOT_SUPPORTED'],
       path: '/orders/order-1',
       timestamp: expect.any(String),
     })
@@ -103,7 +103,7 @@ describe('Cancelling with a provider that cannot cancel (HTTP answer)', () => {
       statusCode: 409,
       message:
         'The provider antech-v6 does not support cancelling individual tests. The test was not cancelled.',
-      errors: [CANCELLATION_NOT_SUPPORTED],
+      errors: ['CANCELLATION_NOT_SUPPORTED'],
       path: '/orders/order-1/tests/T2',
       timestamp: expect.any(String),
     })

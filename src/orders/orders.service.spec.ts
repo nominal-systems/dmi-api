@@ -1058,6 +1058,14 @@ describe('OrdersService', () => {
         expect(ordersRepositoryMock.save).not.toHaveBeenCalled()
       })
 
+      it("refuses another organization's order with 403, before anything is sent to the provider", async () => {
+        const error = await failure(ordersService.cancelOrder({ id: 'org-2' } as any, 'order-1'))
+
+        expect(error).toBeInstanceOf(ForbiddenException)
+        expect(clientMock.send).not.toHaveBeenCalled()
+        expect(ordersRepositoryMock.save).not.toHaveBeenCalled()
+      })
+
       it('marks the order CANCELLED and emits order:updated when the provider cancels', async () => {
         customPromise.toPromise.mockResolvedValueOnce(undefined)
 
@@ -1124,6 +1132,27 @@ describe('OrdersService', () => {
 
         expect(error).toBe(providerError)
         expect(ordersRepositoryMock.save).not.toHaveBeenCalled()
+      })
+
+      it("looks the order up in the caller's organization, and sends nothing when it is not there (404)", async () => {
+        jest
+          .spyOn(ordersService, 'findOne')
+          .mockRejectedValueOnce(new NotFoundException('The order was not found'))
+
+        const error = await failure(cancel())
+
+        expect(error).toBeInstanceOf(NotFoundException)
+        expect(ordersService.findOne).toHaveBeenCalledWith(
+          expect.objectContaining({
+            options: expect.objectContaining({
+              where: {
+                id: 'order-1',
+                integration: { providerConfiguration: { organizationId: 'org-1' } },
+              },
+            }),
+          }),
+        )
+        expect(clientMock.send).not.toHaveBeenCalled()
       })
 
       it('saves the order when the provider cancels', async () => {
