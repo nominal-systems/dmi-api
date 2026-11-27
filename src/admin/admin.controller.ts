@@ -52,7 +52,13 @@ import { FilterQuery } from 'mongoose'
 import { PaginationResult } from '../common/classes/pagination-result'
 import { PaginationDto } from '../common/dtos/pagination.dto'
 import { PAGINATION_PAGE_LIMIT } from '../common/constants/pagination.constant'
-import { getRequestedBy, getStatusRanges, resolveBoundedDateRange, toDeliveryResponse } from './admin-utils'
+import {
+  getRequestedBy,
+  getStatusRanges,
+  MAX_EVENTS_STATS_RANGE_DAYS,
+  resolveBoundedDateRange,
+  toDeliveryResponse,
+} from './admin-utils'
 import { IntegrationsSearch } from '../providers/dtos/integrations-search.dto'
 import { Practice } from '../practices/entities/practice.entity'
 import { TransactionLogsDto } from '../common/dtos/transaction-logs.dto'
@@ -74,6 +80,15 @@ import {
   InternalEventLoggingService,
 } from '../internal-event-logging/internal-event-logging.service'
 import { AdminGuard } from '../common/guards/admin.guard'
+
+const ALLOWED_EVENTS_STATS_GROUP_BY = new Set([
+  'type',
+  'providerId',
+  'practiceId',
+  'integrationId',
+  'namespace',
+  'createdAt',
+])
 
 @Controller('admin')
 @UseGuards(AdminGuard)
@@ -218,8 +233,13 @@ export class AdminController {
 
   @Get('events/stats')
   async getEventsStats (@Query() query: EventsStatsDto): Promise<any> {
-    // Always bound createdAt so the $match stage uses the createdAt_1 index and cannot scan all of events_v2.
-    const { start, end } = resolveBoundedDateRange(query.startDate, query.endDate)
+    // Always bound createdAt so the $match stage limits the events_v2 aggregation to a narrow time window.
+    const { start, end } = resolveBoundedDateRange(
+      query.startDate,
+      query.endDate,
+      new Date(),
+      MAX_EVENTS_STATS_RANGE_DAYS,
+    )
     const options: FilterQuery<EventDocument> = {
       createdAt: { $gte: start, $lte: end },
     }
@@ -231,6 +251,10 @@ export class AdminController {
     let groupBy: string[] = []
     if (query.groupBy !== undefined) {
       groupBy = query.groupBy.split(',').map((field) => field.trim()).filter(Boolean)
+      const invalidGroupBy = groupBy.filter((field) => !ALLOWED_EVENTS_STATS_GROUP_BY.has(field))
+      if (invalidGroupBy.length > 0) {
+        throw new BadRequestException(`Invalid groupBy field(s): ${invalidGroupBy.join(', ')}`)
+      }
     }
 
     return await this.eventsService.stats(options, groupBy)

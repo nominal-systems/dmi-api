@@ -19,7 +19,8 @@ import { Practice } from '../practices/entities/practice.entity'
 import { OrdersService } from '../orders/orders.service'
 import { ExternalRequestsQueryDto } from './dtos/external-requests-query.dto'
 import { EventsQueryDto, MAX_EVENTS_PAGE_LIMIT } from './dtos/events-query.dto'
-import { MAX_EVENTS_RANGE_MS } from './admin-utils'
+import { EventsStatsDto } from './dtos/events-stats.dto'
+import { MAX_EVENTS_STATS_RANGE_DAYS, MAX_EVENTS_STATS_RANGE_MS } from './admin-utils'
 import { PaginationResult } from '../common/classes/pagination-result'
 import { ProviderExternalRequests } from '../providers/entities/provider-external-requests.entity'
 import { ArgumentMetadata, BadRequestException, ValidationPipe } from '@nestjs/common'
@@ -764,9 +765,9 @@ describe('AdminController', () => {
       expect(result).toEqual(statsResult)
     })
 
-    it('applies explicit range up to 31 days + 1h DST tolerance, types, and trimmed groupBy fields', async () => {
-      const startDate = '2026-08-31T12:00:00.000Z'
-      const endDate = new Date(new Date(startDate).getTime() + MAX_EVENTS_RANGE_MS).toISOString()
+    it('applies explicit range up to MAX_EVENTS_STATS_RANGE_MS, types, and trimmed groupBy fields', async () => {
+      const startDate = '2026-09-29T10:00:00.000Z'
+      const endDate = new Date(new Date(startDate).getTime() + MAX_EVENTS_STATS_RANGE_MS).toISOString()
       eventsServiceStatsMock.stats.mockResolvedValueOnce([])
 
       await adminController.getEventsStats({
@@ -790,9 +791,9 @@ describe('AdminController', () => {
       )
     })
 
-    it('rejects ranges wider than 31 days plus 1h DST tolerance without querying stats', async () => {
-      const startDate = '2026-08-31T12:00:00.000Z'
-      const endDate = new Date(new Date(startDate).getTime() + MAX_EVENTS_RANGE_MS + 1).toISOString()
+    it('rejects ranges wider than MAX_EVENTS_STATS_RANGE_MS without querying stats', async () => {
+      const startDate = '2026-09-29T10:00:00.000Z'
+      const endDate = new Date(new Date(startDate).getTime() + MAX_EVENTS_STATS_RANGE_MS + 1).toISOString()
 
       await expect(
         adminController.getEventsStats({
@@ -802,10 +803,25 @@ describe('AdminController', () => {
           page: 1,
           limit: 10,
         }),
-      ).rejects.toBeInstanceOf(BadRequestException)
+      ).rejects.toThrow(new BadRequestException(`Date range cannot exceed ${MAX_EVENTS_STATS_RANGE_DAYS} days`))
 
       expect(eventsServiceStatsMock.stats).not.toHaveBeenCalled()
     })
+
+    it.each(['seq', '_id', '$type', 'data.id', 'type, seq'])(
+      'rejects disallowed groupBy field (%s) without querying stats',
+      async (groupBy) => {
+        await expect(
+          adminController.getEventsStats({
+            groupBy,
+            page: 1,
+            limit: 10,
+          }),
+        ).rejects.toBeInstanceOf(BadRequestException)
+
+        expect(eventsServiceStatsMock.stats).not.toHaveBeenCalled()
+      },
+    )
 
     it('rejects invalid date strings or inverted ranges without querying stats', async () => {
       await expect(
@@ -828,6 +844,37 @@ describe('AdminController', () => {
       ).rejects.toBeInstanceOf(BadRequestException)
 
       expect(eventsServiceStatsMock.stats).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('EventsStatsDto validation', () => {
+    const validationPipe = new ValidationPipe({
+      transform: true,
+      transformOptions: { enableImplicitConversion: true },
+    })
+    const metadata: ArgumentMetadata = { type: 'query', metatype: EventsStatsDto }
+
+    it('accepts valid groupBy, optional dates, and comma-separated types', async () => {
+      await expect(
+        validationPipe.transform(
+          {
+            groupBy: 'type,providerId',
+            startDate: '2026-10-01T00:00:00.000Z',
+            endDate: '2026-10-01T23:59:59.999Z',
+            types: 'order:created,report:updated',
+          },
+          metadata,
+        ),
+      ).resolves.toMatchObject({
+        groupBy: 'type,providerId',
+        startDate: '2026-10-01T00:00:00.000Z',
+        endDate: '2026-10-01T23:59:59.999Z',
+        types: ['order:created', 'report:updated'],
+      })
+    })
+
+    it('rejects missing groupBy with BadRequestException', async () => {
+      await expect(validationPipe.transform({}, metadata)).rejects.toBeInstanceOf(BadRequestException)
     })
   })
 })

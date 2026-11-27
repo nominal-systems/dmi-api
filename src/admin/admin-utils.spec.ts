@@ -3,6 +3,8 @@ import {
   DEFAULT_EVENTS_RANGE_MS,
   MAX_EVENTS_RANGE_DAYS,
   MAX_EVENTS_RANGE_MS,
+  MAX_EVENTS_STATS_RANGE_DAYS,
+  MAX_EVENTS_STATS_RANGE_MS,
   resolveBoundedDateRange,
 } from './admin-utils'
 
@@ -82,6 +84,20 @@ describe('resolveBoundedDateRange', () => {
     })
     expect(() => resolveBoundedDateRange(startDate, oversizedEnd, now)).toThrow(
       new BadRequestException('Date range cannot exceed 31 days'),
+    )
+  })
+
+  it('supports a custom maxRangeDays cap', () => {
+    const startDate = '2026-09-29T10:00:00.000Z'
+    const validEnd = new Date(new Date(startDate).getTime() + MAX_EVENTS_STATS_RANGE_MS).toISOString()
+    const oversizedEnd = new Date(new Date(startDate).getTime() + MAX_EVENTS_STATS_RANGE_MS + 1).toISOString()
+
+    expect(resolveBoundedDateRange(startDate, validEnd, now, MAX_EVENTS_STATS_RANGE_DAYS)).toEqual({
+      start: new Date(startDate),
+      end: new Date(validEnd),
+    })
+    expect(() => resolveBoundedDateRange(startDate, oversizedEnd, now, MAX_EVENTS_STATS_RANGE_DAYS)).toThrow(
+      new BadRequestException(`Date range cannot exceed ${MAX_EVENTS_STATS_RANGE_DAYS} days`),
     )
   })
 })
