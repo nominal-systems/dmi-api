@@ -218,12 +218,10 @@ export class AdminController {
 
   @Get('events/stats')
   async getEventsStats (@Query() query: EventsStatsDto): Promise<any> {
-    const options: FilterQuery<EventDocument> = {}
-    if (query.startDate !== undefined) {
-      options.createdAt = { $gte: new Date(query.startDate) }
-    }
-    if (query.endDate !== undefined) {
-      options.createdAt = { ...options.createdAt, $lte: new Date(query.endDate) }
+    // Always bound createdAt so the $match stage uses the createdAt_1 index and cannot scan all of events_v2.
+    const { start, end } = resolveBoundedDateRange(query.startDate, query.endDate)
+    const options: FilterQuery<EventDocument> = {
+      createdAt: { $gte: start, $lte: end },
     }
 
     if (query.types !== undefined) {
@@ -232,7 +230,7 @@ export class AdminController {
 
     let groupBy: string[] = []
     if (query.groupBy !== undefined) {
-      groupBy = query.groupBy.split(',')
+      groupBy = query.groupBy.split(',').map((field) => field.trim()).filter(Boolean)
     }
 
     return await this.eventsService.stats(options, groupBy)

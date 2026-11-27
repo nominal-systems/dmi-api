@@ -19,6 +19,7 @@ import { Practice } from '../practices/entities/practice.entity'
 import { OrdersService } from '../orders/orders.service'
 import { ExternalRequestsQueryDto } from './dtos/external-requests-query.dto'
 import { EventsQueryDto, MAX_EVENTS_PAGE_LIMIT } from './dtos/events-query.dto'
+import { MAX_EVENTS_RANGE_MS } from './admin-utils'
 import { PaginationResult } from '../common/classes/pagination-result'
 import { ProviderExternalRequests } from '../providers/entities/provider-external-requests.entity'
 import { ArgumentMetadata, BadRequestException, ValidationPipe } from '@nestjs/common'
@@ -38,6 +39,9 @@ describe('AdminController', () => {
   const providersServiceMock = {
     findExternalRequests: jest.fn(),
     countExternalRequests: jest.fn(),
+  }
+  const eventsServiceStatsMock = {
+    stats: jest.fn(),
   }
 
   beforeEach(async () => {
@@ -74,7 +78,7 @@ describe('AdminController', () => {
         },
         {
           provide: EventsService,
-          useValue: {},
+          useValue: eventsServiceStatsMock,
         },
         {
           provide: EventSubscriptionService,
@@ -725,6 +729,105 @@ describe('AdminController', () => {
     it('rejects limit above MAX_EVENTS_PAGE_LIMIT with BadRequestException', async () => {
       await expect(validationPipe.transform({ limit: String(MAX_EVENTS_PAGE_LIMIT + 1) }, metadata))
         .rejects.toBeInstanceOf(BadRequestException)
+    })
+  })
+
+  describe('getEventsStats()', () => {
+    beforeEach(() => {
+      jest.useFakeTimers().setSystemTime(new Date('2026-10-01T12:00:00.000Z'))
+      eventsServiceStatsMock.stats.mockReset()
+    })
+
+    afterEach(() => {
+      jest.useRealTimers()
+    })
+
+    it('defaults to the last 24 hours when startDate and endDate are omitted', async () => {
+      const statsResult = [{ type: 'order:created', count: 12 }]
+      eventsServiceStatsMock.stats.mockResolvedValueOnce(statsResult)
+
+      const result = await adminController.getEventsStats({
+        groupBy: 'type',
+        page: 1,
+        limit: 10,
+      })
+
+      expect(eventsServiceStatsMock.stats).toHaveBeenCalledWith(
+        {
+          createdAt: {
+            $gte: new Date('2026-09-30T12:00:00.000Z'),
+            $lte: new Date('2026-10-01T12:00:00.000Z'),
+          },
+        },
+        ['type'],
+      )
+      expect(result).toEqual(statsResult)
+    })
+
+    it('applies explicit range up to 31 days + 1h DST tolerance, types, and trimmed groupBy fields', async () => {
+      const startDate = '2026-08-31T12:00:00.000Z'
+      const endDate = new Date(new Date(startDate).getTime() + MAX_EVENTS_RANGE_MS).toISOString()
+      eventsServiceStatsMock.stats.mockResolvedValueOnce([])
+
+      await adminController.getEventsStats({
+        startDate,
+        endDate,
+        types: ['order:created', 'report:updated'],
+        groupBy: 'type, providerId',
+        page: 1,
+        limit: 10,
+      })
+
+      expect(eventsServiceStatsMock.stats).toHaveBeenCalledWith(
+        {
+          createdAt: {
+            $gte: new Date(startDate),
+            $lte: new Date(endDate),
+          },
+          type: { $in: ['order:created', 'report:updated'] },
+        },
+        ['type', 'providerId'],
+      )
+    })
+
+    it('rejects ranges wider than 31 days plus 1h DST tolerance without querying stats', async () => {
+      const startDate = '2026-08-31T12:00:00.000Z'
+      const endDate = new Date(new Date(startDate).getTime() + MAX_EVENTS_RANGE_MS + 1).toISOString()
+
+      await expect(
+        adminController.getEventsStats({
+          startDate,
+          endDate,
+          groupBy: 'type',
+          page: 1,
+          limit: 10,
+        }),
+      ).rejects.toBeInstanceOf(BadRequestException)
+
+      expect(eventsServiceStatsMock.stats).not.toHaveBeenCalled()
+    })
+
+    it('rejects invalid date strings or inverted ranges without querying stats', async () => {
+      await expect(
+        adminController.getEventsStats({
+          startDate: 'not-a-date',
+          groupBy: 'type',
+          page: 1,
+          limit: 10,
+        }),
+      ).rejects.toBeInstanceOf(BadRequestException)
+
+      await expect(
+        adminController.getEventsStats({
+          startDate: '2026-10-01T00:00:00.000Z',
+          endDate: '2026-09-30T00:00:00.000Z',
+          groupBy: 'type',
+          page: 1,
+          limit: 10,
+        }),
+      ).rejects.toBeInstanceOf(BadRequestException)
+
+      expect(eventsServiceStatsMock.stats).not.toHaveBeenCalled()
     })
   })
 })
