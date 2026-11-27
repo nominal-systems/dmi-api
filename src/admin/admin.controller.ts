@@ -26,6 +26,8 @@ import {
 } from '../providers/services/provider-configurations.service'
 import { Integration } from '../integrations/entities/integration.entity'
 import { IntegrationsService } from '../integrations/integrations.service'
+import { IntegrationLogEntry } from '../integrations/entities/integration-log-entry.entity'
+import { adminActor } from '../integrations/constants/integration-log.constants'
 import { EventSubscriptionService } from '../events/services/event-subscription.service'
 import { EventSubscription } from '../events/entities/event-subscription.entity'
 import { OrganizationsService } from '../organizations/services/organizations.service'
@@ -337,8 +339,24 @@ export class AdminController {
     })
   }
 
+  /** Who started, stopped, restarted or deleted the integration, and when, newest first (#306). */
+  @Get('integrations/:id/log')
+  async getIntegrationLog (
+    @Param('id') integrationId: string,
+    @Query() params: PaginationDto,
+  ): Promise<PaginationResult<IntegrationLogEntry>> {
+    const integration = await this.integrationsRepository.findOne({
+      where: { id: integrationId },
+      withDeleted: true,
+    })
+    if (integration === null) {
+      throw new NotFoundException('The integration was not found')
+    }
+    return await this.integrationsService.findLog(integrationId, params.page, params.limit)
+  }
+
   @Delete('integrations/:id')
-  async deleteIntegration (@Param('id') integrationId: string): Promise<void> {
+  async deleteIntegration (@Param('id') integrationId: string, @User() user: any): Promise<void> {
     const integration = await this.integrationsService.findOne({
       id: integrationId,
       options: {
@@ -350,7 +368,7 @@ export class AdminController {
       throw new Error('Integration not found')
     }
 
-    await this.integrationsService.doDelete(integration)
+    await this.integrationsService.doDelete(integration, adminActor(getRequestedBy(user)))
   }
 
   @Patch('integrations/:id')
@@ -383,6 +401,7 @@ export class AdminController {
     @Res() res: Response,
     @Param('id') integrationId: string,
     @Query('force', new DefaultValuePipe(false), ParseBoolPipe) force: boolean,
+    @User() user: any,
   ): Promise<void> {
     const queryBuilder = this.integrationsRepository
       .createQueryBuilder('integration')
@@ -403,7 +422,7 @@ export class AdminController {
     if (integration.status === IntegrationStatus.STOPPED) {
       res.status(201).send({ ok: 'Integration is already stopped' })
     } else {
-      const response = await this.integrationsService.doStop(integration)
+      const response = await this.integrationsService.stop(integration, adminActor(getRequestedBy(user)))
       if (response?.message === undefined) {
         res.status(201).send({ ok: 'Integration stopped' })
       } else {
@@ -413,7 +432,11 @@ export class AdminController {
   }
 
   @Post('integrations/:id/start')
-  async startIntegration (@Res() res: Response, @Param('id') integrationId: string): Promise<void> {
+  async startIntegration (
+    @Res() res: Response,
+    @Param('id') integrationId: string,
+    @User() user: any,
+  ): Promise<void> {
     const integration = await this.integrationsService.findOne({
       id: integrationId,
       options: {
@@ -424,11 +447,7 @@ export class AdminController {
     if (integration.status === IntegrationStatus.RUNNING) {
       res.status(201).send({ ok: 'Integration is already running' })
     } else {
-      const response = await this.integrationsService.doStart(
-        integrationId,
-        integration.providerConfiguration,
-        integration.integrationOptions,
-      )
+      const response = await this.integrationsService.start(integration, adminActor(getRequestedBy(user)))
       if (response?.message === undefined) {
         res.status(201).send({ ok: 'Integration started' })
       } else {
@@ -441,6 +460,7 @@ export class AdminController {
   async restartIntegration (
     @Res() res: Response,
     @Param('id') integrationId: string,
+    @User() user: any,
   ): Promise<void> {
     const integration = await this.integrationsService.findOne({
       id: integrationId,
@@ -448,7 +468,7 @@ export class AdminController {
         relations: ['practice', 'providerConfiguration'],
       },
     })
-    const response = await this.integrationsService.restart(integration)
+    const response = await this.integrationsService.restart(integration, adminActor(getRequestedBy(user)))
     if (response?.message === undefined) {
       res.status(201).send({ ok: 'Integration restarted' })
     } else {

@@ -9,8 +9,11 @@ import { Provider } from '../providers/entities/provider.entity'
 import { IntegrationStatus } from './constants/integration-status.enum'
 import { BadGatewayException, BadRequestException, ConflictException, NotFoundException } from '@nestjs/common'
 import { Practice } from '../practices/entities/practice.entity'
+import { IntegrationLogEntry } from './entities/integration-log-entry.entity'
+import { IntegrationActorType, IntegrationLogAction, SYSTEM_ACTOR, adminActor } from './constants/integration-log.constants'
 
-const organization = { id: 'org-1' } as Organization
+const organization = { id: 'org-1', name: 'Org One' } as Organization
+const admin = adminActor('jane.doe')
 
 describe('IntegrationsService', () => {
   let integrationsService: IntegrationsService
@@ -64,6 +67,10 @@ describe('IntegrationsService', () => {
   const practiceRepositoryMock = {
     findOne: jest.fn(() => ({ id: 'practiceId', organizationId: 'org-1' })),
   }
+  const integrationLogRepositoryMock = {
+    insert: jest.fn(),
+    findAndCount: jest.fn(),
+  }
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -88,6 +95,10 @@ describe('IntegrationsService', () => {
         {
           provide: getRepositoryToken(Practice),
           useValue: practiceRepositoryMock,
+        },
+        {
+          provide: getRepositoryToken(IntegrationLogEntry),
+          useValue: integrationLogRepositoryMock,
         },
         {
           provide: 'ACTIVEMQ',
@@ -291,7 +302,7 @@ describe('IntegrationsService', () => {
     it('should stop and start a RUNNING integration', async () => {
       clientProxyMock.send.mockImplementation(resolves)
 
-      const response = await integrationsService.restart({ ...runningIntegration })
+      const response = await integrationsService.restart({ ...runningIntegration }, admin)
 
       expect(response).toBeUndefined()
       expect(clientProxyMock.send).toHaveBeenCalledTimes(2)
@@ -306,7 +317,7 @@ describe('IntegrationsService', () => {
       const response = await integrationsService.restart({
         ...runningIntegration,
         status: IntegrationStatus.STOPPED,
-      })
+      }, admin)
 
       expect(response).toBeUndefined()
       expect(clientProxyMock.send).toHaveBeenCalledTimes(1)
@@ -315,7 +326,7 @@ describe('IntegrationsService', () => {
     it('should restore the previous status when starting fails, so a re-run retries it', async () => {
       clientProxyMock.send.mockImplementationOnce(resolves).mockImplementationOnce(rejects)
 
-      const response = await integrationsService.restart({ ...runningIntegration })
+      const response = await integrationsService.restart({ ...runningIntegration }, admin)
 
       expect(response?.message).toContain('Error starting integration')
       // doStop() persisted STOPPED, the failed start must not leave it there
@@ -330,7 +341,7 @@ describe('IntegrationsService', () => {
     it('should return the stop error without starting', async () => {
       clientProxyMock.send.mockImplementation(rejects)
 
-      const response = await integrationsService.restart({ ...runningIntegration })
+      const response = await integrationsService.restart({ ...runningIntegration }, admin)
 
       expect(response?.message).toContain('Error stopping integration')
       expect(clientProxyMock.send).toHaveBeenCalledTimes(1)
@@ -609,6 +620,185 @@ describe('IntegrationsService', () => {
           list.unshift(IntegrationStatus.NEW)
         }
       })
+    })
+  })
+
+  describe('the integration log (#306)', () => {
+    const integrationIn = (status: IntegrationStatus): any => ({
+      id: 'integration-id',
+      status,
+      providerConfiguration: {
+        id: 'provider-configuration-id',
+        providerId: 'idexx',
+        configurationOptions: {},
+      },
+      integrationOptions: {},
+    })
+    const resolves = (): any => ({ toPromise: async () => ({}) })
+    const rejects = (message: string) => (): any => ({
+      toPromise: async () => {
+        throw new Error(message)
+      },
+    })
+    const entry = (action: IntegrationLogAction, actorType: IntegrationActorType, actor: string, error: string | null = null): any => ({
+      integrationId: 'integration-id',
+      action,
+      actorType,
+      actor,
+      error,
+    })
+    const entries = (): any[] => integrationLogRepositoryMock.insert.mock.calls.map(([row]) => row)
+
+    beforeEach(() => {
+      integrationRepositoryMock.findOne.mockReset()
+      integrationRepositoryMock.update.mockClear()
+      integrationRepositoryMock.find.mockReset()
+      integrationLogRepositoryMock.insert.mockReset()
+      integrationLogRepositoryMock.findAndCount.mockReset()
+      clientProxyMock.send.mockReset()
+      clientProxyMock.send.mockImplementation(resolves)
+    })
+
+    it('records a start and a stop with their actor', async () => {
+      await integrationsService.start(integrationIn(IntegrationStatus.STOPPED), admin)
+      await integrationsService.stop(integrationIn(IntegrationStatus.RUNNING), admin)
+
+      expect(entries()).toEqual([
+        entry(IntegrationLogAction.START, IntegrationActorType.ADMIN, 'jane.doe'),
+        entry(IntegrationLogAction.STOP, IntegrationActorType.ADMIN, 'jane.doe'),
+      ])
+    })
+
+    it("records a failed start with the engine's reason, and answers with the message it always had", async () => {
+      clientProxyMock.send.mockImplementation(rejects('The engine did not respond in time'))
+
+      const error = await integrationsService.start(integrationIn(IntegrationStatus.STOPPED), admin)
+
+      expect(error?.message).toBe('Error starting integration integration-id')
+      expect(entries()).toEqual([
+        entry(
+          IntegrationLogAction.START,
+          IntegrationActorType.ADMIN,
+          'jane.doe',
+          'Error starting integration integration-id: The engine did not respond in time',
+        ),
+      ])
+    })
+
+    it('records a restart as one entry, with the error of the half that failed', async () => {
+      clientProxyMock.send.mockImplementationOnce(resolves).mockImplementationOnce(rejects('engine unreachable'))
+
+      await integrationsService.restart(integrationIn(IntegrationStatus.RUNNING), admin)
+
+      expect(entries()).toEqual([
+        entry(
+          IntegrationLogAction.RESTART,
+          IntegrationActorType.ADMIN,
+          'jane.doe',
+          'Error starting integration integration-id: engine unreachable',
+        ),
+      ])
+    })
+
+    it('records a delete, with the error of a stop that failed, and deletes all the same', async () => {
+      clientProxyMock.send.mockImplementation(rejects('engine unreachable'))
+
+      await integrationsService.doDelete(integrationIn(IntegrationStatus.RUNNING), admin)
+
+      expect(integrationRepositoryMock.softDelete).toHaveBeenCalledWith('integration-id')
+      expect(entries()).toEqual([
+        entry(
+          IntegrationLogAction.DELETE,
+          IntegrationActorType.ADMIN,
+          'jane.doe',
+          'Error stopping integration integration-id: engine unreachable',
+        ),
+      ])
+    })
+
+    it('records an action that throws, and throws on', async () => {
+      integrationRepositoryMock.softDelete.mockRejectedValueOnce(new Error('connection lost'))
+
+      await expect(integrationsService.doDelete(integrationIn(IntegrationStatus.RUNNING), admin)).rejects.toThrow(
+        'connection lost',
+      )
+      expect(entries()).toEqual([
+        entry(IntegrationLogAction.DELETE, IntegrationActorType.ADMIN, 'jane.doe', 'connection lost'),
+      ])
+    })
+
+    it('does not fail an action whose entry cannot be written', async () => {
+      integrationLogRepositoryMock.insert.mockRejectedValueOnce(new Error('table missing'))
+
+      const error = await integrationsService.start(integrationIn(IntegrationStatus.STOPPED), admin)
+
+      expect(error).toBeUndefined()
+      expect(integrationRepositoryMock.update).toHaveBeenCalledWith('integration-id', {
+        status: IntegrationStatus.RUNNING,
+      })
+    })
+
+    it("records the organization as the actor of the organization's start, stop, restart and delete", async () => {
+      integrationRepositoryMock.findOne.mockResolvedValueOnce(integrationIn(IntegrationStatus.NEW))
+      await integrationsService.startById(organization, 'integration-id')
+      integrationRepositoryMock.findOne.mockResolvedValueOnce(integrationIn(IntegrationStatus.RUNNING))
+      await integrationsService.stopById(organization, 'integration-id')
+      integrationRepositoryMock.findOne.mockResolvedValueOnce(integrationIn(IntegrationStatus.RUNNING))
+      await integrationsService.restartById(organization, 'integration-id')
+      integrationRepositoryMock.findOne.mockResolvedValueOnce(integrationIn(IntegrationStatus.RUNNING))
+      await integrationsService.delete(organization, 'integration-id')
+
+      expect(entries()).toEqual([
+        entry(IntegrationLogAction.START, IntegrationActorType.ORGANIZATION, 'Org One'),
+        entry(IntegrationLogAction.STOP, IntegrationActorType.ORGANIZATION, 'Org One'),
+        entry(IntegrationLogAction.RESTART, IntegrationActorType.ORGANIZATION, 'Org One'),
+        entry(IntegrationLogAction.DELETE, IntegrationActorType.ORGANIZATION, 'Org One'),
+      ])
+    })
+
+    it('records nothing when nothing is asked of the engine', async () => {
+      integrationRepositoryMock.findOne.mockResolvedValueOnce(integrationIn(IntegrationStatus.RUNNING))
+      await integrationsService.startById(organization, 'integration-id')
+      integrationRepositoryMock.findOne.mockResolvedValueOnce(integrationIn(IntegrationStatus.STOPPED))
+      await integrationsService.stopById(organization, 'integration-id')
+      integrationRepositoryMock.findOne.mockResolvedValueOnce(integrationIn(IntegrationStatus.NEW))
+      await integrationsService.stopById(organization, 'integration-id')
+      integrationRepositoryMock.findOne.mockResolvedValueOnce(integrationIn(IntegrationStatus.READY))
+      await expect(integrationsService.startById(organization, 'integration-id')).rejects.toThrow(ConflictException)
+
+      expect(integrationLogRepositoryMock.insert).not.toHaveBeenCalled()
+    })
+
+    it("records the status job's restarts as the system's, one entry per attempt", async () => {
+      integrationRepositoryMock.find.mockResolvedValue([integrationIn(IntegrationStatus.RUNNING)])
+      clientProxyMock.send.mockImplementationOnce(rejects('engine unreachable')).mockImplementation(resolves)
+
+      await integrationsService.ensureStatusAll({ attempts: 2, backoffMs: 0 })
+
+      expect(SYSTEM_ACTOR).toEqual({ type: IntegrationActorType.SYSTEM, name: 'system' })
+      expect(entries()).toEqual([
+        entry(
+          IntegrationLogAction.RESTART,
+          IntegrationActorType.SYSTEM,
+          'system',
+          'Error stopping integration integration-id: engine unreachable',
+        ),
+        entry(IntegrationLogAction.RESTART, IntegrationActorType.SYSTEM, 'system'),
+      ])
+    })
+
+    it('reads the log newest first, a page at a time', async () => {
+      integrationLogRepositoryMock.findAndCount.mockResolvedValue([[{ id: 3 }, { id: 2 }], 7])
+
+      const page = await integrationsService.findLog('integration-id', 2, 2)
+
+      expect(integrationLogRepositoryMock.findAndCount).toHaveBeenCalledWith({
+        where: { integrationId: 'integration-id' },
+        order: { createdAt: 'DESC', id: 'DESC' },
+        skip: 2,
+        take: 2,
+      })
+      expect(page).toEqual({ total: 7, page: 2, limit: 2, data: [{ id: 3 }, { id: 2 }] })
     })
   })
 

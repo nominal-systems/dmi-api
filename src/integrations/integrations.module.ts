@@ -10,10 +10,11 @@ import activeMQClientProvider from '../common/providers/activemq-client.provider
 import { ProviderConfiguration } from '../providers/entities/provider-configuration.entity'
 import { Provider } from '../providers/entities/provider.entity'
 import { Practice } from '../practices/entities/practice.entity'
+import { IntegrationLogEntry } from './entities/integration-log-entry.entity'
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Integration, ProviderConfiguration, Provider, Practice]),
+    TypeOrmModule.forFeature([Integration, ProviderConfiguration, Provider, Practice, IntegrationLogEntry]),
     ClientsModule.registerAsync([activeMQClientProvider]),
     OrganizationsModule,
     ConfigModule

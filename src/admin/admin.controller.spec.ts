@@ -23,7 +23,7 @@ import { EventsStatsDto } from './dtos/events-stats.dto'
 import { MAX_EVENTS_STATS_RANGE_DAYS, MAX_EVENTS_STATS_RANGE_MS } from './admin-utils'
 import { PaginationResult } from '../common/classes/pagination-result'
 import { ProviderExternalRequests } from '../providers/entities/provider-external-requests.entity'
-import { ArgumentMetadata, BadRequestException, ValidationPipe } from '@nestjs/common'
+import { ArgumentMetadata, BadRequestException, NotFoundException, ValidationPipe } from '@nestjs/common'
 import { PAGINATION_PAGE_LIMIT } from '../common/constants/pagination.constant'
 import {
   InternalEventLoggingService,
@@ -34,6 +34,8 @@ import { OidcAuthGuard } from '../common/guards/oidc-auth.guard'
 import { AdminJwtAuthGuard } from '../common/guards/admin-jwt-auth.guard'
 import { OktaJwtAuthGuard } from '../common/guards/okta-jwt-auth.guard'
 import { ProviderConfiguration } from '../providers/entities/provider-configuration.entity'
+import { IntegrationStatus } from '../integrations/constants/integration-status.enum'
+import { IntegrationActorType } from '../integrations/constants/integration-log.constants'
 
 describe('AdminController', () => {
   let adminController: AdminController
@@ -910,6 +912,100 @@ describe('AdminController', () => {
 
     it('rejects missing groupBy with BadRequestException', async () => {
       await expect(validationPipe.transform({}, metadata)).rejects.toBeInstanceOf(BadRequestException)
+    })
+  })
+
+  describe('integration start, stop, restart, delete and log (#306)', () => {
+    const okta = { profile: { username: 'jane.doe' } }
+    const jwt = { sub: 'Admin' }
+    const integrationIn = (status: IntegrationStatus): any => ({ id: 'integration-id', status })
+    const integrationsServiceMock = {
+      findOne: jest.fn(),
+      start: jest.fn(),
+      stop: jest.fn(),
+      restart: jest.fn(),
+      doDelete: jest.fn(),
+      findLog: jest.fn(),
+    }
+    const queryBuilder: any = {
+      leftJoinAndSelect: jest.fn(() => queryBuilder),
+      where: jest.fn(() => queryBuilder),
+      withDeleted: jest.fn(() => queryBuilder),
+      getOne: jest.fn(),
+    }
+    const integrationsRepositoryMock = {
+      createQueryBuilder: jest.fn(() => queryBuilder),
+      findOne: jest.fn(),
+    }
+    const reply = (): any => {
+      const res: any = { status: jest.fn(() => res), send: jest.fn(() => res) }
+      return res
+    }
+
+    beforeEach(() => {
+      Object.values(integrationsServiceMock).forEach((mock) => mock.mockReset())
+      queryBuilder.getOne.mockReset()
+      integrationsRepositoryMock.findOne.mockReset()
+      ;(adminController as any).integrationsService = integrationsServiceMock
+      ;(adminController as any).integrationsRepository = integrationsRepositoryMock
+    })
+
+    it.each([
+      [okta, 'jane.doe'],
+      [jwt, 'Admin'],
+    ])('starts, stops and restarts as the admin who asked (%j is %s), and answers as before', async (user, name) => {
+      const actor = { type: IntegrationActorType.ADMIN, name }
+      integrationsServiceMock.findOne.mockResolvedValue(integrationIn(IntegrationStatus.STOPPED))
+      const started = reply()
+      await adminController.startIntegration(started, 'integration-id', user)
+      expect(integrationsServiceMock.start).toHaveBeenCalledWith(integrationIn(IntegrationStatus.STOPPED), actor)
+      expect(started.status).toHaveBeenCalledWith(201)
+      expect(started.send).toHaveBeenCalledWith({ ok: 'Integration started' })
+
+      queryBuilder.getOne.mockResolvedValue(integrationIn(IntegrationStatus.RUNNING))
+      const stopped = reply()
+      await adminController.stopIntegration(stopped, 'integration-id', false, user)
+      expect(integrationsServiceMock.stop).toHaveBeenCalledWith(integrationIn(IntegrationStatus.RUNNING), actor)
+      expect(stopped.send).toHaveBeenCalledWith({ ok: 'Integration stopped' })
+
+      integrationsServiceMock.findOne.mockResolvedValue(integrationIn(IntegrationStatus.RUNNING))
+      const restarted = reply()
+      await adminController.restartIntegration(restarted, 'integration-id', user)
+      expect(integrationsServiceMock.restart).toHaveBeenCalledWith(integrationIn(IntegrationStatus.RUNNING), actor)
+      expect(restarted.send).toHaveBeenCalledWith({ ok: 'Integration restarted' })
+
+      await adminController.deleteIntegration('integration-id', user)
+      expect(integrationsServiceMock.doDelete).toHaveBeenCalledWith(integrationIn(IntegrationStatus.RUNNING), actor)
+    })
+
+    it('answers a failed start with its message, as before', async () => {
+      integrationsServiceMock.findOne.mockResolvedValue(integrationIn(IntegrationStatus.STOPPED))
+      integrationsServiceMock.start.mockResolvedValue(new Error('Error starting integration integration-id'))
+      const res = reply()
+
+      await adminController.startIntegration(res, 'integration-id', jwt)
+
+      expect(res.status).toHaveBeenCalledWith(400)
+      expect(res.send).toHaveBeenCalledWith({ error: 'Error starting integration integration-id' })
+    })
+
+    it('reads the log of an integration, deleted or not', async () => {
+      const page = { total: 1, page: 2, limit: 5, data: [{ id: 1 }] }
+      integrationsRepositoryMock.findOne.mockResolvedValue(integrationIn(IntegrationStatus.STOPPED))
+      integrationsServiceMock.findLog.mockResolvedValue(page)
+
+      await expect(adminController.getIntegrationLog('integration-id', { page: 2, limit: 5 })).resolves.toEqual(page)
+      expect(integrationsRepositoryMock.findOne).toHaveBeenCalledWith({ where: { id: 'integration-id' }, withDeleted: true })
+      expect(integrationsServiceMock.findLog).toHaveBeenCalledWith('integration-id', 2, 5)
+    })
+
+    it('answers 404 for the log of an integration that does not exist', async () => {
+      integrationsRepositoryMock.findOne.mockResolvedValue(null)
+
+      await expect(adminController.getIntegrationLog('missing', { page: 1, limit: 10 })).rejects.toThrow(
+        new NotFoundException('The integration was not found'),
+      )
+      expect(integrationsServiceMock.findLog).not.toHaveBeenCalled()
     })
   })
 })

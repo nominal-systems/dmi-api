@@ -15,6 +15,7 @@ import { ProviderConfiguration } from '../entities/provider-configuration.entity
 import { Provider } from '../entities/provider.entity'
 import { ProviderOption } from '../entities/provider-option.entity'
 import { Practice } from '../../practices/entities/practice.entity'
+import { IntegrationLogEntry } from '../../integrations/entities/integration-log-entry.entity'
 import { BadRequestException, GatewayTimeoutException, HttpException, NotFoundException } from '@nestjs/common'
 import { ProviderError } from '@nominal-systems/dmi-engine-common'
 import { of, throwError } from 'rxjs'
@@ -72,6 +73,10 @@ describe('ProvidersService', () => {
         },
         {
           provide: getRepositoryToken(Practice),
+          useValue: {}
+        },
+        {
+          provide: getRepositoryToken(IntegrationLogEntry),
           useValue: {}
         },
         {

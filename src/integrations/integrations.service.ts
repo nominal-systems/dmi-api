@@ -23,6 +23,15 @@ import { IntegrationTestResponse, Operation, Resource } from '@nominal-systems/d
 import { IntegrationStatus } from './constants/integration-status.enum'
 import { Provider } from '../providers/entities/provider.entity'
 import { Practice } from '../practices/entities/practice.entity'
+import { describeError } from '../common/utils/describe-error'
+import { PaginationResult } from '../common/classes/pagination-result'
+import { IntegrationLogEntry } from './entities/integration-log-entry.entity'
+import {
+  IntegrationActor,
+  IntegrationLogAction,
+  organizationActor,
+  SYSTEM_ACTOR,
+} from './constants/integration-log.constants'
 
 const DEFAULT_RESTART_CONCURRENCY = 5
 const DEFAULT_RESTART_ATTEMPTS = 3
@@ -44,6 +53,17 @@ export const ORGANIZATION_STARTABLE_STATUSES: readonly string[] = [
 /** What an organization's start or stop answers when it succeeds, in the shape the admin routes use. */
 export interface IntegrationActionAnswer {
   ok: string
+}
+
+/**
+ * A failed start or stop. The message is what the routes answer, as before; the reason is the engine round trip's
+ * own error, which the integration's log records with it (#306).
+ */
+export class IntegrationEngineError extends Error {
+  constructor (message: string, readonly reason: string) {
+    super(message)
+    this.name = IntegrationEngineError.name
+  }
 }
 
 export interface EnsureStatusOptions {
@@ -88,6 +108,8 @@ export class IntegrationsService {
     private readonly providerRepository: Repository<Provider>,
     @InjectRepository(Practice)
     private readonly practiceRepository: Repository<Practice>,
+    @InjectRepository(IntegrationLogEntry)
+    private readonly integrationLogRepository: Repository<IntegrationLogEntry>,
     @Inject('ACTIVEMQ') private readonly client: ClientProxy,
   ) {
     this.secretKey = this.configService.get('secretKey') ?? ''
@@ -203,7 +225,14 @@ export class IntegrationsService {
     return await this.findOne({ id: integrationId })
   }
 
-  async restart(integration: Integration): Promise<Error | undefined> {
+  /** Stops the integration and, if it was running, starts it again: one entry in its log. */
+  async restart(integration: Integration, actor: IntegrationActor): Promise<Error | undefined> {
+    return await this.recorded(integration, IntegrationLogAction.RESTART, actor, async () => {
+      return await this.stopThenStart(integration)
+    })
+  }
+
+  private async stopThenStart(integration: Integration): Promise<Error | undefined> {
     const previousStatus = integration.status
     const responseStop = await this.doStop(integration)
     if (responseStop?.message !== undefined) {
@@ -247,7 +276,7 @@ export class IntegrationsService {
         `Integration ${integration.id} is NEW and cannot be restarted with an organization key`,
       )
     }
-    return await this.restart(integration)
+    return await this.restart(integration, organizationActor(organization))
   }
 
   /**
@@ -269,11 +298,7 @@ export class IntegrationsService {
       )
     }
 
-    const error = await this.doStart(
-      integration.id,
-      integration.providerConfiguration,
-      integration.integrationOptions,
-    )
+    const error = await this.start(integration, organizationActor(organization))
     if (error !== undefined) {
       throw new BadGatewayException(error.message)
     }
@@ -297,7 +322,7 @@ export class IntegrationsService {
       return { ok: 'Integration has not been started' }
     }
 
-    const error = await this.doStop(integration)
+    const error = await this.stop(integration, organizationActor(organization))
     if (error !== undefined) {
       throw new BadGatewayException(error.message)
     }
@@ -334,7 +359,7 @@ export class IntegrationsService {
       return
     }
 
-    await this.doDelete(integration)
+    await this.doDelete(integration, organizationActor(organization))
   }
 
   /**
@@ -456,7 +481,7 @@ export class IntegrationsService {
 
     for (let attempt = 1; attempt <= attempts; attempt++) {
       try {
-        lastError = await this.restart(integration)
+        lastError = await this.restart(integration, SYSTEM_ACTOR)
       } catch (e) {
         lastError = e instanceof Error ? e : new Error(String(e))
       }
@@ -477,11 +502,93 @@ export class IntegrationsService {
     return lastError
   }
 
-  async doDelete(integration: Integration): Promise<void> {
-    // Soft-delete the integration
-    await this.doStop(integration)
-    await this.integrationsRepository.softDelete(integration.id)
-    this.logger.log(`Deleted Integration: ${integration.id}`)
+  /**
+   * Stops and soft-deletes the integration. The delete goes ahead when the stop fails, as it always has; the log
+   * entry then carries the stop's error, since the engine may still be polling for it.
+   */
+  async doDelete(integration: Integration, actor: IntegrationActor): Promise<void> {
+    await this.recorded(integration, IntegrationLogAction.DELETE, actor, async () => {
+      const stopError = await this.doStop(integration)
+      await this.integrationsRepository.softDelete(integration.id)
+      this.logger.log(`Deleted Integration: ${integration.id}`)
+      return stopError
+    })
+  }
+
+  /** Asks the engine to schedule the integration's jobs and marks it RUNNING: one entry in its log. */
+  async start(integration: Integration, actor: IntegrationActor): Promise<Error | undefined> {
+    return await this.recorded(integration, IntegrationLogAction.START, actor, async () => {
+      return await this.doStart(
+        integration.id,
+        integration.providerConfiguration,
+        integration.integrationOptions,
+      )
+    })
+  }
+
+  /** Asks the engine to remove the integration's jobs and marks it STOPPED: one entry in its log. */
+  async stop(integration: Integration, actor: IntegrationActor): Promise<Error | undefined> {
+    return await this.recorded(integration, IntegrationLogAction.STOP, actor, async () => {
+      return await this.doStop(integration)
+    })
+  }
+
+  /** The integration's log, newest first (#306). */
+  async findLog(
+    integrationId: string,
+    page: number,
+    limit: number,
+  ): Promise<PaginationResult<IntegrationLogEntry>> {
+    const [data, total] = await this.integrationLogRepository.findAndCount({
+      where: { integrationId },
+      order: { createdAt: 'DESC', id: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    })
+    return { total, page, limit, data }
+  }
+
+  /**
+   * Runs one action on the integration and records it in the integration's log, whether it succeeded, failed or
+   * threw. A log entry that cannot be written is logged and does not fail the action, which has happened.
+   */
+  private async recorded(
+    integration: Integration,
+    action: IntegrationLogAction,
+    actor: IntegrationActor,
+    run: () => Promise<Error | undefined>,
+  ): Promise<Error | undefined> {
+    let error: unknown
+    try {
+      error = await run()
+      return error as Error | undefined
+    } catch (thrown) {
+      error = thrown
+      throw thrown
+    } finally {
+      await this.record(integration.id, action, actor, error)
+    }
+  }
+
+  private async record(
+    integrationId: string,
+    action: IntegrationLogAction,
+    actor: IntegrationActor,
+    error: unknown,
+  ): Promise<void> {
+    try {
+      await this.integrationLogRepository.insert({
+        integrationId,
+        action,
+        actorType: actor.type,
+        actor: actor.name,
+        error: error === undefined ? null : describeLoggedError(error),
+      })
+    } catch (e) {
+      this.logger.error(
+        `Failed to record the ${action} of integration ${integrationId} by ${actor.type} ${actor.name}: ${describeError(e)}`,
+      )
+    }
   }
 
   async doStop(integration: Integration): Promise<Error | undefined> {
@@ -506,7 +613,7 @@ export class IntegrationsService {
         status: IntegrationStatus.STOPPED,
       })
     } catch (e) {
-      return new Error(`Error stopping integration ${integration.id}`)
+      return new IntegrationEngineError(`Error stopping integration ${integration.id}`, describeError(e))
     }
   }
 
@@ -532,7 +639,7 @@ export class IntegrationsService {
       await this.client.send(messagePattern, message).toPromise()
       await this.integrationsRepository.update(integrationId, { status: IntegrationStatus.RUNNING })
     } catch (e) {
-      return new Error(`Error starting integration ${integrationId}`)
+      return new IntegrationEngineError(`Error starting integration ${integrationId}`, describeError(e))
     }
   }
 
@@ -623,4 +730,12 @@ export class IntegrationsService {
       }
     }
   }
+}
+
+// What an integration's log says about a failure: the message, and the engine's reason when there is one
+function describeLoggedError (error: unknown): string {
+  if (error instanceof IntegrationEngineError) {
+    return `${error.message}: ${error.reason}`
+  }
+  return describeError(error)
 }
