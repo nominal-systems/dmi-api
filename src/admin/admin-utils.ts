@@ -7,9 +7,14 @@ export const DEFAULT_EVENTS_RANGE_MS = 24 * 60 * 60 * 1000
 export const MAX_EVENTS_RANGE_DAYS = 31
 // +1h tolerance so a 31-calendar-day local range spanning a fall-back DST transition is accepted.
 export const MAX_EVENTS_RANGE_DST_TOLERANCE_MS = 60 * 60 * 1000
-export const MAX_EVENTS_RANGE_MS = MAX_EVENTS_RANGE_DAYS * 24 * 60 * 60 * 1000 + MAX_EVENTS_RANGE_DST_TOLERANCE_MS
+
+export function maxDateRangeMs (maxRangeDays: number): number {
+  return maxRangeDays * 24 * 60 * 60 * 1000 + MAX_EVENTS_RANGE_DST_TOLERANCE_MS
+}
+
+export const MAX_EVENTS_RANGE_MS = maxDateRangeMs(MAX_EVENTS_RANGE_DAYS)
 export const MAX_EVENTS_STATS_RANGE_DAYS = 2
-export const MAX_EVENTS_STATS_RANGE_MS = MAX_EVENTS_STATS_RANGE_DAYS * 24 * 60 * 60 * 1000 + MAX_EVENTS_RANGE_DST_TOLERANCE_MS
+export const MAX_EVENTS_STATS_RANGE_MS = maxDateRangeMs(MAX_EVENTS_STATS_RANGE_DAYS)
 
 export function resolveBoundedDateRange (
   startDate?: string,
@@ -34,7 +39,7 @@ export function resolveBoundedDateRange (
     throw new BadRequestException('startDate must be before or equal to endDate')
   }
 
-  const maxRangeMs = maxRangeDays * 24 * 60 * 60 * 1000 + MAX_EVENTS_RANGE_DST_TOLERANCE_MS
+  const maxRangeMs = maxDateRangeMs(maxRangeDays)
   if (end.getTime() - start.getTime() > maxRangeMs) {
     throw new BadRequestException(`Date range cannot exceed ${maxRangeDays} days`)
   }

@@ -808,6 +808,41 @@ describe('AdminController', () => {
       expect(eventsServiceStatsMock.stats).not.toHaveBeenCalled()
     })
 
+    it('accepts literal fall-back DST today and 2-day ranges and rejects a 3-day range', async () => {
+      eventsServiceStatsMock.stats.mockResolvedValue([])
+
+      await adminController.getEventsStats({
+        startDate: '2026-11-01T05:00:00.000Z',
+        endDate: '2026-11-02T05:59:59.999Z',
+        groupBy: 'type',
+        page: 1,
+        limit: 10,
+      })
+
+      await adminController.getEventsStats({
+        startDate: '2026-11-01T05:00:00.000Z',
+        endDate: '2026-11-03T06:00:00.000Z',
+        groupBy: 'type',
+        page: 1,
+        limit: 10,
+      })
+
+      expect(eventsServiceStatsMock.stats).toHaveBeenCalledTimes(2)
+      eventsServiceStatsMock.stats.mockClear()
+
+      await expect(
+        adminController.getEventsStats({
+          startDate: '2026-11-01T05:00:00.000Z',
+          endDate: '2026-11-04T05:00:00.000Z',
+          groupBy: 'type',
+          page: 1,
+          limit: 10,
+        }),
+      ).rejects.toThrow(new BadRequestException('Date range cannot exceed 2 days'))
+
+      expect(eventsServiceStatsMock.stats).not.toHaveBeenCalled()
+    })
+
     it.each(['seq', '_id', '$type', 'data.id', 'type, seq'])(
       'rejects disallowed groupBy field (%s) without querying stats',
       async (groupBy) => {
