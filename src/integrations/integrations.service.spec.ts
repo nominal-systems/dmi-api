@@ -568,9 +568,9 @@ describe('IntegrationsService', () => {
       )
     })
 
-    /* Whether an organization may start a NEW integration is still open, and limiting start to integrations that
-     * have run before must stay one change: taking NEW out of ORGANIZATION_STARTABLE_STATUSES. Restart has to
-     * follow it, or a restart would stop the NEW integration, leave it STOPPED, and let start take it. */
+    /* An organization may start a NEW integration. Limiting start to integrations that have run before stays one
+     * change: taking NEW out of ORGANIZATION_STARTABLE_STATUSES. Restart has to follow it, or a restart would stop
+     * the NEW integration, leave it STOPPED, and let start take it. */
     describe('the NEW rule is one list', () => {
       it('while NEW is in it, a restart of a NEW integration stops it, as it always has', async () => {
         integrationRepositoryMock.findOne.mockResolvedValue(integrationIn(IntegrationStatus.NEW))
