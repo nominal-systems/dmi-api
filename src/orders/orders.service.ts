@@ -53,6 +53,7 @@ import { isThrottledError } from '../common/utils/cosmos-throttling'
 import { matchesStoredValue } from '../common/utils/matches-stored-value'
 import { isNullOrEmpty } from '../common/utils/shared.utils'
 import { createHash } from 'crypto'
+import { CancellationTarget, cancellationNotSupported } from './cancellation-not-supported'
 
 // Each EventData payload without the practice and order id, which addOrderEvent fills in
 type OrderEventExtraData<T extends EventData = EventData> = T extends unknown
@@ -378,7 +379,7 @@ export class OrdersService {
       },
     })
     this.logger.log(`Sending '${messagePattern}' to '${providerId}' provider`)
-    await this.client.send(messagePattern, message).toPromise()
+    await this.sendCancellation(messagePattern, message, order, providerId, 'order')
 
     // TODO(gb): also mark as deleted in the DB?
     order.status = OrderStatus.CANCELLED
@@ -474,12 +475,44 @@ export class OrdersService {
       },
     })
 
-    await this.client.send(messagePattern, message).toPromise()
+    await this.sendCancellation(
+      messagePattern,
+      message,
+      order,
+      providerConfiguration.providerId,
+      'test',
+    )
 
     await this.ordersRepository.save({
       ...order,
       tests: [...order.tests, ...tests],
     })
+  }
+
+  // Sends a cancel to the provider's engine. A provider that cannot cancel is answered 409 with the
+  // CANCELLATION_NOT_SUPPORTED token (#304); any other failure is thrown as it came. Either way the caller
+  // stops before the order is changed.
+  private async sendCancellation(
+    messagePattern: string,
+    message: unknown,
+    order: Order,
+    providerId: string,
+    target: CancellationTarget,
+  ): Promise<void> {
+    try {
+      await this.client.send(messagePattern, message).toPromise()
+    } catch (error) {
+      const refusal = cancellationNotSupported(error, providerId, target)
+      if (refusal === undefined) {
+        throw error
+      }
+      const what = target === 'order' ? 'order' : 'a test on order'
+      const said = JSON.stringify(error.response.message)
+      this.logger.warn(
+        `The provider '${providerId}' cannot cancel ${what} ${order.id} (accession ${order.requisitionId}): ${said}`,
+      )
+      throw refusal
+    }
   }
 
   async handleExternalOrders({ integrationId, orders }: ExternalOrdersEventData): Promise<void> {

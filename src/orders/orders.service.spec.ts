@@ -26,7 +26,14 @@ import {
   CreateOrderDtoClient,
   CreateOrderDtoPatient,
 } from './dtos/create-order.dto'
-import { ForbiddenException, HttpException, Logger, NotFoundException } from '@nestjs/common'
+import {
+  ConflictException,
+  ForbiddenException,
+  HttpException,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common'
+import { CANCELLATION_NOT_SUPPORTED } from './cancellation-not-supported'
 import { v4 as uuidv4 } from 'uuid'
 import { Patient } from './entities/patient.entity'
 import { ProvidersService } from '../providers/services/providers.service'
@@ -917,6 +924,243 @@ describe('OrdersService', () => {
           data: { practice, orderId: ORDER_ID, reportId: 'report-1', report: { id: 'report-1' } },
         })
         expect(errorSpy).not.toHaveBeenCalled()
+      })
+    })
+  })
+
+  // A provider that cannot cancel is answered 409 with a token the caller can act on (#304)
+  describe('cancelling', () => {
+    // An engine's error reply arrives as parsed JSON, not as the class it was thrown as.
+    const overTheWire = (error: unknown): any => JSON.parse(JSON.stringify(error))
+    // What the antech-v6 engine answers both cancel routes with, before any request to Antech
+    const notImplemented = (message: string): any =>
+      overTheWire(
+        new ProviderError({
+          provider: 'antech-v6',
+          code: 501,
+          message,
+          error: ['Not Implemented'],
+        }),
+      )
+    const ORGANIZATION = { id: 'org-1' } as any
+    const storedOrder = (): any => ({
+      id: 'order-1',
+      externalId: 'ext-1',
+      requisitionId: 'req-1',
+      status: OrderStatus.SUBMITTED,
+      tests: [{ code: 'T1' }, { code: 'T2' }],
+      integration: {
+        id: 'integration-1',
+        practice: { id: 'practice-1' },
+        integrationOptions: {},
+        providerConfiguration: {
+          organizationId: 'org-1',
+          providerId: 'antech-v6',
+          configurationOptions: {},
+        },
+      },
+    })
+    const failure = async (attempt: Promise<unknown>): Promise<any> =>
+      await attempt.then(
+        () => {
+          throw new Error('expected the cancel to fail')
+        },
+        (error) => error,
+      )
+    let order: any
+    let warnSpy: jest.SpyInstance
+
+    beforeEach(() => {
+      order = storedOrder()
+      jest.spyOn(ordersService, 'findOne').mockResolvedValue(order)
+      jest.spyOn(clientMock, 'send').mockReturnValue(customPromise)
+      warnSpy = jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined)
+    })
+
+    afterEach(() => {
+      warnSpy.mockRestore()
+    })
+
+    describe('cancelOrder()', () => {
+      it('answers 409 with CANCELLATION_NOT_SUPPORTED, naming the provider, when the provider cannot cancel', async () => {
+        customPromise.toPromise.mockRejectedValueOnce(
+          notImplemented('Antech V6 API does not support cancelling orders.'),
+        )
+
+        const error = await failure(ordersService.cancelOrder(ORGANIZATION, 'order-1'))
+
+        expect(error).toBeInstanceOf(ConflictException)
+        expect(error.getStatus()).toEqual(409)
+        expect(error.message).toEqual(
+          'The provider antech-v6 does not support cancelling orders. The order was not cancelled.',
+        )
+        expect(error.getResponse().message).toEqual([CANCELLATION_NOT_SUPPORTED])
+        expect(error.cause).toEqual(
+          expect.objectContaining({
+            name: 'ProviderError',
+            response: expect.objectContaining({ code: 501 }),
+          }),
+        )
+      })
+
+      it('leaves the order as it was, and emits nothing, when the provider cannot cancel', async () => {
+        customPromise.toPromise.mockRejectedValueOnce(
+          notImplemented('Antech V6 API does not support cancelling orders.'),
+        )
+
+        await failure(ordersService.cancelOrder(ORGANIZATION, 'order-1'))
+
+        expect(order.status).toEqual(OrderStatus.SUBMITTED)
+        expect(ordersRepositoryMock.save).not.toHaveBeenCalled()
+        expect(eventsServiceMock.addEvent).not.toHaveBeenCalled()
+      })
+
+      it("logs the provider's own words with the order", async () => {
+        customPromise.toPromise.mockRejectedValueOnce(
+          notImplemented('Antech V6 API does not support cancelling orders.'),
+        )
+
+        await failure(ordersService.cancelOrder(ORGANIZATION, 'order-1'))
+
+        expect(warnSpy).toHaveBeenCalledWith(
+          `The provider 'antech-v6' cannot cancel order order-1 (accession req-1): "Antech V6 API does not support cancelling orders."`,
+        )
+      })
+
+      it('throws any other provider error as it came', async () => {
+        const providerError = overTheWire(
+          new ProviderError({
+            provider: 'idexx',
+            code: 500,
+            message: 'Internal Server Error',
+            error: ['A request to /api/v1/orders/ext-1 failed with 500 status code.'],
+          }),
+        )
+        customPromise.toPromise.mockRejectedValueOnce(providerError)
+
+        const error = await failure(ordersService.cancelOrder(ORGANIZATION, 'order-1'))
+
+        expect(error).toBe(providerError)
+        expect(ordersRepositoryMock.save).not.toHaveBeenCalled()
+      })
+
+      it('throws a 501 that is not a ProviderError as it came', async () => {
+        const engineError = {
+          status: 501,
+          message: 'Not Implemented',
+          response: { message: 'Not Implemented' },
+        }
+        customPromise.toPromise.mockRejectedValueOnce(engineError)
+
+        const error = await failure(ordersService.cancelOrder(ORGANIZATION, 'order-1'))
+
+        expect(error).toBe(engineError)
+        expect(ordersRepositoryMock.save).not.toHaveBeenCalled()
+      })
+
+      it("refuses another organization's order with 403, before anything is sent to the provider", async () => {
+        const error = await failure(ordersService.cancelOrder({ id: 'org-2' } as any, 'order-1'))
+
+        expect(error).toBeInstanceOf(ForbiddenException)
+        expect(clientMock.send).not.toHaveBeenCalled()
+        expect(ordersRepositoryMock.save).not.toHaveBeenCalled()
+      })
+
+      it('marks the order CANCELLED and emits order:updated when the provider cancels', async () => {
+        customPromise.toPromise.mockResolvedValueOnce(undefined)
+
+        await ordersService.cancelOrder(ORGANIZATION, 'order-1')
+
+        expect(ordersRepositoryMock.save).toHaveBeenCalledWith(
+          expect.objectContaining({ id: 'order-1', status: OrderStatus.CANCELLED }),
+        )
+        expect(eventsServiceMock.addEvent).toHaveBeenCalledWith(
+          expect.objectContaining({
+            type: EventType.ORDER_UPDATED,
+            data: expect.objectContaining({ orderId: 'order-1', status: OrderStatus.CANCELLED }),
+          }),
+        )
+      })
+    })
+
+    describe('cancelOrderTests()', () => {
+      const cancel = async (): Promise<void> =>
+        await ordersService.cancelOrderTests({
+          orderId: 'order-1',
+          tests: [{ code: 'T2' } as any],
+          organizationId: 'org-1',
+        })
+
+      it('answers 409 with CANCELLATION_NOT_SUPPORTED, naming the provider, when the provider cannot cancel', async () => {
+        customPromise.toPromise.mockRejectedValueOnce(
+          notImplemented('Antech V6 API does not support cancelling individual tests.'),
+        )
+
+        const error = await failure(cancel())
+
+        expect(error).toBeInstanceOf(ConflictException)
+        expect(error.getStatus()).toEqual(409)
+        expect(error.message).toEqual(
+          'The provider antech-v6 does not support cancelling individual tests. The test was not cancelled.',
+        )
+        expect(error.getResponse().message).toEqual([CANCELLATION_NOT_SUPPORTED])
+      })
+
+      it('leaves the order as it was when the provider cannot cancel', async () => {
+        customPromise.toPromise.mockRejectedValueOnce(
+          notImplemented('Antech V6 API does not support cancelling individual tests.'),
+        )
+
+        await failure(cancel())
+
+        expect(order.tests).toEqual([{ code: 'T1' }, { code: 'T2' }])
+        expect(ordersRepositoryMock.save).not.toHaveBeenCalled()
+      })
+
+      it('throws any other provider error as it came', async () => {
+        const providerError = overTheWire(
+          new ProviderError({
+            provider: 'zoetis',
+            code: 404,
+            message: 'Not Found',
+            error: ['A request to /orders/ext-1/tests/T2 failed with 404 status code.'],
+          }),
+        )
+        customPromise.toPromise.mockRejectedValueOnce(providerError)
+
+        const error = await failure(cancel())
+
+        expect(error).toBe(providerError)
+        expect(ordersRepositoryMock.save).not.toHaveBeenCalled()
+      })
+
+      it("looks the order up in the caller's organization, and sends nothing when it is not there (404)", async () => {
+        jest
+          .spyOn(ordersService, 'findOne')
+          .mockRejectedValueOnce(new NotFoundException('The order was not found'))
+
+        const error = await failure(cancel())
+
+        expect(error).toBeInstanceOf(NotFoundException)
+        expect(ordersService.findOne).toHaveBeenCalledWith(
+          expect.objectContaining({
+            options: expect.objectContaining({
+              where: {
+                id: 'order-1',
+                integration: { providerConfiguration: { organizationId: 'org-1' } },
+              },
+            }),
+          }),
+        )
+        expect(clientMock.send).not.toHaveBeenCalled()
+      })
+
+      it('saves the order when the provider cancels', async () => {
+        customPromise.toPromise.mockResolvedValueOnce(undefined)
+
+        await cancel()
+
+        expect(ordersRepositoryMock.save).toHaveBeenCalledTimes(1)
       })
     })
   })
