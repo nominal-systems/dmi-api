@@ -15,6 +15,9 @@ import { PublishedEvent } from '../interfaces/published-event.interface'
 import { DeliveryOptions } from '../interfaces/delivery-options.interface'
 import { retryWhenThrottled } from '../../common/utils/cosmos-throttling'
 
+// The highest total countCapped reports; above it the total is flagged as capped.
+export const EVENTS_COUNT_CAP = 1000
+
 @Injectable()
 export class EventsService implements OnModuleInit {
   private readonly logger = new Logger(EventsService.name)
@@ -56,7 +59,8 @@ export class EventsService implements OnModuleInit {
     const docs = await this.eventModel.find(query, { __v: 0, data: 0 }, {
       limit: limit,
       skip: (page - 1) * limit,
-      sort: { seq: -1 },
+      // Sort on createdAt to share the createdAt_1 index with the date range filter in Cosmos DB (no compound _id index exists).
+      sort: { createdAt: -1 },
       lean: true
     })
     return docs.map(stringifyId)
@@ -66,6 +70,17 @@ export class EventsService implements OnModuleInit {
     query: FilterQuery<EventDocument>
   ): Promise<number> {
     return await this.eventModel.countDocuments(query)
+  }
+
+  // Stops the count scan at cap + 1 docs ($match -> $limit -> $group) so wide filters cannot starve Cosmos DB writes.
+  async countCapped (
+    query: FilterQuery<EventDocument>,
+    cap: number = EVENTS_COUNT_CAP
+  ): Promise<{ total: number, capped: boolean }> {
+    const count = await this.eventModel.countDocuments(query, { limit: cap + 1 })
+    return count > cap
+      ? { total: cap, capped: true }
+      : { total: count, capped: false }
   }
 
   async addEvent (

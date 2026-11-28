@@ -2,7 +2,7 @@ import { Logger } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { getModelToken } from '@nestjs/mongoose'
 import { ModuleRef } from '@nestjs/core'
-import { EventsService } from './events.service'
+import { EVENTS_COUNT_CAP, EventsService } from './events.service'
 import { EventSubscriptionService } from './event-subscription.service'
 import { PracticesService } from '../../practices/practices.service'
 import { Event } from '../entities/event.entity'
@@ -227,6 +227,64 @@ describe('EventsService', () => {
 
       await expect(service.addEvent({ type: 'order:created' } as AddEventDto)).resolves.toBe(created)
       expect(eventSubscriptionServiceMock.notifySubscriptions).toHaveBeenCalledWith(created, undefined)
+    })
+  })
+
+  describe('find()', () => {
+    it('sorts by createdAt descending, applies pagination, and stringifies ids', async () => {
+      const query = { createdAt: { $gte: new Date('2026-09-30T00:00:00Z'), $lte: new Date('2026-10-01T00:00:00Z') } }
+      eventModelMock.find.mockResolvedValueOnce([{ _id: 123, type: 'order:created' }])
+
+      const result = await service.find(query, { page: 2, limit: 20 })
+
+      expect(eventModelMock.find).toHaveBeenCalledWith(
+        query,
+        { __v: 0, data: 0 },
+        { limit: 20, skip: 20, sort: { createdAt: -1 }, lean: true }
+      )
+      expect(result).toEqual([{ _id: '123', type: 'order:created' }])
+    })
+  })
+
+  describe('countCapped()', () => {
+    it('stops one past the default cap', async () => {
+      const query = { providerId: { $in: ['idexx'] } }
+      eventModelMock.countDocuments.mockResolvedValueOnce(0)
+
+      await service.countCapped(query)
+
+      expect(eventModelMock.countDocuments).toHaveBeenCalledWith(query, { limit: EVENTS_COUNT_CAP + 1 })
+    })
+
+    it('returns { total: 0, capped: false } when no documents match', async () => {
+      eventModelMock.countDocuments.mockResolvedValueOnce(0)
+
+      await expect(service.countCapped({})).resolves.toEqual({ total: 0, capped: false })
+    })
+
+    it('returns the exact count when below the cap', async () => {
+      eventModelMock.countDocuments.mockResolvedValueOnce(42)
+
+      await expect(service.countCapped({})).resolves.toEqual({ total: 42, capped: false })
+    })
+
+    it('reports a total of exactly the cap as not capped', async () => {
+      eventModelMock.countDocuments.mockResolvedValueOnce(EVENTS_COUNT_CAP)
+
+      await expect(service.countCapped({})).resolves.toEqual({ total: EVENTS_COUNT_CAP, capped: false })
+    })
+
+    it('caps the total and flags capped when count exceeds the cap', async () => {
+      eventModelMock.countDocuments.mockResolvedValueOnce(EVENTS_COUNT_CAP + 1)
+
+      await expect(service.countCapped({})).resolves.toEqual({ total: EVENTS_COUNT_CAP, capped: true })
+    })
+
+    it('respects a custom cap', async () => {
+      eventModelMock.countDocuments.mockResolvedValueOnce(51)
+
+      await expect(service.countCapped({ type: 'order:created' }, 50)).resolves.toEqual({ total: 50, capped: true })
+      expect(eventModelMock.countDocuments).toHaveBeenCalledWith({ type: 'order:created' }, { limit: 51 })
     })
   })
 })

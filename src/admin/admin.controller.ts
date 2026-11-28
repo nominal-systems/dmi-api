@@ -38,7 +38,7 @@ import { ReferenceDataQueryParams } from '../providers/dtos/reference-data-query
 import { RefsService } from '../refs/refs.service'
 import { ProviderOptionDto } from '../providers/dtos/provider-option.dto'
 import { ProvidersService } from '../providers/services/providers.service'
-import { EventsService } from '../events/services/events.service'
+import { EVENTS_COUNT_CAP, EventsService } from '../events/services/events.service'
 import { Event, EventDocument } from '../events/entities/event.entity'
 import { Ref } from '../refs/entities/ref.entity'
 import { Provider } from '../providers/entities/provider.entity'
@@ -52,7 +52,7 @@ import { FilterQuery } from 'mongoose'
 import { PaginationResult } from '../common/classes/pagination-result'
 import { PaginationDto } from '../common/dtos/pagination.dto'
 import { PAGINATION_PAGE_LIMIT } from '../common/constants/pagination.constant'
-import { getRequestedBy, getStatusRanges, toDeliveryResponse } from './admin-utils'
+import { getRequestedBy, getStatusRanges, resolveBoundedDateRange, toDeliveryResponse } from './admin-utils'
 import { IntegrationsSearch } from '../providers/dtos/integrations-search.dto'
 import { Practice } from '../practices/entities/practice.entity'
 import { TransactionLogsDto } from '../common/dtos/transaction-logs.dto'
@@ -172,7 +172,14 @@ export class AdminController {
 
   @Get('events')
   async getEvents (@Query() query: EventsQueryDto): Promise<PaginationResult<Event>> {
-    const options: FilterQuery<EventDocument> = {}
+    const { start, end } = resolveBoundedDateRange(query.startDate, query.endDate)
+    const { page, limit } = query
+    if ((page - 1) * limit >= EVENTS_COUNT_CAP) {
+      throw new BadRequestException(`Pagination offset must be below ${EVENTS_COUNT_CAP}`)
+    }
+    const options: FilterQuery<EventDocument> = {
+      createdAt: { $gte: start, $lte: end },
+    }
     if (query.providers !== undefined) {
       options.providerId = { $in: query.providers }
     }
@@ -182,26 +189,27 @@ export class AdminController {
     if (query.types !== undefined) {
       options.type = { $in: query.types }
     }
-    if (query.startDate !== undefined) {
-      options.createdAt = { $gte: new Date(query.startDate) }
-    }
-    if (query.endDate !== undefined) {
-      options.createdAt = { ...options.createdAt, $lte: new Date(query.endDate) }
-    }
     if (query.search !== undefined) {
       const matchingPractices = await this.practicesRepository
         .createQueryBuilder('practice')
         .where('practice.name LIKE :search', { search: `%${query.search}%` })
         .select('practice.id')
         .getMany()
+      if (matchingPractices.length === 0) {
+        return { total: 0, totalCapped: false, page, limit, data: [] }
+      }
       options.practiceId = { $in: matchingPractices.map((p) => p.id) }
     }
-    const { page, limit } = query
 
     const data = await this.eventsService.find(options, { page, limit })
+    // A short first page already gives the exact total, skipping the count query for selective filters.
+    const { total, capped } = page === 1 && data.length < limit
+      ? { total: data.length, capped: false }
+      : await this.eventsService.countCapped(options)
 
     return {
-      total: await this.eventsService.count(options),
+      total,
+      totalCapped: capped,
       page,
       limit,
       data,
