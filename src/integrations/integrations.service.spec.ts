@@ -1,4 +1,4 @@
-import { IntegrationsService } from './integrations.service'
+import { IntegrationsService, ORGANIZATION_STARTABLE_STATUSES } from './integrations.service'
 import { Test, TestingModule } from '@nestjs/testing'
 import { ConfigService } from '@nestjs/config'
 import { Integration } from './entities/integration.entity'
@@ -7,7 +7,7 @@ import { Organization } from '../organizations/entities/organization.entity'
 import { ProviderConfiguration } from '../providers/entities/provider-configuration.entity'
 import { Provider } from '../providers/entities/provider.entity'
 import { IntegrationStatus } from './constants/integration-status.enum'
-import { BadRequestException, NotFoundException } from '@nestjs/common'
+import { BadGatewayException, BadRequestException, ConflictException, NotFoundException } from '@nestjs/common'
 import { Practice } from '../practices/entities/practice.entity'
 
 const organization = { id: 'org-1' } as Organization
@@ -370,6 +370,245 @@ describe('IntegrationsService', () => {
 
       expect(response).toBeUndefined()
       expect(clientProxyMock.send).toHaveBeenCalledTimes(2)
+    })
+  })
+
+  describe('startById() and stopById()', () => {
+    const integrationIn = (status: IntegrationStatus): any => ({
+      id: 'integration-id',
+      status,
+      providerConfiguration: {
+        id: 'provider-configuration-id',
+        providerId: 'idexx',
+        configurationOptions: { url: 'https://idexx.example' },
+      },
+      integrationOptions: { username: 'clinic' },
+    })
+    const resolves = (): any => ({ toPromise: async () => ({}) })
+    const rejects = (): any => ({
+      toPromise: async () => {
+        throw new Error('engine unreachable')
+      },
+    })
+    const ownedLookup = {
+      where: {
+        id: 'integration-id',
+        providerConfiguration: { organizationId: 'org-1' },
+      },
+      relations: ['practice', 'providerConfiguration'],
+    }
+
+    beforeEach(() => {
+      integrationRepositoryMock.findOne.mockReset()
+      integrationRepositoryMock.update.mockClear()
+      clientProxyMock.send.mockReset()
+      clientProxyMock.send.mockImplementation(resolves)
+    })
+
+    describe('startById()', () => {
+      it.each([IntegrationStatus.NEW, IntegrationStatus.STOPPED])(
+        'starts a %s integration: the engine gets the create message, and the status becomes RUNNING',
+        async (status) => {
+          integrationRepositoryMock.findOne.mockResolvedValue(integrationIn(status))
+
+          const answer = await integrationsService.startById(organization, 'integration-id')
+
+          expect(answer).toEqual({ ok: 'Integration started' })
+          expect(clientProxyMock.send).toHaveBeenCalledTimes(1)
+          expect(clientProxyMock.send).toHaveBeenCalledWith(
+            'idexx/integration/create',
+            expect.objectContaining({
+              data: expect.objectContaining({
+                integrationId: 'integration-id',
+                integrationOptions: { username: 'clinic' },
+                providerConfiguration: { url: 'https://idexx.example' },
+              }),
+            }),
+          )
+          expect(integrationRepositoryMock.update).toHaveBeenCalledWith('integration-id', {
+            status: IntegrationStatus.RUNNING,
+          })
+        },
+      )
+
+      it("looks the integration up within the caller's organization", async () => {
+        integrationRepositoryMock.findOne.mockResolvedValue(integrationIn(IntegrationStatus.STOPPED))
+
+        await integrationsService.startById(organization, 'integration-id')
+
+        expect(integrationRepositoryMock.findOne).toHaveBeenCalledWith(ownedLookup)
+      })
+
+      it('refuses an integration owned by another organization, and changes nothing', async () => {
+        integrationRepositoryMock.findOne.mockResolvedValue(undefined)
+
+        await expect(integrationsService.startById(organization, 'integration-id')).rejects.toThrow(
+          NotFoundException,
+        )
+        expect(clientProxyMock.send).not.toHaveBeenCalled()
+        expect(integrationRepositoryMock.update).not.toHaveBeenCalled()
+      })
+
+      it('answers a RUNNING integration without asking the engine', async () => {
+        integrationRepositoryMock.findOne.mockResolvedValue(integrationIn(IntegrationStatus.RUNNING))
+
+        const answer = await integrationsService.startById(organization, 'integration-id')
+
+        expect(answer).toEqual({ ok: 'Integration is already running' })
+        expect(clientProxyMock.send).not.toHaveBeenCalled()
+        expect(integrationRepositoryMock.update).not.toHaveBeenCalled()
+      })
+
+      it.each([IntegrationStatus.READY, IntegrationStatus.ERROR])(
+        'refuses a %s integration with a 409, outside the statuses an organization may start from',
+        async (status) => {
+          integrationRepositoryMock.findOne.mockResolvedValue(integrationIn(status))
+
+          await expect(integrationsService.startById(organization, 'integration-id')).rejects.toThrow(
+            new ConflictException(
+              `Integration integration-id is ${status} and cannot be started with an organization key`,
+            ),
+          )
+          expect(clientProxyMock.send).not.toHaveBeenCalled()
+          expect(integrationRepositoryMock.update).not.toHaveBeenCalled()
+        },
+      )
+
+      it('answers an engine failure with a 502 and leaves the status as it was', async () => {
+        integrationRepositoryMock.findOne.mockResolvedValue(integrationIn(IntegrationStatus.STOPPED))
+        clientProxyMock.send.mockImplementation(rejects)
+
+        await expect(integrationsService.startById(organization, 'integration-id')).rejects.toThrow(
+          new BadGatewayException('Error starting integration integration-id'),
+        )
+        expect(integrationRepositoryMock.update).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('stopById()', () => {
+      it('stops a RUNNING integration: the engine gets the remove message, and the status becomes STOPPED', async () => {
+        integrationRepositoryMock.findOne.mockResolvedValue(integrationIn(IntegrationStatus.RUNNING))
+
+        const answer = await integrationsService.stopById(organization, 'integration-id')
+
+        expect(answer).toEqual({ ok: 'Integration stopped' })
+        expect(clientProxyMock.send).toHaveBeenCalledTimes(1)
+        expect(clientProxyMock.send).toHaveBeenCalledWith(
+          'idexx/integration/remove',
+          expect.objectContaining({
+            data: expect.objectContaining({ integrationId: 'integration-id' }),
+          }),
+        )
+        expect(integrationRepositoryMock.update).toHaveBeenCalledWith('integration-id', {
+          status: IntegrationStatus.STOPPED,
+        })
+      })
+
+      it("looks the integration up within the caller's organization", async () => {
+        integrationRepositoryMock.findOne.mockResolvedValue(integrationIn(IntegrationStatus.RUNNING))
+
+        await integrationsService.stopById(organization, 'integration-id')
+
+        expect(integrationRepositoryMock.findOne).toHaveBeenCalledWith(ownedLookup)
+      })
+
+      it('refuses an integration owned by another organization, and changes nothing', async () => {
+        integrationRepositoryMock.findOne.mockResolvedValue(undefined)
+
+        await expect(integrationsService.stopById(organization, 'integration-id')).rejects.toThrow(
+          NotFoundException,
+        )
+        expect(clientProxyMock.send).not.toHaveBeenCalled()
+        expect(integrationRepositoryMock.update).not.toHaveBeenCalled()
+      })
+
+      it('answers a STOPPED integration without asking the engine', async () => {
+        integrationRepositoryMock.findOne.mockResolvedValue(integrationIn(IntegrationStatus.STOPPED))
+
+        const answer = await integrationsService.stopById(organization, 'integration-id')
+
+        expect(answer).toEqual({ ok: 'Integration is already stopped' })
+        expect(clientProxyMock.send).not.toHaveBeenCalled()
+        expect(integrationRepositoryMock.update).not.toHaveBeenCalled()
+      })
+
+      it('leaves a NEW integration NEW, without asking the engine', async () => {
+        integrationRepositoryMock.findOne.mockResolvedValue(integrationIn(IntegrationStatus.NEW))
+
+        const answer = await integrationsService.stopById(organization, 'integration-id')
+
+        expect(answer).toEqual({ ok: 'Integration has not been started' })
+        expect(clientProxyMock.send).not.toHaveBeenCalled()
+        expect(integrationRepositoryMock.update).not.toHaveBeenCalled()
+      })
+
+      it('answers an engine failure with a 502 and leaves the status as it was', async () => {
+        integrationRepositoryMock.findOne.mockResolvedValue(integrationIn(IntegrationStatus.RUNNING))
+        clientProxyMock.send.mockImplementation(rejects)
+
+        await expect(integrationsService.stopById(organization, 'integration-id')).rejects.toThrow(
+          new BadGatewayException('Error stopping integration integration-id'),
+        )
+        expect(integrationRepositoryMock.update).not.toHaveBeenCalled()
+      })
+
+      it.each([IntegrationStatus.READY, IntegrationStatus.ERROR])(
+        'stops a %s integration, as the admin stop does',
+        async (status) => {
+          integrationRepositoryMock.findOne.mockResolvedValue(integrationIn(status))
+
+          const answer = await integrationsService.stopById(organization, 'integration-id')
+
+          expect(answer).toEqual({ ok: 'Integration stopped' })
+          expect(clientProxyMock.send).toHaveBeenCalledWith('idexx/integration/remove', expect.anything())
+          expect(integrationRepositoryMock.update).toHaveBeenCalledWith('integration-id', {
+            status: IntegrationStatus.STOPPED,
+          })
+        },
+      )
+    })
+
+    /* An organization may start a NEW integration. Limiting start to integrations that have run before stays one
+     * change: taking NEW out of ORGANIZATION_STARTABLE_STATUSES. Restart has to follow it, or a restart would stop
+     * the NEW integration, leave it STOPPED, and let start take it. */
+    describe('the NEW rule is one list', () => {
+      it('while NEW is in it, a restart of a NEW integration stops it, as it always has', async () => {
+        integrationRepositoryMock.findOne.mockResolvedValue(integrationIn(IntegrationStatus.NEW))
+
+        await expect(integrationsService.restartById(organization, 'integration-id')).resolves.toBeUndefined()
+        expect(clientProxyMock.send).toHaveBeenCalledWith('idexx/integration/remove', expect.anything())
+        expect(integrationRepositoryMock.update).toHaveBeenCalledWith('integration-id', {
+          status: IntegrationStatus.STOPPED,
+        })
+      })
+
+      it('taken out of it, NEW can neither be started nor restarted, and nothing is sent', async () => {
+        const list = ORGANIZATION_STARTABLE_STATUSES as string[]
+        list.splice(list.indexOf(IntegrationStatus.NEW), 1)
+        try {
+          integrationRepositoryMock.findOne.mockResolvedValue(integrationIn(IntegrationStatus.NEW))
+
+          await expect(integrationsService.startById(organization, 'integration-id')).rejects.toThrow(
+            new ConflictException(
+              'Integration integration-id is NEW and cannot be started with an organization key',
+            ),
+          )
+          await expect(integrationsService.restartById(organization, 'integration-id')).rejects.toThrow(
+            new ConflictException(
+              'Integration integration-id is NEW and cannot be restarted with an organization key',
+            ),
+          )
+          expect(clientProxyMock.send).not.toHaveBeenCalled()
+          expect(integrationRepositoryMock.update).not.toHaveBeenCalled()
+
+          integrationRepositoryMock.findOne.mockResolvedValue(integrationIn(IntegrationStatus.STOPPED))
+          await expect(integrationsService.startById(organization, 'integration-id')).resolves.toEqual({
+            ok: 'Integration started',
+          })
+        } finally {
+          list.unshift(IntegrationStatus.NEW)
+        }
+      })
     })
   })
 

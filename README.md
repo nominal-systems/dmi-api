@@ -185,6 +185,8 @@ The following routes are mapped by the application
 | GET    | `/integrations/:id`                               | API Key         |
 | POST   | `/integrations`                                   | API Key         |
 | DELETE | `/integrations/:id`                               | API Key         |
+| POST   | `/integrations/:id/start`                         | API Key         |
+| POST   | `/integrations/:id/stop`                          | API Key         |
 | GET    | `/practices`                                      | API Key         |
 | GET    | `/practices/:id`                                  | API Key         |
 | POST   | `/practices`                                      | API Key         |

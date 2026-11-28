@@ -5,7 +5,7 @@ import { ApiGuard } from '../common/guards/api.guard'
 import { Organization as OrganizationEntity } from '../organizations/entities/organization.entity'
 import { CreateIntegrationDto } from './dtos/create-integration.dto'
 import { Integration } from './entities/integration.entity'
-import { IntegrationsService } from './integrations.service'
+import { IntegrationActionAnswer, IntegrationsService } from './integrations.service'
 
 @Controller('integrations')
 @UseGuards(ApiGuard)
@@ -70,6 +70,26 @@ export class IntegrationsController {
     @Param('id') integrationId: string
   ): Promise<void> {
     return await this.integrationsService.delete(organization, integrationId)
+  }
+
+  // 201, as the admin start and stop routes and this controller's restart answer, so a client written against them
+  // sees the same status
+  @Post(':id/start')
+  @HttpCode(HttpStatus.CREATED)
+  async startIntegration (
+    @Organization() organization: OrganizationEntity,
+    @Param('id') integrationId: string
+  ): Promise<IntegrationActionAnswer> {
+    return await this.integrationsService.startById(organization, integrationId)
+  }
+
+  @Post(':id/stop')
+  @HttpCode(HttpStatus.CREATED)
+  async stopIntegration (
+    @Organization() organization: OrganizationEntity,
+    @Param('id') integrationId: string
+  ): Promise<IntegrationActionAnswer> {
+    return await this.integrationsService.stopById(organization, integrationId)
   }
 
   @Post(':id/restart')
