@@ -11,6 +11,7 @@ import { FindOneOfTypeOptions, toFindOneOptions } from '../../common/typings/fin
 import { Integration } from '../../integrations/entities/integration.entity'
 import { IntegrationsService } from '../../integrations/integrations.service'
 import { IntegrationStatus } from '../../integrations/constants/integration-status.enum'
+import { IntegrationActor } from '../../integrations/constants/integration-log.constants'
 
 @Injectable()
 export class ProviderConfigurationsService {
@@ -109,7 +110,8 @@ export class ProviderConfigurationsService {
     }
   }
 
-  async delete(args: FindOneOfTypeOptions<ProviderConfiguration>): Promise<void> {
+  /** Soft-deletes the configuration and its integrations; each integration's log records the delete (#306). */
+  async delete(args: FindOneOfTypeOptions<ProviderConfiguration>, actor: IntegrationActor): Promise<void> {
     const providerConfig = await this.findOne(args)
 
     if (providerConfig == null) {
@@ -124,6 +126,10 @@ export class ProviderConfigurationsService {
       const integrationIds = providerConfig.integrations.map((i) => i.id)
       await this.integrationsRepository.softDelete(integrationIds)
       this.logger.log(`Deleted Integrations: ${integrationIds.join(',')}`)
+      await this.integrationsService.recordDeletes(
+        providerConfig.integrations.filter((integration) => integration.deletedAt == null).map((i) => i.id),
+        actor,
+      )
     }
   }
 
